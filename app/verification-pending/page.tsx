@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Clock, CheckCircle, XCircle, RefreshCw } from "lucide-react"
+import axios from "axios"
 
 export default function VerificationPendingPage() {
   const router = useRouter()
@@ -45,25 +46,22 @@ export default function VerificationPendingPage() {
   const checkStatus = async () => {
     setChecking(true)
     try {
-      const { apiRequest } = await import("../../lib/api-client")
       const token = localStorage.getItem("affiliate_token")
 
-      const response = await apiRequest("/affiliate/me", {
+      const response = await axios.get("/api/affiliate/me", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       })
 
-      if (response.ok) {
-        const data = await response.json()
-        localStorage.setItem("affiliate_user", JSON.stringify(data.user))
-        setUser(data.user)
+      const data = response.data
+      localStorage.setItem("affiliate_user", JSON.stringify(data.user))
+      setUser(data.user)
 
-        if (data.user.is_approved) {
-          router.push("/dashboard")
-        } else if (data.user.rejected_at) {
-          // Stay on page to show rejection
-        }
+      if (data.user.is_approved) {
+        router.push("/dashboard")
+      } else if (data.user.rejected_at) {
+        // Stay on page to show rejection
       }
     } catch (err) {
       console.error("Error checking status:", err)

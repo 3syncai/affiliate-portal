@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { Search, Filter, Package, DollarSign, TrendingUp, CheckCircle, XCircle } from "lucide-react"
+import axios from "axios"
 
 type Product = {
   id: string
@@ -60,22 +61,15 @@ export default function ProductCommissionPage() {
   const loadProducts = async () => {
     setLoading(true)
     try {
-      const { apiRequest } = await import("../../../lib/api-client")
-      const response = await apiRequest("/affiliate/admin/products")
-
-      if (response.ok) {
-        const data = await response.json()
-        setProducts(data.products || [])
-        setFilters(data.filters || { categories: [], collections: [], types: [] })
-        setStats(data.stats || { total: 0, in_stock: 0, out_of_stock: 0 })
-      } else {
-        const errorData = await response.json().catch(() => ({ message: "Unknown error" }))
-        console.error("Failed to fetch products:", response.status, errorData)
-        alert(`Failed to load products: ${errorData.message || "Unknown error"}`)
-      }
-    } catch (error) {
+      const response = await axios.get("/api/affiliate/admin/products")
+      const data = response.data
+      setProducts(data.products || [])
+      setFilters(data.filters || { categories: [], collections: [], types: [] })
+      setStats(data.stats || { total: 0, in_stock: 0, out_of_stock: 0 })
+    } catch (error: any) {
       console.error("Failed to fetch products:", error)
-      alert(`Error loading products: ${error instanceof Error ? error.message : "Unknown error"}`)
+      const errorMessage = error.response?.data?.message || error.message || "Unknown error"
+      alert(`Error loading products: ${errorMessage}`)
     } finally {
       setLoading(false)
     }

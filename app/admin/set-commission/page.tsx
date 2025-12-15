@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { Search, Plus, Edit, Trash2, Package, Tag, Boxes, Type, Save, X } from "lucide-react"
+import axios from "axios"
 
 interface Commission {
   id: string
@@ -47,20 +48,13 @@ export default function SetCommissionPage() {
 
   const loadCommissions = async () => {
     try {
-      const { apiRequest } = await import("../../../lib/api-client")
-      const response = await apiRequest("/affiliate/admin/commissions")
-
-      if (response.ok) {
-        const data = await response.json()
-        setCommissions(data.commissions || [])
-      } else {
-        const errorData = await response.json().catch(() => ({ message: "Unknown error" }))
-        console.error("Failed to fetch commissions:", response.status, errorData)
-        alert(`Failed to load commissions: ${errorData.message || "Unknown error"}`)
-      }
-    } catch (error) {
+      const response = await axios.get("/api/affiliate/admin/commissions")
+      const data = response.data
+      setCommissions(data.commissions || [])
+    } catch (error: any) {
       console.error("Failed to fetch commissions:", error)
-      alert(`Error loading commissions: ${error instanceof Error ? error.message : "Unknown error"}`)
+      const errorMessage = error.response?.data?.message || error.message || "Unknown error"
+      alert(`Error loading commissions: ${errorMessage}`)
     } finally {
       setLoading(false)
     }
@@ -68,53 +62,45 @@ export default function SetCommissionPage() {
 
   const loadProducts = async () => {
     try {
-      const { apiRequest } = await import("../../../lib/api-client")
-      const response = await apiRequest("/affiliate/admin/products")
+      const response = await axios.get("/api/affiliate/admin/products")
+      const data = response.data
+      setProducts(data.products || [])
 
-      if (response.ok) {
-        const data = await response.json()
-        setProducts(data.products || [])
-        
-        // Extract unique categories, collections, and types
-        const uniqueCategories = new Map<string, FilterOption>()
-        const uniqueCollections = new Map<string, FilterOption>()
-        const uniqueTypes = new Map<string, FilterOption>()
+      // Extract unique categories, collections, and types
+      const uniqueCategories = new Map<string, FilterOption>()
+      const uniqueCollections = new Map<string, FilterOption>()
+      const uniqueTypes = new Map<string, FilterOption>()
 
-        data.products?.forEach((product: any) => {
-          product.categories?.forEach((cat: any) => {
-            if (!uniqueCategories.has(cat.id)) {
-              uniqueCategories.set(cat.id, { id: cat.id, name: cat.name })
-            }
-          })
-          if (product.collection) {
-            if (!uniqueCollections.has(product.collection.id)) {
-              uniqueCollections.set(product.collection.id, {
-                id: product.collection.id,
-                title: product.collection.title,
-              })
-            }
-          }
-          if (product.type) {
-            if (!uniqueTypes.has(product.type.id)) {
-              uniqueTypes.set(product.type.id, {
-                id: product.type.id,
-                value: product.type.value,
-              })
-            }
+      data.products?.forEach((product: any) => {
+        product.categories?.forEach((cat: any) => {
+          if (!uniqueCategories.has(cat.id)) {
+            uniqueCategories.set(cat.id, { id: cat.id, name: cat.name })
           }
         })
+        if (product.collection) {
+          if (!uniqueCollections.has(product.collection.id)) {
+            uniqueCollections.set(product.collection.id, {
+              id: product.collection.id,
+              title: product.collection.title,
+            })
+          }
+        }
+        if (product.type) {
+          if (!uniqueTypes.has(product.type.id)) {
+            uniqueTypes.set(product.type.id, {
+              id: product.type.id,
+              value: product.type.value,
+            })
+          }
+        }
+      })
 
-        setCategories(Array.from(uniqueCategories.values()))
-        setCollections(Array.from(uniqueCollections.values()))
-        setTypes(Array.from(uniqueTypes.values()))
-      } else {
-        const errorData = await response.json().catch(() => ({ message: "Unknown error" }))
-        console.error("Failed to fetch products:", response.status, errorData)
-        alert(`Failed to load products: ${errorData.message || "Unknown error"}`)
-      }
-    } catch (error) {
+      setCategories(Array.from(uniqueCategories.values()))
+      setCollections(Array.from(uniqueCollections.values()))
+      setTypes(Array.from(uniqueTypes.values()))
+    } catch (error: any) {
       console.error("Failed to fetch products:", error)
-      const errorMessage = error instanceof Error ? error.message : "Unknown error"
+      const errorMessage = error.response?.data?.message || error.message || "Unknown error"
       alert(`Error loading products: ${errorMessage}. Please check if the backend server is running.`)
     }
   }
@@ -133,20 +119,20 @@ export default function SetCommissionPage() {
     }
 
     const trimmedRate = formData.commission_rate.trim()
-    
+
     // Check if trimmed rate is empty
     if (!trimmedRate || trimmedRate === "") {
       alert("Please enter a commission rate")
       return
     }
-    
+
     const commissionRate = parseFloat(trimmedRate)
-    
+
     if (isNaN(commissionRate) || !isFinite(commissionRate)) {
       alert("Commission rate must be a valid number")
       return
     }
-    
+
     if (commissionRate < 0 || commissionRate > 100) {
       alert("Commission rate must be between 0 and 100")
       return
@@ -157,12 +143,11 @@ export default function SetCommissionPage() {
       alert("Please enter a valid commission rate")
       return
     }
-    
+
     console.log("Validated commission rate:", commissionRate, "Type:", typeof commissionRate)
 
     setSaving(true)
     try {
-      const { apiRequest } = await import("../../../lib/api-client")
       let response
 
       if (editingCommission) {
@@ -171,20 +156,14 @@ export default function SetCommissionPage() {
           commission_rate: commissionRate,
         }
         console.log("Updating commission:", requestBody)
-        
-        response = await apiRequest(`/affiliate/admin/commissions/${editingCommission.id}`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(requestBody),
-        })
+
+        response = await axios.put(`/api/affiliate/admin/commissions/${editingCommission.id}`, requestBody)
       } else {
         // Create new commission
         const body: any = {
           commission_rate: commissionRate,
         }
-        
+
         // Set the appropriate entity ID based on commission type
         if (formData.commission_type === "product") {
           body.product_id = formData.entity_id
@@ -195,45 +174,34 @@ export default function SetCommissionPage() {
         } else if (formData.commission_type === "type") {
           body.type_id = formData.entity_id
         }
-        
+
         const requestBody = {
           ...body,
           commission_rate: commissionRate, // Ensure it's explicitly set as a number
         }
-        
+
         console.log("Creating commission with body:", JSON.stringify(requestBody, null, 2))
         console.log("Commission rate value:", commissionRate, "Type:", typeof commissionRate)
         console.log("Request body stringified:", JSON.stringify(requestBody))
 
-        response = await apiRequest("/affiliate/admin/commissions", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(requestBody),
-        })
-        
+        response = await axios.post("/api/affiliate/admin/commissions", requestBody)
+
         console.log("Response status:", response.status)
-        console.log("Response ok:", response.ok)
       }
 
-      if (response.ok) {
-        await loadCommissions()
-        setShowForm(false)
-        setEditingCommission(null)
-        setFormData({
-          commission_type: "product",
-          entity_id: "",
-          commission_rate: "",
-        })
-        alert(editingCommission ? "Commission updated successfully" : "Commission created successfully")
-      } else {
-        const errorData = await response.json().catch(() => ({ message: "Unknown error" }))
-        alert(`Failed to save commission: ${errorData.message || "Unknown error"}`)
-      }
-    } catch (error) {
+      await loadCommissions()
+      setShowForm(false)
+      setEditingCommission(null)
+      setFormData({
+        commission_type: "product",
+        entity_id: "",
+        commission_rate: "",
+      })
+      alert(editingCommission ? "Commission updated successfully" : "Commission created successfully")
+    } catch (error: any) {
       console.error("Failed to save commission:", error)
-      alert(`Error saving commission: ${error instanceof Error ? error.message : "Unknown error"}`)
+      const errorMessage = error.response?.data?.message || error.message || "Unknown error"
+      alert(`Error saving commission: ${errorMessage}`)
     } finally {
       setSaving(false)
     }
@@ -245,21 +213,13 @@ export default function SetCommissionPage() {
     }
 
     try {
-      const { apiRequest } = await import("../../../lib/api-client")
-      const response = await apiRequest(`/affiliate/admin/commissions/${commissionId}`, {
-        method: "DELETE",
-      })
-
-      if (response.ok) {
-        await loadCommissions()
-        alert("Commission deleted successfully")
-      } else {
-        const errorData = await response.json().catch(() => ({ message: "Unknown error" }))
-        alert(`Failed to delete commission: ${errorData.message || "Unknown error"}`)
-      }
-    } catch (error) {
+      await axios.delete(`/api/affiliate/admin/commissions/${commissionId}`)
+      await loadCommissions()
+      alert("Commission deleted successfully")
+    } catch (error: any) {
       console.error("Failed to delete commission:", error)
-      alert(`Error deleting commission: ${error instanceof Error ? error.message : "Unknown error"}`)
+      const errorMessage = error.response?.data?.message || error.message || "Unknown error"
+      alert(`Error deleting commission: ${errorMessage}`)
     }
   }
 
@@ -412,10 +372,10 @@ export default function SetCommissionPage() {
                   {formData.commission_type === "product"
                     ? "Product"
                     : formData.commission_type === "category"
-                    ? "Category"
-                    : formData.commission_type === "collection"
-                    ? "Collection"
-                    : "Type"}
+                      ? "Category"
+                      : formData.commission_type === "collection"
+                        ? "Collection"
+                        : "Type"}
                 </label>
                 <select
                   value={formData.entity_id}
