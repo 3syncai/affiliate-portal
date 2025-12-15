@@ -1,12 +1,12 @@
 "use client"
 
-import { useState, FormEvent, useEffect } from "react"
+import { useState, FormEvent, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import axios from "axios"
 import { Mail, Lock, ArrowRight, CheckCircle, AlertCircle } from "lucide-react"
 import { BACKEND_URL } from "@/lib/config"
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [email, setEmail] = useState("")
@@ -228,5 +228,17 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="w-8 h-8 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    }>
+      <LoginContent />
+    </Suspense>
   )
 }
