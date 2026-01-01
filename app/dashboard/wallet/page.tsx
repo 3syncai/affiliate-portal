@@ -1,9 +1,11 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import axios from "axios"
-import { Wallet, CreditCard, Building2, Smartphone, Plus, Edit2, CheckCircle, TrendingUp, History, ArrowUpRight, Copy } from "lucide-react"
+import { Wallet, CreditCard, Building2, Smartphone, Plus, Edit2, CheckCircle, TrendingUp, History, ArrowUpRight, Copy, Wifi, WifiOff } from "lucide-react"
 import UserNavbar from "../../components/UserNavbar"
+import { useSSE } from "@/hooks/useSSE"
+import { Toast } from "@/components/Toast"
 
 type PaymentMethod = {
     method: string
@@ -49,6 +51,32 @@ export default function WalletPage() {
     const [submittingWithdrawal, setSubmittingWithdrawal] = useState(false)
     const [withdrawalHistory, setWithdrawalHistory] = useState<any[]>([])
     const [loadingHistory, setLoadingHistory] = useState(false)
+    const [referCode, setReferCode] = useState<string>("")
+
+    // Toast notification state
+    const [showToast, setShowToast] = useState(false)
+    const [toastData, setToastData] = useState<{ message: string; amount?: number }>({ message: "" })
+
+    // SSE Real-time updates
+    const handlePaymentReceived = useCallback((data: any) => {
+        console.log("Payment received!", data);
+        setToastData({
+            message: data.message || "Payment received!",
+            amount: data.amount
+        });
+        setShowToast(true);
+
+        // Refresh wallet data
+        if (referCode) {
+            fetchWalletData(referCode);
+            fetchWithdrawalHistory(referCode);
+        }
+    }, [referCode]);
+
+    const { isConnected } = useSSE({
+        affiliateCode: referCode,
+        onPaymentReceived: handlePaymentReceived
+    });
 
     // Form state
     const [bankForm, setBankForm] = useState({
@@ -85,6 +113,7 @@ export default function WalletPage() {
 
             // Fetch wallet data with actual refer code
             if (parsedUser.refer_code) {
+                setReferCode(parsedUser.refer_code)
                 fetchWalletData(parsedUser.refer_code)
                 fetchGSTSettings()
                 fetchWithdrawalHistory(parsedUser.refer_code)
@@ -305,6 +334,25 @@ export default function WalletPage() {
     return (
         <>
             <UserNavbar userName={userName} />
+
+            {/* Real-time Connection Indicator */}
+            <div className="fixed bottom-4 left-4 z-50">
+                <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium ${isConnected ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                    {isConnected ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
+                    {isConnected ? 'Live Updates On' : 'Connecting...'}
+                </div>
+            </div>
+
+            {/* Payment Received Toast */}
+            {showToast && (
+                <Toast
+                    message={toastData.message}
+                    type="payment"
+                    amount={toastData.amount}
+                    onClose={() => setShowToast(false)}
+                />
+            )}
+
             <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-8">
                 <div className="max-w-7xl mx-auto space-y-8">
                     {/* Header Section */}

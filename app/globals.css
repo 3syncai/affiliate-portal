@@ -3,6 +3,16 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+  /* Theme colors - default to blue */
+  --theme-primary: #3b82f6;
+  --theme-primary-hover: #2563eb;
+  --theme-primary-light: #dbeafe;
+  --theme-sidebar: #1e40af;
+  --theme-sidebar-text: #ffffff;
+  --theme-accent: #0ea5e9;
+  --theme-background: #f0f5ff;
+  --theme-card-bg: #ffffff;
 }
 
 @theme inline {
@@ -14,13 +24,88 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #ffffff;
+    --foreground: #171717;
   }
 }
 
 body {
-  background: var(--background);
+  background: var(--theme-background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Theme-aware card backgrounds */
+.bg-white {
+  background-color: var(--theme-card-bg) !important;
+}
+
+/* Ensure inputs always have dark text and visible placeholders */
+input,
+select,
+textarea {
+  color: #1f2937 !important;
+  background-color: #ffffff !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #9ca3af !important;
+  opacity: 1;
+}
+
+/* Theme-aware button primary color */
+.bg-blue-600 {
+  background-color: var(--theme-primary) !important;
+}
+
+.bg-blue-600:hover,
+.hover\:bg-blue-700:hover {
+  background-color: var(--theme-primary-hover) !important;
+}
+
+/* Theme-aware badge/pill colors */
+.bg-blue-100 {
+  background-color: var(--theme-primary-light) !important;
+}
+
+.text-blue-600,
+.text-blue-700,
+.text-blue-800 {
+  color: var(--theme-primary) !important;
+}
+
+/* Theme-aware border colors */
+.border-blue-600 {
+  border-color: var(--theme-primary) !important;
+}
+
+.focus\:ring-blue-500:focus {
+  --tw-ring-color: var(--theme-primary) !important;
+}
+
+.focus\:border-blue-500:focus {
+  border-color: var(--theme-primary) !important;
+}
+
+/* Lenis Smooth Scroll */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+.lenis.lenis-scrolling iframe {
+  pointer-events: none;
 }

@@ -53,6 +53,8 @@ export default function DashboardPage() {
   const [copied, setCopied] = useState(false)
   const [stats, setStats] = useState<AffiliateStats | null>(null)
   const [statsLoading, setStatsLoading] = useState(false)
+  const [affiliateRate, setAffiliateRate] = useState<number>(100) // Default 100% if not set
+  const [walletBalance, setWalletBalance] = useState<number>(0) // Dynamically calculated wallet balance
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
@@ -103,6 +105,8 @@ export default function DashboardPage() {
 
         // Fetch affiliate stats
         fetchStats(parsedUser.refer_code)
+        fetchAffiliateRate()
+        fetchWalletBalance(parsedUser.refer_code)
       }
     } catch (e) {
       console.error("Error parsing user data:", e)
@@ -125,6 +129,33 @@ export default function DashboardPage() {
       console.error("Failed to fetch stats:", err)
     } finally {
       setStatsLoading(false)
+    }
+  }
+
+  const fetchAffiliateRate = async () => {
+    try {
+      const response = await axios.get("/api/admin/commission-rates")
+      if (response.data.success && response.data.rates) {
+        const affiliateRateObj = response.data.rates.find(
+          (r: any) => r.role_type === "affiliate"
+        )
+        if (affiliateRateObj) {
+          setAffiliateRate(parseFloat(affiliateRateObj.commission_percentage))
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching affiliate rate:", err)
+    }
+  }
+
+  const fetchWalletBalance = async (referCode: string) => {
+    try {
+      const response = await axios.get(`/api/affiliate/wallet?refer_code=${referCode}`)
+      if (response.data.success) {
+        setWalletBalance(response.data.data.balance.current || 0)
+      }
+    } catch (err) {
+      console.error("Error fetching wallet balance:", err)
     }
   }
 
@@ -256,10 +287,10 @@ export default function DashboardPage() {
                 </div>
                 <div>
                   <p className="text-xs text-gray-500">Total Commission</p>
-                  <p className="text-2xl font-bold text-gray-900">₹{(stats?.commission.total_earned || 0).toFixed(2)}</p>
+                  <p className="text-2xl font-bold text-gray-900">₹{((stats?.commission.total_earned || 0) * affiliateRate / 100).toFixed(2)}</p>
                 </div>
               </div>
-              <p className="text-xs text-amber-600 mt-2">₹{(stats?.commission.pending || 0).toFixed(2)} pending</p>
+              <p className="text-xs text-amber-600 mt-2">₹{((stats?.commission.pending || 0) * affiliateRate / 100).toFixed(2)} pending</p>
             </div>
 
             {/* Wallet Balance */}
@@ -271,11 +302,11 @@ export default function DashboardPage() {
                   </div>
                   <div>
                     <p className="text-xs text-emerald-100">Wallet Balance</p>
-                    <p className="text-2xl font-bold text-white">₹{(stats?.wallet.balance || 0).toFixed(2)}</p>
+                    <p className="text-2xl font-bold text-white">₹{walletBalance.toFixed(2)}</p>
                   </div>
                 </div>
                 {(stats?.wallet.locked || 0) > 0 && (
-                  <p className="text-xs text-emerald-200 mt-2">₹{stats?.wallet.locked.toFixed(2)} unlocking soon</p>
+                  <p className="text-xs text-emerald-200 mt-2">₹{((stats?.wallet.locked || 0) * affiliateRate / 100).toFixed(2)} unlocking soon</p>
                 )}
               </div>
             </a>
@@ -393,22 +424,25 @@ export default function DashboardPage() {
               </h3>
               {stats?.recent_commissions && stats.recent_commissions.length > 0 ? (
                 <div className="space-y-3">
-                  {stats.recent_commissions.slice(0, 5).map((comm) => (
-                    <div key={comm.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">{comm.product_name}</p>
-                        <p className="text-xs text-gray-500">₹{comm.order_amount} @ {comm.commission_rate}%</p>
+                  {stats.recent_commissions.slice(0, 5).map((comm) => {
+                    const adjustedCommission = comm.commission_amount * (affiliateRate / 100)
+                    return (
+                      <div key={comm.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">{comm.product_name}</p>
+                          <p className="text-xs text-gray-500">₹{comm.order_amount} @ {comm.commission_rate}%</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-bold text-emerald-600">+₹{adjustedCommission.toFixed(2)}</p>
+                          <span className={`text-xs px-1.5 py-0.5 rounded ${comm.status === 'CREDITED' ? 'bg-green-100 text-green-700' :
+                            comm.status === 'PENDING' ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-700'
+                            }`}>
+                            {comm.status}
+                          </span>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <p className="text-sm font-bold text-emerald-600">+₹{Number(comm.commission_amount).toFixed(2)}</p>
-                        <span className={`text-xs px-1.5 py-0.5 rounded ${comm.status === 'CREDITED' ? 'bg-green-100 text-green-700' :
-                          comm.status === 'PENDING' ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-700'
-                          }`}>
-                          {comm.status}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               ) : (
                 <div className="text-center py-8 text-gray-400">

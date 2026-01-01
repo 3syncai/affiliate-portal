@@ -148,6 +148,7 @@ export async function POST(req: NextRequest) {
         }
 
         // Insert affiliate user (columns match database schema exactly)
+        // Normalize branch, area, state, city names (First letter caps)
         const userId = crypto.randomUUID()
         const insertQuery = `
             INSERT INTO affiliate_user (
@@ -160,8 +161,8 @@ export async function POST(req: NextRequest) {
                 country, address_state, upi_id, is_approved, created_at, updated_at
             ) VALUES (
                 $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17,
-                $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32,
-                $33, $34, $35, $36, $37, $38, $39, $40, FALSE, NOW(), NOW()
+                $18, $19, $20, $21, $22, $23, $24, INITCAP(LOWER($25)), INITCAP(LOWER($26)), INITCAP(LOWER($27)), $28, $29, $30, $31, $32,
+                $33, $34, $35, INITCAP(LOWER($36)), $37, $38, INITCAP(LOWER($39)), $40, FALSE, NOW(), NOW()
             ) RETURNING id, email, first_name, last_name, refer_code, is_approved
         `
 

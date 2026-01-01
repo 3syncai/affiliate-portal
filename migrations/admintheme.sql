@@ -1,0 +1,8 @@
+CREATE TABLE IF NOT EXISTS admin_users (
+    id VARCHAR(50) PRIMARY KEY,
+    email VARCHAR(255),
+    name VARCHAR(255),
+    theme VARCHAR(20) DEFAULT 'violet',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

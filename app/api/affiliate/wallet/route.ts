@@ -53,32 +53,31 @@ export async function GET(request: Request) {
 
         const user = userResult.rows[0];
 
-        // Fetch wallet balance
-        const walletQuery = `
-      SELECT coins_balance
-      FROM customer_wallet
-      WHERE customer_id = $1
-    `;
-        const walletResult = await pool.query(walletQuery, [user.id]);
-        const walletBalance = walletResult.rows[0]?.coins_balance || 0;
-
-        // Fetch total commission earned
+        // Fetch total commission earned (affiliates get 70% - use affiliate_amount column)
         const commissionQuery = `
-      SELECT COALESCE(SUM(commission_amount), 0) as total_earned
+      SELECT 
+        COALESCE(SUM(COALESCE(affiliate_amount, commission_amount * 0.70)), 0) as total_earned
       FROM affiliate_commission_log
       WHERE affiliate_code = $1
     `;
         const commissionResult = await pool.query(commissionQuery, [referCode]);
         const totalEarned = parseFloat(commissionResult.rows[0]?.total_earned) || 0;
 
-        // Fetch total withdrawn (only PAID withdrawals)
+        // Fetch total withdrawn (APPROVED + PAID withdrawals - money already deducted)
         const withdrawnQuery = `
-      SELECT COALESCE(SUM(net_payable), 0) as total_withdrawn
+      SELECT 
+        COALESCE(SUM(CASE WHEN status = 'PAID' THEN net_payable ELSE 0 END), 0) as paid_out,
+        COALESCE(SUM(CASE WHEN status IN ('APPROVED', 'PAID') THEN withdrawal_amount ELSE 0 END), 0) as total_deducted
       FROM withdrawal_request
-      WHERE affiliate_code = $1 AND status = 'PAID'
+      WHERE affiliate_code = $1
     `;
         const withdrawnResult = await pool.query(withdrawnQuery, [referCode]);
-        const totalWithdrawn = parseFloat(withdrawnResult.rows[0]?.total_withdrawn) || 0;
+        const totalPaidOut = parseFloat(withdrawnResult.rows[0]?.paid_out) || 0;
+        const totalDeducted = parseFloat(withdrawnResult.rows[0]?.total_deducted) || 0;
+
+        // Calculate available balance dynamically (never gets out of sync!)
+        // Available = Total Earned (70%) - Total Deducted (approved/paid withdrawals)
+        const availableBalance = totalEarned - totalDeducted;
 
         await pool.end();
 
@@ -91,9 +90,9 @@ export async function GET(request: Request) {
                 referCode: user.refer_code
             },
             balance: {
-                current: parseFloat(walletBalance) || 0,
+                current: availableBalance,  // Calculated dynamically!
                 totalEarned: totalEarned,
-                withdrawn: totalWithdrawn  // Only PAID withdrawals
+                withdrawn: totalPaidOut  // Only PAID withdrawals (actual money sent)
             },
             paymentMethod: user.payment_method ? {
                 method: user.payment_method,

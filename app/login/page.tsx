@@ -27,6 +27,7 @@ function LoginContent() {
     setLoading(true)
 
     try {
+      // First try regular login (for affiliates and main admin)
       const response = await axios.post(`${BACKEND_URL}/affiliate/auth/login`, { email, password })
       const data = response.data
 
@@ -38,6 +39,10 @@ function LoginContent() {
       // Redirect based on role and approval status
       if (data.role === "admin") {
         router.push("/admin/dashboard")
+      } else if (data.role === "state" || data.user?.designation === "state") {
+        // State admin users go to state admin dashboard
+        localStorage.setItem("affiliate_role", "state")
+        router.push("/state-admin/dashboard")
       } else if (data.redirectTo) {
         router.push(data.redirectTo)
       } else if (!data.is_approved) {
@@ -46,11 +51,57 @@ function LoginContent() {
         router.push("/dashboard")
       }
     } catch (err: any) {
+      // If regular login fails, try state admin login
+      try {
+        const stateResponse = await axios.post("/api/state-admin/login", { email, password })
+        const stateData = stateResponse.data
+
+        if (stateData.success) {
+          localStorage.setItem("affiliate_token", stateData.token)
+          localStorage.setItem("affiliate_user", JSON.stringify(stateData.user))
+          localStorage.setItem("affiliate_role", "state")
+          router.push("/state-admin/dashboard")
+          return
+        }
+      } catch {
+        // State admin login also failed, try ASM login
+        try {
+          const asmResponse = await axios.post("/api/asm/login", { email, password })
+          const asmData = asmResponse.data
+
+          if (asmData.success) {
+            localStorage.setItem("affiliate_token", asmData.token)
+            localStorage.setItem("affiliate_user", JSON.stringify(asmData.user))
+            localStorage.setItem("affiliate_role", "asm")
+            router.push("/asm/dashboard")
+            return
+          }
+        } catch {
+          // ASM login also failed, try Branch Admin login
+          try {
+            const branchResponse = await axios.post("/api/branch/login", { email, password })
+            const branchData = branchResponse.data
+
+            if (branchData.success) {
+              localStorage.setItem("affiliate_token", branchData.token)
+              localStorage.setItem("affiliate_user", JSON.stringify(branchData.user))
+              localStorage.setItem("affiliate_role", "branch")
+              router.push("/branch/dashboard")
+              return
+            }
+          } catch {
+            // Branch login also failed
+          }
+        }
+      }
       setError(err.response?.data?.message || err.message || "An error occurred. Please try again.")
     } finally {
       setLoading(false)
     }
   }
+
+
+
 
   return (
     <div className="min-h-screen flex">
@@ -80,10 +131,10 @@ function LoginContent() {
               className="h-20 mb-8"
             />
             <h1 className="text-5xl font-bold mb-6 leading-tight">
-              Welcome to<br />Oweg Affiliate
+              Welcome to<br />Oweg Partners
             </h1>
             <p className="text-xl text-emerald-100 leading-relaxed max-w-md">
-              Join our affiliate program and start earning commissions by promoting our products.
+              Join our partner program and start earning commissions by promoting our products.
             </p>
           </div>
 

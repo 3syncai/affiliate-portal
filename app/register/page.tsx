@@ -791,11 +791,10 @@ export default function RegisterPage() {
                         onChange={(e) => setFormData({ ...formData, branch: e.target.value })}
                       >
                         <option value="">Select branch</option>
-                        <option value="north">North Branch</option>
-                        <option value="south">South Branch</option>
-                        <option value="east">East Branch</option>
-                        <option value="west">West Branch</option>
+                        <option value="nalasopara">Nalasopara</option>
+                        <option value="darbhanga">Darbhanga</option>
                       </select>
+
                     </div>
 
                     <div>

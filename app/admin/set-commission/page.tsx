@@ -48,7 +48,7 @@ export default function SetCommissionPage() {
 
   const loadCommissions = async () => {
     try {
-      const response = await axios.get("/api/affiliate/admin/commissions")
+      const response = await axios.get("/api/affiliate/admin/commission-settings")
       const data = response.data
       setCommissions(data.commissions || [])
     } catch (error: any) {
@@ -157,7 +157,7 @@ export default function SetCommissionPage() {
         }
         console.log("Updating commission:", requestBody)
 
-        response = await axios.put(`/api/affiliate/admin/commissions/${editingCommission.id}`, requestBody)
+        response = await axios.put(`/api/affiliate/admin/commission-settings/${editingCommission.id}`, requestBody)
       } else {
         // Create new commission
         const body: any = {
@@ -184,7 +184,7 @@ export default function SetCommissionPage() {
         console.log("Commission rate value:", commissionRate, "Type:", typeof commissionRate)
         console.log("Request body stringified:", JSON.stringify(requestBody))
 
-        response = await axios.post("/api/affiliate/admin/commissions", requestBody)
+        response = await axios.post("/api/affiliate/admin/commission-settings", requestBody)
 
         console.log("Response status:", response.status)
       }
