@@ -8,10 +8,10 @@ const pool = new Pool({
 // GET - Get a single store by ID
 export async function GET(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { id } = params
+        const { id } = await params
 
         const result = await pool.query('SELECT * FROM stores WHERE id = $1', [id])
 
@@ -38,10 +38,10 @@ export async function GET(
 // PUT - Update a store
 export async function PUT(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { id } = params
+        const { id } = await params
         const body = await request.json()
         const { branch_name, city, state, address, contact_phone, contact_email, is_active } = body
 
@@ -95,10 +95,10 @@ export async function PUT(
 // DELETE - Delete/deactivate a store
 export async function DELETE(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { id } = params
+        const { id } = await params
 
         // Soft delete by setting is_active to false
         const result = await pool.query(
