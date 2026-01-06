@@ -1,0 +1,29 @@
+
+> affiliate-portal@0.1.0 build
+> next build
+
+   Γû▓ Next.js 16.0.7 (Turbopack)
+   - Environments: .env
+
+   Creating an optimized production build ...
+ Γ£ô Compiled successfully in 12.9s
+   Running TypeScript ...
+Failed to compile.
+
+.next/dev/types/validator.ts:594:31
+Type error: Type 'typeof import("C:/Users/abhij/OneDrive/Desktop/oweg/partner-oweg/affiliate-portal/app/api/admin/stores/[id]/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/admin/stores/[id]">'.
+  Types of property 'GET' are incompatible.
+    Type '(request: NextRequest, { params }: { params: { id: string; }; }) => Promise<NextResponse<{ success: boolean; error: string; }> | NextResponse<{ success: boolean; store: any; }>>' is not assignable to type '(request: NextRequest, context: { params: Promise<{ id: string; }>; }) => void | Response | Promise<void | Response>'.
+      Types of parameters '__1' and 'context' are incompatible.
+        Type '{ params: Promise<{ id: string; }>; }' is not assignable to type '{ params: { id: string; }; }'.
+          Types of property 'params' are incompatible.
+            Property 'id' is missing in type 'Promise<{ id: string; }>' but required in type '{ id: string; }'.
+
+  592 |   type __IsExpected<Specific extends RouteHandlerConfig<"/api/admin/stores/[id]">> = Specific
+  593 |   const handler = {} as typeof import("../../../app/api/admin/stores/[id]/route.js")
+> 594 |   type __Check = __IsExpected<typeof handler>
+      |                               ^
+  595 |   // @ts-ignore
+  596 |   type __Unused = __Check
+  597 | }
+Next.js build worker exited with code: 1 and signal: null
