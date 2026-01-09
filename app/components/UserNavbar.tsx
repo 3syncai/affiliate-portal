@@ -31,7 +31,7 @@ export default function UserNavbar({ userName }: UserNavbarProps) {
                             <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center">
                                 <span className="text-white font-bold text-sm">AF</span>
                             </div>
-                            <span className="text-xl font-bold text-gray-900">Affiliate Portal</span>
+                            <span className="text-xl font-bold text-gray-900">Partners Portal</span>
                         </Link>
 
                         {/* Navigation Links */}
@@ -39,8 +39,8 @@ export default function UserNavbar({ userName }: UserNavbarProps) {
                             <Link
                                 href="/dashboard"
                                 className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-all ${isActive("/dashboard")
-                                        ? "bg-green-50 text-green-700"
-                                        : "text-gray-600 hover:bg-green-50 hover:text-green-700"
+                                    ? "bg-green-50 text-green-700"
+                                    : "text-gray-600 hover:bg-green-50 hover:text-green-700"
                                     }`}
                             >
                                 <LayoutDashboard size={18} />
@@ -49,8 +49,8 @@ export default function UserNavbar({ userName }: UserNavbarProps) {
                             <Link
                                 href="/products"
                                 className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-all ${isActive("/products")
-                                        ? "bg-green-50 text-green-700"
-                                        : "text-gray-600 hover:bg-green-50 hover:text-green-700"
+                                    ? "bg-green-50 text-green-700"
+                                    : "text-gray-600 hover:bg-green-50 hover:text-green-700"
                                     }`}
                             >
                                 <Package size={18} />

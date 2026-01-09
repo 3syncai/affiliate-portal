@@ -107,18 +107,27 @@ export default function BranchLayout({
 
     return (
         <div className="min-h-screen flex overflow-x-hidden" style={{ backgroundColor: theme.background }}>
-            <aside className={`${sidebarOpen ? "w-64" : "w-0"} transition-all duration-300 overflow-hidden flex flex-col fixed h-screen z-30`} style={{ background: `linear-gradient(to bottom, ${theme.sidebar}, ${theme.sidebar}dd)` }}>
-                <div className="flex items-center justify-between p-4" style={{ borderBottomColor: 'rgba(255,255,255,0.2)', borderBottomWidth: '1px' }}>
-                    <h1 className="text-xl font-bold text-white whitespace-nowrap flex items-center gap-2">
-                        <Building className="w-5 h-5" />
-                        Branch Admin
-                    </h1>
-                    <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-white/70 hover:text-white">
+            <aside
+                className={`${sidebarOpen ? "w-72" : "w-0"} transition-all duration-300 overflow-hidden flex flex-col fixed h-screen z-30 shadow-xl`}
+                style={{ backgroundColor: theme.sidebar }}
+            >
+                <div className="flex items-center justify-between p-6">
+                    <div className="flex items-center gap-3 text-white">
+                        <div className="p-2 rounded-lg bg-white/10 backdrop-blur-sm">
+                            <Building className="w-6 h-6" />
+                        </div>
+                        <div>
+                            <h1 className="text-lg font-bold leading-tight">Branch Portal</h1>
+                            <p className="text-xs text-white/60 font-medium tracking-wide uppercase">Workspace</p>
+                        </div>
+                    </div>
+                    <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-white/70 hover:text-white transition-colors">
                         <X className="w-5 h-5" />
                     </button>
                 </div>
 
-                <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+                <nav className="flex-1 p-4 space-y-1.5 overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+                    <div className="px-4 py-2 text-xs font-semibold text-white/40 uppercase tracking-wider">Menu</div>
                     {navigationItems.map((item) => {
                         const Icon = item.icon
                         const isActive = pathname === item.href
@@ -126,19 +135,25 @@ export default function BranchLayout({
                             <Link
                                 key={item.name}
                                 href={item.href}
-                                className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${isActive ? "bg-white/20 text-white" : "text-white/70 hover:bg-white/10 hover:text-white"}`}
+                                className={`group flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${isActive
+                                    ? "bg-white text-gray-900 shadow-sm"
+                                    : "text-white/70 hover:bg-white/10 hover:text-white hover:pl-5"
+                                    }`}
                             >
-                                <Icon className="w-5 h-5 mr-3" />
+                                <Icon className={`w-5 h-5 mr-3 transition-colors ${isActive ? "text-gray-900" : "text-white/70 group-hover:text-white"}`} />
                                 <span>{item.name}</span>
+                                {isActive && (
+                                    <div className="ml-auto w-1.5 h-1.5 rounded-full bg-current" style={{ color: theme.primary }} />
+                                )}
                             </Link>
                         )
                     })}
                 </nav>
 
-                <div className="p-4 relative" style={{ borderTopWidth: '1px', borderTopColor: 'rgba(255,255,255,0.2)' }}>
-                    <div className="flex items-center gap-3 px-4 py-2 mb-2">
+                <div className="p-4 m-4 rounded-2xl bg-black/20 backdrop-blur-sm border border-white/5">
+                    <div className="flex items-center gap-3">
                         {/* Circular Profile Icon */}
-                        <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-white/20 to-white/10 flex items-center justify-center text-white text-sm font-bold flex-shrink-0 ring-2 ring-white/10">
                             {(user?.first_name || 'B').charAt(0).toUpperCase()}
                         </div>
 
@@ -146,85 +161,100 @@ export default function BranchLayout({
                             <p className="text-sm font-medium text-white truncate">
                                 {user?.first_name} {user?.last_name}
                             </p>
-                            <p className="text-xs text-orange-200 truncate">{user?.branch}</p>
+                            <p className="text-xs text-white/50 truncate">{user?.branch}</p>
                         </div>
-                        <button
-                            onClick={() => setShowUserMenu(!showUserMenu)}
-                            className="ml-2 p-1 hover:bg-orange-700 rounded transition-colors text-orange-100"
-                            title="More options"
-                        >
-                            <MoreVertical className="w-5 h-5" />
-                        </button>
-                    </div>
 
-                    {/* Dropdown Menu */}
-                    {showUserMenu && (
-                        <div className="absolute bottom-full left-4 right-4 mb-2 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                        <div className="relative">
                             <button
-                                onClick={() => {
-                                    setShowUserMenu(false)
-                                    // Navigate to profile page (if exists) or just alert
-                                    // Based on context, specific profile pages might exist or not. 
-                                    // Admin has /admin/profile. Branch likely doesn't have one explicitly requested yet?
-                                    // User said "create the 3 dot and use profile and theme".
-                                    // I'll stick to a generic alert or route if unsure.
-                                    // Let's route to /branch/profile just in case, or show the same UI.
-                                    // Actually, let's leave it as a placeholder or consistent with admin.
-                                    // Admin: router.push('/admin/profile')
-                                    // I'll use /branch/profile. I might need to create it later if it fails.
-                                    router.push('/branch/profile')
-                                }}
-                                className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                                onClick={() => setShowUserMenu(!showUserMenu)}
+                                className="p-2 hover:bg-white/10 rounded-lg transition-colors text-white/70 hover:text-white"
                             >
-                                <User className="w-4 h-4 mr-3 text-gray-500" />
-                                <span>Profile</span>
+                                <MoreVertical className="w-4 h-4" />
                             </button>
-                            <button
-                                onClick={() => {
-                                    setShowUserMenu(false)
-                                    router.push('/branch/profile#theme')
-                                }}
-                                className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                            >
-                                <Palette className="w-4 h-4 mr-3 text-gray-500" />
-                                <span>Theme</span>
-                            </button>
-                            <div className="border-t border-gray-100 my-1"></div>
-                            <button
-                                onClick={() => {
-                                    setShowUserMenu(false)
-                                    handleLogout()
-                                }}
-                                className="w-full flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
-                            >
-                                <LogOut className="w-4 h-4 mr-3" />
-                                <span>Logout</span>
-                            </button>
+
+                            {/* Dropdown Menu */}
+                            {showUserMenu && (
+                                <div className="absolute bottom-full right-0 mb-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 py-1.5 z-50 transform origin-bottom-right animate-in fade-in zoom-in-95 duration-200">
+                                    <div className="px-3 py-2 border-b border-gray-50 mb-1">
+                                        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Account</p>
+                                    </div>
+                                    <button
+                                        onClick={() => {
+                                            setShowUserMenu(false)
+                                            router.push('/branch/profile')
+                                        }}
+                                        className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                                    >
+                                        <User className="w-4 h-4 mr-3 text-gray-400" />
+                                        <span>Profile</span>
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setShowUserMenu(false)
+                                            router.push('/branch/profile#theme')
+                                        }}
+                                        className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                                    >
+                                        <Palette className="w-4 h-4 mr-3 text-gray-400" />
+                                        <span>Theme</span>
+                                    </button>
+                                    <div className="border-t border-gray-100 my-1"></div>
+                                    <button
+                                        onClick={() => {
+                                            setShowUserMenu(false)
+                                            handleLogout()
+                                        }}
+                                        className="w-full flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                                    >
+                                        <LogOut className="w-4 h-4 mr-3" />
+                                        <span>Logout</span>
+                                    </button>
+                                </div>
+                            )}
                         </div>
-                    )}
+                    </div>
                 </div>
             </aside>
 
-            <div className={`flex-1 flex flex-col ${sidebarOpen ? "ml-64" : "ml-0"} transition-all duration-300 overflow-x-hidden`}>
-                <header className="bg-white border-b border-gray-200 px-6 py-4 sticky top-0 z-20">
-                    <div className="flex items-center justify-between">
-                        <button onClick={() => setSidebarOpen(!sidebarOpen)} className="lg:hidden text-gray-500 hover:text-gray-700">
-                            <Menu className="w-6 h-6" />
-                        </button>
-                        <div className="flex items-center space-x-4 ml-auto">
+            <div className={`flex-1 flex flex-col ${sidebarOpen ? "ml-72" : "ml-0"} transition-all duration-300 overflow-x-hidden min-w-0`}>
+                <header className="bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-20 transition-all duration-200">
+                    <div className="flex items-center justify-between px-6 py-4">
+                        <div className="flex items-center gap-4">
+                            <button
+                                onClick={() => setSidebarOpen(!sidebarOpen)}
+                                className="p-2 -ml-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors lg:hidden"
+                            >
+                                <Menu className="w-5 h-5" />
+                            </button>
+                            <h2 className="text-lg font-semibold text-gray-900 lg:hidden">
+                                {navigationItems.find(i => i.href === pathname)?.name || 'Dashboard'}
+                            </h2>
+                        </div>
+
+                        <div className="flex items-center space-x-3 ml-auto">
                             {/* Notification Bell */}
                             {user?.id && (
                                 <NotificationDropdown userId={user.id} userRole="branch" />
                             )}
-                            <span className="px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1" style={{ backgroundColor: theme.primaryLight, color: theme.primary }}>
-                                <Building className="w-4 h-4" />
-                                {user?.branch || "Branch Admin"}
-                            </span>
+                            <div className="h-8 w-px bg-gray-200 mx-2"></div>
+                            <div
+                                className="px-3 py-1.5 rounded-full text-sm font-medium flex items-center gap-2 border border-transparent transition-all hover:shadow-sm"
+                                style={{
+                                    backgroundColor: `${theme.primary}10`,
+                                    color: theme.primary,
+                                    borderColor: `${theme.primary}20`
+                                }}
+                            >
+                                <div className="p-0.5 rounded-full bg-current">
+                                    <Building className="w-3 h-3 text-white" />
+                                </div>
+                                <span className="pr-1">{user?.branch || "Branch Admin"}</span>
+                            </div>
                         </div>
                     </div>
                 </header>
 
-                <main className="flex-1 overflow-y-auto overflow-x-hidden p-6">
+                <main className="flex-1 overflow-y-auto overflow-x-hidden p-6 lg:p-8 scroll-smooth">
                     {children}
                 </main>
             </div>
