@@ -1,13 +1,13 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Users, TrendingUp, DollarSign, ShoppingBag, CheckCircle, UserPlus, CreditCard, Clock, ArrowUpRight } from "lucide-react"
+import { Users, TrendingUp, DollarSign, ShoppingBag, CheckCircle, UserPlus, CreditCard, Clock, ArrowUpRight, MapPin } from "lucide-react"
 import axios from "axios"
 import { useTheme } from "@/contexts/ThemeContext"
 
 type Activity = {
     id: string
-    type: 'affiliate_request' | 'order' | 'approval' | 'withdrawal'
+    type: 'affiliate_request' | 'order' | 'approval' | 'withdrawal' | 'payment'
     timestamp: string
     data: {
         name: string
@@ -17,6 +17,7 @@ type Activity = {
         product_name?: string
         commission_amount?: number
         status?: string
+        transaction_id?: string
     }
 }
 
@@ -78,13 +79,21 @@ export default function BranchDashboard() {
         const diffMs = now.getTime() - date.getTime()
         const diffMins = Math.floor(diffMs / (1000 * 60))
         const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
-        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
 
+        // Show relative time only for recent activities
         if (diffMins < 1) return "Just now"
         if (diffMins < 60) return `${diffMins}m ago`
         if (diffHours < 24) return `${diffHours}h ago`
-        if (diffDays < 7) return `${diffDays}d ago`
-        return date.toLocaleDateString("en-IN", { month: "short", day: "numeric" })
+
+        // For anything older than 24h, show actual date
+        const currentYear = now.getFullYear()
+        const dateYear = date.getFullYear()
+
+        if (currentYear === dateYear) {
+            return date.toLocaleDateString("en-IN", { month: "short", day: "numeric" })
+        } else {
+            return date.toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" })
+        }
     }
 
     const getActivityIcon = (type: string) => {
@@ -97,6 +106,8 @@ export default function BranchDashboard() {
                 return { icon: DollarSign, bgColor: "bg-blue-100", iconColor: "text-blue-600" }
             case 'withdrawal':
                 return { icon: CreditCard, bgColor: "bg-purple-100", iconColor: "text-purple-600" }
+            case 'payment':
+                return { icon: CreditCard, bgColor: "bg-emerald-100", iconColor: "text-emerald-600" }
             default:
                 return { icon: Clock, bgColor: "bg-gray-100", iconColor: "text-gray-600" }
         }
@@ -120,13 +131,19 @@ export default function BranchDashboard() {
     ]
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-8 max-w-[1600px] mx-auto p-2">
             {/* Header */}
-            <div>
-                <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-                <p className="text-gray-600 mt-1">
-                    Welcome back, {user?.first_name}! Managing <span className="font-semibold text-orange-600">{user?.branch}</span> branch
-                </p>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-2xl font-bold tracking-tight text-gray-900">Dashboard</h1>
+                    <p className="text-sm text-gray-500 mt-1">
+                        Welcome back, {user?.first_name} • <span className="font-medium" style={{ color: theme.primary }}>{user?.branch} Branch</span>
+                    </p>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-gray-500 bg-white px-3 py-1.5 rounded-lg border border-gray-200 shadow-sm">
+                    <Clock className="w-4 h-4" />
+                    <span>Last updated: {new Date().toLocaleTimeString()}</span>
+                </div>
             </div>
 
             {/* Stats Cards */}
@@ -134,146 +151,202 @@ export default function BranchDashboard() {
                 {statCards.map((stat, index) => {
                     const Icon = stat.icon
                     return (
-                        <div key={index} className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-md transition-shadow">
-                            <div className="flex items-center justify-between">
+                        <div key={index} className="group bg-white rounded-xl border border-gray-200 p-5 hover:border-gray-300 transition-all duration-200 hover:shadow-md relative overflow-hidden">
+                            <div className="flex items-start justify-between relative z-10">
                                 <div>
-                                    <p className="text-sm font-medium text-gray-500">{stat.title}</p>
-                                    <p className="text-2xl font-bold text-gray-900 mt-1">
+                                    <p className="text-sm font-medium text-gray-500 group-hover:text-gray-700 transition-colors">{stat.title}</p>
+                                    <h3 className="text-2xl font-bold text-gray-900 mt-2 tracking-tight">
                                         {loading ? "..." : stat.value}
-                                    </p>
+                                    </h3>
                                 </div>
-                                <div className="p-3 rounded-xl shadow-lg" style={{ background: `linear-gradient(to bottom right, ${theme.primary}, ${theme.sidebar})` }}>
-                                    <Icon className="w-6 h-6 text-white" />
+                                <div
+                                    className="p-3 rounded-lg transition-colors"
+                                    style={{
+                                        backgroundColor: `${theme.primary}10`,
+                                        color: theme.primary
+                                    }}
+                                >
+                                    <Icon className="w-5 h-5" />
                                 </div>
                             </div>
+                            {/* Decorational background circle */}
+                            <div
+                                className="absolute -bottom-4 -right-4 w-24 h-24 rounded-full opacity-0 group-hover:opacity-5 transition-opacity duration-300 pointer-events-none"
+                                style={{ backgroundColor: theme.primary }}
+                            />
                         </div>
                     )
                 })}
             </div>
 
             {/* Main Content Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Recent Activity - Takes 2 columns */}
-                <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                    <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-                        <div>
-                            <h2 className="text-lg font-bold text-gray-900">Recent Activity</h2>
-                            <p className="text-sm text-gray-500">Latest updates from your branch</p>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm font-medium" style={{ color: theme.primary }}>
-                            <Clock className="w-4 h-4" />
-                            Live
-                        </div>
+                <div className="lg:col-span-2 space-y-4">
+                    <div className="flex items-center justify-between">
+                        <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                            Recent Activity
+                            <span className="relative flex h-2 w-2">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ backgroundColor: theme.primary }}></span>
+                                <span className="relative inline-flex rounded-full h-2 w-2" style={{ backgroundColor: theme.primary }}></span>
+                            </span>
+                        </h2>
                     </div>
 
-                    <div className="divide-y divide-gray-50">
-                        {activitiesLoading ? (
-                            <div className="p-8 flex items-center justify-center">
-                                <div className="flex items-center gap-3 text-gray-500">
-                                    <div className="w-5 h-5 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
-                                    <span>Loading activities...</span>
-                                </div>
-                            </div>
-                        ) : activities.length === 0 ? (
-                            <div className="p-8 text-center">
-                                <div className="w-12 h-12 mx-auto mb-3 rounded-full flex items-center justify-center" style={{ backgroundColor: theme.primaryLight }}>
-                                    <Clock className="w-6 h-6" style={{ color: theme.primary }} />
-                                </div>
-                                <p className="text-gray-500">No recent activity in your branch</p>
-                            </div>
-                        ) : (
-                            activities.map((activity) => {
-                                const { icon: ActivityIcon, bgColor, iconColor } = getActivityIcon(activity.type)
-                                return (
-                                    <div key={activity.id} className="px-6 py-4 hover:bg-gray-50 transition-colors">
-                                        <div className="flex items-start gap-4">
-                                            <div className={`${bgColor} p-2.5 rounded-full flex-shrink-0`}>
-                                                <ActivityIcon className={`w-5 h-5 ${iconColor}`} />
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <div className="flex items-center gap-2">
-                                                    <span className="font-semibold text-gray-900">{activity.data.name}</span>
-                                                    <span className={`text-sm ${getActivityColor(activity.type)}`}>
-                                                        {activity.data.action}
-                                                    </span>
-                                                </div>
-                                                {activity.type === 'order' && activity.data.product_name && (
-                                                    <p className="text-xs text-gray-500 mt-1 truncate">
-                                                        Order #{activity.data.order_id?.slice(-10)} • {activity.data.product_name}
-                                                    </p>
-                                                )}
-                                            </div>
-                                            <span className="text-xs text-gray-400 whitespace-nowrap">
-                                                {formatTimeAgo(activity.timestamp)}
-                                            </span>
-                                        </div>
+                    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+                        <div className="p-6">
+                            {activitiesLoading ? (
+                                <div className="flex items-center justify-center py-12">
+                                    <div className="flex items-center gap-3 text-gray-500">
+                                        <div className="w-5 h-5 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: theme.primary }}></div>
+                                        <span className="text-sm font-medium">Loading activity feed...</span>
                                     </div>
-                                )
-                            })
-                        )}
+                                </div>
+                            ) : activities.length === 0 ? (
+                                <div className="text-center py-16">
+                                    <div
+                                        className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center"
+                                        style={{ backgroundColor: `${theme.primary}10` }}
+                                    >
+                                        <Clock className="w-8 h-8" style={{ color: theme.primary }} />
+                                    </div>
+                                    <h3 className="text-gray-900 font-medium mb-1">No recent activity</h3>
+                                    <p className="text-gray-500 text-sm">Activities from your branch will appear here.</p>
+                                </div>
+                            ) : (
+                                <div className="relative space-y-8 before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-gray-200 before:to-transparent">
+                                    {activities.map((activity, idx) => {
+                                        const { icon: ActivityIcon, bgColor, iconColor } = getActivityIcon(activity.type)
+                                        return (
+                                            <div key={activity.id} className="relative flex items-start group">
+                                                <div
+                                                    className="absolute left-0 top-1 mt-1 ml-2.5 h-5 w-5 rounded-full border-2 border-white bg-white flex items-center justify-center z-10"
+                                                >
+                                                    <div className="h-2 w-2 rounded-full ring-2 ring-white" style={{ backgroundColor: theme.primary }}></div>
+                                                </div>
+                                                <div className="ml-12 w-full">
+                                                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-1 sm:gap-4">
+                                                        <div>
+                                                            <p className="text-sm font-semibold text-gray-900 group-hover:text-gray-700 transition-colors">
+                                                                {activity.data.name}
+                                                                <span className="font-normal text-gray-500"> {activity.data.action}</span>
+                                                            </p>
+                                                            {activity.type === 'order' && activity.data.product_name && (
+                                                                <div className="mt-1.5 flex items-center gap-2 text-xs text-gray-500 bg-gray-50 px-2.5 py-1.5 rounded-md w-fit">
+                                                                    <ShoppingBag className="w-3 h-3" />
+                                                                    <span className="truncate max-w-[200px]">{activity.data.product_name}</span>
+                                                                    <span className="border-l border-gray-300 pl-2 ml-1">#{activity.data.order_id?.slice(-8)}</span>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        <span className="text-xs font-medium text-gray-400 whitespace-nowrap pt-0.5">
+                                                            {formatTimeAgo(activity.timestamp)}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
 
-                {/* Quick Actions - Takes 1 column */}
-                <div className="space-y-4">
-                    {/* Branch Info Card */}
-                    <div className="rounded-xl p-5 text-white" style={{ background: `linear-gradient(to bottom right, ${theme.primary}, ${theme.sidebar})` }}>
-                        <h3 className="text-lg font-bold mb-2">Branch Overview</h3>
-                        <p className="text-white/80 text-sm mb-4">
-                            Managing {user?.branch} branch in {user?.city}
-                        </p>
-                        <div className="flex items-center gap-2 text-sm bg-white/20 rounded-lg px-3 py-2">
-                            <Users className="w-4 h-4" />
-                            <span>{stats.totalAgents} active agents</span>
+                {/* Right Column */}
+                <div className="space-y-6">
+                    {/* Branch Status Card */}
+                    <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm relative overflow-hidden">
+                        <div
+                            className="absolute top-0 right-0 p-4 opacity-10"
+                            style={{ color: theme.primary }}
+                        >
+                            <UserPlus className="w-24 h-24 -mr-8 -mt-8" />
+                        </div>
+
+                        <div className="relative z-10">
+                            <h3 className="font-bold text-gray-900 mb-1">Branch Overview</h3>
+                            <p className="text-sm text-gray-500 mb-6 flex items-center gap-1.5">
+                                <MapPin className="w-3.5 h-3.5" />
+                                {user?.city || 'Location'}, India
+                            </p>
+
+                            <div className="space-y-4">
+                                <div className="p-4 rounded-lg bg-gray-50 border border-gray-100">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <span className="text-sm font-medium text-gray-600">Active Agents</span>
+                                        <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-700">Live</span>
+                                    </div>
+                                    <div className="flex items-baseline gap-2">
+                                        <span className="text-2xl font-bold text-gray-900">{stats.totalAgents}</span>
+                                        <span className="text-xs text-gray-500">total agents</span>
+                                    </div>
+                                    <div className="w-full bg-gray-200 rounded-full h-1.5 mt-3">
+                                        <div
+                                            className="h-1.5 rounded-full"
+                                            style={{ width: '70%', backgroundColor: theme.primary }}
+                                        ></div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    {/* Quick Links */}
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                        <div className="px-5 py-4 border-b border-gray-100">
-                            <h3 className="font-bold text-gray-900">Quick Actions</h3>
+                    {/* Quick Actions */}
+                    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                        <div className="px-5 py-4 border-b border-gray-50 bg-gray-50/50">
+                            <h3 className="font-bold text-gray-900 text-sm uppercase tracking-wider">Quick Attributes</h3>
                         </div>
-                        <div className="p-2">
-                            <a href="/branch/affiliate-request" className="flex items-center gap-3 p-3 rounded-lg hover:bg-orange-50 transition-colors group">
-                                <div className="bg-yellow-100 p-2 rounded-lg group-hover:bg-yellow-200 transition-colors">
-                                    <TrendingUp className="w-5 h-5 text-yellow-600" />
-                                </div>
-                                <div className="flex-1">
-                                    <p className="font-medium text-gray-900">Pending Approvals</p>
-                                    <p className="text-xs text-gray-500">{stats.pendingApproval} requests waiting</p>
-                                </div>
-                                <ArrowUpRight className="w-4 h-4 text-gray-400 group-hover:text-orange-500 transition-colors" />
-                            </a>
-                            <a href="/branch/agents" className="flex items-center gap-3 p-3 rounded-lg hover:bg-orange-50 transition-colors group">
-                                <div className="bg-orange-100 p-2 rounded-lg group-hover:bg-orange-200 transition-colors">
-                                    <Users className="w-5 h-5 text-orange-600" />
-                                </div>
-                                <div className="flex-1">
-                                    <p className="font-medium text-gray-900">View Agents</p>
-                                    <p className="text-xs text-gray-500">Manage all agents</p>
-                                </div>
-                                <ArrowUpRight className="w-4 h-4 text-gray-400 group-hover:text-orange-500 transition-colors" />
-                            </a>
-                            <a href="/branch/pending-payout" className="flex items-center gap-3 p-3 rounded-lg hover:bg-orange-50 transition-colors group">
-                                <div className="bg-green-100 p-2 rounded-lg group-hover:bg-green-200 transition-colors">
-                                    <CreditCard className="w-5 h-5 text-green-600" />
-                                </div>
-                                <div className="flex-1">
-                                    <p className="font-medium text-gray-900">Pending Payouts</p>
-                                    <p className="text-xs text-gray-500">Review withdrawals</p>
-                                </div>
-                                <ArrowUpRight className="w-4 h-4 text-gray-400 group-hover:text-orange-500 transition-colors" />
-                            </a>
-                            <a href="/branch/total-commission" className="flex items-center gap-3 p-3 rounded-lg hover:bg-orange-50 transition-colors group">
-                                <div className="bg-purple-100 p-2 rounded-lg group-hover:bg-purple-200 transition-colors">
-                                    <DollarSign className="w-5 h-5 text-purple-600" />
-                                </div>
-                                <div className="flex-1">
-                                    <p className="font-medium text-gray-900">Commission Report</p>
-                                    <p className="text-xs text-gray-500">View earnings</p>
-                                </div>
-                                <ArrowUpRight className="w-4 h-4 text-gray-400 group-hover:text-orange-500 transition-colors" />
-                            </a>
+                        <div className="divide-y divide-gray-50">
+                            {[
+                                {
+                                    name: "Pending Approvals",
+                                    desc: `${stats.pendingApproval} waiting`,
+                                    href: "/branch/affiliate-request",
+                                    icon: TrendingUp,
+                                    color: "#eab308" // yellow-500
+                                },
+                                {
+                                    name: "View Agents",
+                                    desc: "Manage team",
+                                    href: "/branch/agents",
+                                    icon: Users,
+                                    color: "#f97316" // orange-500
+                                },
+                                {
+                                    name: "Pending Payouts",
+                                    desc: "Review withdrawals",
+                                    href: "/branch/pending-payout",
+                                    icon: CreditCard,
+                                    color: "#10b981" // green-500
+                                },
+                                {
+                                    name: "Commission Report",
+                                    desc: "View earnings",
+                                    href: "/branch/total-commission",
+                                    icon: DollarSign,
+                                    color: "#a855f7" // purple-500
+                                }
+                            ].map((action, i) => {
+                                const Icon = action.icon
+                                return (
+                                    <a key={i} href={action.href} className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors group">
+                                        <div className="flex items-center gap-4">
+                                            <div
+                                                className="w-10 h-10 rounded-lg flex items-center justify-center transition-transform group-hover:scale-105"
+                                                style={{ backgroundColor: `${action.color}15` }}
+                                            >
+                                                <Icon className="w-5 h-5" style={{ color: action.color }} />
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-semibold text-gray-900">{action.name}</p>
+                                                <p className="text-xs text-gray-500">{action.desc}</p>
+                                            </div>
+                                        </div>
+                                        <ArrowUpRight className="w-4 h-4 text-gray-300 group-hover:text-gray-500 transition-colors" />
+                                    </a>
+                                )
+                            })}
                         </div>
                     </div>
                 </div>

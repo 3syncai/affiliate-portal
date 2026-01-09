@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react"
 import axios from "axios"
-import { Clock, Check, X, Copy, CreditCard, Calendar, FileText } from "lucide-react"
+import { Clock, Check, X, Copy, CreditCard, Calendar, FileText, AlertCircle } from "lucide-react"
+import { useTheme } from "@/contexts/ThemeContext"
 
 type Withdrawal = {
   id: number
@@ -28,6 +29,7 @@ type Withdrawal = {
 }
 
 export default function PendingPayoutPage() {
+  const { theme } = useTheme()
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<string>("ALL")
@@ -145,7 +147,8 @@ export default function PendingPayoutPage() {
 
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text)
-    alert(`${label} copied to clipboard!`)
+    // Optional: could replace with a toast notification for better UX
+    // alert(`${label} copied to clipboard!`) 
   }
 
   const formatCurrency = (amount: number) => {
@@ -164,191 +167,226 @@ export default function PendingPayoutPage() {
 
   const getStatusBadge = (status: string) => {
     const styles = {
-      PENDING: 'bg-amber-100 text-amber-700',
-      APPROVED: 'bg-blue-100 text-blue-700',
-      REJECTED: 'bg-red-100 text-red-700',
-      PAID: 'bg-green-100 text-green-700'
+      PENDING: 'bg-amber-50 text-amber-700 border-amber-200 ring-amber-100',
+      APPROVED: 'bg-blue-50 text-blue-700 border-blue-200 ring-blue-100',
+      REJECTED: 'bg-red-50 text-red-700 border-red-200 ring-red-100',
+      PAID: 'bg-emerald-50 text-emerald-700 border-emerald-200 ring-emerald-100'
     }
-    return styles[status as keyof typeof styles] || 'bg-gray-100 text-gray-700'
+    return styles[status as keyof typeof styles] || 'bg-gray-50 text-gray-700 border-gray-200 ring-gray-100'
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Withdrawal Requests</h1>
-        <p className="text-gray-600 mt-1">Manage affiliate withdrawal requests</p>
+        <h1 className="text-2xl font-bold tracking-tight text-gray-900">Withdrawal Requests</h1>
+        <p className="text-sm text-gray-500 mt-1">Manage and process affiliate withdrawal requests</p>
       </div>
 
-      {/* Filter Tabs */}
-      <div className="flex gap-2 border-b border-gray-200">
-        {['ALL', 'PENDING', 'APPROVED', 'PAID', 'REJECTED'].map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setFilter(tab)}
-            className={`px-4 py-2 font-medium border-b-2 transition-colors ${filter === tab
-              ? 'border-indigo-600 text-indigo-600'
-              : 'border-transparent text-gray-600 hover:text-gray-900'
-              }`}
-          >
-            {tab}
-          </button>
-        ))}
+      {/* Filter Tabs - Modern Pills */}
+      <div className="flex gap-2 p-1 bg-gray-100/80 rounded-xl w-fit">
+        {['ALL', 'PENDING', 'APPROVED', 'PAID', 'REJECTED'].map((tab) => {
+          const isActive = filter === tab
+          return (
+            <button
+              key={tab}
+              onClick={() => setFilter(tab)}
+              className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all duration-200 ${isActive
+                ? 'bg-white text-gray-900 shadow-sm ring-1 ring-gray-200'
+                : 'text-gray-500 hover:text-gray-900 hover:bg-gray-200/50'
+                }`}
+            >
+              {tab === 'ALL' ? 'All Requests' : tab.charAt(0) + tab.slice(1).toLowerCase()}
+            </button>
+          )
+        })}
       </div>
 
       {/* Withdrawals List */}
       {loading ? (
-        <div className="text-center py-12">Loading...</div>
+        <div className="flex items-center justify-center p-12">
+          <div className="w-8 h-8 border-4 border-gray-200 border-t-current rounded-full animate-spin" style={{ color: theme.primary }}></div>
+        </div>
       ) : withdrawals.length === 0 ? (
-        <div className="text-center py-12 text-gray-500">
-          No withdrawal requests found
+        <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-gray-200">
+          <div className="mx-auto w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mb-3">
+            <FileText className="w-6 h-6 text-gray-400" />
+          </div>
+          <h3 className="text-sm font-medium text-gray-900">No requests found</h3>
+          <p className="text-xs text-gray-500 mt-1">Withdrawal requests will appear here based on your filter.</p>
         </div>
       ) : (
         <div className="space-y-4">
           {withdrawals.map((withdrawal) => (
-            <div key={withdrawal.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <div className="flex items-start justify-between mb-4">
+            <div key={withdrawal.id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:border-gray-300 transition-colors">
+              {/* Card Header */}
+              <div className="p-6 border-b border-gray-50 flex items-start justify-between">
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900">{withdrawal.affiliate_name}</h3>
-                  <p className="text-sm text-gray-600">{withdrawal.affiliate_email}</p>
-                  <p className="text-xs text-gray-500 mt-1">Code: {withdrawal.affiliate_code}</p>
+                  <div className="flex items-center gap-2 mb-1">
+                    <h3 className="text-base font-bold text-gray-900">{withdrawal.affiliate_name}</h3>
+                    <span className="text-xs font-mono bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">{withdrawal.affiliate_code}</span>
+                  </div>
+                  <p className="text-sm text-gray-500">{withdrawal.affiliate_email}</p>
                 </div>
-                <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusBadge(withdrawal.status)}`}>
+                <span className={`px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wide border ${getStatusBadge(withdrawal.status)}`}>
                   {withdrawal.status}
                 </span>
               </div>
 
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                <div>
-                  <p className="text-xs text-gray-500">Withdrawal Amount</p>
-                  <p className="text-lg font-bold text-gray-900">{formatCurrency(withdrawal.withdrawal_amount)}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500">GST Deduction ({withdrawal.gst_percentage}%)</p>
-                  <p className="text-lg font-semibold text-red-600">-{formatCurrency(withdrawal.gst_amount)}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500">Net Payable</p>
-                  <p className="text-lg font-bold text-emerald-600">{formatCurrency(withdrawal.net_payable)}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500">Requested</p>
-                  <p className="text-sm font-medium text-gray-900">{formatDate(withdrawal.requested_at)}</p>
-                </div>
-              </div>
-
-              {/* Payment Details */}
-              <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                <p className="text-sm font-semibold text-gray-900 mb-2">Payment Method: {withdrawal.payment_method}</p>
-
-                {withdrawal.payment_method === 'Bank Transfer' && (
-                  <div className="grid grid-cols-2 gap-3 text-sm">
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-600">Account Holder:</span>
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">{withdrawal.account_name}</span>
-                        <button onClick={() => copyToClipboard(withdrawal.account_name!, 'Account name')} className="text-indigo-600 hover:text-indigo-700">
-                          <Copy className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-600">Account Number:</span>
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">{withdrawal.account_number}</span>
-                        <button onClick={() => copyToClipboard(withdrawal.account_number!, 'Account number')} className="text-indigo-600 hover:text-indigo-700">
-                          <Copy className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-600">IFSC Code:</span>
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">{withdrawal.ifsc_code}</span>
-                        <button onClick={() => copyToClipboard(withdrawal.ifsc_code!, 'IFSC code')} className="text-indigo-600 hover:text-indigo-700">
-                          <Copy className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-600">Bank Name:</span>
-                      <span className="font-medium">{withdrawal.bank_name}</span>
+              <div className="p-6">
+                {/* Financial Grid */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-6 p-4 rounded-lg bg-gray-50/50 border border-gray-100 mb-6">
+                  <div>
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Amount</p>
+                    <p className="text-lg font-bold text-gray-900">{formatCurrency(withdrawal.withdrawal_amount)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">GST ({withdrawal.gst_percentage}%)</p>
+                    <p className="text-lg font-semibold text-red-500">-{formatCurrency(withdrawal.gst_amount)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Net Payable</p>
+                    <p className="text-xl font-bold text-emerald-600">{formatCurrency(withdrawal.net_payable)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Requested</p>
+                    <div className="flex items-center text-sm font-medium text-gray-700 mt-1">
+                      <Clock className="w-3.5 h-3.5 mr-1.5 text-gray-400" />
+                      {formatDate(withdrawal.requested_at)}
                     </div>
                   </div>
-                )}
+                </div>
 
-                {withdrawal.payment_method === 'UPI' && (
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">UPI ID:</span>
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-gray-900 text-lg">{withdrawal.upi_id || 'Not available'}</span>
-                      {withdrawal.upi_id && (
-                        <button onClick={() => copyToClipboard(withdrawal.upi_id!, 'UPI ID')} className="text-indigo-600 hover:text-indigo-700">
-                          <Copy className="w-4 h-4" />
-                        </button>
+                {/* Grid Layout for Details & Actions */}
+                <div className="grid md:grid-cols-2 gap-8">
+                  {/* Payment Details Column */}
+                  <div>
+                    <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wide mb-3 flex items-center gap-2">
+                      <CreditCard className="w-4 h-4 text-gray-400" />
+                      Payment Method: {withdrawal.payment_method}
+                    </h4>
+
+                    <div className="bg-white border border-gray-100 rounded-lg p-3 space-y-2 text-sm">
+                      {withdrawal.payment_method === 'Bank Transfer' && (
+                        <>
+                          <div className="flex justify-between items-center py-1 border-b border-gray-50 last:border-0">
+                            <span className="text-gray-500">Account Name</span>
+                            <div className="flex items-center gap-2 font-medium text-gray-900">
+                              {withdrawal.account_name}
+                              <button onClick={() => copyToClipboard(withdrawal.account_name!, 'Name')} className="text-gray-400 hover:text-indigo-600">
+                                <Copy className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                          <div className="flex justify-between items-center py-1 border-b border-gray-50 last:border-0">
+                            <span className="text-gray-500">Account No</span>
+                            <div className="flex items-center gap-2 font-medium text-gray-900">
+                              {withdrawal.account_number}
+                              <button onClick={() => copyToClipboard(withdrawal.account_number!, 'Account Number')} className="text-gray-400 hover:text-indigo-600">
+                                <Copy className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                          <div className="flex justify-between items-center py-1 border-b border-gray-50 last:border-0">
+                            <span className="text-gray-500">IFSC Code</span>
+                            <div className="flex items-center gap-2 font-medium text-gray-900">
+                              {withdrawal.ifsc_code}
+                              <button onClick={() => copyToClipboard(withdrawal.ifsc_code!, 'IFSC')} className="text-gray-400 hover:text-indigo-600">
+                                <Copy className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                          <div className="flex justify-between items-center py-1 border-b border-gray-50 last:border-0">
+                            <span className="text-gray-500">Bank Name</span>
+                            <span className="font-medium text-gray-900">{withdrawal.bank_name}</span>
+                          </div>
+                        </>
                       )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Transaction Details (if paid) */}
-                {withdrawal.status === 'PAID' && withdrawal.transaction_id && (
-                  <div className="mt-4 pt-4 border-t border-gray-200">
-                    <p className="text-sm font-semibold text-green-700 mb-2">✅ Payment Completed</p>
-                    <div className="grid grid-cols-2 gap-2 text-sm">
-                      <div>
-                        <span className="text-gray-600">Transaction ID:</span>
-                        <span className="font-medium ml-2">{withdrawal.transaction_id}</span>
-                      </div>
-                      {withdrawal.payment_date && (
-                        <div>
-                          <span className="text-gray-600">Payment Date:</span>
-                          <span className="font-medium ml-2">{formatDate(withdrawal.payment_date)}</span>
+                      {withdrawal.payment_method === 'UPI' && (
+                        <div className="flex justify-between items-center py-2">
+                          <span className="text-gray-500">UPI ID</span>
+                          <div className="flex items-center gap-2 font-bold text-gray-900">
+                            {withdrawal.upi_id}
+                            <button onClick={() => copyToClipboard(withdrawal.upi_id!, 'UPI ID')} className="text-gray-400 hover:text-indigo-600">
+                              <Copy className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </div>
                       )}
                     </div>
-                    {withdrawal.payment_details && (
-                      <p className="text-xs text-gray-600 mt-2">{withdrawal.payment_details}</p>
+                  </div>
+
+                  {/* Actions / Status Info Column */}
+                  <div className="flex flex-col justify-end">
+                    {withdrawal.status === 'PENDING' && (
+                      <div className="flex gap-3">
+                        <button
+                          onClick={() => handleApprove(withdrawal.id)}
+                          disabled={processing}
+                          className="flex-1 flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-lg text-sm font-semibold shadow-sm transition-all hover:shadow disabled:opacity-50"
+                        >
+                          <Check className="w-4 h-4" />
+                          Approve
+                        </button>
+                        <button
+                          onClick={() => handleReject(withdrawal.id)}
+                          disabled={processing}
+                          className="flex-1 flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-700 hover:bg-red-50 hover:text-red-600 hover:border-red-200 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all disabled:opacity-50"
+                        >
+                          <X className="w-4 h-4" />
+                          Reject
+                        </button>
+                      </div>
+                    )}
+
+                    {withdrawal.status === 'APPROVED' && (
+                      <div>
+                        <div className="bg-amber-50 text-amber-800 text-xs px-3 py-2 rounded-md mb-3 flex items-start gap-2 border border-amber-100">
+                          <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                          <p>Funds have been deducted. Please process the transfer manually and then mark as paid.</p>
+                        </div>
+                        <button
+                          onClick={() => {
+                            setSelectedWithdrawal(withdrawal)
+                            setShowPaidModal(true)
+                          }}
+                          className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg text-sm font-semibold shadow-sm transition-all hover:shadow"
+                        >
+                          <CreditCard className="w-4 h-4" />
+                          Mark as Paid
+                        </button>
+                      </div>
+                    )}
+
+                    {withdrawal.status === 'PAID' && withdrawal.transaction_id && (
+                      <div className="bg-emerald-50/50 rounded-lg p-3 border border-emerald-100">
+                        <p className="text-xs font-semibold text-emerald-800 mb-2 flex items-center gap-1.5">
+                          <Check className="w-3.5 h-3.5" /> Payment Completed
+                        </p>
+                        <div className="text-xs text-emerald-900/70 space-y-1 font-mono">
+                          <div className="flex justify-between">
+                            <span>TXN ID:</span>
+                            <span>{withdrawal.transaction_id}</span>
+                          </div>
+                          {withdrawal.payment_date && (
+                            <div className="flex justify-between">
+                              <span>DATE:</span>
+                              <span>{formatDate(withdrawal.payment_date).split(',')[0]}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {withdrawal.status === 'REJECTED' && (
+                      <div className="bg-red-50/50 rounded-lg p-3 border border-red-100">
+                        <p className="text-xs font-semibold text-red-800 flex items-center gap-1.5">
+                          <X className="w-3.5 h-3.5" /> Request Rejected
+                        </p>
+                      </div>
                     )}
                   </div>
-                )}
-              </div>
-
-              {/* Actions */}
-              <div className="flex gap-3">
-                {withdrawal.status === 'PENDING' && (
-                  <>
-                    <button
-                      onClick={() => handleApprove(withdrawal.id)}
-                      disabled={processing}
-                      className="flex-1 flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50"
-                    >
-                      <Check className="w-4 h-4" />
-                      Approve & Deduct from Wallet
-                    </button>
-                    <button
-                      onClick={() => handleReject(withdrawal.id)}
-                      disabled={processing}
-                      className="flex-1 flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50"
-                    >
-                      <X className="w-4 h-4" />
-                      Reject
-                    </button>
-                  </>
-                )}
-
-                {withdrawal.status === 'APPROVED' && (
-                  <button
-                    onClick={() => {
-                      setSelectedWithdrawal(withdrawal)
-                      setShowPaidModal(true)
-                    }}
-                    className="flex-1 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-                  >
-                    <CreditCard className="w-4 h-4" />
-                    Mark as Paid (Enter Transaction ID)
-                  </button>
-                )}
+                </div>
               </div>
             </div>
           ))}
@@ -357,71 +395,71 @@ export default function PendingPayoutPage() {
 
       {/* Mark as Paid Modal */}
       {showPaidModal && selectedWithdrawal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-md w-full">
-            <div className="p-6 border-b border-gray-200">
-              <h3 className="text-2xl font-bold text-gray-900">Mark as Paid</h3>
-              <p className="text-sm text-gray-600 mt-1">
-                Amount: {formatCurrency(selectedWithdrawal.net_payable)} to {selectedWithdrawal.affiliate_name}
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-all">
+          <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="px-6 py-5 border-b border-gray-100 bg-gray-50/50">
+              <h3 className="text-xl font-bold text-gray-900">Confirm Payment</h3>
+              <p className="text-sm text-gray-500 mt-1">
+                Enter transaction details for the transfer of <span className="font-bold text-gray-900">{formatCurrency(selectedWithdrawal.net_payable)}</span>
               </p>
             </div>
 
-            <div className="p-6 space-y-4">
+            <div className="p-6 space-y-5">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Transaction ID / Reference Number *
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                  Transaction ID / UTR Number <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
                   value={transactionForm.transactionId}
                   onChange={(e) => setTransactionForm({ ...transactionForm, transactionId: e.target.value })}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2 text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter transaction ID"
+                  className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                  placeholder="e.g. UTR123456789"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
                   Payment Date
                 </label>
                 <input
                   type="date"
                   value={transactionForm.paymentDate}
                   onChange={(e) => setTransactionForm({ ...transactionForm, paymentDate: e.target.value })}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2 text-gray-900 focus:ring-2 focus:ring-blue-500"
+                  className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-gray-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Payment Details (Optional)
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                  Additional Notes (Optional)
                 </label>
                 <textarea
                   value={transactionForm.paymentDetails}
                   onChange={(e) => setTransactionForm({ ...transactionForm, paymentDetails: e.target.value })}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2 text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500"
-                  placeholder="Add any additional payment notes"
+                  className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all resize-y min-h-[80px]"
+                  placeholder="Any internal notes about this transfer..."
                   rows={3}
                 />
               </div>
             </div>
 
-            <div className="p-6 border-t border-gray-200 flex gap-3">
+            <div className="p-6 border-t border-gray-100 bg-gray-50/50 flex gap-3">
               <button
                 onClick={() => {
                   setShowPaidModal(false)
                   setTransactionForm({ transactionId: "", paymentDate: new Date().toISOString().split('T')[0], paymentDetails: "" })
                 }}
-                className="flex-1 border border-gray-300 text-gray-700 px-6 py-3 rounded-lg font-medium hover:bg-gray-50"
+                className="flex-1 bg-white border border-gray-200 text-gray-700 px-6 py-2.5 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleMarkAsPaid}
                 disabled={!transactionForm.transactionId || processing}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed shadow-sm transition-all"
               >
-                {processing ? 'Saving...' : 'Confirm Payment'}
+                {processing ? 'Processing...' : 'Confirm Payment'}
               </button>
             </div>
           </div>

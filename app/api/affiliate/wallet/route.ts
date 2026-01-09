@@ -53,7 +53,7 @@ export async function GET(request: Request) {
 
         const user = userResult.rows[0];
 
-        // Fetch total commission earned (affiliates get 70% - use affiliate_amount column)
+        // Fetch total commission earned (use affiliate_amount - the 70% affiliate gets)
         const commissionQuery = `
       SELECT 
         COALESCE(SUM(COALESCE(affiliate_amount, commission_amount * 0.70)), 0) as total_earned
@@ -76,7 +76,7 @@ export async function GET(request: Request) {
         const totalDeducted = parseFloat(withdrawnResult.rows[0]?.total_deducted) || 0;
 
         // Calculate available balance dynamically (never gets out of sync!)
-        // Available = Total Earned (70%) - Total Deducted (approved/paid withdrawals)
+        // Available = Total Earned (70% of commissions) - Total Deducted (approved/paid withdrawals)
         const availableBalance = totalEarned - totalDeducted;
 
         await pool.end();

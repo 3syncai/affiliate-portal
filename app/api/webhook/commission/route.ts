@@ -15,6 +15,8 @@ interface CommissionPayload {
     commission_source: string;
     status?: string;
     customer_id?: string;
+    customer_name?: string;  // NEW: Customer display name
+    customer_email?: string; // NEW: Customer email address
 }
 
 // POST /api/webhook/commission
@@ -65,8 +67,10 @@ export async function POST(request: NextRequest) {
                 commission_source,
                 status,
                 customer_id,
+                customer_name,
+                customer_email,
                 created_at
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW())
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, NOW())
             RETURNING id
         `, [
             payload.order_id,
@@ -81,7 +85,9 @@ export async function POST(request: NextRequest) {
             affiliateCommission,        // Affiliate's actual earnings
             payload.commission_source || 'order',
             payload.status || 'CREDITED',
-            payload.customer_id || null
+            payload.customer_id || null,
+            payload.customer_name || null,
+            payload.customer_email || null
         ]);
 
         // Update customer wallet with affiliateCommission (not full amount)

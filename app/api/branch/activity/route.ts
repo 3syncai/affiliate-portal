@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 
 type Activity = {
     id: string;
-    type: 'affiliate_request' | 'order' | 'approval' | 'withdrawal';
+    type: 'affiliate_request' | 'order' | 'approval' | 'withdrawal' | 'payment';
     timestamp: string;
     data: any;
 };
@@ -88,6 +88,29 @@ export async function GET(req: NextRequest) {
             console.log("Could not fetch withdrawals");
         }
 
+        // Fetch recent payment completions (PAID withdrawals with transaction details)
+        const paymentsQuery = `
+            SELECT 
+                wr.id,
+                wr.amount,
+                wr.transaction_id,
+                wr.payment_date,
+                wr.updated_at,
+                u.first_name,
+                u.last_name
+            FROM withdrawal_requests wr
+            JOIN affiliate_user u ON wr.user_id = u.id
+            WHERE u.branch ILIKE $1 AND wr.status = 'PAID'
+            ORDER BY wr.payment_date DESC
+            LIMIT 10
+        `;
+        let paymentsResult = { rows: [] };
+        try {
+            paymentsResult = await pool.query(paymentsQuery, [branch]);
+        } catch (e) {
+            console.log("Could not fetch payment completions");
+        }
+
         await pool.end();
 
         // Combine and format activities
@@ -149,6 +172,21 @@ export async function GET(req: NextRequest) {
                     amount: parseFloat(row.amount) || 0,
                     status: row.status,
                     action: `requested ₹${(parseFloat(row.amount) || 0).toFixed(2)} withdrawal`
+                }
+            });
+        });
+
+        // Add payment completions
+        paymentsResult.rows.forEach((row: any) => {
+            activities.push({
+                id: `payment_${row.id}`,
+                type: 'payment',
+                timestamp: row.payment_date || row.updated_at,
+                data: {
+                    name: `${row.first_name} ${row.last_name}`,
+                    amount: parseFloat(row.amount) || 0,
+                    transaction_id: row.transaction_id,
+                    action: `paid ₹${(parseFloat(row.amount) || 0).toFixed(2)} to affiliate`
                 }
             });
         });

@@ -4,6 +4,9 @@ import type { NextConfig } from "next";
 const storeUrl = process.env.NEXT_PUBLIC_STORE_URL;
 
 const nextConfig: NextConfig = {
+  turbopack: {
+    root: __dirname,
+  },
   async rewrites() {
     return [
       {

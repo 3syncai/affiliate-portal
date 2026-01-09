@@ -102,7 +102,43 @@ type ThemeContextType = {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-    const [themeName, setThemeName] = useState<ThemeName>('blue')
+    // Get default theme based on user role
+    const getDefaultTheme = (role: string): ThemeName => {
+        switch (role) {
+            case 'asm': return 'blue'
+            case 'state': return 'emerald'
+            case 'branch': return 'amber'
+            default: return 'blue'
+        }
+    }
+
+    // Initialize theme from localStorage immediately to prevent flash
+    const getInitialTheme = (): ThemeName => {
+        if (typeof window === 'undefined') return 'blue'
+
+        try {
+            const userRole = localStorage.getItem('affiliate_role')
+            const userData = localStorage.getItem('affiliate_user')
+            const defaultTheme = getDefaultTheme(userRole || '')
+
+            if (userData && userRole) {
+                const user = JSON.parse(userData)
+                const userSpecificKey = `app_theme_${user.id}_${userRole}`
+                const savedTheme = localStorage.getItem(userSpecificKey) as ThemeName
+
+                if (savedTheme && themes.find(t => t.name === savedTheme)) {
+                    return savedTheme
+                }
+            }
+
+            return defaultTheme
+        } catch (error) {
+            console.error('Error loading initial theme:', error)
+            return 'blue'
+        }
+    }
+
+    const [themeName, setThemeName] = useState<ThemeName>(getInitialTheme)
     const [mounted, setMounted] = useState(false)
     const [isLoading, setIsLoading] = useState(true)
 
@@ -110,21 +146,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         setMounted(true)
 
-        // Get default theme based on user role
-        const getDefaultTheme = (role: string): ThemeName => {
-            switch (role) {
-                case 'asm': return 'blue'
-                case 'state': return 'emerald'
-                case 'branch': return 'amber'
-                default: return 'blue'
-            }
-        }
-
         const fetchTheme = async () => {
             try {
                 const userRole = localStorage.getItem('affiliate_role')
                 const userData = localStorage.getItem('affiliate_user')
-                const defaultTheme = getDefaultTheme(userRole || '')
 
                 // Clean up old non-user-specific theme key
                 const oldTheme = localStorage.getItem('app_theme')
@@ -132,39 +157,34 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
                     localStorage.removeItem('app_theme')
                 }
 
-                // Get user-specific localStorage key
-                let userSpecificKey = ''
+                // Fetch from database for cross-device sync
                 if (userData && userRole) {
                     const user = JSON.parse(userData)
-                    userSpecificKey = `app_theme_${user.id}_${userRole}`
-                }
-
-                // First, check user-specific localStorage for quick load
-                if (userSpecificKey) {
-                    const savedTheme = localStorage.getItem(userSpecificKey) as ThemeName
-                    if (savedTheme && themes.find(t => t.name === savedTheme)) {
-                        setThemeName(savedTheme)
-                    } else {
-                        // Use role-specific default
-                        setThemeName(defaultTheme)
-                    }
-                } else {
-                    setThemeName(defaultTheme)
-                }
-
-                // Then fetch from database for cross-device sync
-                if (userData && userRole) {
-                    const user = JSON.parse(userData)
+                    const userSpecificKey = `app_theme_${user.id}_${userRole}`
                     const response = await fetch(`/api/user/theme?userId=${user.id}&userRole=${userRole}`)
-                    const data = await response.json()
 
-                    if (data.success && data.theme) {
-                        setThemeName(data.theme)
-                        localStorage.setItem(userSpecificKey, data.theme)
-                    } else {
-                        // No theme in DB, use role default
-                        setThemeName(defaultTheme)
-                        localStorage.setItem(userSpecificKey, defaultTheme)
+                    if (response.ok) {
+                        const data = await response.json()
+
+                        if (data.success && data.theme) {
+                            // Update theme if different from what we loaded initially
+                            if (data.theme !== themeName) {
+                                setThemeName(data.theme)
+                                localStorage.setItem(userSpecificKey, data.theme)
+                            }
+                        } else {
+                            // No theme in DB, save current theme to DB
+                            const defaultTheme = getDefaultTheme(userRole)
+                            await fetch('/api/user/theme', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    userId: user.id,
+                                    userRole: userRole,
+                                    theme: defaultTheme
+                                })
+                            })
+                        }
                     }
                 }
             } catch (error) {

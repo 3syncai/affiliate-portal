@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react"
 import axios from "axios"
-import { Package, DollarSign, TrendingUp, Eye, Download, Filter, Calendar } from "lucide-react"
+import { Package, DollarSign, TrendingUp, Eye, Download, Filter, Calendar, Search } from "lucide-react"
+import { useTheme } from "@/contexts/ThemeContext"
 
 type AffiliateOrder = {
   id: string
@@ -23,6 +24,7 @@ type AffiliateOrder = {
 }
 
 export default function OrderLayoutPage() {
+  const { theme } = useTheme()
   const [orders, setOrders] = useState<AffiliateOrder[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedOrder, setSelectedOrder] = useState<AffiliateOrder | null>(null)
@@ -66,12 +68,12 @@ export default function OrderLayoutPage() {
 
   const getStatusBadge = (status: string) => {
     const statusColors: Record<string, string> = {
-      "PENDING": "bg-yellow-100 text-yellow-800",
-      "APPROVED": "bg-green-100 text-green-800",
-      "PAID": "bg-blue-100 text-blue-800",
-      "REJECTED": "bg-red-100 text-red-800"
+      "PENDING": "bg-amber-50 text-amber-700 border-amber-200 ring-amber-100",
+      "APPROVED": "bg-emerald-50 text-emerald-700 border-emerald-200 ring-emerald-100",
+      "PAID": "bg-blue-50 text-blue-700 border-blue-200 ring-blue-100",
+      "REJECTED": "bg-red-50 text-red-700 border-red-200 ring-red-100"
     }
-    return statusColors[status] || "bg-gray-100 text-gray-800"
+    return statusColors[status] || "bg-gray-50 text-gray-700 border-gray-200 ring-gray-100"
   }
 
   const exportToCSV = () => {
@@ -149,22 +151,22 @@ export default function OrderLayoutPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-lg text-gray-500">Loading orders...</div>
+        <div className="w-8 h-8 border-4 border-gray-200 border-t-current rounded-full animate-spin" style={{ color: theme.primary }}></div>
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 bg-gray-50/50 -m-6 p-6">
       {/* Header */}
       <div className="flex justify-between items-start">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Order Layout</h1>
-          <p className="text-gray-600 mt-1">View and manage affiliate orders</p>
+          <h1 className="text-2xl font-bold tracking-tight text-gray-900">Order Layout</h1>
+          <p className="text-sm text-gray-500 mt-1">View and manage affiliate orders</p>
         </div>
         <button
           onClick={exportToCSV}
-          className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+          className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm font-semibold text-sm"
         >
           <Download className="w-4 h-4" />
           Export CSV
@@ -173,49 +175,49 @@ export default function OrderLayoutPage() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+        <div className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Total Orders</p>
-              <p className="text-2xl font-bold text-purple-600 mt-1">{totalOrders}</p>
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Total Orders</p>
+              <p className="text-3xl font-bold text-gray-900">{totalOrders}</p>
             </div>
-            <div className="bg-purple-100 p-3 rounded-lg">
-              <Package className="w-6 h-6 text-purple-600" />
+            <div className="w-12 h-12 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${theme.primary}15` }}>
+              <Package className="w-6 h-6" style={{ color: theme.primary }} />
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+        <div className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Total Amount</p>
-              <p className="text-2xl font-bold text-blue-600 mt-1">{formatCurrency(totalOrderAmount)}</p>
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Total Amount</p>
+              <p className="text-3xl font-bold text-gray-900 tabular-nums">{formatCurrency(totalOrderAmount)}</p>
             </div>
-            <div className="bg-blue-100 p-3 rounded-lg">
+            <div className="w-12 h-12 rounded-lg bg-blue-50 flex items-center justify-center">
               <DollarSign className="w-6 h-6 text-blue-600" />
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+        <div className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Total Commission</p>
-              <p className="text-2xl font-bold text-green-600 mt-1">{formatCurrency(totalCommission)}</p>
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Total Commission</p>
+              <p className="text-3xl font-bold text-emerald-600 tabular-nums">{formatCurrency(totalCommission)}</p>
             </div>
-            <div className="bg-green-100 p-3 rounded-lg">
-              <TrendingUp className="w-6 h-6 text-green-600" />
+            <div className="w-12 h-12 rounded-lg bg-emerald-50 flex items-center justify-center">
+              <TrendingUp className="w-6 h-6 text-emerald-600" />
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+        <div className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Avg Commission</p>
-              <p className="text-2xl font-bold text-orange-600 mt-1">{avgCommissionRate.toFixed(1)}%</p>
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Avg Commission</p>
+              <p className="text-3xl font-bold text-orange-600">{avgCommissionRate.toFixed(1)}%</p>
             </div>
-            <div className="bg-orange-100 p-3 rounded-lg">
+            <div className="w-12 h-12 rounded-lg bg-orange-50 flex items-center justify-center">
               <TrendingUp className="w-6 h-6 text-orange-600" />
             </div>
           </div>
@@ -223,20 +225,24 @@ export default function OrderLayoutPage() {
       </div>
 
       {/* Filters and Search */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <input
-            type="text"
-            placeholder="Search orders..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent col-span-2"
-          />
+          {/* Search with icon */}
+          <div className="col-span-2 relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search orders..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm"
+            />
+          </div>
 
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            className="px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm bg-white"
           >
             <option value="ALL">All Status</option>
             <option value="PENDING">Pending</option>
@@ -248,7 +254,7 @@ export default function OrderLayoutPage() {
           <select
             value={dateFilter}
             onChange={(e) => setDateFilter(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            className="px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm bg-white"
           >
             <option value="ALL">All Time</option>
             <option value="TODAY">Today</option>
@@ -258,91 +264,92 @@ export default function OrderLayoutPage() {
         </div>
 
         <div className="mb-4">
-          <p className="text-sm text-gray-600">
-            Showing <span className="font-semibold text-gray-900">{filteredOrders.length}</span> of <span className="font-semibold text-gray-900">{orders.length}</span> orders
+          <p className="text-xs text-gray-500">
+            Showing <span className="font-bold text-gray-900">{filteredOrders.length}</span> of <span className="font-bold text-gray-900">{orders.length}</span> orders
           </p>
         </div>
 
         {filteredOrders.length === 0 ? (
-          <div className="text-center py-12 text-gray-500">
-            <Package className="w-12 h-12 mx-auto mb-3 text-gray-400" />
-            <p>{searchTerm || statusFilter !== "ALL" || dateFilter !== "ALL" ? "No orders found matching your filters" : "No orders available"}</p>
+          <div className="text-center py-16 bg-gray-50/50 rounded-xl border border-dashed border-gray-200">
+            <Package className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+            <p className="text-sm font-medium text-gray-900">{searchTerm || statusFilter !== "ALL" || dateFilter !== "ALL" ? "No orders found matching your filters" : "No orders available"}</p>
+            <p className="text-xs text-gray-500 mt-1">Try adjusting your filters or search term</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto -mx-6 px-6">
             <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <thead>
+                <tr className="bg-gray-50">
+                  <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
                     Order ID
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
                     Date
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
                     Affiliate
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
                     Product
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">
                     Qty
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">
                     Order Amount
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">
                     Commission
                   </th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white divide-y divide-gray-100">
                 {filteredOrders.map((order) => (
-                  <tr key={order.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-indigo-600">
+                  <tr key={order.id} className="hover:bg-gray-50/50 transition-colors">
+                    <td className="px-4 py-4 whitespace-nowrap">
+                      <div className="text-sm font-mono font-medium" style={{ color: theme.primary }}>
                         {order.order_id}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600">
                       {formatDate(order.created_at)}
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-4">
                       <div className="text-sm font-medium text-gray-900">{order.affiliate_name}</div>
-                      <div className="text-xs text-gray-500">{order.affiliate_code}</div>
+                      <div className="text-xs text-gray-500 font-mono">{order.affiliate_code}</div>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-4">
                       <div className="text-sm text-gray-900 max-w-xs truncate" title={order.product_name}>
                         {order.product_name}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
+                    <td className="px-4 py-4 whitespace-nowrap text-sm text-right text-gray-900 font-semibold tabular-nums">
                       {order.quantity}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-semibold text-blue-600">
+                    <td className="px-4 py-4 whitespace-nowrap text-sm text-right font-bold text-blue-600 tabular-nums">
                       {formatCurrency(order.order_amount)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
-                      <div className="font-semibold text-green-600">{formatCurrency(order.commission_amount)}</div>
-                      <div className="text-xs text-gray-500">{order.commission_rate}%</div>
+                    <td className="px-4 py-4 whitespace-nowrap text-sm text-right">
+                      <div className="font-bold text-emerald-600 tabular-nums">{formatCurrency(order.commission_amount)}</div>
+                      <div className="text-xs text-gray-500 tabular-nums">{order.commission_rate}%</div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-center">
-                      <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadge(order.status)}`}>
+                    <td className="px-4 py-4 whitespace-nowrap text-center">
+                      <span className={`px-2.5 py-1 inline-flex text-xs leading-5 font-bold rounded-md border ${getStatusBadge(order.status)}`}>
                         {order.status}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <button
                         onClick={() => setSelectedOrder(order)}
-                        className="text-indigo-600 hover:text-indigo-900 flex items-center ml-auto"
+                        className="inline-flex items-center gap-1.5 text-gray-600 hover:text-gray-900 font-semibold transition-colors"
                       >
-                        <Eye className="w-4 h-4 mr-1" />
+                        <Eye className="w-4 h-4" />
                         View
                       </button>
                     </td>
@@ -356,26 +363,26 @@ export default function OrderLayoutPage() {
 
       {/* View Order Modal */}
       {selectedOrder && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-200 flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-gray-900">Order Details</h2>
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+            <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+              <h2 className="text-xl font-bold text-gray-900">Order Details</h2>
               <button
                 onClick={() => setSelectedOrder(null)}
-                className="text-gray-400 hover:text-gray-600 text-3xl leading-none"
+                className="text-gray-400 hover:text-gray-600 w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors"
               >
-                ×
+                <span className="text-2xl leading-none">×</span>
               </button>
             </div>
 
             <div className="p-6 space-y-6">
               {/* Order Information */}
               <div>
-                <h3 className="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">Order Information</h3>
-                <div className="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg">
+                <h3 className="text-xs font-bold text-gray-500 mb-3 uppercase tracking-wide">Order Information</h3>
+                <div className="grid grid-cols-2 gap-4 bg-gray-50/50 p-4 rounded-xl border border-gray-100">
                   <div>
                     <p className="text-xs text-gray-500 mb-1">Order ID</p>
-                    <p className="text-sm font-medium text-indigo-600">{selectedOrder.order_id}</p>
+                    <p className="text-sm font-mono font-semibold" style={{ color: theme.primary }}>{selectedOrder.order_id}</p>
                   </div>
                   <div>
                     <p className="text-xs text-gray-500 mb-1">Order Date</p>
@@ -387,7 +394,7 @@ export default function OrderLayoutPage() {
                   </div>
                   <div>
                     <p className="text-xs text-gray-500 mb-1">Status</p>
-                    <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadge(selectedOrder.status)}`}>
+                    <span className={`px-2.5 py-1 inline-flex text-xs leading-5 font-bold rounded-md border ${getStatusBadge(selectedOrder.status)}`}>
                       {selectedOrder.status}
                     </span>
                   </div>
@@ -396,70 +403,70 @@ export default function OrderLayoutPage() {
 
               {/* Product Information */}
               <div>
-                <h3 className="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">Product Details</h3>
-                <div className="bg-gray-50 p-4 rounded-lg space-y-2">
-                  <div className="flex justify-between">
+                <h3 className="text-xs font-bold text-gray-500 mb-3 uppercase tracking-wide">Product Details</h3>
+                <div className="bg-gray-50/50 p-4 rounded-xl border border-gray-100 space-y-3">
+                  <div className="flex justify-between items-center pb-3 border-b border-gray-200">
                     <span className="text-sm text-gray-600">Product Name</span>
-                    <span className="text-sm font-medium text-gray-900">{selectedOrder.product_name}</span>
+                    <span className="text-sm font-semibold text-gray-900">{selectedOrder.product_name}</span>
                   </div>
-                  <div className="flex justify-between">
+                  <div className="flex justify-between items-center pb-3 border-b border-gray-200">
                     <span className="text-sm text-gray-600">Quantity</span>
-                    <span className="text-sm font-medium text-gray-900">{selectedOrder.quantity}</span>
+                    <span className="text-sm font-semibold text-gray-900 tabular-nums">{selectedOrder.quantity}</span>
                   </div>
-                  <div className="flex justify-between">
+                  <div className="flex justify-between items-center pb-3 border-b border-gray-200">
                     <span className="text-sm text-gray-600">Item Price</span>
-                    <span className="text-sm font-medium text-gray-900">{formatCurrency(selectedOrder.item_price)}</span>
+                    <span className="text-sm font-semibold text-gray-900 tabular-nums">{formatCurrency(selectedOrder.item_price)}</span>
                   </div>
-                  <div className="flex justify-between pt-2 border-t border-gray-200">
-                    <span className="text-sm font-semibold text-gray-700">Order Amount</span>
-                    <span className="text-sm font-bold text-blue-600">{formatCurrency(selectedOrder.order_amount)}</span>
+                  <div className="flex justify-between items-center pt-2">
+                    <span className="text-sm font-bold text-gray-700">Order Amount</span>
+                    <span className="text-lg font-bold text-blue-600 tabular-nums">{formatCurrency(selectedOrder.order_amount)}</span>
                   </div>
                 </div>
               </div>
 
               {/* Affiliate Information */}
               <div>
-                <h3 className="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">Affiliate Information</h3>
-                <div className="grid grid-cols-2 gap-4 bg-indigo-50 p-4 rounded-lg border border-indigo-200">
+                <h3 className="text-xs font-bold text-gray-500 mb-3 uppercase tracking-wide">Affiliate Information</h3>
+                <div className="grid grid-cols-2 gap-4 p-4 rounded-xl border border-gray-200 bg-white">
                   <div>
-                    <p className="text-xs text-indigo-700 mb-1">Affiliate Name</p>
-                    <p className="text-sm font-medium text-indigo-900">{selectedOrder.affiliate_name}</p>
+                    <p className="text-xs text-gray-500 mb-1">Affiliate Name</p>
+                    <p className="text-sm font-semibold text-gray-900">{selectedOrder.affiliate_name}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-indigo-700 mb-1">Affiliate Code</p>
-                    <p className="text-sm font-medium text-indigo-900">{selectedOrder.affiliate_code}</p>
+                    <p className="text-xs text-gray-500 mb-1">Affiliate Code</p>
+                    <p className="text-sm font-mono font-semibold text-gray-900">{selectedOrder.affiliate_code}</p>
                   </div>
                   <div className="col-span-2">
-                    <p className="text-xs text-indigo-700 mb-1">Email</p>
-                    <p className="text-sm font-medium text-indigo-900">{selectedOrder.affiliate_email || "-"}</p>
+                    <p className="text-xs text-gray-500 mb-1">Email</p>
+                    <p className="text-sm font-medium text-gray-900">{selectedOrder.affiliate_email || "-"}</p>
                   </div>
                 </div>
               </div>
 
               {/* Commission Information */}
               <div>
-                <h3 className="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">Commission Details</h3>
+                <h3 className="text-xs font-bold text-gray-500 mb-3 uppercase tracking-wide">Commission Details</h3>
                 <div className="grid grid-cols-3 gap-4">
-                  <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
-                    <p className="text-xs text-green-700 font-semibold uppercase mb-2">Commission Rate</p>
-                    <p className="text-2xl font-bold text-green-600">{selectedOrder.commission_rate}%</p>
+                  <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-xl">
+                    <p className="text-xs text-emerald-700 font-bold uppercase mb-2">Commission Rate</p>
+                    <p className="text-2xl font-bold text-emerald-600">{selectedOrder.commission_rate}%</p>
                   </div>
-                  <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
-                    <p className="text-xs text-green-700 font-semibold uppercase mb-2">Commission Amount</p>
-                    <p className="text-2xl font-bold text-green-600">{formatCurrency(selectedOrder.commission_amount)}</p>
+                  <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-xl">
+                    <p className="text-xs text-emerald-700 font-bold uppercase mb-2">Commission Amount</p>
+                    <p className="text-2xl font-bold text-emerald-600 tabular-nums">{formatCurrency(selectedOrder.commission_amount)}</p>
                   </div>
-                  <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
-                    <p className="text-xs text-green-700 font-semibold uppercase mb-2">Source</p>
-                    <p className="text-lg font-bold text-green-600 capitalize">{selectedOrder.commission_source}</p>
+                  <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-xl">
+                    <p className="text-xs text-emerald-700 font-bold uppercase mb-2">Source</p>
+                    <p className="text-lg font-bold text-emerald-600 capitalize">{selectedOrder.commission_source}</p>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="p-6 border-t border-gray-200 flex justify-end">
+            <div className="p-6 border-t border-gray-100 bg-gray-50/50 flex justify-end">
               <button
                 onClick={() => setSelectedOrder(null)}
-                className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium"
+                className="px-6 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 font-semibold transition-colors shadow-sm"
               >
                 Close
               </button>

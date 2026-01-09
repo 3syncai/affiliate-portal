@@ -91,126 +91,149 @@ export default function EarningsPage() {
     }
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-8">
             {/* Header */}
             <div>
-                <h1 className="text-3xl font-bold text-gray-900">My Earnings</h1>
-                <p className="text-gray-600 mt-1">Track your branch commissions and sales performance</p>
+                <h1 className="text-2xl font-bold tracking-tight text-gray-900">My Earnings</h1>
+                <p className="text-sm text-gray-500 mt-1">Track your branch commissions and sales performance</p>
             </div>
 
-            {/* Stats Cards */}
+            {/* Income Overview Section */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* Total Earnings Card */}
-                <div className="rounded-xl shadow-lg p-6 text-white relative overflow-hidden" style={{ background: `linear-gradient(to bottom right, ${theme.primary}, ${theme.sidebar})` }}>
-                    <div className="absolute top-0 right-0 -mr-4 -mt-4 w-24 h-24 rounded-full bg-white/10 blur-xl"></div>
-                    <div className="relative">
-                        <p className="text-white/80 font-medium mb-1">Total Earnings</p>
-                        <h2 className="text-4xl font-bold">{formatCurrency(stats.totalEarnings)}</h2>
-                        <div className="mt-4 flex items-center text-sm text-white/80 bg-white/20 w-fit px-3 py-1 rounded-full">
-                            <TrendingUp className="w-4 h-4 mr-1.5" />
-                            <span>Calculated at {stats.commissionRate}% Commission</span>
+                {/* Total Earnings Card - Primary Metric */}
+                <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 relative overflow-hidden group hover:border-gray-300 transition-colors">
+                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-current transition-all group-hover:w-1.5" style={{ color: theme.primary }}></div>
+                    <div className="flex justify-between items-start mb-4">
+                        <div>
+                            <p className="text-sm font-medium text-gray-500">Total Earnings</p>
+                            <h2 className="text-3xl font-bold text-gray-900 mt-2 tracking-tight">{formatCurrency(stats.totalEarnings)}</h2>
                         </div>
+                        <div className="p-2.5 rounded-lg" style={{ backgroundColor: `${theme.primary}10` }}>
+                            <TrendingUp className="w-5 h-5" style={{ color: theme.primary }} />
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs font-medium text-gray-500 bg-gray-50 w-fit px-2.5 py-1 rounded-md border border-gray-100">
+                        <div className="w-1.5 h-1.5 rounded-full bg-current" style={{ color: theme.primary }}></div>
+                        <span>{stats.commissionRate}% Commission Rate</span>
                     </div>
                 </div>
 
-                {/* Total Affiliate Commissions Card */}
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                    <div className="flex justify-between items-start">
+                {/* Affiliate Commissions */}
+                <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 hover:border-gray-300 transition-colors">
+                    <div className="flex justify-between items-start mb-4">
                         <div>
-                            <p className="text-sm font-medium text-gray-500">Total Affiliate Commissions</p>
-                            <h3 className="text-2xl font-bold text-gray-900 mt-1">{formatCurrency(stats.totalAffiliateCommissions || 0)}</h3>
+                            <p className="text-sm font-medium text-gray-500">Affiliate Commissions</p>
+                            <h3 className="text-2xl font-bold text-gray-900 mt-2 tracking-tight">{formatCurrency(stats.totalAffiliateCommissions || 0)}</h3>
                         </div>
-                        <div style={{ backgroundColor: theme.primaryLight }} className="p-3 rounded-lg">
-                            <DollarSign className="w-6 h-6" style={{ color: theme.primary }} />
+                        <div className="p-2.5 rounded-lg bg-blue-50">
+                            <DollarSign className="w-5 h-5 text-blue-600" />
                         </div>
                     </div>
-                    <p className="text-sm text-gray-500 mt-4">
-                        Total affiliates commissions from your branch
+                    <p className="text-xs text-gray-500">
+                        Earnings from your branch hierarchy
                     </p>
                 </div>
 
-                {/* Total Orders Card */}
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                    <div className="flex justify-between items-start">
+                {/* Total Orders */}
+                <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 hover:border-gray-300 transition-colors">
+                    <div className="flex justify-between items-start mb-4">
                         <div>
                             <p className="text-sm font-medium text-gray-500">Total Orders</p>
-                            <h3 className="text-2xl font-bold text-gray-900 mt-1">{stats.totalOrders}</h3>
+                            <h3 className="text-2xl font-bold text-gray-900 mt-2 tracking-tight">{stats.totalOrders}</h3>
                         </div>
-                        <div style={{ backgroundColor: theme.primaryLight }} className="p-3 rounded-lg">
-                            <ShoppingBag className="w-6 h-6" style={{ color: theme.primary }} />
+                        <div className="p-2.5 rounded-lg bg-orange-50">
+                            <ShoppingBag className="w-5 h-5 text-orange-600" />
                         </div>
                     </div>
-                    <p className="text-sm text-gray-500 mt-4">
-                        Number of completed customer orders
+                    <p className="text-xs text-gray-500">
+                        Completed customer orders
                     </p>
                 </div>
             </div>
 
-            {/* Wallet Balance Section */}
-            <div className="rounded-xl shadow-lg p-6 text-white" style={{ background: `linear-gradient(to right, ${theme.sidebar}, ${theme.primary})` }}>
-                <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center">
-                        <Wallet className="w-8 h-8 mr-3" />
-                        <h2 className="text-xl font-bold">My Wallet</h2>
+            {/* Wallet Section */}
+            <div>
+                <div className="flex items-center gap-2 mb-4">
+                    <div className="p-1.5 rounded bg-gray-100">
+                        <Wallet className="w-4 h-4 text-gray-600" />
                     </div>
-                    <span className="text-sm bg-white/20 px-3 py-1 rounded-full">Current Balance</span>
+                    <h2 className="text-base font-semibold text-gray-900">Wallet Overview</h2>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {/* Available Balance - Highlighted */}
+                    <div className="bg-gray-900 rounded-xl shadow-sm p-6 text-white relative overflow-hidden ring-1 ring-gray-900">
+                        <div className="relative z-10">
+                            <p className="text-gray-400 text-sm font-medium mb-1">Available Balance</p>
+                            <h3 className="text-3xl font-bold text-white tracking-tight">{formatCurrency(stats.currentEarnings || (stats.lifetimeEarnings - stats.paidAmount) || stats.totalEarnings)}</h3>
+                            <div className="mt-4 flex items-center gap-2">
+                                <span className="flex items-center text-xs font-medium text-emerald-400 bg-emerald-400/10 px-2 py-1 rounded border border-emerald-400/20">
+                                    <ArrowUpCircle className="w-3 h-3 mr-1" />
+                                    Ready to withdraw
+                                </span>
+                            </div>
+                        </div>
+                        {/* Decorative background accent */}
+                        <div className="absolute top-0 right-0 -mr-8 -mt-8 w-32 h-32 rounded-full bg-white/5 blur-2xl"></div>
+                        <div className="absolute bottom-0 right-0 p-6 opacity-10">
+                            <Wallet className="w-12 h-12 text-white" />
+                        </div>
+                    </div>
+
                     {/* Lifetime Earnings */}
-                    <div className="bg-white/10 rounded-lg p-4">
-                        <div className="flex items-center text-white/80 mb-2">
-                            <ArrowUpCircle className="w-5 h-5 mr-2" />
-                            <span className="text-sm font-medium">Lifetime Earnings</span>
+                    <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+                        <div className="flex items-center gap-3 mb-2">
+                            <div className="p-2 rounded-full bg-emerald-50">
+                                <TrendingUp className="w-4 h-4 text-emerald-600" />
+                            </div>
+                            <span className="text-sm font-medium text-gray-600">Lifetime Earnings</span>
                         </div>
-                        <p className="text-2xl font-bold">{formatCurrency(stats.lifetimeEarnings || stats.totalEarnings)}</p>
-                        <p className="text-xs text-white/70 mt-1">Total earned ever</p>
+                        <p className="text-2xl font-bold text-gray-900 ml-1">{formatCurrency(stats.lifetimeEarnings || stats.totalEarnings)}</p>
                     </div>
 
-                    {/* Paid Amount */}
-                    <div className="bg-white/10 rounded-lg p-4">
-                        <div className="flex items-center text-white/80 mb-2">
-                            <ArrowDownCircle className="w-5 h-5 mr-2" />
-                            <span className="text-sm font-medium">Withdrawn Amount</span>
+                    {/* Withdrawn Amount */}
+                    <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+                        <div className="flex items-center gap-3 mb-2">
+                            <div className="p-2 rounded-full bg-gray-100">
+                                <ArrowDownCircle className="w-4 h-4 text-gray-600" />
+                            </div>
+                            <span className="text-sm font-medium text-gray-600">Withdrawn Amount</span>
                         </div>
-                        <p className="text-2xl font-bold">{formatCurrency(stats.paidAmount)}</p>
-                        <p className="text-xs text-white/70 mt-1">Amount already paid</p>
-                    </div>
-
-                    {/* Current Balance */}
-                    <div className="bg-white/20 rounded-lg p-4 border-2 border-white/30">
-                        <div className="flex items-center text-white mb-2">
-                            <Wallet className="w-5 h-5 mr-2" />
-                            <span className="text-sm font-bold">Available Balance</span>
-                        </div>
-                        <p className="text-3xl font-bold">{formatCurrency(stats.currentEarnings || (stats.lifetimeEarnings - stats.paidAmount) || stats.totalEarnings)}</p>
-                        <p className="text-xs text-white/70 mt-1">Available for withdrawal</p>
+                        <p className="text-2xl font-bold text-gray-900 ml-1">{formatCurrency(stats.paidAmount)}</p>
                     </div>
                 </div>
             </div>
 
-            {/* info alert */}
-            <div className="rounded-xl p-4 flex items-start" style={{ backgroundColor: theme.primaryLight, border: `1px solid ${theme.primary}20` }}>
-                <AlertCircle className="w-5 h-5 mt-0.5 mr-3 flex-shrink-0" style={{ color: theme.primary }} />
-                <div>
-                    <h4 className="text-sm font-semibold" style={{ color: theme.sidebar }}>How is this calculated?</h4>
-                    <p className="text-sm mt-1" style={{ color: theme.primary }}>
-                        Your earnings are automatically calculated as <strong>{stats.commissionRate}%</strong> of the total commissions earned by affiliates in your branch (cascading structure).
-                        Currently, this includes all recorded orders.
+            {/* Info Section */}
+            <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 flex items-start gap-4">
+                <AlertCircle className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                    <h4 className="text-sm font-medium text-gray-900">How is this calculated?</h4>
+                    <p className="text-sm text-gray-500 leading-relaxed">
+                        Your earnings are automatically calculated as <span className="font-semibold text-gray-700">{stats.commissionRate}%</span> of the total commissions earned by affiliates in your branch hierarchy.
+                        This ensures you earn a passive income from all branch activity.
                     </p>
                 </div>
             </div>
 
-            {/* Contributing Orders Table */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                <div className="px-6 py-4 border-b border-gray-100">
-                    <h2 className="text-lg font-bold text-gray-900">Contributing Orders</h2>
-                    <p className="text-sm text-gray-500">Recent orders that contributed to your earnings</p>
+            {/* Recent Table */}
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-gray-50/50">
+                    <div>
+                        <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">Contributing Orders</h2>
+                    </div>
+                    <div className="text-xs text-gray-500 font-medium bg-white px-2 py-1 rounded border border-gray-200">
+                        Last {recentOrders.length} orders
+                    </div>
                 </div>
 
                 {recentOrders.length === 0 ? (
-                    <div className="p-8 text-center text-gray-500">
-                        No orders recorded yet.
+                    <div className="p-12 text-center">
+                        <div className="mx-auto w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-3">
+                            <ShoppingBag className="w-6 h-6 text-gray-400" />
+                        </div>
+                        <h3 className="text-sm font-medium text-gray-900">No orders yet</h3>
+                        <p className="text-sm text-gray-500 mt-1">Orders from your branch affiliates will appear here.</p>
                     </div>
                 ) : (
                     <div className="overflow-x-auto">
@@ -221,12 +244,12 @@ export default function EarningsPage() {
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order ID</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Affiliate</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
-                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Order Amount</th>
+                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
                                 </tr>
                             </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
+                            <tbody className="divide-y divide-gray-200 bg-white">
                                 {recentOrders.map((order) => (
-                                    <tr key={order.id} className="hover:bg-gray-50">
+                                    <tr key={order.id} className="hover:bg-gray-50 transition-colors">
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             {new Date(order.created_at).toLocaleDateString('en-IN', {
                                                 day: 'numeric',
@@ -234,17 +257,21 @@ export default function EarningsPage() {
                                                 year: 'numeric'
                                             })}
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                            #{order.order_id}
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                                                #{order.order_id}
+                                            </span>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="text-sm text-gray-900">{order.first_name} {order.last_name}</div>
-                                            <div className="text-xs text-gray-500">{order.refer_code}</div>
+                                            <div className="flex flex-col">
+                                                <span className="text-sm font-medium text-gray-900">{order.first_name} {order.last_name}</span>
+                                                <span className="text-xs text-gray-500 font-mono">{order.refer_code}</span>
+                                            </div>
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <td className="px-6 py-4 text-sm text-gray-600 max-w-xs truncate" title={order.product_name}>
                                             {order.product_name}
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900 font-medium">
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-semibold text-gray-900">
                                             {formatCurrency(order.order_amount)}
                                         </td>
                                     </tr>
