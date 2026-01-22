@@ -23,8 +23,49 @@ export async function GET(req: NextRequest) {
 
         const pool = new Pool({
             connectionString: process.env.DATABASE_URL || process.env.NEXT_PUBLIC_DATABASE_URL,
-            ssl: { rejectUnauthorized: false }
+            ssl: false
         });
+
+        const activities: Activity[] = [];
+
+        // 1. Get activities from activity_log for this branch
+        try {
+            const activityLogQuery = `
+                SELECT 
+                    id,
+                    activity_type,
+                    actor_name,
+                    target_name,
+                    amount,
+                    product_name,
+                    description,
+                    created_at,
+                    metadata
+                FROM activity_log
+                WHERE actor_branch ILIKE $1
+                ORDER BY created_at DESC
+                LIMIT 30
+            `;
+
+            const activityResult = await pool.query(activityLogQuery, [branch]);
+
+            activityResult.rows.forEach(row => {
+                activities.push({
+                    id: `activity-${row.id}`,
+                    type: row.activity_type,
+                    timestamp: row.created_at,
+                    data: {
+                        message: row.description,
+                        name: row.target_name || row.actor_name,
+                        amount: parseFloat(row.amount) || 0,
+                        product_name: row.product_name,
+                        metadata: row.metadata
+                    }
+                });
+            });
+        } catch (err) {
+            console.log("Activity log query failed:", err);
+        }
 
         // Fetch recent affiliate requests from this branch (last 10)
         const affiliateRequestsQuery = `
@@ -113,10 +154,7 @@ export async function GET(req: NextRequest) {
 
         await pool.end();
 
-        // Combine and format activities
-        const activities: Activity[] = [];
-
-        // Add affiliate requests
+        // Add affiliate requests to activities
         affiliateRequestsResult.rows.forEach(row => {
             if (row.is_approved && row.is_agent) {
                 activities.push({

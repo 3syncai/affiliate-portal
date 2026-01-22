@@ -90,12 +90,12 @@ export async function GET(request: NextRequest) {
             credited: parseFloat(commissionResult.rows[0]?.credited || '0')
         };
 
-        // 3. Get wallet balance (use stored affiliate_commission)
+        // 3. Get wallet balance - ONLY CREDITED commissions (after delivery)
         const walletQuery = `
             SELECT 
                 COALESCE(SUM(COALESCE(affiliate_commission, commission_amount * 0.70)), 0) as total_earned
             FROM affiliate_commission_log
-            WHERE affiliate_code = $1
+            WHERE affiliate_code = $1 AND status = 'CREDITED'
         `;
         const walletResult = await pool.query(walletQuery, [affiliateCode]);
         const totalEarned = parseFloat(walletResult.rows[0]?.total_earned || '0');
@@ -110,7 +110,7 @@ export async function GET(request: NextRequest) {
         const totalDeducted = parseFloat(withdrawnResult.rows[0]?.total_deducted || '0');
 
         const wallet = {
-            balance: totalEarned - totalDeducted,
+            balance: totalEarned - totalDeducted,  // Only CREDITED - WITHDRAWN
             locked: 0 // Can be calculated based on pending withdrawals if needed
         };
 

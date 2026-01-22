@@ -88,9 +88,9 @@ export async function POST(req: NextRequest) {
         });
 
         if (action === 'APPROVE') {
-            // Get withdrawal details with affiliate info
+            // Get withdrawal details with affiliate info including city (area)
             const withdrawalResult = await pool.query(
-                `SELECT wr.*, au.first_name, au.last_name, au.branch, au.state
+                `SELECT wr.*, au.first_name, au.last_name, au.branch, au.city, au.state
                  FROM withdrawal_request wr
                  JOIN affiliate_user au ON au.id = wr.affiliate_id
                  WHERE wr.id = $1`,
@@ -120,21 +120,22 @@ export async function POST(req: NextRequest) {
             try {
                 await pool.query(
                     `INSERT INTO activity_log 
-                     (activity_type, actor_id, actor_name, actor_role, actor_branch, actor_state, 
+                     (activity_type, actor_id, actor_name, actor_role, actor_branch, actor_area, actor_state, 
                       target_id, target_name, target_type, amount, description)
-                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
                     [
                         'payment_approved',
-                        withdrawal.affiliate_id, // Using as actor for now
+                        withdrawal.affiliate_id,
                         withdrawal.branch + ' Admin',
                         'branch',
                         withdrawal.branch,
+                        withdrawal.city,  // Area is the city
                         withdrawal.state,
                         withdrawal.affiliate_id,
                         `${withdrawal.first_name} ${withdrawal.last_name}`,
                         'withdrawal',
                         withdrawal.withdrawal_amount,
-                        `${withdrawal.branch} branch approved ₹${parseFloat(withdrawal.withdrawal_amount).toFixed(2)} withdrawal for ${withdrawal.first_name} ${withdrawal.last_name}`
+                        `approved ₹${parseFloat(withdrawal.withdrawal_amount).toFixed(2)} withdrawal for ${withdrawal.first_name} ${withdrawal.last_name}`
                     ]
                 );
             } catch (e) {
@@ -145,9 +146,9 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ success: true, message: "Withdrawal approved" });
 
         } else if (action === 'REJECT') {
-            // Get withdrawal details for logging
+            // Get withdrawal details for logging including city (area)
             const withdrawalResult = await pool.query(
-                `SELECT wr.*, au.first_name, au.last_name, au.branch, au.state
+                `SELECT wr.*, au.first_name, au.last_name, au.branch, au.city, au.state
                  FROM withdrawal_request wr
                  JOIN affiliate_user au ON au.id = wr.affiliate_id
                  WHERE wr.id = $1`,
@@ -165,17 +166,18 @@ export async function POST(req: NextRequest) {
                 try {
                     await pool.query(
                         `INSERT INTO activity_log 
-                         (activity_type, actor_role, actor_branch, actor_state, target_name, target_type, amount, description)
-                         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+                         (activity_type, actor_role, actor_branch, actor_area, actor_state, target_name, target_type, amount, description)
+                         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
                         [
                             'payment_rejected',
                             'branch',
                             withdrawal.branch,
+                            withdrawal.city,  // Area is the city
                             withdrawal.state,
                             `${withdrawal.first_name} ${withdrawal.last_name}`,
                             'withdrawal',
                             withdrawal.withdrawal_amount,
-                            `${withdrawal.branch} branch rejected ₹${parseFloat(withdrawal.withdrawal_amount).toFixed(2)} withdrawal for ${withdrawal.first_name} ${withdrawal.last_name}`
+                            `rejected ₹${parseFloat(withdrawal.withdrawal_amount).toFixed(2)} withdrawal for ${withdrawal.first_name} ${withdrawal.last_name}`
                         ]
                     );
                 } catch (e) {

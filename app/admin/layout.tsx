@@ -20,12 +20,14 @@ import {
   User,
   Palette,
   Bell,
-  Banknote
+  Banknote,
+  Package
 } from "lucide-react"
 
 
 const navigationItems = [
   { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
+  { name: "Products", href: "/admin/products", icon: Package },
   { name: "State Admins", href: "/admin/state-admins", icon: MapPin },
   { name: "Create State User", href: "/admin/create-state-user", icon: UserPlus },
   { name: "Store Management", href: "/admin/stores", icon: Store },

@@ -53,12 +53,13 @@ export async function GET(request: Request) {
 
         const user = userResult.rows[0];
 
-        // Fetch total commission earned (use affiliate_amount - the 70% affiliate gets)
+        // Fetch total commission earned - ONLY CREDITED commissions (after delivery)
+        // PENDING commissions are not counted until product is delivered
         const commissionQuery = `
       SELECT 
-        COALESCE(SUM(COALESCE(affiliate_amount, commission_amount * 0.70)), 0) as total_earned
+        COALESCE(SUM(COALESCE(affiliate_commission, affiliate_amount, commission_amount * 0.70)), 0) as total_earned
       FROM affiliate_commission_log
-      WHERE affiliate_code = $1
+      WHERE affiliate_code = $1 AND status = 'CREDITED'
     `;
         const commissionResult = await pool.query(commissionQuery, [referCode]);
         const totalEarned = parseFloat(commissionResult.rows[0]?.total_earned) || 0;

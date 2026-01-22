@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import axios from "axios"
 import { Users, DollarSign, ShoppingBag, MapPin, TrendingUp, CheckCircle, XCircle, Award } from "lucide-react"
+import { useTheme } from "@/contexts/ThemeContext"
 
 type Stats = {
     totalASMs: number
@@ -29,13 +30,16 @@ type Branch = {
 
 type Activity = {
     id: string
-    type: 'approval' | 'rejection' | 'commission'
+    type: 'approval' | 'rejection' | 'commission' | 'commission_earned' | 'payment_approved' | 'payment_rejected' | 'payment_paid' | 'withdrawal_requested' | 'affiliate_approved'
     message: string
     branch_name: string
+    area?: string
+    amount?: number
     created_at: string
 }
 
 export default function StateAdminDashboard() {
+    const { theme } = useTheme()
     const [stats, setStats] = useState<Stats>({
         totalASMs: 0,
         totalBranches: 0,
@@ -100,11 +104,19 @@ export default function StateAdminDashboard() {
     const getActivityIcon = (type: string) => {
         switch (type) {
             case 'approval':
+            case 'affiliate_approved':
+            case 'payment_approved':
                 return <CheckCircle className="w-5 h-5 text-green-600" />
             case 'rejection':
+            case 'payment_rejected':
                 return <XCircle className="w-5 h-5 text-red-600" />
             case 'commission':
+            case 'commission_earned':
                 return <Award className="w-5 h-5 text-blue-600" />
+            case 'withdrawal_requested':
+                return <DollarSign className="w-5 h-5 text-purple-600" />
+            case 'payment_paid':
+                return <CheckCircle className="w-5 h-5 text-emerald-600" />
             default:
                 return <Users className="w-5 h-5 text-gray-600" />
         }
@@ -241,23 +253,39 @@ export default function StateAdminDashboard() {
 
                 {/* Recent Activity - 1/3 width */}
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                    <h2 className="text-lg font-bold text-gray-900 mb-6">Recent Activity</h2>
+                    <div className="flex items-center justify-between mb-6">
+                        <h2 className="text-lg font-bold text-gray-900">Recent Activity</h2>
+                        <span className="relative flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ backgroundColor: theme.primary }}></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2" style={{ backgroundColor: theme.primary }}></span>
+                        </span>
+                    </div>
 
                     {activities.length === 0 ? (
                         <p className="text-center text-gray-500 py-8">No recent activity</p>
                     ) : (
-                        <div className="space-y-4 max-h-[600px] overflow-y-auto">
+                        <div className="relative space-y-8 pl-4 before:absolute before:inset-0 before:left-4 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-gray-200 before:to-transparent max-h-[600px] overflow-y-auto pr-2">
                             {activities.map((activity) => (
-                                <div key={activity.id} className="flex gap-3 pb-4 border-b border-gray-100 last:border-0">
-                                    <div className="flex-shrink-0 mt-0.5">
-                                        {getActivityIcon(activity.type)}
+                                <div key={activity.id} className="relative flex items-start group">
+                                    <div
+                                        className="absolute left-[-5px] top-1 mt-1 h-3 w-3 rounded-full border-2 border-white bg-white flex items-center justify-center z-10"
+                                    >
+                                        <div className="h-1.5 w-1.5 rounded-full ring-2 ring-white" style={{ backgroundColor: theme.primary }}></div>
                                     </div>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-sm text-gray-700">{activity.message}</p>
-                                        <div className="flex items-center gap-2 mt-1">
-                                            <span className="text-xs text-gray-500">{activity.branch_name}</span>
-                                            <span className="text-xs text-gray-400">•</span>
-                                            <span className="text-xs text-gray-400">{formatTime(activity.created_at)}</span>
+                                    <div className="ml-6 w-full pb-4 border-b border-gray-50 last:border-0 group-last:pb-0">
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm text-gray-700 font-medium">{activity.message}</p>
+                                            <div className="flex flex-col gap-1 mt-1.5">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-md border border-gray-200">{activity.branch_name}</span>
+                                                    <span className="text-xs text-gray-400">{formatTime(activity.created_at)}</span>
+                                                </div>
+                                                {activity.amount && (
+                                                    <span className="text-xs font-semibold text-green-600">
+                                                        {formatCurrency(activity.amount)}
+                                                    </span>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

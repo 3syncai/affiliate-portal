@@ -22,7 +22,8 @@ import {
     User,
     Palette,
     TrendingUp,
-    Bell
+    Bell,
+    Share2
 } from "lucide-react"
 
 const navigationItems = [
@@ -30,6 +31,7 @@ const navigationItems = [
     { name: "Products", href: "/branch/products", icon: Package },
     { name: "Affiliate Request", href: "/branch/affiliate-request", icon: UserCheck },
     { name: "Agents in Branch", href: "/branch/agents", icon: Users },
+    { name: "My Referrals", href: "/branch/my-referrals", icon: Share2 },
     { name: "My Earnings", href: "/branch/earnings", icon: TrendingUp },
     { name: "Pending Payout", href: "/branch/pending-payout", icon: Clock },
     { name: "Order Layout", href: "/branch/order-layout", icon: ShoppingBag },

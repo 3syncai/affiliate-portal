@@ -27,6 +27,18 @@ export async function POST(req: NextRequest) {
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
+        // Generate unique referral code: owegBR + 5 random alphanumeric characters
+        const generateReferCode = () => {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let randomPart = '';
+            for (let i = 0; i < 5; i++) {
+                randomPart += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return `owegBR${randomPart}`;
+        };
+
+        let generatedReferCode = generateReferCode();
+
         const pool = new Pool({
             connectionString: process.env.DATABASE_URL || process.env.NEXT_PUBLIC_DATABASE_URL,
             ssl: { rejectUnauthorized: false }
@@ -62,13 +74,27 @@ export async function POST(req: NextRequest) {
             );
         }
 
+        // Ensure unique refer code
+        let codeExists = true;
+        while (codeExists) {
+            const codeCheck = await pool.query(
+                "SELECT id FROM branch_admin WHERE refer_code = $1",
+                [generatedReferCode]
+            );
+            if (codeCheck.rows.length === 0) {
+                codeExists = false;
+            } else {
+                generatedReferCode = generateReferCode();
+            }
+        }
+
         // Insert Branch Admin with normalized names (First letter caps)
         const insertQuery = `
             INSERT INTO branch_admin (
-                first_name, last_name, email, password_hash, phone, branch, city, state, created_by, role, is_active, created_at, updated_at
+                first_name, last_name, email, password_hash, refer_code, phone, branch, city, state, created_by, role, is_active, created_at, updated_at
             ) VALUES (
-                $1, $2, $3, $4, $5, INITCAP(LOWER($6)), INITCAP(LOWER($7)), INITCAP(LOWER($8)), $9, 'branch', TRUE, NOW(), NOW()
-            ) RETURNING id, email, first_name, last_name, branch, city, state, role, is_active
+                $1, $2, $3, $4, $5, $6, INITCAP(LOWER($7)), INITCAP(LOWER($8)), INITCAP(LOWER($9)), $10, 'branch', TRUE, NOW(), NOW()
+            ) RETURNING id, email, first_name, last_name, refer_code, branch, city, state, role, is_active
         `;
 
         const result = await pool.query(insertQuery, [
@@ -76,6 +102,7 @@ export async function POST(req: NextRequest) {
             last_name,
             email,
             hashedPassword,
+            generatedReferCode,
             phone,
             branch,
             city,
@@ -96,6 +123,7 @@ export async function POST(req: NextRequest) {
                 email: branchAdmin.email,
                 first_name: branchAdmin.first_name,
                 last_name: branchAdmin.last_name,
+                refer_code: branchAdmin.refer_code,
                 branch: branchAdmin.branch,
                 city: branchAdmin.city,
                 state: branchAdmin.state,

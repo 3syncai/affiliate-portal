@@ -1,29 +1,33 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Users, TrendingUp, DollarSign, ShoppingBag, CheckCircle, UserPlus, CreditCard, Clock, ArrowUpRight, MapPin } from "lucide-react"
+import { Users, TrendingUp, DollarSign, ShoppingBag, CheckCircle, UserPlus, CreditCard, Clock, ArrowUpRight, MapPin, Copy } from "lucide-react"
 import axios from "axios"
 import { useTheme } from "@/contexts/ThemeContext"
 
 type Activity = {
     id: string
-    type: 'affiliate_request' | 'order' | 'approval' | 'withdrawal' | 'payment'
+    type: 'affiliate_request' | 'order' | 'approval' | 'withdrawal' | 'payment' | 'commission_earned' | 'withdrawal_requested' | 'payment_approved' | 'payment_rejected' | 'payment_paid' | 'affiliate_approved'
     timestamp: string
     data: {
-        name: string
-        action: string
+        name?: string
+        action?: string
+        message?: string  // Pre-formatted hierarchical message from API
         amount?: number
         order_id?: string
         product_name?: string
         commission_amount?: number
         status?: string
         transaction_id?: string
+        metadata?: any
     }
 }
 
 export default function BranchDashboard() {
     const { theme } = useTheme()
     const [user, setUser] = useState<any>(null)
+    const [referralCode, setReferralCode] = useState<string>("")
+    const [copied, setCopied] = useState(false)
     const [stats, setStats] = useState({
         totalAgents: 0,
         pendingApproval: 0,
@@ -39,6 +43,7 @@ export default function BranchDashboard() {
         if (userData) {
             const parsed = JSON.parse(userData)
             setUser(parsed)
+            setReferralCode(parsed.refer_code || "")
             fetchStats(parsed.branch)
             fetchActivities(parsed.branch)
         } else {
@@ -73,6 +78,14 @@ export default function BranchDashboard() {
         }
     }
 
+    const copyReferralCode = () => {
+        if (referralCode) {
+            navigator.clipboard.writeText(referralCode)
+            setCopied(true)
+            setTimeout(() => setCopied(false), 2000)
+        }
+    }
+
     const formatTimeAgo = (timestamp: string) => {
         const now = new Date()
         const date = new Date(timestamp)
@@ -99,14 +112,22 @@ export default function BranchDashboard() {
     const getActivityIcon = (type: string) => {
         switch (type) {
             case 'approval':
+            case 'affiliate_approved':
                 return { icon: CheckCircle, bgColor: "bg-green-100", iconColor: "text-green-600" }
             case 'affiliate_request':
                 return { icon: UserPlus, bgColor: "bg-orange-100", iconColor: "text-orange-600" }
             case 'order':
+            case 'commission_earned':
                 return { icon: DollarSign, bgColor: "bg-blue-100", iconColor: "text-blue-600" }
             case 'withdrawal':
+            case 'withdrawal_requested':
                 return { icon: CreditCard, bgColor: "bg-purple-100", iconColor: "text-purple-600" }
             case 'payment':
+            case 'payment_approved':
+                return { icon: CheckCircle, bgColor: "bg-green-100", iconColor: "text-green-600" }
+            case 'payment_rejected':
+                return { icon: CreditCard, bgColor: "bg-red-100", iconColor: "text-red-600" }
+            case 'payment_paid':
                 return { icon: CreditCard, bgColor: "bg-emerald-100", iconColor: "text-emerald-600" }
             default:
                 return { icon: Clock, bgColor: "bg-gray-100", iconColor: "text-gray-600" }
@@ -214,28 +235,34 @@ export default function BranchDashboard() {
                                     <p className="text-gray-500 text-sm">Activities from your branch will appear here.</p>
                                 </div>
                             ) : (
-                                <div className="relative space-y-8 before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-gray-200 before:to-transparent">
+                                <div className="relative space-y-8 pl-4 before:absolute before:inset-0 before:left-4 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-gray-200 before:to-transparent">
                                     {activities.map((activity, idx) => {
                                         const { icon: ActivityIcon, bgColor, iconColor } = getActivityIcon(activity.type)
                                         return (
                                             <div key={activity.id} className="relative flex items-start group">
                                                 <div
-                                                    className="absolute left-0 top-1 mt-1 ml-2.5 h-5 w-5 rounded-full border-2 border-white bg-white flex items-center justify-center z-10"
+                                                    className="absolute left-[-5px] top-1 mt-1 h-3 w-3 rounded-full border-2 border-white bg-white flex items-center justify-center z-10"
                                                 >
-                                                    <div className="h-2 w-2 rounded-full ring-2 ring-white" style={{ backgroundColor: theme.primary }}></div>
+                                                    <div className="h-1.5 w-1.5 rounded-full ring-2 ring-white" style={{ backgroundColor: theme.primary }}></div>
                                                 </div>
-                                                <div className="ml-12 w-full">
+                                                <div className="ml-6 w-full">
                                                     <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-1 sm:gap-4">
                                                         <div>
                                                             <p className="text-sm font-semibold text-gray-900 group-hover:text-gray-700 transition-colors">
-                                                                {activity.data.name}
-                                                                <span className="font-normal text-gray-500"> {activity.data.action}</span>
+                                                                {activity.data.message || `${activity.data.name} ${activity.data.action}`}
                                                             </p>
-                                                            {activity.type === 'order' && activity.data.product_name && (
+                                                            {(activity.type === 'order' || activity.type === 'commission_earned') && activity.data.product_name && (
                                                                 <div className="mt-1.5 flex items-center gap-2 text-xs text-gray-500 bg-gray-50 px-2.5 py-1.5 rounded-md w-fit">
                                                                     <ShoppingBag className="w-3 h-3" />
                                                                     <span className="truncate max-w-[200px]">{activity.data.product_name}</span>
-                                                                    <span className="border-l border-gray-300 pl-2 ml-1">#{activity.data.order_id?.slice(-8)}</span>
+                                                                    {activity.data.order_id && (
+                                                                        <span className="border-l border-gray-300 pl-2 ml-1">#{activity.data.order_id?.slice(-8)}</span>
+                                                                    )}
+                                                                </div>
+                                                            )}
+                                                            {activity.data.amount && activity.data.amount > 0 && (
+                                                                <div className="mt-1 text-xs font-medium text-green-600">
+                                                                    ₹{activity.data.amount.toFixed(2)}
                                                                 </div>
                                                             )}
                                                         </div>
@@ -255,6 +282,66 @@ export default function BranchDashboard() {
 
                 {/* Right Column */}
                 <div className="space-y-6">
+                    {/* Referral Code Card */}
+                    {referralCode && (
+                        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm relative overflow-hidden">
+                            <div
+                                className="absolute top-0 right-0 p-4 opacity-5"
+                                style={{ backgroundColor: theme.primary }}
+                            >
+                                <div className="w-24 h-24 -mr-8 -mt-8 rounded-full" />
+                            </div>
+
+                            <div className="relative z-10">
+                                <h3 className="font-bold text-gray-900 mb-1">Your Referral Code</h3>
+                                <p className="text-xs text-gray-500 mb-4">Share this code with new affiliates</p>
+
+                                <div className="space-y-3">
+                                    <div
+                                        className="p-4 rounded-lg border-2 transition-all duration-200 hover:shadow-md"
+                                        style={{
+                                            backgroundColor: `${theme.primary}08`,
+                                            borderColor: `${theme.primary}30`
+                                        }}
+                                    >
+                                        <div className="flex items-center justify-between">
+                                            <div>
+                                                <p className="text-xs font-medium text-gray-500 mb-1">Referral Code</p>
+                                                <p
+                                                    className="text-2xl font-bold tracking-wider font-mono"
+                                                    style={{ color: theme.primary }}
+                                                >
+                                                    {referralCode}
+                                                </p>
+                                            </div>
+                                            <button
+                                                onClick={copyReferralCode}
+                                                className="p-3 rounded-lg transition-all duration-200 hover:scale-105 active:scale-95"
+                                                style={{
+                                                    backgroundColor: copied ? '#10b981' : theme.primary,
+                                                    color: 'white'
+                                                }}
+                                                title="Copy referral code"
+                                            >
+                                                {copied ? (
+                                                    <CheckCircle className="w-5 h-5" />
+                                                ) : (
+                                                    <Copy className="w-5 h-5" />
+                                                )}
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {copied && (
+                                        <p className="text-xs font-medium text-green-600 text-center animate-pulse">
+                                            ✓ Copied to clipboard!
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Branch Status Card */}
                     <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm relative overflow-hidden">
                         <div

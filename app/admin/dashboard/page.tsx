@@ -20,9 +20,20 @@ import {
 
 type Activity = {
   id: string
-  type: 'affiliate_request' | 'order' | 'approval'
+  type: string
   timestamp: string
-  data: any
+  data: {
+    message?: string
+    name?: string
+    state?: string
+    area?: string
+    branch_name?: string
+    amount?: number
+    product_name?: string
+    commission_amount?: number
+    order_id?: string
+    affiliate_name?: string
+  }
 }
 
 type CommissionRate = {
@@ -82,8 +93,8 @@ export default function AdminDashboardPage() {
         setCommissionRates(ratesData.rates)
       }
 
-      // Fetch recent activity  
-      const activityResponse = await axios.get("/api/affiliate/admin/activity")
+      // Fetch recent activity from new hierarchical endpoint
+      const activityResponse = await axios.get("/api/admin/activity")
       const activityData = activityResponse.data
       if (activityData.success) {
         setActivities(activityData.activities || [])
@@ -114,17 +125,30 @@ export default function AdminDashboardPage() {
   const getActivityIcon = (type: string) => {
     switch (type) {
       case 'affiliate_request':
+      case 'affiliate_approved':
         return { icon: UserPlus, bg: 'bg-orange-100', text: 'text-orange-600' }
       case 'approval':
+      case 'payment_approved':
         return { icon: CheckCircle, bg: 'bg-green-100', text: 'text-green-600' }
       case 'order':
-        return { icon: ShoppingBag, bg: 'bg-purple-100', text: 'text-purple-600' }
+      case 'commission_earned':
+        return { icon: ShoppingBag, bg: 'bg-blue-100', text: 'text-blue-600' }
+      case 'withdrawal_requested':
+        return { icon: DollarSign, bg: 'bg-purple-100', text: 'text-purple-600' }
+      case 'payment_paid':
+        return { icon: CheckCircle, bg: 'bg-emerald-100', text: 'text-emerald-600' }
       default:
         return { icon: Clock, bg: 'bg-gray-100', text: 'text-gray-600' }
     }
   }
 
   const getActivityText = (activity: Activity) => {
+    // Use pre-formatted message if available
+    if (activity.data.message) {
+      return <span className="text-gray-600">{activity.data.message}</span>
+    }
+
+    // Fallback to old format
     switch (activity.type) {
       case 'affiliate_request':
         return (
@@ -134,6 +158,7 @@ export default function AdminDashboardPage() {
           </div>
         )
       case 'approval':
+      case 'affiliate_approved':
         return (
           <div>
             <span className="font-semibold text-gray-900">{activity.data.name}</span>
@@ -141,16 +166,17 @@ export default function AdminDashboardPage() {
           </div>
         )
       case 'order':
+      case 'commission_earned':
         return (
           <div>
-            <span className="font-semibold text-gray-900">{activity.data.affiliate_name}</span>
+            <span className="font-semibold text-gray-900">{activity.data.affiliate_name || activity.data.name}</span>
             <span className="text-gray-600"> earned </span>
-            <span className="font-semibold text-green-600">{formatCurrency(activity.data.commission_amount)}</span>
+            <span className="font-semibold text-green-600">{formatCurrency(activity.data.commission_amount || activity.data.amount || 0)}</span>
             <span className="text-gray-600"> commission</span>
           </div>
         )
       default:
-        return <span className="text-gray-600">Unknown activity</span>
+        return <span className="text-gray-600">Activity update</span>
     }
   }
 
@@ -297,9 +323,15 @@ export default function AdminDashboardPage() {
 
           {/* Recent Activity - Enhanced */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div className="px-6 py-5 border-b border-gray-200 bg-gray-50">
-              <h2 className="text-xl font-semibold text-gray-900">Recent Activity</h2>
-              <p className="text-sm text-gray-600 mt-1">Latest updates from your platform</p>
+            <div className="px-6 py-5 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">Recent Activity</h2>
+                <p className="text-sm text-gray-600 mt-1">Latest updates from your platform</p>
+              </div>
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 bg-indigo-600"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-600"></span>
+              </span>
             </div>
             <div className="p-6">
               {activities.length === 0 ? (
@@ -311,32 +343,40 @@ export default function AdminDashboardPage() {
                   <p className="text-sm text-gray-400 mt-1">Activity will appear here as it happens</p>
                 </div>
               ) : (
-                <div className="space-y-1">
-                  {activities.slice(0, 6).map((activity) => {
+                <div className="relative space-y-8 pl-4 before:absolute before:inset-0 before:left-4 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-gray-200 before:to-transparent">
+                  {activities.slice(0, 10).map((activity) => {
                     const activityData = getActivityIcon(activity.type)
                     const IconComponent = activityData.icon
                     return (
-                      <div
-                        key={activity.id}
-                        className="flex items-start gap-4 p-4 rounded-lg hover:bg-gray-50 transition-colors"
-                      >
-                        <div className={`flex-shrink-0 p-2 ${activityData.bg} rounded-lg`}>
-                          <IconComponent className={`w-5 h-5 ${activityData.text}`} />
+                      <div key={activity.id} className="relative flex items-start group">
+                        <div
+                          className="absolute left-[-5px] top-1 mt-1 h-3 w-3 rounded-full border-2 border-white bg-white flex items-center justify-center z-10"
+                        >
+                          <div className="h-1.5 w-1.5 rounded-full ring-2 ring-white bg-indigo-600"></div>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-sm leading-relaxed">
-                            {getActivityText(activity)}
-                          </div>
-                          {activity.type === 'order' && (
-                            <div className="mt-1 text-xs text-gray-500">
-                              Order #{activity.data.order_id} • {activity.data.product_name}
+                        <div className="ml-6 w-full pb-4 border-b border-gray-50 last:border-0 group-last:pb-0">
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm leading-relaxed">
+                              {getActivityText(activity)}
                             </div>
-                          )}
-                        </div>
-                        <div className="flex-shrink-0">
-                          <span className="text-xs text-gray-500 font-medium">
-                            {formatTimeAgo(activity.timestamp)}
-                          </span>
+                            <div className="flex flex-col gap-1 mt-1.5">
+                              <div className="flex items-center gap-2">
+                                {activity.data.state && (
+                                  <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-md border border-gray-200">{activity.data.state}</span>
+                                )}
+                                {activity.data.branch_name && (
+                                  <span className="text-xs text-gray-500">{activity.data.branch_name}</span>
+                                )}
+                                <span className="text-xs text-gray-400">•</span>
+                                <span className="text-xs text-gray-400 font-medium">{formatTimeAgo(activity.timestamp)}</span>
+                              </div>
+                              {activity.type === 'order' && (
+                                <div className="text-xs text-gray-500">
+                                  Order #{activity.data.order_id} • {activity.data.product_name}
+                                </div>
+                              )}
+                            </div>
+                          </div>
                         </div>
                       </div>
                     )

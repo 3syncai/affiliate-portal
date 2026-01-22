@@ -16,12 +16,12 @@ export async function POST(req: NextRequest) {
 
         const pool = new Pool({
             connectionString: process.env.DATABASE_URL || process.env.NEXT_PUBLIC_DATABASE_URL,
-            ssl: { rejectUnauthorized: false }
+            ssl: false
         });
 
-        // Get withdrawal details for logging
+        // Get withdrawal details for logging including city (area)
         const withdrawalResult = await pool.query(
-            `SELECT wr.*, au.first_name, au.last_name, au.branch, au.state
+            `SELECT wr.*, au.first_name, au.last_name, au.branch, au.city, au.state
              FROM withdrawal_request wr
              JOIN affiliate_user au ON au.id = wr.affiliate_id
              WHERE wr.id = $1`,
@@ -41,19 +41,20 @@ export async function POST(req: NextRequest) {
             try {
                 await pool.query(
                     `INSERT INTO activity_log 
-                     (activity_type, actor_name, actor_role, actor_branch, actor_state, 
+                     (activity_type, actor_name, actor_role, actor_branch, actor_area, actor_state, 
                       target_name, target_type, amount, description, metadata)
-                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
                     [
                         'payment_paid',
                         withdrawal.branch + ' Admin',
                         'branch',
                         withdrawal.branch,
+                        withdrawal.city,  // Area is the city
                         withdrawal.state,
                         `${withdrawal.first_name} ${withdrawal.last_name}`,
                         'withdrawal',
                         withdrawal.net_payable,
-                        `${withdrawal.branch} branch paid ₹${parseFloat(withdrawal.net_payable).toFixed(2)} to ${withdrawal.first_name} ${withdrawal.last_name}`,
+                        `paid ₹${parseFloat(withdrawal.net_payable).toFixed(2)} to ${withdrawal.first_name} ${withdrawal.last_name} (Txn: ${transactionId})`,
                         JSON.stringify({ transactionId, paymentDate })
                     ]
                 );

@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS branch_admin (
     last_name VARCHAR(100) NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
+    refer_code VARCHAR(50) UNIQUE,
     phone VARCHAR(20) NOT NULL,
     branch VARCHAR(100) NOT NULL,
     city VARCHAR(100) NOT NULL,
@@ -19,6 +20,7 @@ CREATE TABLE IF NOT EXISTS branch_admin (
 
 -- Create indexes for faster queries
 CREATE INDEX idx_branch_admin_email ON branch_admin(email);
+CREATE INDEX idx_branch_admin_refer_code ON branch_admin(refer_code);
 CREATE INDEX idx_branch_admin_branch ON branch_admin(branch);
 CREATE INDEX idx_branch_admin_city ON branch_admin(city);
 CREATE INDEX idx_branch_admin_created_by ON branch_admin(created_by);

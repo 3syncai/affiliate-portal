@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Search, Plus, Edit, Trash2, Package, Tag, Boxes, Type, Save, X } from "lucide-react"
+import { Search, Plus, Edit, Trash2, Package, Tag, Boxes, Type, Save, X, Maximize2, Minimize2, AlertTriangle } from "lucide-react"
 import axios from "axios"
 
 interface Commission {
@@ -40,6 +40,13 @@ export default function SetCommissionPage() {
   const [categories, setCategories] = useState<FilterOption[]>([])
   const [collections, setCollections] = useState<FilterOption[]>([])
   const [types, setTypes] = useState<FilterOption[]>([])
+  const [productSearch, setProductSearch] = useState("")
+  const [showProductDropdown, setShowProductDropdown] = useState(false)
+  const [isMaximized, setIsMaximized] = useState(false)
+  const [entitySearch, setEntitySearch] = useState("")
+  const [showEntityDropdown, setShowEntityDropdown] = useState(false)
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{ show: boolean; id: string | null }>({ show: false, id: null })
+  const [notification, setNotification] = useState<{ show: boolean; message: string; type: 'success' | 'error' }>({ show: false, message: '', type: 'success' })
 
   useEffect(() => {
     loadCommissions()
@@ -50,6 +57,7 @@ export default function SetCommissionPage() {
     try {
       const response = await axios.get("/api/affiliate/admin/commission-settings")
       const data = response.data
+      console.log('Loaded commissions:', data.commissions)
       setCommissions(data.commissions || [])
     } catch (error: any) {
       console.error("Failed to fetch commissions:", error)
@@ -208,18 +216,31 @@ export default function SetCommissionPage() {
   }
 
   const handleDelete = async (commissionId: string) => {
-    if (!confirm("Are you sure you want to delete this commission?")) {
-      return
-    }
+    setDeleteConfirmation({ show: true, id: commissionId })
+  }
+
+  const confirmDelete = async () => {
+    if (!deleteConfirmation.id) return
 
     try {
-      await axios.delete(`/api/affiliate/admin/commissions/${commissionId}`)
+      console.log('Deleting commission:', deleteConfirmation.id)
+      const response = await axios.delete(`/api/affiliate/admin/commission-settings/${deleteConfirmation.id}`)
+      console.log('Delete response:', response.data)
+
+      if (!response.data.success) {
+        throw new Error(response.data.error || 'Failed to delete commission')
+      }
+
       await loadCommissions()
-      alert("Commission deleted successfully")
+      setNotification({ show: true, message: 'Commission deleted successfully', type: 'success' })
+      setTimeout(() => setNotification({ show: false, message: '', type: 'success' }), 3000)
     } catch (error: any) {
       console.error("Failed to delete commission:", error)
-      const errorMessage = error.response?.data?.message || error.message || "Unknown error"
-      alert(`Error deleting commission: ${errorMessage}`)
+      const errorMessage = error.response?.data?.error || error.response?.data?.message || error.message || "Unknown error"
+      setNotification({ show: true, message: `Error: ${errorMessage}`, type: 'error' })
+      setTimeout(() => setNotification({ show: false, message: '', type: 'error' }), 5000)
+    } finally {
+      setDeleteConfirmation({ show: false, id: null })
     }
   }
 
@@ -258,6 +279,11 @@ export default function SetCommissionPage() {
       entity_id: "",
       commission_rate: "",
     })
+    setProductSearch("")
+    setShowProductDropdown(false)
+    setIsMaximized(false)
+    setEntitySearch("")
+    setShowEntityDropdown(false)
   }
 
   const getEntityName = (commission: Commission): string => {
@@ -332,18 +358,40 @@ export default function SetCommissionPage() {
 
       {/* Form Modal */}
       {showForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold">
+        <div className="fixed inset-0 bg-gray-900/20 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className={`bg-white rounded-xl shadow-2xl mx-auto transform transition-all ${isMaximized ? 'w-full h-full max-w-none' : 'max-w-lg w-full'
+            }`}>
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+              <h2 className="text-xl font-semibold text-gray-900">
                 {editingCommission ? "Edit Commission" : "Add Commission"}
               </h2>
-              <button onClick={handleCancel} className="text-gray-500 hover:text-gray-700">
-                <X className="w-5 h-5" />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setIsMaximized(!isMaximized)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors rounded-lg p-1 hover:bg-gray-100"
+                  title={isMaximized ? "Minimize" : "Maximize"}
+                >
+                  {isMaximized ? (
+                    <Minimize2 className="w-5 h-5" />
+                  ) : (
+                    <Maximize2 className="w-5 h-5" />
+                  )}
+                </button>
+                <button
+                  onClick={handleCancel}
+                  className="text-gray-400 hover:text-gray-600 transition-colors rounded-lg p-1 hover:bg-gray-100"
+                  title="Close"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
             </div>
 
-            <div className="space-y-4">
+            {/* Modal Body */}
+            <div className={`px-6 py-5 space-y-5 overflow-y-auto ${isMaximized ? 'h-[calc(100vh-180px)]' : 'max-h-[calc(100vh-200px)]'
+              }`}>
+              {/* Commission Type */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Commission Type
@@ -357,7 +405,7 @@ export default function SetCommissionPage() {
                       entity_id: "",
                     })
                   }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white text-gray-900 appearance-none cursor-pointer"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900 transition-shadow"
                   disabled={!!editingCommission}
                 >
                   <option value="product">Product</option>
@@ -367,6 +415,7 @@ export default function SetCommissionPage() {
                 </select>
               </div>
 
+              {/* Entity Selection */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   {formData.commission_type === "product"
@@ -377,39 +426,192 @@ export default function SetCommissionPage() {
                         ? "Collection"
                         : "Type"}
                 </label>
-                <select
-                  value={formData.entity_id}
-                  onChange={(e) => setFormData({ ...formData, entity_id: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white text-gray-900 appearance-none cursor-pointer"
-                >
-                  <option value="">Select {formData.commission_type}</option>
-                  {formData.commission_type === "product" &&
-                    products.map((product) => (
-                      <option key={product.id} value={product.id}>
-                        {product.title}
-                      </option>
-                    ))}
-                  {formData.commission_type === "category" &&
-                    categories.map((cat) => (
-                      <option key={cat.id} value={cat.id}>
-                        {cat.name}
-                      </option>
-                    ))}
-                  {formData.commission_type === "collection" &&
-                    collections.map((col) => (
-                      <option key={col.id} value={col.id}>
-                        {col.title}
-                      </option>
-                    ))}
-                  {formData.commission_type === "type" &&
-                    types.map((type) => (
-                      <option key={type.id} value={type.id}>
-                        {type.value}
-                      </option>
-                    ))}
-                </select>
+
+                {/* Product Selector with Search and Images */}
+                {formData.commission_type === "product" ? (
+                  <div className="relative">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 z-10" />
+                      <input
+                        type="text"
+                        placeholder="Search products..."
+                        value={productSearch}
+                        onChange={(e) => setProductSearch(e.target.value)}
+                        onFocus={() => setShowProductDropdown(true)}
+                        className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow"
+                      />
+                    </div>
+
+                    {showProductDropdown && (
+                      <div className={`absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg overflow-y-auto ${isMaximized ? 'max-h-96' : 'max-h-64'
+                        }`}>
+                        {products
+                          .filter(p =>
+                            productSearch === "" ||
+                            p.title?.toLowerCase().includes(productSearch.toLowerCase())
+                          )
+                          .map((product) => (
+                            <button
+                              key={product.id}
+                              type="button"
+                              onClick={() => {
+                                setFormData({ ...formData, entity_id: product.id })
+                                setProductSearch(product.title)
+                                setShowProductDropdown(false)
+                              }}
+                              className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-indigo-50 transition-colors text-left border-b border-gray-100 last:border-0"
+                            >
+                              {product.thumbnail ? (
+                                <img
+                                  src={product.thumbnail}
+                                  alt={product.title}
+                                  className="w-12 h-12 object-cover rounded-md border border-gray-200 flex-shrink-0"
+                                />
+                              ) : (
+                                <div className="w-12 h-12 bg-gray-100 rounded-md flex items-center justify-center flex-shrink-0">
+                                  <Package className="w-6 h-6 text-gray-400" />
+                                </div>
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-gray-900 truncate">
+                                  {product.title}
+                                </p>
+                                {product.collection?.title && (
+                                  <p className="text-xs text-gray-500 truncate">
+                                    {product.collection.title}
+                                  </p>
+                                )}
+                              </div>
+                            </button>
+                          ))}
+                        {products.filter(p =>
+                          productSearch === "" ||
+                          p.title?.toLowerCase().includes(productSearch.toLowerCase())
+                        ).length === 0 && (
+                            <div className="px-4 py-8 text-center text-gray-500 text-sm">
+                              No products found
+                            </div>
+                          )}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  /* Custom Searchable Dropdown for Category, Collection, Type */
+                  <div className="relative">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 z-10" />
+                      <input
+                        type="text"
+                        placeholder={`Search ${formData.commission_type}...`}
+                        value={entitySearch}
+                        onChange={(e) => setEntitySearch(e.target.value)}
+                        onFocus={() => setShowEntityDropdown(true)}
+                        className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow"
+                      />
+                    </div>
+
+                    {showEntityDropdown && (
+                      <div className={`absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg overflow-y-auto ${isMaximized ? 'max-h-96' : 'max-h-64'
+                        }`}>
+                        {/* Category options */}
+                        {formData.commission_type === "category" &&
+                          categories
+                            .filter(cat =>
+                              entitySearch === "" ||
+                              cat.name?.toLowerCase().includes(entitySearch.toLowerCase())
+                            )
+                            .map((cat) => (
+                              <button
+                                key={cat.id}
+                                type="button"
+                                onClick={() => {
+                                  setFormData({ ...formData, entity_id: cat.id })
+                                  setEntitySearch(cat.name || "")
+                                  setShowEntityDropdown(false)
+                                }}
+                                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-indigo-50 transition-colors text-left border-b border-gray-100 last:border-0"
+                              >
+                                <Tag className="w-5 h-5 text-green-500 flex-shrink-0" />
+                                <span className="text-sm font-medium text-gray-900">
+                                  {cat.name}
+                                </span>
+                              </button>
+                            ))}
+
+                        {/* Collection options */}
+                        {formData.commission_type === "collection" &&
+                          collections
+                            .filter(col =>
+                              entitySearch === "" ||
+                              col.title?.toLowerCase().includes(entitySearch.toLowerCase())
+                            )
+                            .map((col) => (
+                              <button
+                                key={col.id}
+                                type="button"
+                                onClick={() => {
+                                  setFormData({ ...formData, entity_id: col.id })
+                                  setEntitySearch(col.title || "")
+                                  setShowEntityDropdown(false)
+                                }}
+                                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-indigo-50 transition-colors text-left border-b border-gray-100 last:border-0"
+                              >
+                                <Boxes className="w-5 h-5 text-purple-500 flex-shrink-0" />
+                                <span className="text-sm font-medium text-gray-900">
+                                  {col.title}
+                                </span>
+                              </button>
+                            ))}
+
+                        {/* Type options */}
+                        {formData.commission_type === "type" &&
+                          types
+                            .filter(type =>
+                              entitySearch === "" ||
+                              type.value?.toLowerCase().includes(entitySearch.toLowerCase())
+                            )
+                            .map((type) => (
+                              <button
+                                key={type.id}
+                                type="button"
+                                onClick={() => {
+                                  setFormData({ ...formData, entity_id: type.id })
+                                  setEntitySearch(type.value || "")
+                                  setShowEntityDropdown(false)
+                                }}
+                                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-indigo-50 transition-colors text-left border-b border-gray-100 last:border-0"
+                              >
+                                <Type className="w-5 h-5 text-orange-500 flex-shrink-0" />
+                                <span className="text-sm font-medium text-gray-900">
+                                  {type.value}
+                                </span>
+                              </button>
+                            ))}
+
+                        {/* No results message */}
+                        {((formData.commission_type === "category" && categories.filter(cat =>
+                          entitySearch === "" ||
+                          cat.name?.toLowerCase().includes(entitySearch.toLowerCase())
+                        ).length === 0) ||
+                          (formData.commission_type === "collection" && collections.filter(col =>
+                            entitySearch === "" ||
+                            col.title?.toLowerCase().includes(entitySearch.toLowerCase())
+                          ).length === 0) ||
+                          (formData.commission_type === "type" && types.filter(type =>
+                            entitySearch === "" ||
+                            type.value?.toLowerCase().includes(entitySearch.toLowerCase())
+                          ).length === 0)) && (
+                            <div className="px-4 py-8 text-center text-gray-500 text-sm">
+                              No {formData.commission_type} found
+                            </div>
+                          )}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
+              {/* Commission Rate */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Commission Rate (%)
@@ -422,50 +624,107 @@ export default function SetCommissionPage() {
                   value={formData.commission_rate}
                   onChange={(e) => {
                     const value = e.target.value
-                    // Allow empty string for typing, but validate on submit
                     setFormData((prev) => ({ ...prev, commission_rate: value }))
                   }}
                   onBlur={(e) => {
-                    // Trim whitespace on blur
                     const value = e.target.value.trim()
                     setFormData((prev) => ({ ...prev, commission_rate: value }))
                   }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow"
                   placeholder="e.g., 5 for 5%"
                   required
                 />
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-gray-500 mt-1.5">
                   Enter a percentage (0-100). For example, 5 means 5% commission.
                 </p>
               </div>
+            </div>
 
-              <div className="flex gap-3 justify-end pt-4">
+            {/* Modal Footer */}
+            <div className="flex items-center justify-end gap-3 px-6 py-4 bg-gray-50 rounded-b-xl border-t border-gray-100">
+              <button
+                onClick={handleCancel}
+                className="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+                disabled={saving}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="px-5 py-2.5 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center transition-colors"
+              >
+                {saving ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4 mr-2" />
+                    {editingCommission ? "Update" : "Create"}
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirmation.show && (
+        <div className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full mx-auto transform transition-all">
+            <div className="p-6">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                  <AlertTriangle className="w-6 h-6 text-red-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Delete Commission</h3>
+                  <p className="text-sm text-gray-500">This action cannot be undone</p>
+                </div>
+              </div>
+              <p className="text-gray-600 mb-6">
+                Are you sure you want to delete this commission? This will permanently remove the commission rate.
+              </p>
+              <div className="flex items-center justify-end gap-3">
                 <button
-                  onClick={handleCancel}
-                  className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
-                  disabled={saving}
+                  onClick={() => setDeleteConfirmation({ show: false, id: null })}
+                  className="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
-                  onClick={handleSave}
-                  disabled={saving}
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 flex items-center"
+                  onClick={confirmDelete}
+                  className="px-5 py-2.5 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
                 >
-                  {saving ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="w-4 h-4 mr-2" />
-                      {editingCommission ? "Update" : "Create"}
-                    </>
-                  )}
+                  Delete
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Notification Toast */}
+      {notification.show && (
+        <div className="fixed top-4 right-4 z-50 animate-slide-in">
+          <div className={`rounded-lg shadow-lg px-6 py-4 flex items-center gap-3 ${notification.type === 'success' ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
+            }`}>
+            {notification.type === 'success' ? (
+              <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0">
+                <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+            ) : (
+              <AlertTriangle className="w-5 h-5 text-red-600 flex-shrink-0" />
+            )}
+            <span className={`text-sm font-medium ${notification.type === 'success' ? 'text-green-800' : 'text-red-800'
+              }`}>
+              {notification.message}
+            </span>
           </div>
         </div>
       )}
@@ -513,8 +772,10 @@ export default function SetCommissionPage() {
                         </span>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900">{getEntityName(commission)}</div>
+                    <td className="px-6 py-4 max-w-md">
+                      <div className="text-sm text-gray-900 break-words" title={getEntityName(commission)}>
+                        {getEntityName(commission)}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-indigo-600">
@@ -524,14 +785,26 @@ export default function SetCommissionPage() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex items-center gap-2">
                         <button
-                          onClick={() => handleEdit(commission)}
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            handleEdit(commission)
+                          }}
                           className="text-indigo-600 hover:text-indigo-900"
+                          title="Edit"
                         >
                           <Edit className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => handleDelete(commission.id)}
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            handleDelete(commission.id)
+                          }}
                           className="text-red-600 hover:text-red-900"
+                          title="Delete"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
