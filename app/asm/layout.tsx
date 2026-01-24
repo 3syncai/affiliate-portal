@@ -19,11 +19,14 @@ import {
     User,
     Palette,
     TrendingUp,
-    Bell
+    Bell,
+    Package
 } from "lucide-react"
 
 const navigationItems = [
     { name: "Dashboard", href: "/asm/dashboard", icon: LayoutDashboard },
+    { name: "Products", href: "/asm/products", icon: Package },
+    { name: "My Referrals", href: "/asm/my-referrals", icon: Users },
     { name: "Branch Admins", href: "/asm/branch-admins", icon: Building },
     { name: "My Earnings", href: "/asm/earnings", icon: TrendingUp },
     { name: "Create Branch Admin", href: "/asm/create-branch", icon: UserPlus },
@@ -102,18 +105,26 @@ export default function ASMLayout({
         <div className="min-h-screen flex overflow-x-hidden" style={{ backgroundColor: theme.background }}>
             {/* Sidebar */}
             <aside
-                className={`${sidebarOpen ? "w-64" : "w-0"
-                    } transition-all duration-300 overflow-hidden flex flex-col fixed h-screen z-30`}
-                style={{ background: `linear-gradient(to bottom, ${theme.sidebar}, ${theme.sidebar}dd)` }}
+                className={`${sidebarOpen ? "w-72" : "w-0"
+                    } transition-all duration-300 overflow-hidden flex flex-col fixed h-screen z-30 shadow-2xl`}
+                style={{
+                    background: theme.sidebar,
+                    backgroundImage: `linear-gradient(to bottom, ${theme.sidebar}, ${theme.sidebar}dd)`
+                }}
             >
-                <div className="flex items-center justify-between p-4" style={{ borderBottomColor: 'rgba(255,255,255,0.2)', borderBottomWidth: '1px' }}>
-                    <h1 className="text-xl font-bold text-white whitespace-nowrap flex items-center gap-2">
-                        <Briefcase className="w-5 h-5" />
-                        Area Manager
-                    </h1>
+                <div className="flex items-center justify-between p-6" style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                    <div className="flex items-center gap-3">
+                        <div className="bg-white/10 p-2 rounded-lg backdrop-blur-sm">
+                            <Briefcase className="w-6 h-6 text-indigo-200" />
+                        </div>
+                        <div>
+                            <h1 className="text-lg font-bold text-white tracking-wide">Area Manager</h1>
+                            <p className="text-[10px] text-indigo-300 font-medium tracking-wider uppercase">Workspace</p>
+                        </div>
+                    </div>
                     <button
                         onClick={() => setSidebarOpen(false)}
-                        className="lg:hidden text-white/70 hover:text-white"
+                        className="lg:hidden text-white/50 hover:text-white transition-colors"
                     >
                         <X className="w-5 h-5" />
                     </button>
@@ -122,19 +133,21 @@ export default function ASMLayout({
                 <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
                     {navigationItems.map((item) => {
                         const Icon = item.icon
-                        const isActive = pathname === item.href
+                        const isActive = pathname.startsWith(item.href)
                         return (
                             <Link
                                 key={item.name}
                                 href={item.href}
-                                className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${isActive
-                                    ? "text-white"
-                                    : "text-white/80 hover:text-white"
+                                className={`flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 group relative overflow-hidden ${isActive
+                                    ? "text-white bg-white/10 shadow-lg backdrop-blur-sm border border-white/10"
+                                    : "text-indigo-200/70 hover:text-white hover:bg-white/5"
                                     }`}
-                                style={isActive ? { backgroundColor: 'rgba(255,255,255,0.2)' } : undefined}
                             >
+                                {isActive && (
+                                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-indigo-400 rounded-r-full"></div>
+                                )}
                                 <Icon className="w-5 h-5 mr-3" />
-                                <span>{item.name}</span>
+                                <span className="relative z-10">{item.name}</span>
                             </Link>
                         )
                     })}
@@ -203,26 +216,30 @@ export default function ASMLayout({
             </aside>
 
             {/* Main Content */}
-            <div className={`flex-1 flex flex-col ${sidebarOpen ? "ml-64" : "ml-0"} transition-all duration-300 overflow-x-hidden`}>
+            <div className={`flex-1 flex flex-col ${sidebarOpen ? "ml-72" : "ml-0"} transition-all duration-300 overflow-x-hidden min-w-0`}>
                 {/* Top Bar */}
-                <header className="bg-white border-b border-gray-200 px-6 py-4 sticky top-0 z-20">
-                    <div className="flex items-center justify-between">
+                <header className="bg-white/80 backdrop-blur-xl border-b border-indigo-50 px-8 py-5 sticky top-0 z-20 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
                         <button
                             onClick={() => setSidebarOpen(!sidebarOpen)}
-                            className="lg:hidden text-gray-500 hover:text-gray-700"
+                            className="text-gray-400 hover:text-indigo-600 transition-colors lg:hidden"
                         >
                             <Menu className="w-6 h-6" />
                         </button>
-                        <div className="flex items-center space-x-4 ml-auto">
-                            {/* Notification Bell */}
-                            {user?.id && (
-                                <NotificationDropdown userId={user.id} userRole="asm" />
-                            )}
-                            <span className="px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1" style={{ backgroundColor: theme.primaryLight, color: theme.primary }}>
-                                <Building className="w-4 h-4" />
-                                {user?.city || "Area Sales Manager"}
-                            </span>
-                        </div>
+                    </div>
+
+                    <div className="flex items-center space-x-6">
+                        {/* Notification Bell */}
+                        {user?.id && (
+                            <NotificationDropdown userId={user.id} userRole="asm" />
+                        )}
+
+                        <div className="h-8 w-[1px] bg-gray-200 mx-2"></div>
+
+                        <span className="px-4 py-1.5 rounded-full text-sm font-semibold flex items-center gap-2 bg-indigo-50 text-indigo-700 border border-indigo-100 shadow-sm">
+                            <Building className="w-3.5 h-3.5" />
+                            {user?.city || "Area Sales Manager"}
+                        </span>
                     </div>
                 </header>
 

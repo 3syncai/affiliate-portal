@@ -38,17 +38,17 @@ function LoginContent() {
 
       // Redirect based on role and approval status
       if (data.role === "admin") {
-        router.push("/admin/dashboard")
+        window.location.href = "/admin/dashboard"
       } else if (data.role === "state" || data.user?.designation === "state") {
         // State admin users go to state admin dashboard
         localStorage.setItem("affiliate_role", "state")
-        router.push("/state-admin/dashboard")
+        window.location.href = "/state-admin/dashboard"
       } else if (data.redirectTo) {
-        router.push(data.redirectTo)
+        window.location.href = data.redirectTo
       } else if (!data.is_approved) {
-        router.push("/verification-pending")
+        window.location.href = "/verification-pending"
       } else {
-        router.push("/dashboard")
+        window.location.href = "/dashboard"
       }
     } catch (err: any) {
       // If regular login fails, try state admin login
@@ -60,7 +60,7 @@ function LoginContent() {
           localStorage.setItem("affiliate_token", stateData.token)
           localStorage.setItem("affiliate_user", JSON.stringify(stateData.user))
           localStorage.setItem("affiliate_role", "state")
-          router.push("/state-admin/dashboard")
+          window.location.href = "/state-admin/dashboard"
           return
         }
       } catch {
@@ -73,7 +73,7 @@ function LoginContent() {
             localStorage.setItem("affiliate_token", asmData.token)
             localStorage.setItem("affiliate_user", JSON.stringify(asmData.user))
             localStorage.setItem("affiliate_role", "asm")
-            router.push("/asm/dashboard")
+            window.location.href = "/asm/dashboard"
             return
           }
         } catch {
@@ -86,7 +86,7 @@ function LoginContent() {
               localStorage.setItem("affiliate_token", branchData.token)
               localStorage.setItem("affiliate_user", JSON.stringify(branchData.user))
               localStorage.setItem("affiliate_role", "branch")
-              router.push("/branch/dashboard")
+              window.location.href = "/branch/dashboard"
               return
             }
           } catch {

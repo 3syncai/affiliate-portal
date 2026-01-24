@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
         });
 
         const result = await pool.query(
-            `SELECT id, first_name, last_name, email, password_hash, phone, branch, city, state, role, is_active
+            `SELECT id, first_name, last_name, email, password_hash, phone, branch, city, state, role, is_active, refer_code
              FROM branch_admin WHERE email = $1`,
             [email]
         );
@@ -70,7 +70,8 @@ export async function POST(req: NextRequest) {
                 phone: branchAdmin.phone,
                 branch: branchAdmin.branch,
                 city: branchAdmin.city,
-                state: branchAdmin.state
+                state: branchAdmin.state,
+                refer_code: branchAdmin.refer_code
             }
         });
     } catch (error: any) {

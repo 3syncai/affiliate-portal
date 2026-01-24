@@ -166,7 +166,7 @@ export default function ASMAgentsPage() {
 
             {/* View Agent Modal */}
             {selectedAgent && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
                     <div className="bg-white rounded-lg max-w-lg w-full p-6">
                         <h2 className="text-xl font-bold text-gray-900 mb-4">Agent Details</h2>
                         <div className="space-y-3 text-sm">

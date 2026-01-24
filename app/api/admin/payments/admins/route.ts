@@ -22,15 +22,15 @@ export async function GET() {
                 ba.state,
                 'branch' as admin_type,
                 COALESCE(
-                    (SELECT SUM(acl.commission_amount) 
+                    (SELECT SUM(acl.affiliate_commission) 
                      FROM affiliate_commission_log acl
-                     JOIN affiliate_user au ON acl.affiliate_code = au.refer_code
-                     WHERE LOWER(au.branch) = LOWER(ba.branch)), 
+                     WHERE (acl.affiliate_code = ba.refer_code OR acl.affiliate_user_id = ba.id::text) 
+                     AND acl.status = 'CREDITED'), 
                     0
-                ) as total_commission_base,
+                ) as lifetime_earnings,
                 (SELECT commission_percentage FROM commission_rates WHERE role_type = 'branch') as commission_rate,
                 COALESCE(
-                    (SELECT SUM(amount) 
+                    (SELECT SUM(amount + COALESCE(tds_amount, 0)) 
                      FROM admin_payments 
                      WHERE recipient_id::uuid = ba.id AND recipient_type = 'branch' AND status = 'completed'), 
                     0
@@ -40,7 +40,7 @@ export async function GET() {
             ORDER BY ba.first_name
         `;
 
-        // Fetch all Area Sales Managers with their earnings (using stores table)
+        // Fetch all Area Sales Managers with their earnings
         const asmQuery = `
             SELECT 
                 asm.id,
@@ -50,17 +50,41 @@ export async function GET() {
                 asm.city,
                 asm.state,
                 'asm' as admin_type,
-                COALESCE(
-                    (SELECT SUM(acl.commission_amount) 
-                     FROM affiliate_commission_log acl
-                     JOIN affiliate_user au ON acl.affiliate_code = au.refer_code
-                     JOIN stores s ON LOWER(au.branch) = LOWER(s.branch_name)
-                     WHERE LOWER(s.city) = LOWER(asm.city) AND LOWER(s.state) = LOWER(asm.state)), 
-                    0
-                ) as total_commission_base,
+                asm.refer_code,
                 (SELECT commission_percentage FROM commission_rates WHERE role_type = 'area') as commission_rate,
+                
+                /* 1. Affiliate Overrides (Base * Rate) */
+                (
+                    COALESCE(
+                        (SELECT SUM(acl.commission_amount) 
+                         FROM affiliate_commission_log acl
+                         JOIN affiliate_user au ON acl.affiliate_code = au.refer_code
+                         JOIN stores s ON LOWER(au.branch) = LOWER(s.branch_name)
+                         WHERE LOWER(s.city) = LOWER(asm.city) AND LOWER(s.state) = LOWER(asm.state)), 
+                        0
+                    ) * (SELECT commission_percentage FROM commission_rates WHERE role_type = 'area') / 100
+                ) + 
+                /* 2. Direct Referrals (Already calculated amount) */
                 COALESCE(
-                    (SELECT SUM(amount) 
+                    (SELECT SUM(affiliate_commission) 
+                     FROM affiliate_commission_log 
+                     WHERE commission_source = 'asm_direct' 
+                     AND (affiliate_user_id = asm.id::text OR affiliate_code = asm.refer_code)
+                     AND status = 'CREDITED'),
+                     0
+                ) +
+                /* 3. Branch Admin Overrides (Already calculated amount) */
+                COALESCE(
+                    (SELECT SUM(affiliate_commission) 
+                     FROM affiliate_commission_log 
+                     WHERE commission_source = 'area_manager' 
+                     AND affiliate_user_id = asm.id::text
+                     AND status = 'CREDITED'),
+                     0
+                ) as total_lifetime_earnings,
+                
+                COALESCE(
+                    (SELECT SUM(amount + COALESCE(tds_amount, 0)) 
                      FROM admin_payments 
                      WHERE recipient_id::uuid = asm.id AND recipient_type = 'asm' AND status = 'completed'), 
                     0
@@ -78,6 +102,7 @@ export async function GET() {
                 sa.last_name,
                 sa.email,
                 sa.state,
+                sa.refer_code,
                 'state' as admin_type,
                 COALESCE(
                     (SELECT SUM(acl.commission_amount) 
@@ -86,10 +111,34 @@ export async function GET() {
                      JOIN stores s ON LOWER(au.branch) = LOWER(s.branch_name)
                      WHERE LOWER(s.state) = LOWER(sa.state)), 
                     0
+                ) +
+                COALESCE(
+                    (SELECT SUM(acl.commission_amount) 
+                     FROM affiliate_commission_log acl
+                     JOIN branch_admin ba ON acl.affiliate_code = ba.refer_code
+                     WHERE LOWER(ba.state) = LOWER(sa.state) AND acl.commission_source = 'branch_admin'),
+                    0
+                ) +
+                COALESCE(
+                    (SELECT SUM(acl.commission_amount) 
+                     FROM affiliate_commission_log acl
+                     JOIN area_sales_manager asm ON acl.affiliate_code = asm.refer_code
+                     WHERE LOWER(asm.state) = LOWER(sa.state) AND acl.commission_source = 'asm_direct'),
+                    0
                 ) as total_commission_base,
+                
+                /* Direct Earnings from State Admin Referrals */
+                COALESCE(
+                    (SELECT SUM(affiliate_commission)
+                     FROM affiliate_commission_log
+                     WHERE affiliate_code = sa.refer_code
+                     AND status = 'CREDITED'),
+                    0
+                ) as direct_earnings,
+
                 (SELECT commission_percentage FROM commission_rates WHERE role_type = 'state') as commission_rate,
                 COALESCE(
-                    (SELECT SUM(amount) 
+                    (SELECT SUM(amount + COALESCE(tds_amount, 0)) 
                      FROM admin_payments 
                      WHERE recipient_id::uuid = sa.id AND recipient_type = 'state' AND status = 'completed'), 
                     0
@@ -108,7 +157,7 @@ export async function GET() {
         // Combine and format all admins
         const allAdmins = [
             ...branchResult.rows.map(admin => {
-                const lifetimeEarnings = parseFloat(admin.total_commission_base || '0') * (parseFloat(admin.commission_rate || '5') / 100);
+                const lifetimeEarnings = parseFloat(admin.lifetime_earnings || '0');
                 const paidAmount = parseFloat(admin.paid_amount || '0');
                 return {
                     id: admin.id,
@@ -119,16 +168,15 @@ export async function GET() {
                     location: admin.branch,
                     city: admin.city,
                     state: admin.state,
-                    totalCommissionBase: parseFloat(admin.total_commission_base || '0'),
-                    commissionRate: parseFloat(admin.commission_rate || '5'),
+                    commissionRate: parseFloat(admin.commission_rate || '15'),
                     lifetimeEarnings,
                     paidAmount,
                     currentEarnings: lifetimeEarnings - paidAmount,
-                    totalEarnings: lifetimeEarnings - paidAmount // For backward compatibility
+                    totalEarnings: lifetimeEarnings - paidAmount
                 };
             }),
             ...asmResult.rows.map(admin => {
-                const lifetimeEarnings = parseFloat(admin.total_commission_base || '0') * (parseFloat(admin.commission_rate || '3') / 100);
+                const lifetimeEarnings = parseFloat(admin.total_lifetime_earnings || '0');
                 const paidAmount = parseFloat(admin.paid_amount || '0');
                 return {
                     id: admin.id,
@@ -139,7 +187,7 @@ export async function GET() {
                     location: admin.city,
                     city: admin.city,
                     state: admin.state,
-                    totalCommissionBase: parseFloat(admin.total_commission_base || '0'),
+                    totalCommissionBase: 0,
                     commissionRate: parseFloat(admin.commission_rate || '3'),
                     lifetimeEarnings,
                     paidAmount,
@@ -148,7 +196,9 @@ export async function GET() {
                 };
             }),
             ...stateResult.rows.map(admin => {
-                const lifetimeEarnings = parseFloat(admin.total_commission_base || '0') * (parseFloat(admin.commission_rate || '2') / 100);
+                const overrideEarnings = parseFloat(admin.total_commission_base || '0') * (parseFloat(admin.commission_rate || '2') / 100);
+                const directEarnings = parseFloat(admin.direct_earnings || '0');
+                const lifetimeEarnings = overrideEarnings + directEarnings;
                 const paidAmount = parseFloat(admin.paid_amount || '0');
                 return {
                     id: admin.id,

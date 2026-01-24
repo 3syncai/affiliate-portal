@@ -14,9 +14,10 @@ export async function GET() {
        ORDER BY 
          CASE role_type
            WHEN 'affiliate' THEN 1
-           WHEN 'state' THEN 2
-           WHEN 'area' THEN 3
-           WHEN 'branch' THEN 4
+           WHEN 'branch_direct' THEN 2
+           WHEN 'branch' THEN 3
+           WHEN 'area' THEN 4
+           WHEN 'state' THEN 5
          END`
         )
 

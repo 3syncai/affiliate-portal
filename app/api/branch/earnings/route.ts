@@ -7,10 +7,10 @@ export async function GET(req: NextRequest) {
     try {
         const { searchParams } = new URL(req.url);
         const branch = searchParams.get('branch');
-        const adminId = searchParams.get('adminId'); // Branch admin's ID for payment tracking
+        const adminId = searchParams.get('adminId');
 
-        if (!branch) {
-            return NextResponse.json({ success: false, error: "Branch parameter is required" }, { status: 400 });
+        if (!adminId) {
+            return NextResponse.json({ success: false, error: "Admin ID is required" }, { status: 400 });
         }
 
         const pool = new Pool({
@@ -18,93 +18,106 @@ export async function GET(req: NextRequest) {
             ssl: { rejectUnauthorized: false }
         });
 
-        // 1. Get Commission Rate for Branch Admin (should be 3%)
-        const rateResult = await pool.query(`
-            SELECT commission_percentage 
-            FROM commission_rates 
-            WHERE role_type = 'branch'
-        `);
+        // 1. Get Commission Rate and Refer Code
+        const adminDetailsRef = await pool.query(`
+            SELECT ba.refer_code, cr.commission_percentage 
+            FROM branch_admin ba 
+            LEFT JOIN commission_rates cr ON cr.role_type = 'branch' 
+            WHERE ba.id = $1
+        `, [adminId]);
 
-        const commissionRate = rateResult.rows.length > 0
-            ? parseFloat(rateResult.rows[0].commission_percentage)
-            : 3.0; // Default to 3%
+        let commissionRate = 15.0;
+        let referCode = '';
 
-        // 2. Get Total AFFILIATE COMMISSIONS in this branch (use affiliate_amount column)
-        const commissionsQuery = `
-            SELECT 
-                COALESCE(SUM(COALESCE(acl.affiliate_amount, acl.commission_amount * 0.70)), 0) as total_affiliate_commissions,
-                COALESCE(SUM(acl.commission_amount), 0) as total_commission,
-                COUNT(acl.id) as total_orders
-            FROM affiliate_commission_log acl
-            JOIN affiliate_user u ON acl.affiliate_code = u.refer_code
-            WHERE u.branch ILIKE $1
-        `;
-
-        const commissionsResult = await pool.query(commissionsQuery, [branch]);
-        const totalAffiliateCommissions = parseFloat(commissionsResult.rows[0].total_affiliate_commissions || '0');
-        const totalOrders = parseInt(commissionsResult.rows[0].total_orders || '0');
-
-        // 3. Calculate Branch Admin Lifetime Earnings: X% of affiliate commissions
-        const lifetimeEarnings = totalAffiliateCommissions * (commissionRate / 100);
-
-        // 4. Get Total Paid Amount to this admin
-        let paidAmount = 0;
-        if (adminId) {
-            const paidQuery = `
-                SELECT COALESCE(SUM(amount), 0) as total_paid
-                FROM admin_payments
-                WHERE recipient_id = $1 AND recipient_type = 'branch' AND status = 'completed'
-            `;
-            const paidResult = await pool.query(paidQuery, [adminId]);
-            paidAmount = parseFloat(paidResult.rows[0].total_paid || '0');
+        if (adminDetailsRef.rows.length > 0) {
+            commissionRate = parseFloat(adminDetailsRef.rows[0].commission_percentage || '15.0');
+            referCode = adminDetailsRef.rows[0].refer_code;
         }
 
-        // 5. Current Earnings = Lifetime - Paid
-        const currentEarnings = lifetimeEarnings - paidAmount;
+        // 2. Statistics Query
+        // We aggregate logs assigned to this admin (by ID or refer code)
+        const statsQuery = `
+            SELECT
+                -- Override Commissions (Source = 'branch_admin' OR 'BRANCH' code logic if applicable)
+                COALESCE(SUM(CASE WHEN commission_source = 'branch_admin' THEN affiliate_commission ELSE 0 END), 0) as override_earnings,
+                COUNT(CASE WHEN commission_source = 'branch_admin' THEN 1 END) as override_orders,
+                
+                -- Direct Commissions (Source != 'branch_admin')
+                COALESCE(SUM(CASE WHEN commission_source != 'branch_admin' THEN affiliate_commission ELSE 0 END), 0) as direct_earnings,
+                COUNT(CASE WHEN commission_source != 'branch_admin' THEN 1 END) as direct_orders
+            FROM affiliate_commission_log
+            WHERE (affiliate_user_id = $1 OR affiliate_code = $2) AND status = 'CREDITED'
+        `;
+        const statsRes = await pool.query(statsQuery, [adminId, referCode]);
+        const statsData = statsRes.rows[0];
 
-        // 6. Get Recent Orders for Transparency
+        const overrideEarnings = parseFloat(statsData.override_earnings);
+        const directEarnings = parseFloat(statsData.direct_earnings);
+        const overrideOrders = parseInt(statsData.override_orders);
+        const directOrders = parseInt(statsData.direct_orders);
+
+        const totalEarnings = overrideEarnings + directEarnings;
+        const totalOrders = overrideOrders + directOrders;
+
+        // 3. Paid Amount
+        const paidQuery = `
+            SELECT COALESCE(SUM(CASE WHEN gross_amount > 0 THEN gross_amount ELSE (amount + COALESCE(tds_amount, 0)) END), 0) as total_paid
+            FROM admin_payments
+            WHERE recipient_id = $1 AND recipient_type = 'branch' AND status = 'completed'
+        `;
+        const paidResult = await pool.query(paidQuery, [adminId]);
+        const paidAmount = parseFloat(paidResult.rows[0].total_paid || '0');
+
+        const availableBalance = totalEarnings - paidAmount;
+
+        // 4. Recent Orders
         const recentOrdersQuery = `
             SELECT 
-                acl.id,
-                acl.order_id,
-                acl.order_amount,
-                acl.commission_amount,
-                acl.created_at,
-                acl.product_name,
-                u.first_name,
-                u.last_name,
-                u.refer_code,
-                u.branch
-            FROM affiliate_commission_log acl
-            JOIN affiliate_user u ON acl.affiliate_code = u.refer_code
-            WHERE u.branch ILIKE $1
-            ORDER BY acl.created_at DESC
-            LIMIT 50
+                id,
+                order_id,
+                order_amount,
+                commission_source,
+                affiliate_commission as commission_amount, -- The amount YOU earned
+                created_at,
+                product_name,
+                customer_name as first_name, -- Using customer name directly
+                '' as last_name,
+                affiliate_code as refer_code,
+                CASE 
+                    WHEN commission_source = 'branch_admin' THEN 'Affiliate Override'
+                    ELSE 'Direct Sale'
+                END as type
+            FROM affiliate_commission_log
+            WHERE affiliate_user_id = $1
+            ORDER BY created_at DESC
+            LIMIT 20
         `;
-
-        const recentOrdersResult = await pool.query(recentOrdersQuery, [branch]);
+        const recentOrdersResult = await pool.query(recentOrdersQuery, [adminId]);
 
         await pool.end();
 
         return NextResponse.json({
             success: true,
             stats: {
-                totalAffiliateCommissions,
+                totalEarnings,
+                overrideEarnings, // Affiliate Agent Commissions
+                directEarnings,   // Direct Referral Commissions
+
                 totalOrders,
-                commissionRate,
-                lifetimeEarnings,    // Total earned ever
-                paidAmount,          // Amount already paid by admin
-                currentEarnings,     // What's still owed (lifetime - paid)
-                totalEarnings: currentEarnings // For backward compatibility
+                overrideOrders,   // Affiliate Orders
+                directOrders,     // Direct Orders
+
+                paidAmount,
+                availableBalance,
+                currentEarnings: availableBalance, // Alias
+
+                commissionRate, // Override Rate
             },
             recentOrders: recentOrdersResult.rows
         });
 
     } catch (error: any) {
         console.error("Failed to fetch branch earnings:", error);
-        return NextResponse.json({
-            success: false,
-            error: error.message
-        }, { status: 500 });
+        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }
 }

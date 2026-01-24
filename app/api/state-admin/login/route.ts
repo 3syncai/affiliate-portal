@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
 
         // Find state admin by email
         const result = await pool.query(
-            `SELECT id, first_name, last_name, email, password_hash, phone, state, is_active, created_at
+            `SELECT id, first_name, last_name, email, password_hash, phone, state, refer_code, is_active, created_at
              FROM state_admin WHERE email = $1`,
             [email]
         );
@@ -89,7 +89,8 @@ export async function POST(req: NextRequest) {
                 last_name: stateAdmin.last_name,
                 email: stateAdmin.email,
                 phone: stateAdmin.phone,
-                state: stateAdmin.state
+                state: stateAdmin.state,
+                refer_code: stateAdmin.refer_code
             }
         });
 

@@ -12,7 +12,9 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ success: false, error: "State parameter is required" }, { status: 400 });
         }
 
-        console.log("Fetching activities for state:", state);
+        // Sanitize state parameter: remove "State" suffix if present (e.g. "Maharashtra State" -> "Maharashtra")
+        const cleanState = state.replace(/\s+State$/i, "").trim();
+        console.log("Fetching activities for state:", cleanState, "(Original:", state, ")");
 
         const pool = new Pool({
             connectionString: process.env.DATABASE_URL || process.env.NEXT_PUBLIC_DATABASE_URL,
@@ -38,7 +40,7 @@ export async function GET(req: NextRequest) {
                 ORDER BY created_at DESC
                 LIMIT 20
             `;
-            const activityResult = await pool.query(activityLogQuery, [`%${state}%`]);
+            const activityResult = await pool.query(activityLogQuery, [`%${cleanState}%`]);
 
             activityResult.rows.forEach(row => {
                 activities.push({
@@ -54,28 +56,44 @@ export async function GET(req: NextRequest) {
             console.log("Activity log query failed (table may not exist):", err);
         }
 
-        // 2. Get recent user creations/signups as "approvals"
+        // 2. Get recent user creations with REFERRER details
         const approvalsQuery = `
             SELECT 
-                u.id,
-                u.first_name,
-                u.last_name,
-                u.branch,
-                u.created_at
+                u.id, u.first_name, u.last_name, u.branch, u.created_at, u.referred_by,
+                -- Try to find who referred them
+                b.first_name as b_first, b.last_name as b_last, 'Branch' as b_role,
+                asm.first_name as asm_first, asm.last_name as asm_last, 'ASM' as asm_role,
+                aff.first_name as aff_first, aff.last_name as aff_last, 'Affiliate' as aff_role
             FROM affiliate_user u
+            LEFT JOIN branch_admin b ON u.referred_by = b.refer_code
+            LEFT JOIN area_sales_manager asm ON u.referred_by = asm.refer_code
+            LEFT JOIN affiliate_user aff ON u.referred_by = aff.refer_code
             WHERE u.state ILIKE $1 
             ORDER BY u.created_at DESC
             LIMIT 20
         `;
 
         try {
-            const approvalsResult = await pool.query(approvalsQuery, [`%${state}%`]);
+            const approvalsResult = await pool.query(approvalsQuery, [`%${cleanState}%`]);
 
             approvalsResult.rows.forEach(row => {
+                let message = `${row.first_name} ${row.last_name} joined`;
+
+                // Construct message based on referrer
+                if (row.b_first) {
+                    message = `Branch Admin ${row.b_first} ${row.b_last} referred ${row.first_name} ${row.last_name}`;
+                } else if (row.asm_first) {
+                    message = `ASM ${row.asm_first} ${row.asm_last} referred ${row.first_name} ${row.last_name}`;
+                } else if (row.aff_first) {
+                    message = `Affiliate ${row.aff_first} ${row.aff_last} referred ${row.first_name} ${row.last_name}`;
+                } else if (!row.referred_by) {
+                    message = `${row.first_name} ${row.last_name} joined directly`;
+                }
+
                 activities.push({
                     id: `approval-${row.id}`,
-                    type: 'approval',
-                    message: `${row.first_name} ${row.last_name} was approved as an affiliate`,
+                    type: 'approval', // Keep type 'approval' or change to 'referral' if frontend supports it
+                    message: message,
                     branch_name: row.branch || 'Unknown Branch',
                     created_at: row.created_at
                 });
@@ -102,7 +120,7 @@ export async function GET(req: NextRequest) {
         `;
 
         try {
-            const commissionsResult = await pool.query(commissionsQuery, [`%${state}%`]);
+            const commissionsResult = await pool.query(commissionsQuery, [`%${cleanState}%`]);
 
             commissionsResult.rows.forEach(row => {
                 activities.push({

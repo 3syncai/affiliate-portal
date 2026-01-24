@@ -60,7 +60,9 @@ export async function POST(req: NextRequest) {
             transactionId,
             paymentMethod,
             accountDetails,
-            notes
+            notes,
+            tdsAmount,
+            grossAmount
         } = body;
 
         // Validation
@@ -84,17 +86,23 @@ export async function POST(req: NextRequest) {
                 recipient_name,
                 recipient_email,
                 amount,
+                tds_amount,
+                gross_amount,
                 transaction_id,
                 payment_method,
                 account_details,
                 paid_by,
                 notes,
                 status
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
             RETURNING *
         `;
 
         const accountDetailsJson = accountDetails ? JSON.stringify(accountDetails) : null;
+
+        // Ensure values are numbers/decimals
+        const cleanTds = tdsAmount ? parseFloat(tdsAmount) : 0;
+        const cleanGross = grossAmount ? parseFloat(grossAmount) : 0;
 
         const result = await pool.query(insertQuery, [
             recipientId,
@@ -102,6 +110,8 @@ export async function POST(req: NextRequest) {
             recipientName,
             recipientEmail,
             amount,
+            cleanTds,
+            cleanGross,
             transactionId,
             paymentMethod || 'Bank Transfer',
             accountDetailsJson,

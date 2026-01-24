@@ -46,6 +46,11 @@ export default function PaymentsPage() {
     const [upiId, setUpiId] = useState("")
     const [notes, setNotes] = useState("")
 
+    // TDS State
+    const [tdsPercentage, setTdsPercentage] = useState(18)
+    const [grossAmount, setGrossAmount] = useState(0)
+    const [tdsDeduction, setTdsDeduction] = useState(0)
+
     useEffect(() => {
         fetchData()
     }, [])
@@ -53,9 +58,10 @@ export default function PaymentsPage() {
     const fetchData = async () => {
         setLoading(true)
         try {
-            const [adminsRes, paymentsRes] = await Promise.all([
+            const [adminsRes, paymentsRes, tdsRes] = await Promise.all([
                 axios.get("/api/admin/payments/admins"),
-                axios.get("/api/admin/payments")
+                axios.get("/api/admin/payments"),
+                axios.get("/api/admin/tds-settings")
             ])
 
             if (adminsRes.data.success) {
@@ -63,6 +69,9 @@ export default function PaymentsPage() {
             }
             if (paymentsRes.data.success) {
                 setPayments(paymentsRes.data.payments)
+            }
+            if (tdsRes.data.success) {
+                setTdsPercentage(tdsRes.data.tdsPercentage || 18)
             }
         } catch (error) {
             console.error("Failed to fetch data:", error)
@@ -96,6 +105,8 @@ export default function PaymentsPage() {
                 recipientName: selectedAdmin.name,
                 recipientEmail: selectedAdmin.email,
                 amount: parseFloat(amount),
+                grossAmount: grossAmount,
+                tdsAmount: tdsDeduction,
                 transactionId,
                 paymentMethod,
                 accountDetails,
@@ -113,6 +124,8 @@ export default function PaymentsPage() {
                 setUpiId("")
                 setNotes("")
                 setSearchTerm("")
+                setGrossAmount(0)
+                setTdsDeduction(0)
                 // Refresh data
                 fetchData()
             }
@@ -122,6 +135,18 @@ export default function PaymentsPage() {
         } finally {
             setProcessing(false)
         }
+    }
+
+    const handleAdminSelect = (admin: Admin) => {
+        setSelectedAdmin(admin)
+        const gross = admin.totalEarnings
+        const tds = (gross * tdsPercentage) / 100
+        const net = gross - tds
+
+        setGrossAmount(gross)
+        setTdsDeduction(tds)
+        setAmount(net.toFixed(2))
+        setNotes(`TDS Deducted: ₹${tds.toFixed(2)} (${tdsPercentage}%)`)
     }
 
     const formatCurrency = (amount: number) => {
@@ -184,13 +209,10 @@ export default function PaymentsPage() {
                                 filteredAdmins.map((admin) => (
                                     <button
                                         key={admin.id}
-                                        onClick={() => {
-                                            setSelectedAdmin(admin)
-                                            setAmount(admin.totalEarnings.toFixed(2))
-                                        }}
+                                        onClick={() => handleAdminSelect(admin)}
                                         className={`w-full text-left p-4 rounded-lg border-2 transition-all ${selectedAdmin?.id === admin.id
-                                                ? "border-indigo-500 bg-indigo-50"
-                                                : "border-gray-200 hover:border-gray-300 bg-white"
+                                            ? "border-indigo-500 bg-indigo-50"
+                                            : "border-gray-200 hover:border-gray-300 bg-white"
                                             }`}
                                     >
                                         <div className="flex items-start justify-between">
@@ -221,23 +243,39 @@ export default function PaymentsPage() {
                             <h2 className="text-lg font-semibold text-gray-900 mb-4">Payment Details</h2>
 
                             <div className="space-y-4">
-                                {/* Amount */}
+                                {/* Payment Breakdown */}
+                                <div className="bg-gray-50 rounded-lg p-4 space-y-2 mb-4 border border-gray-200">
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-gray-600">Gross Earnings:</span>
+                                        <span className="font-medium text-gray-900">{formatCurrency(grossAmount)}</span>
+                                    </div>
+                                    <div className="flex justify-between text-sm text-red-600">
+                                        <span>TDS Deduction ({tdsPercentage}%):</span>
+                                        <span className="font-medium">- {formatCurrency(tdsDeduction)}</span>
+                                    </div>
+                                    <div className="border-t border-gray-300 pt-2 mt-2 flex justify-between text-base font-bold">
+                                        <span className="text-gray-900">Net Payable:</span>
+                                        <span className="text-indigo-600">{formatCurrency(parseFloat(amount))}</span>
+                                    </div>
+                                </div>
+
+                                {/* Amount (Net) */}
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Amount (Total Earnings) <span className="text-red-500">*</span>
+                                        Payment Amount (Net Payable) <span className="text-red-500">*</span>
                                     </label>
                                     <div className="relative">
                                         <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                                         <input
                                             type="text"
-                                            value={formatCurrency(parseFloat(amount || "0"))}
+                                            value={amount}
                                             readOnly
                                             disabled
-                                            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 font-semibold cursor-not-allowed"
+                                            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg bg-indigo-50 text-indigo-700 font-bold text-lg cursor-not-allowed border-indigo-200"
                                         />
                                     </div>
-                                    <p className="text-xs text-green-600 mt-1 font-medium">
-                                        ✓ Auto-calculated based on admin's total earnings
+                                    <p className="text-xs text-indigo-600 mt-1 font-medium">
+                                        ✓ Auto-calculated after deductions
                                     </p>
                                 </div>
 
@@ -321,7 +359,7 @@ export default function PaymentsPage() {
                                 {/* Notes */}
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Notes (Optional)
+                                        Notes <span className="text-xs text-gray-500">(Auto-populated with TDS details)</span>
                                     </label>
                                     <textarea
                                         value={notes}

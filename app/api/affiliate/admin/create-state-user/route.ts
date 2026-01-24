@@ -49,14 +49,38 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        // Insert state admin into state_admin table (no referral code)
+        // Generate unique referral code: STATE + first 3 chars of name + 5 random digits
+        // Example: STATEVIS12345
+        const generateReferCode = () => {
+            const namePart = first_name.substring(0, 3).toUpperCase();
+            const randomDigits = Math.floor(10000 + Math.random() * 90000);
+            return `STATE${namePart}${randomDigits}`;
+        }
+
+        let generatedReferCode = generateReferCode();
+
+        // Ensure unique refer code
+        let codeExists = true;
+        while (codeExists) {
+            const codeCheck = await pool.query(
+                "SELECT id FROM state_admin WHERE refer_code = $1",
+                [generatedReferCode]
+            );
+            if (codeCheck.rows.length === 0) {
+                codeExists = false;
+            } else {
+                generatedReferCode = generateReferCode();
+            }
+        }
+
+        // Insert state admin into state_admin table
         // Normalize state name (First letter caps)
         const insertQuery = `
             INSERT INTO state_admin (
-                first_name, last_name, email, password_hash, phone, state, is_active, created_at, updated_at
+                first_name, last_name, email, password_hash, phone, state, refer_code, is_active, created_at, updated_at
             ) VALUES (
-                $1, $2, $3, $4, $5, INITCAP(LOWER($6)), TRUE, NOW(), NOW()
-            ) RETURNING id, email, first_name, last_name, state, is_active
+                $1, $2, $3, $4, $5, INITCAP(LOWER($6)), $7, TRUE, NOW(), NOW()
+            ) RETURNING id, email, first_name, last_name, state, refer_code, is_active
         `;
 
         const result = await pool.query(insertQuery, [
@@ -65,7 +89,8 @@ export async function POST(req: NextRequest) {
             email,
             hashedPassword,
             phone,
-            state
+            state,
+            generatedReferCode
         ]);
 
         await pool.end();
@@ -82,6 +107,7 @@ export async function POST(req: NextRequest) {
                 first_name: user.first_name,
                 last_name: user.last_name,
                 state: user.state,
+                refer_code: user.refer_code,
                 is_active: user.is_active
             }
         });

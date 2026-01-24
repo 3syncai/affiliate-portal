@@ -32,37 +32,37 @@ export async function GET() {
 
         await pool.end();
 
-        const gstPercentage = result.rows.length > 0
+        const tdsPercentage = result.rows.length > 0
             ? parseFloat(result.rows[0].setting_value)
             : 18; // Default 18%
 
         return NextResponse.json({
             success: true,
-            gstPercentage
+            tdsPercentage
         });
     } catch (error) {
-        console.error('Error fetching GST settings:', error);
+        console.error('Error fetching TDS settings:', error);
         return NextResponse.json(
             {
                 success: false,
-                error: 'Failed to fetch GST settings'
+                error: 'Failed to fetch TDS settings'
             },
             { status: 500 }
         );
     }
 }
 
-// POST - Save GST settings to database
+// POST - Save TDS settings to database
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-        const { gstPercentage } = body;
+        const { tdsPercentage } = body;
 
-        if (typeof gstPercentage !== 'number' || gstPercentage < 0 || gstPercentage > 100) {
+        if (typeof tdsPercentage !== 'number' || tdsPercentage < 0 || tdsPercentage > 100) {
             return NextResponse.json(
                 {
                     success: false,
-                    error: 'Invalid GST percentage. Must be between 0 and 100'
+                    error: 'Invalid TDS percentage. Must be between 0 and 100'
                 },
                 { status: 400 }
             );
@@ -84,7 +84,8 @@ export async function POST(request: Request) {
     `;
         await pool.query(createTableQuery);
 
-        // Insert or update GST percentage
+        // Insert or update TDS percentage
+        // NOTE: We keep 'gst_percentage' as the DB key to avoid migration, but treat it as TDS
         const upsertQuery = `
       INSERT INTO app_settings (setting_key, setting_value, updated_at)
       VALUES ('gst_percentage', $1, CURRENT_TIMESTAMP)
@@ -95,12 +96,12 @@ export async function POST(request: Request) {
       RETURNING *
     `;
 
-        await pool.query(upsertQuery, [gstPercentage.toString()]);
+        await pool.query(upsertQuery, [tdsPercentage.toString()]);
         await pool.end();
 
         return NextResponse.json({
             success: true,
-            message: 'GST settings saved successfully to database'
+            message: 'TDS settings saved successfully to database'
         });
     } catch (error) {
         console.error('Error saving GST settings:', error);

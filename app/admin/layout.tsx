@@ -34,7 +34,7 @@ const navigationItems = [
   { name: "Set Commission", href: "/admin/set-commission", icon: Percent },
   { name: "Product Commission", href: "/admin/product-commission", icon: Percent },
   { name: "Total Agent", href: "/admin/total-agent", icon: Users },
-  { name: "GST Settings", href: "/admin/gst-settings", icon: Settings },
+  { name: "TDS Settings", href: "/admin/tds-settings", icon: Settings },
 ]
 
 

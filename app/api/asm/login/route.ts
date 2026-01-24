@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
 
         // Find ASM by email
         const result = await pool.query(
-            `SELECT id, first_name, last_name, email, password_hash, phone, city, state, role, is_active, created_at
+            `SELECT id, first_name, last_name, email, password_hash, phone, city, state, role, is_active, refer_code, created_at
              FROM area_sales_manager WHERE email = $1`,
             [email]
         );
@@ -91,7 +91,8 @@ export async function POST(req: NextRequest) {
                 email: asm.email,
                 phone: asm.phone,
                 city: asm.city,
-                state: asm.state
+                state: asm.state,
+                refer_code: asm.refer_code
             }
         });
 

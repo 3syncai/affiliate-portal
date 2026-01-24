@@ -62,13 +62,37 @@ export async function POST(req: NextRequest) {
             );
         }
 
+        // Generate unique referral code: BRANCH + first 3 chars of name + 5 random digits
+        // Example: BRANCHVIS12345
+        const generateReferCode = () => {
+            const namePart = first_name.substring(0, 3).toUpperCase();
+            const randomDigits = Math.floor(10000 + Math.random() * 90000);
+            return `BRANCH${namePart}${randomDigits}`;
+        }
+
+        let generatedReferCode = generateReferCode();
+
+        // Ensure unique refer code
+        let codeExists = true;
+        while (codeExists) {
+            const codeCheck = await pool.query(
+                "SELECT id FROM branch_admin WHERE refer_code = $1",
+                [generatedReferCode]
+            );
+            if (codeCheck.rows.length === 0) {
+                codeExists = false;
+            } else {
+                generatedReferCode = generateReferCode();
+            }
+        }
+
         // Insert Branch Admin with normalized names (First letter caps)
         const insertQuery = `
             INSERT INTO branch_admin (
-                first_name, last_name, email, password_hash, phone, branch, city, state, created_by, role, is_active, created_at, updated_at
+                first_name, last_name, email, password_hash, phone, branch, city, state, created_by, refer_code, role, is_active, created_at, updated_at
             ) VALUES (
-                $1, $2, $3, $4, $5, INITCAP(LOWER($6)), INITCAP(LOWER($7)), INITCAP(LOWER($8)), $9, 'branch', TRUE, NOW(), NOW()
-            ) RETURNING id, email, first_name, last_name, branch, city, state, role, is_active
+                $1, $2, $3, $4, $5, INITCAP(LOWER($6)), INITCAP(LOWER($7)), INITCAP(LOWER($8)), $9, $10, 'branch', TRUE, NOW(), NOW()
+            ) RETURNING id, email, first_name, last_name, branch, city, state, refer_code, role, is_active
         `;
 
         const result = await pool.query(insertQuery, [
@@ -80,7 +104,8 @@ export async function POST(req: NextRequest) {
             branch,
             city,
             state,
-            asm_id
+            asm_id,
+            generatedReferCode
         ]);
 
         await pool.end();
@@ -99,6 +124,7 @@ export async function POST(req: NextRequest) {
                 branch: branchAdmin.branch,
                 city: branchAdmin.city,
                 state: branchAdmin.state,
+                refer_code: branchAdmin.refer_code,
                 role: branchAdmin.role,
                 is_active: branchAdmin.is_active
             }

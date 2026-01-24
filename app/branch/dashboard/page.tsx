@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Users, TrendingUp, DollarSign, ShoppingBag, CheckCircle, UserPlus, CreditCard, Clock, ArrowUpRight, MapPin } from "lucide-react"
+import { Users, TrendingUp, DollarSign, ShoppingBag, CheckCircle, UserPlus, CreditCard, Clock, ArrowUpRight, MapPin, Copy, Check, Link2, TrendingDown, Share2 } from "lucide-react"
 import axios from "axios"
 import { useTheme } from "@/contexts/ThemeContext"
 
@@ -30,6 +30,7 @@ export default function BranchDashboard() {
         totalCommission: 0,
         totalOrders: 0
     })
+    const [copied, setCopied] = useState(false)
     const [activities, setActivities] = useState<Activity[]>([])
     const [loading, setLoading] = useState(true)
     const [activitiesLoading, setActivitiesLoading] = useState(true)
@@ -80,12 +81,10 @@ export default function BranchDashboard() {
         const diffMins = Math.floor(diffMs / (1000 * 60))
         const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
 
-        // Show relative time only for recent activities
         if (diffMins < 1) return "Just now"
         if (diffMins < 60) return `${diffMins}m ago`
         if (diffHours < 24) return `${diffHours}h ago`
 
-        // For anything older than 24h, show actual date
         const currentYear = now.getFullYear()
         const dateYear = date.getFullYear()
 
@@ -113,21 +112,19 @@ export default function BranchDashboard() {
         }
     }
 
-    const getActivityColor = (type: string) => {
-        switch (type) {
-            case 'approval': return "text-green-600"
-            case 'affiliate_request': return "text-orange-600"
-            case 'order': return "text-blue-600"
-            case 'withdrawal': return "text-purple-600"
-            default: return "text-gray-600"
+    const copyReferralCode = async () => {
+        if (user?.refer_code) {
+            await navigator.clipboard.writeText(user.refer_code)
+            setCopied(true)
+            setTimeout(() => setCopied(false), 2000)
         }
     }
 
     const statCards = [
-        { title: "Total Agents", value: stats.totalAgents, icon: Users, gradient: "from-orange-500 to-orange-600" },
-        { title: "Pending Approval", value: stats.pendingApproval, icon: TrendingUp, gradient: "from-yellow-500 to-yellow-600" },
-        { title: "Total Commission", value: `₹${stats.totalCommission.toLocaleString("en-IN")}`, icon: DollarSign, gradient: "from-green-500 to-green-600" },
-        { title: "Total Orders", value: stats.totalOrders, icon: ShoppingBag, gradient: "from-purple-500 to-purple-600" }
+        { title: "Total Agents", value: stats.totalAgents, icon: Users, color: "text-orange-600", bg: "bg-orange-50" },
+        { title: "Pending Approval", value: stats.pendingApproval, icon: TrendingUp, color: "text-yellow-600", bg: "bg-yellow-50" },
+        { title: "Total Commission", value: `₹${stats.totalCommission.toLocaleString("en-IN")}`, icon: DollarSign, color: "text-green-600", bg: "bg-green-50" },
+        { title: "Total Orders", value: stats.totalOrders, icon: ShoppingBag, color: "text-purple-600", bg: "bg-purple-50" }
     ]
 
     return (
@@ -137,43 +134,37 @@ export default function BranchDashboard() {
                 <div>
                     <h1 className="text-2xl font-bold tracking-tight text-gray-900">Dashboard</h1>
                     <p className="text-sm text-gray-500 mt-1">
-                        Welcome back, {user?.first_name} • <span className="font-medium" style={{ color: theme.primary }}>{user?.branch} Branch</span>
+                        Overview of your branch performance
                     </p>
                 </div>
-                <div className="flex items-center gap-2 text-sm text-gray-500 bg-white px-3 py-1.5 rounded-lg border border-gray-200 shadow-sm">
-                    <Clock className="w-4 h-4" />
-                    <span>Last updated: {new Date().toLocaleTimeString()}</span>
+                <div className="flex items-center gap-3">
+                    <span className="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10">
+                        {user?.branch} Branch
+                    </span>
+                    <div className="flex items-center gap-2 text-sm text-gray-500 bg-white px-3 py-1.5 rounded-lg border border-gray-200 shadow-sm">
+                        <Clock className="w-4 h-4" />
+                        <span>{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                    </div>
                 </div>
             </div>
 
-            {/* Stats Cards */}
+            {/* Stats Cards - Clean Style */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {statCards.map((stat, index) => {
                     const Icon = stat.icon
                     return (
-                        <div key={index} className="group bg-white rounded-xl border border-gray-200 p-5 hover:border-gray-300 transition-all duration-200 hover:shadow-md relative overflow-hidden">
-                            <div className="flex items-start justify-between relative z-10">
+                        <div key={index} className="bg-white rounded-xl border border-gray-200 p-6 hover:border-gray-300 transition-all duration-200 shadow-sm">
+                            <div className="flex justify-between items-start mb-4">
                                 <div>
-                                    <p className="text-sm font-medium text-gray-500 group-hover:text-gray-700 transition-colors">{stat.title}</p>
-                                    <h3 className="text-2xl font-bold text-gray-900 mt-2 tracking-tight">
+                                    <p className="text-sm font-medium text-gray-500">{stat.title}</p>
+                                    <h3 className="text-2xl font-bold text-gray-900 mt-1 tracking-tight">
                                         {loading ? "..." : stat.value}
                                     </h3>
                                 </div>
-                                <div
-                                    className="p-3 rounded-lg transition-colors"
-                                    style={{
-                                        backgroundColor: `${theme.primary}10`,
-                                        color: theme.primary
-                                    }}
-                                >
-                                    <Icon className="w-5 h-5" />
+                                <div className={`p-2.5 rounded-lg ${stat.bg}`}>
+                                    <Icon className={`w-5 h-5 ${stat.color}`} />
                                 </div>
                             </div>
-                            {/* Decorational background circle */}
-                            <div
-                                className="absolute -bottom-4 -right-4 w-24 h-24 rounded-full opacity-0 group-hover:opacity-5 transition-opacity duration-300 pointer-events-none"
-                                style={{ backgroundColor: theme.primary }}
-                            />
                         </div>
                     )
                 })}
@@ -181,118 +172,112 @@ export default function BranchDashboard() {
 
             {/* Main Content Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Recent Activity - Takes 2 columns */}
-                <div className="lg:col-span-2 space-y-4">
-                    <div className="flex items-center justify-between">
-                        <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+
+                {/* Left Column: Activity Feed */}
+                <div className="lg:col-span-2 space-y-6">
+
+                    {/* Activity Section */}
+                    <div>
+                        <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2 mb-4">
                             Recent Activity
                             <span className="relative flex h-2 w-2">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ backgroundColor: theme.primary }}></span>
-                                <span className="relative inline-flex rounded-full h-2 w-2" style={{ backgroundColor: theme.primary }}></span>
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 bg-green-500"></span>
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
                             </span>
                         </h2>
-                    </div>
 
-                    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
-                        <div className="p-6">
-                            {activitiesLoading ? (
-                                <div className="flex items-center justify-center py-12">
-                                    <div className="flex items-center gap-3 text-gray-500">
-                                        <div className="w-5 h-5 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: theme.primary }}></div>
-                                        <span className="text-sm font-medium">Loading activity feed...</span>
+                        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+                            <div className="p-0">
+                                {activitiesLoading ? (
+                                    <div className="flex items-center justify-center py-12">
+                                        <div className="w-6 h-6 border-2 border-t-transparent border-gray-300 rounded-full animate-spin"></div>
                                     </div>
-                                </div>
-                            ) : activities.length === 0 ? (
-                                <div className="text-center py-16">
-                                    <div
-                                        className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center"
-                                        style={{ backgroundColor: `${theme.primary}10` }}
-                                    >
-                                        <Clock className="w-8 h-8" style={{ color: theme.primary }} />
+                                ) : activities.length === 0 ? (
+                                    <div className="text-center py-16">
+                                        <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-gray-50 flex items-center justify-center">
+                                            <Clock className="w-6 h-6 text-gray-400" />
+                                        </div>
+                                        <p className="text-gray-500 text-sm">No recent activity found.</p>
                                     </div>
-                                    <h3 className="text-gray-900 font-medium mb-1">No recent activity</h3>
-                                    <p className="text-gray-500 text-sm">Activities from your branch will appear here.</p>
-                                </div>
-                            ) : (
-                                <div className="relative space-y-8 before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-gray-200 before:to-transparent">
-                                    {activities.map((activity, idx) => {
-                                        const { icon: ActivityIcon, bgColor, iconColor } = getActivityIcon(activity.type)
-                                        return (
-                                            <div key={activity.id} className="relative flex items-start group">
-                                                <div
-                                                    className="absolute left-0 top-1 mt-1 ml-2.5 h-5 w-5 rounded-full border-2 border-white bg-white flex items-center justify-center z-10"
-                                                >
-                                                    <div className="h-2 w-2 rounded-full ring-2 ring-white" style={{ backgroundColor: theme.primary }}></div>
-                                                </div>
-                                                <div className="ml-12 w-full">
-                                                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-1 sm:gap-4">
-                                                        <div>
-                                                            <p className="text-sm font-semibold text-gray-900 group-hover:text-gray-700 transition-colors">
-                                                                {activity.data.name}
-                                                                <span className="font-normal text-gray-500"> {activity.data.action}</span>
+                                ) : (
+                                    <div className="divide-y divide-gray-100">
+                                        {activities.map((activity, idx) => {
+                                            const { icon: ActivityIcon, bgColor, iconColor } = getActivityIcon(activity.type)
+                                            return (
+                                                <div key={activity.id} className="p-4 hover:bg-gray-50 transition-colors flex items-start gap-4">
+                                                    <div className={`mt-1 p-2 rounded-full flex-shrink-0 ${bgColor}`}>
+                                                        <ActivityIcon className={`w-4 h-4 ${iconColor}`} />
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="flex justify-between items-start">
+                                                            <p className="text-sm font-medium text-gray-900 truncate">
+                                                                {activity.data.name} <span className="font-normal text-gray-500">{activity.data.action}</span>
                                                             </p>
-                                                            {activity.type === 'order' && activity.data.product_name && (
-                                                                <div className="mt-1.5 flex items-center gap-2 text-xs text-gray-500 bg-gray-50 px-2.5 py-1.5 rounded-md w-fit">
-                                                                    <ShoppingBag className="w-3 h-3" />
-                                                                    <span className="truncate max-w-[200px]">{activity.data.product_name}</span>
-                                                                    <span className="border-l border-gray-300 pl-2 ml-1">#{activity.data.order_id?.slice(-8)}</span>
-                                                                </div>
-                                                            )}
+                                                            <span className="text-xs text-gray-400 whitespace-nowrap ml-2">
+                                                                {formatTimeAgo(activity.timestamp)}
+                                                            </span>
                                                         </div>
-                                                        <span className="text-xs font-medium text-gray-400 whitespace-nowrap pt-0.5">
-                                                            {formatTimeAgo(activity.timestamp)}
-                                                        </span>
+                                                        {activity.type === 'order' && activity.data.product_name && (
+                                                            <p className="text-xs text-gray-500 mt-0.5 truncate bg-gray-50 px-2 py-1 rounded w-fit border border-gray-100">
+                                                                {activity.data.product_name} • <span className="font-medium">#{activity.data.order_id?.slice(-6)}</span>
+                                                            </p>
+                                                        )}
                                                     </div>
                                                 </div>
-                                            </div>
-                                        )
-                                    })}
-                                </div>
-                            )}
+                                            )
+                                        })}
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                {/* Right Column */}
+                {/* Right Column: Referral & Actions */}
                 <div className="space-y-6">
-                    {/* Branch Status Card */}
-                    <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm relative overflow-hidden">
-                        <div
-                            className="absolute top-0 right-0 p-4 opacity-10"
-                            style={{ color: theme.primary }}
-                        >
-                            <UserPlus className="w-24 h-24 -mr-8 -mt-8" />
-                        </div>
 
-                        <div className="relative z-10">
-                            <h3 className="font-bold text-gray-900 mb-1">Branch Overview</h3>
-                            <p className="text-sm text-gray-500 mb-6 flex items-center gap-1.5">
-                                <MapPin className="w-3.5 h-3.5" />
-                                {user?.city || 'Location'}, India
-                            </p>
+                    {/* Referral Card - Professional & Clean */}
+                    {user?.refer_code && (
+                        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                            <div className="p-6">
+                                <div className="flex items-center gap-3 mb-4">
+                                    <div className="p-2 bg-blue-50 rounded-lg">
+                                        <Share2 className="w-5 h-5 text-blue-600" />
+                                    </div>
+                                    <div>
+                                        <h3 className="font-bold text-gray-900">Your Referral Code</h3>
+                                        <p className="text-xs text-gray-500">Share to earn direct commissions</p>
+                                    </div>
+                                </div>
 
-                            <div className="space-y-4">
-                                <div className="p-4 rounded-lg bg-gray-50 border border-gray-100">
-                                    <div className="flex items-center justify-between mb-2">
-                                        <span className="text-sm font-medium text-gray-600">Active Agents</span>
-                                        <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-700">Live</span>
+                                <div className="bg-gray-50 border border-gray-200 rounded-lg p-1 flex items-center gap-2 mb-4">
+                                    <div className="flex-1 px-3 py-2 font-mono text-lg font-bold text-gray-800 tracking-wider text-center">
+                                        {user.refer_code}
                                     </div>
-                                    <div className="flex items-baseline gap-2">
-                                        <span className="text-2xl font-bold text-gray-900">{stats.totalAgents}</span>
-                                        <span className="text-xs text-gray-500">total agents</span>
+                                    <button
+                                        onClick={copyReferralCode}
+                                        className="p-2 bg-white border border-gray-200 rounded-md hover:bg-gray-50 transition-all text-gray-600 hover:text-gray-900 shadow-sm"
+                                        title="Copy Code"
+                                    >
+                                        {copied ? <Check className="w-5 h-5 text-green-600" /> : <Copy className="w-5 h-5" />}
+                                    </button>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-3 text-center">
+                                    <div className="p-3 rounded-lg bg-emerald-50 border border-emerald-100">
+                                        <p className="text-emerald-700 text-lg font-bold">85%</p>
+                                        <p className="text-emerald-600/80 text-[10px] uppercase font-semibold tracking-wide">Direct Sales</p>
                                     </div>
-                                    <div className="w-full bg-gray-200 rounded-full h-1.5 mt-3">
-                                        <div
-                                            className="h-1.5 rounded-full"
-                                            style={{ width: '70%', backgroundColor: theme.primary }}
-                                        ></div>
+                                    <div className="p-3 rounded-lg bg-blue-50 border border-blue-100">
+                                        <p className="text-blue-700 text-lg font-bold">15%</p>
+                                        <p className="text-blue-600/80 text-[10px] uppercase font-semibold tracking-wide">Override</p>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    )}
 
-                    {/* Quick Actions */}
+                    {/* Quick Attributes */}
                     <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
                         <div className="px-5 py-4 border-b border-gray-50 bg-gray-50/50">
                             <h3 className="font-bold text-gray-900 text-sm uppercase tracking-wider">Quick Attributes</h3>
@@ -304,42 +289,43 @@ export default function BranchDashboard() {
                                     desc: `${stats.pendingApproval} waiting`,
                                     href: "/branch/affiliate-request",
                                     icon: TrendingUp,
-                                    color: "#eab308" // yellow-500
+                                    color: "text-yellow-600",
+                                    bg: "bg-yellow-50"
                                 },
                                 {
                                     name: "View Agents",
                                     desc: "Manage team",
                                     href: "/branch/agents",
                                     icon: Users,
-                                    color: "#f97316" // orange-500
+                                    color: "text-orange-600",
+                                    bg: "bg-orange-50"
                                 },
                                 {
                                     name: "Pending Payouts",
                                     desc: "Review withdrawals",
                                     href: "/branch/pending-payout",
                                     icon: CreditCard,
-                                    color: "#10b981" // green-500
+                                    color: "text-emerald-600",
+                                    bg: "bg-emerald-50"
                                 },
                                 {
                                     name: "Commission Report",
                                     desc: "View earnings",
                                     href: "/branch/total-commission",
                                     icon: DollarSign,
-                                    color: "#a855f7" // purple-500
+                                    color: "text-purple-600",
+                                    bg: "bg-purple-50"
                                 }
                             ].map((action, i) => {
                                 const Icon = action.icon
                                 return (
                                     <a key={i} href={action.href} className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors group">
                                         <div className="flex items-center gap-4">
-                                            <div
-                                                className="w-10 h-10 rounded-lg flex items-center justify-center transition-transform group-hover:scale-105"
-                                                style={{ backgroundColor: `${action.color}15` }}
-                                            >
-                                                <Icon className="w-5 h-5" style={{ color: action.color }} />
+                                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center transition-transform group-hover:scale-105 ${action.bg}`}>
+                                                <Icon className={`w-5 h-5 ${action.color}`} />
                                             </div>
                                             <div>
-                                                <p className="text-sm font-semibold text-gray-900">{action.name}</p>
+                                                <p className="text-sm font-semibold text-gray-900 group-hover:text-gray-700">{action.name}</p>
                                                 <p className="text-xs text-gray-500">{action.desc}</p>
                                             </div>
                                         </div>

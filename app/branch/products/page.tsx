@@ -33,6 +33,8 @@ export default function BranchProductsPage() {
     const [error, setError] = useState<string | null>(null)
     const [user, setUser] = useState<any>(null)
 
+    const [commissionRate, setCommissionRate] = useState<number>(0)
+
     useEffect(() => {
         const userData = localStorage.getItem("affiliate_user")
         const token = localStorage.getItem("affiliate_token")
@@ -41,11 +43,31 @@ export default function BranchProductsPage() {
         }
         if (token) {
             fetchProducts(token)
+            fetchCommissionRates()
         } else {
             setLoading(false)
             setError("Not authenticated")
         }
     }, [])
+
+    const fetchCommissionRates = async () => {
+        try {
+            const response = await axios.get("/api/admin/commission-rates")
+            if (response.data.success && response.data.rates) {
+                const affiliateRateObj = response.data.rates.find((r: any) => r.role_type === "affiliate")
+                const branchDirectRateObj = response.data.rates.find((r: any) => r.role_type === "branch_direct")
+
+                const baseRate = parseFloat(affiliateRateObj?.commission_percentage || '70')
+                const bonusRate = parseFloat(branchDirectRateObj?.commission_percentage || '15')
+
+                setCommissionRate(baseRate + bonusRate)
+            }
+        } catch (err) {
+            console.error("Error fetching commission rates:", err)
+            // Default fallback
+            setCommissionRate(85)
+        }
+    }
 
     const fetchProducts = async (token: string) => {
         try {
@@ -162,7 +184,7 @@ export default function BranchProductsPage() {
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {filteredProducts.map((product) => (
-                        <ProductCard key={product.id} product={product} user={user} theme={theme} />
+                        <ProductCard key={product.id} product={product} user={user} theme={theme} commissionRate={commissionRate} />
                     ))}
                 </div>
             )}
@@ -170,8 +192,14 @@ export default function BranchProductsPage() {
     )
 }
 
-function ProductCard({ product, user, theme }: { product: Product; user: any; theme: any }) {
+function ProductCard({ product, user, theme, commissionRate }: { product: Product; user: any; theme: any; commissionRate: number }) {
     const [copied, setCopied] = useState(false)
+
+    // Calculate actual commission based on the rate (e.g. 85%)
+    // If commissionRate is not yet loaded (0), show loading or fallback
+    const actualCommission = commissionRate > 0
+        ? product.commissionAmount * (commissionRate / 100)
+        : product.commissionAmount * 0.85 // Fallback to 85% estimate while loading
 
     const handleShare = () => {
         const referralCode = user?.refer_code || ''
@@ -271,13 +299,23 @@ function ProductCard({ product, user, theme }: { product: Product; user: any; th
 
                 {/* Affiliate Commission */}
                 {product.commissionRate && (
-                    <div className="rounded-lg px-3 py-2" style={{ backgroundColor: theme.primaryLight, border: `1px solid ${theme.primary}20` }}>
-                        <span className="font-medium" style={{ color: theme.primary }}>
-                            Affiliate commission: ₹{product.commissionAmount.toLocaleString("en-IN", {
+                    <div className="rounded-lg px-3 py-2 space-y-1" style={{ backgroundColor: theme.primaryLight, border: `1px solid ${theme.primary}20` }}>
+                        <div className="flex justify-between items-center">
+                            <span className="text-xs font-medium text-gray-600">Your Share ({commissionRate}%):</span>
+                            <span className="font-bold text-lg" style={{ color: theme.primary }}>
+                                ₹{actualCommission.toLocaleString("en-IN", {
+                                    minimumFractionDigits: 2,
+                                    maximumFractionDigits: 2
+                                })}
+                            </span>
+                        </div>
+                        <div className="flex justify-between items-center text-xs text-gray-500 border-t border-gray-200 pt-1 mt-1">
+                            <span>Total Commission:</span>
+                            <span>₹{product.commissionAmount.toLocaleString("en-IN", {
                                 minimumFractionDigits: 2,
                                 maximumFractionDigits: 2
-                            })}
-                        </span>
+                            })}</span>
+                        </div>
                     </div>
                 )}
             </div>

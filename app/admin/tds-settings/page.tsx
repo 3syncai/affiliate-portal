@@ -5,41 +5,41 @@ import axios from "axios"
 import { Settings, Save } from "lucide-react"
 
 export default function GSTSettingsPage() {
-    const [gstPercentage, setGstPercentage] = useState("")
+    const [tdsPercentage, setTdsPercentage] = useState("")
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
 
     useEffect(() => {
-        fetchGSTSettings()
+        fetchTDSSettings()
     }, [])
 
-    const fetchGSTSettings = async () => {
+    const fetchTDSSettings = async () => {
         setLoading(true)
         try {
-            const response = await axios.get('/api/admin/gst-settings')
+            const response = await axios.get('/api/admin/tds-settings')
             const data = response.data
             if (data.success) {
-                setGstPercentage(data.gstPercentage || "18")
+                setTdsPercentage(data.tdsPercentage || "18")
             }
         } catch (error) {
-            console.error('Failed to fetch GST settings', error)
+            console.error('Failed to fetch TDS settings', error)
         } finally {
             setLoading(false)
         }
     }
 
-    const saveGSTSettings = async () => {
-        if (!gstPercentage || parseFloat(gstPercentage) < 0 || parseFloat(gstPercentage) > 100) {
-            alert('Please enter a valid GST percentage (0-100)')
+    const saveTDSSettings = async () => {
+        if (!tdsPercentage || parseFloat(tdsPercentage) < 0 || parseFloat(tdsPercentage) > 100) {
+            alert('Please enter a valid TDS percentage (0-100)')
             return
         }
 
         setSaving(true)
         try {
-            const response = await axios.post('/api/admin/gst-settings', { gstPercentage: parseFloat(gstPercentage) })
+            const response = await axios.post('/api/admin/tds-settings', { tdsPercentage: parseFloat(tdsPercentage) })
             const data = response.data
             if (data.success) {
-                alert('GST settings saved successfully!')
+                alert('TDS settings saved successfully!')
             } else {
                 alert('Failed to save: ' + (data.error || 'Unknown error'))
             }
@@ -63,8 +63,8 @@ export default function GSTSettingsPage() {
         <div className="space-y-6">
             {/* Header */}
             <div>
-                <h1 className="text-3xl font-bold text-gray-900">GST Settings</h1>
-                <p className="text-gray-600 mt-1">Configure GST percentage for affiliate commissions</p>
+                <h1 className="text-3xl font-bold text-gray-900">TDS Settings</h1>
+                <p className="text-gray-600 mt-1">Configure TDS percentage for affiliate commissions</p>
             </div>
 
             {/* Settings Card */}
@@ -74,34 +74,34 @@ export default function GSTSettingsPage() {
                         <Settings className="w-6 h-6 text-indigo-600" />
                     </div>
                     <div>
-                        <h2 className="text-xl font-semibold text-gray-900">GST Configuration</h2>
-                        <p className="text-sm text-gray-500">Set the GST percentage to be applied on affiliate commissions</p>
+                        <h2 className="text-xl font-semibold text-gray-900">TDS Configuration</h2>
+                        <p className="text-sm text-gray-500">Set the TDS percentage to be applied on affiliate commissions</p>
                     </div>
                 </div>
 
                 <div className="space-y-4">
                     <div>
-                        <label htmlFor="gst-percentage" className="block text-sm font-medium text-gray-700 mb-2">
-                            GST Percentage (%)
+                        <label htmlFor="tds-percentage" className="block text-sm font-medium text-gray-700 mb-2">
+                            TDS Percentage (%)
                         </label>
                         <div className="flex gap-3">
                             <input
-                                id="gst-percentage"
+                                id="tds-percentage"
                                 type="number"
                                 min="0"
                                 max="100"
                                 step="0.01"
-                                value={gstPercentage}
-                                onChange={(e) => setGstPercentage(e.target.value)}
+                                value={tdsPercentage}
+                                onChange={(e) => setTdsPercentage(e.target.value)}
                                 className="flex-1 border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-lg"
-                                placeholder="Enter GST percentage"
+                                placeholder="Enter TDS percentage"
                             />
                             <div className="flex items-center px-4 bg-gray-100 rounded-lg">
                                 <span className="text-2xl font-bold text-gray-700">%</span>
                             </div>
                         </div>
                         <p className="text-sm text-gray-500 mt-2">
-                            This GST will be applied on all affiliate commission calculations
+                            This TDS will be applied on all affiliate commission calculations
                         </p>
                     </div>
 
@@ -110,20 +110,20 @@ export default function GSTSettingsPage() {
                         <p className="text-sm font-medium text-indigo-900 mb-2">Example Calculation:</p>
                         <div className="text-sm text-indigo-700 space-y-1">
                             <p>• Commission Amount: ₹1,000</p>
-                            <p>• GST ({gstPercentage || "0"}%): ₹{((parseFloat(gstPercentage) || 0) * 10).toFixed(2)}</p>
+                            <p>• TDS ({tdsPercentage || "0"}%): ₹{((parseFloat(tdsPercentage) || 0) * 10).toFixed(2)}</p>
                             <p className="font-semibold border-t border-indigo-300 pt-2 mt-2">
-                                • Total Payable: ₹{(1000 + ((parseFloat(gstPercentage) || 0) * 10)).toFixed(2)}
+                                • Total Payable: ₹{(1000 - ((parseFloat(tdsPercentage) || 0) * 10)).toFixed(2)}
                             </p>
                         </div>
                     </div>
 
                     <button
-                        onClick={saveGSTSettings}
+                        onClick={saveTDSSettings}
                         disabled={saving}
                         className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         <Save className="w-5 h-5" />
-                        {saving ? 'Saving...' : 'Save GST Settings'}
+                        {saving ? 'Saving...' : 'Save TDS Settings'}
                     </button>
                 </div>
             </div>
@@ -132,10 +132,10 @@ export default function GSTSettingsPage() {
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-2xl">
                 <h3 className="text-sm font-semibold text-blue-900 mb-2">ℹ️ Important Information</h3>
                 <ul className="text-sm text-blue-700 space-y-1 list-disc list-inside">
-                    <li>GST will be calculated on top of the commission amount</li>
+                    <li>TDS will be calculated on top of the commission amount</li>
                     <li>Changes will apply to all new commission calculations</li>
                     <li>Existing pending commissions will not be affected</li>
-                    <li>Standard GST rate in India is 18%</li>
+                    <li>Standard TDS rate in India is variable (usually 1% to 10%)</li>
                 </ul>
             </div>
         </div>
