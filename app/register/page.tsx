@@ -110,9 +110,30 @@ export default function RegisterPage() {
     pan_card_photo?: string
   }>({})
 
+  const [availableBranches, setAvailableBranches] = useState<string[]>([])
+  const [loadingBranches, setLoadingBranches] = useState(false)
+
   const [error, setError] = useState<string>("")
   const [loading, setLoading] = useState<boolean>(false)
   const [successMessage, setSuccessMessage] = useState<string>("")
+
+  // Fetch branches on mount
+  React.useEffect(() => {
+    const fetchBranches = async () => {
+      try {
+        setLoadingBranches(true)
+        const response = await axios.get("/api/affiliate/branches")
+        if (response.data.success) {
+          setAvailableBranches(response.data.branches)
+        }
+      } catch (err) {
+        console.error("Failed to fetch branches:", err)
+      } finally {
+        setLoadingBranches(false)
+      }
+    }
+    fetchBranches()
+  }, [])
 
   // Helper functions for formatting
   const formatPhone = (value: string) => {
@@ -789,10 +810,14 @@ export default function RegisterPage() {
                         className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent placeholder:text-gray-500 text-black"
                         value={formData.branch}
                         onChange={(e) => setFormData({ ...formData, branch: e.target.value })}
+                        disabled={loadingBranches}
                       >
-                        <option value="">Select branch</option>
-                        <option value="nalasopara">Nalasopara</option>
-                        <option value="darbhanga">Darbhanga</option>
+                        <option value="">{loadingBranches ? "Loading branches..." : "Select branch"}</option>
+                        {availableBranches.map((branch) => (
+                          <option key={branch} value={branch}>
+                            {branch}
+                          </option>
+                        ))}
                       </select>
 
                     </div>

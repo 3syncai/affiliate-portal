@@ -14,6 +14,33 @@ type User = {
     branch: string
     is_approved: boolean
     created_at: string
+    // Extended fields
+    gender?: string
+    birth_date?: string
+    father_name?: string
+    mother_name?: string
+    qualification?: string
+    marital_status?: string
+    blood_group?: string
+    emergency_person_name?: string
+    emergency_person_mobile?: string
+    aadhar_card_no?: string
+    pan_card_no?: string
+    designation?: string
+    sales_target?: string
+    area?: string
+    state?: string
+    payment_method?: string
+    bank_name?: string
+    bank_branch?: string
+    ifsc_code?: string
+    account_name?: string
+    account_number?: string
+    address_1?: string
+    address_2?: string
+    city?: string
+    aadhar_card_photo?: string
+    pan_card_photo?: string
 }
 
 export default function BranchAffiliateRequestPage() {
@@ -174,30 +201,176 @@ export default function BranchAffiliateRequestPage() {
 
             {/* View Modal */}
             {selectedUser && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-lg max-w-lg w-full p-6">
-                        <h2 className="text-xl font-bold text-gray-900 mb-4">Affiliate Details</h2>
-                        <div className="space-y-3 text-sm">
-                            <p><strong>Name:</strong> {selectedUser.first_name} {selectedUser.last_name}</p>
-                            <p><strong>Email:</strong> {selectedUser.email}</p>
-                            <p><strong>Phone:</strong> {selectedUser.phone || "-"}</p>
-                            <p><strong>Referral Code:</strong> <span className="font-mono text-indigo-600">{selectedUser.refer_code}</span></p>
-                            <p><strong>Branch:</strong> {selectedUser.branch}</p>
-                            <p><strong>Status:</strong> {selectedUser.is_approved ? "Approved" : "Pending"}</p>
-                            <p><strong>Applied:</strong> {formatDate(selectedUser.created_at)}</p>
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    <div
+                        className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
+                        onClick={() => setSelectedUser(null)}
+                    ></div>
+                    <div className="relative bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl z-10 transition-transform transform scale-100">
+                        <div className="p-6 border-b border-gray-100 flex justify-between items-center sticky top-0 bg-white z-20">
+                            <div>
+                                <h2 className="text-2xl font-bold text-gray-900">Affiliate Details</h2>
+                                <p className="text-sm text-gray-500">Applicant ID: <span className="font-mono">{selectedUser.id.slice(0, 8)}</span></p>
+                            </div>
+                            <button onClick={() => setSelectedUser(null)} className="text-gray-400 hover:text-gray-600">
+                                <UserX className="w-6 h-6" />
+                            </button>
                         </div>
-                        <div className="flex gap-2 mt-6">
-                            {!selectedUser.is_approved && (
+
+                        <div className="p-6 space-y-8">
+                            {/* Personal Information */}
+                            <section>
+                                <h3 className="text-lg font-semibold text-gray-900 border-b pb-2 mb-4 flex items-center gap-2">
+                                    <div className="w-1 h-6 bg-orange-500 rounded-full"></div>
+                                    Personal Information
+                                </h3>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    <div className="space-y-1">
+                                        <p className="text-xs text-gray-500 uppercase font-medium">Full Name</p>
+                                        <p className="text-sm font-semibold">{selectedUser.first_name} {selectedUser.last_name}</p>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <p className="text-xs text-gray-500 uppercase font-medium">Contact</p>
+                                        <p className="text-sm">{selectedUser.email}</p>
+                                        <p className="text-sm">{selectedUser.phone || "-"}</p>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <p className="text-xs text-gray-500 uppercase font-medium">Parents</p>
+                                        <p className="text-sm">F: {selectedUser.father_name || "-"}</p>
+                                        <p className="text-sm">M: {selectedUser.mother_name || "-"}</p>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <p className="text-xs text-gray-500 uppercase font-medium">Demographics</p>
+                                        <p className="text-sm">DOB: {selectedUser.birth_date ? new Date(selectedUser.birth_date).toLocaleDateString() : "-"}</p>
+                                        <p className="text-sm capitalize">Gender: {selectedUser.gender || "-"}</p>
+                                        <p className="text-sm">Blood: {selectedUser.blood_group || "-"}</p>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <p className="text-xs text-gray-500 uppercase font-medium">Status</p>
+                                        <p className="text-sm capitalize">Marital: {selectedUser.marital_status || "-"}</p>
+                                        <p className="text-sm capitalize">Qual: {selectedUser.qualification || "-"}</p>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <p className="text-xs text-gray-500 uppercase font-medium">Emergency Contact</p>
+                                        <p className="text-sm">{selectedUser.emergency_person_name || "-"}</p>
+                                        <p className="text-sm">{selectedUser.emergency_person_mobile || "-"}</p>
+                                    </div>
+                                </div>
+                            </section>
+
+                            {/* Work & Location */}
+                            <section>
+                                <h3 className="text-lg font-semibold text-gray-900 border-b pb-2 mb-4 flex items-center gap-2">
+                                    <div className="w-1 h-6 bg-blue-500 rounded-full"></div>
+                                    Work & Location
+                                </h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="space-y-1">
+                                        <p className="text-xs text-gray-500 uppercase font-medium">Role Details</p>
+                                        <p className="text-sm">Branch: {selectedUser.branch}</p>
+                                        <p className="text-sm">Area: {selectedUser.area || "-"}</p>
+                                        <p className="text-sm">Referral Code: <span className="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded font-mono">{selectedUser.refer_code}</span></p>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <p className="text-xs text-gray-500 uppercase font-medium">Key IDs</p>
+                                        <p className="text-sm">Aadhar: {selectedUser.aadhar_card_no || "-"}</p>
+                                        <p className="text-sm">PAN: {selectedUser.pan_card_no || "-"}</p>
+                                    </div>
+                                    <div className="col-span-full space-y-1">
+                                        <p className="text-xs text-gray-500 uppercase font-medium">Address</p>
+                                        <p className="text-sm">{selectedUser.address_1} {selectedUser.address_2}</p>
+                                        <p className="text-sm">{selectedUser.city}, {selectedUser.state} - {selectedUser.pin_code}</p>
+                                    </div>
+                                </div>
+                            </section>
+
+                            {/* Bank Details */}
+                            <section>
+                                <h3 className="text-lg font-semibold text-gray-900 border-b pb-2 mb-4 flex items-center gap-2">
+                                    <div className="w-1 h-6 bg-green-500 rounded-full"></div>
+                                    Bank Details
+                                </h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-50 p-4 rounded-lg">
+                                    <div className="space-y-1">
+                                        <p className="text-xs text-gray-500 uppercase font-medium">Bank Info</p>
+                                        <p className="text-sm font-semibold">{selectedUser.bank_name || "-"}</p>
+                                        <p className="text-sm">{selectedUser.bank_branch || "-"}</p>
+                                        <p className="text-sm font-mono">{selectedUser.ifsc_code || "-"}</p>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <p className="text-xs text-gray-500 uppercase font-medium">Account Details</p>
+                                        <p className="text-sm">Name: {selectedUser.account_name || "-"}</p>
+                                        <p className="text-sm font-mono">Acc No: {selectedUser.account_number || "-"}</p>
+                                        <p className="text-sm">Method: {selectedUser.payment_method || "-"}</p>
+                                    </div>
+                                </div>
+                            </section>
+
+                            {/* Documents */}
+                            <section>
+                                <h3 className="text-lg font-semibold text-gray-900 border-b pb-2 mb-4 flex items-center gap-2">
+                                    <div className="w-1 h-6 bg-purple-500 rounded-full"></div>
+                                    Documents
+                                </h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <p className="text-sm font-medium mb-2">Aadhar Card</p>
+                                        {selectedUser.aadhar_card_photo ? (
+                                            <a href={selectedUser.aadhar_card_photo} target="_blank" rel="noopener noreferrer" className="block group relative overflow-hidden rounded-lg border border-gray-200">
+                                                <img
+                                                    src={selectedUser.aadhar_card_photo}
+                                                    alt="Aadhar Card"
+                                                    className="w-full h-48 object-cover transition-transform group-hover:scale-105"
+                                                />
+                                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                                                    <span className="bg-white/90 text-gray-900 px-3 py-1 rounded text-xs font-medium shadow-sm">View Full</span>
+                                                </div>
+                                            </a>
+                                        ) : (
+                                            <div className="h-48 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400 text-sm border-2 border-dashed border-gray-200">
+                                                No Image
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-medium mb-2">PAN Card</p>
+                                        {selectedUser.pan_card_photo ? (
+                                            <a href={selectedUser.pan_card_photo} target="_blank" rel="noopener noreferrer" className="block group relative overflow-hidden rounded-lg border border-gray-200">
+                                                <img
+                                                    src={selectedUser.pan_card_photo}
+                                                    alt="PAN Card"
+                                                    className="w-full h-48 object-cover transition-transform group-hover:scale-105"
+                                                />
+                                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                                                    <span className="bg-white/90 text-gray-900 px-3 py-1 rounded text-xs font-medium shadow-sm">View Full</span>
+                                                </div>
+                                            </a>
+                                        ) : (
+                                            <div className="h-48 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400 text-sm border-2 border-dashed border-gray-200">
+                                                No Image
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </section>
+                        </div>
+
+                        <div className="p-6 border-t border-gray-100 bg-gray-50 rounded-b-xl flex gap-3 sticky bottom-0">
+                            {!selectedUser.is_approved ? (
                                 <>
-                                    <button onClick={() => { handleApprove(selectedUser.id); setSelectedUser(null); }} className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
-                                        Approve
+                                    <button onClick={() => { handleApprove(selectedUser.id); setSelectedUser(null); }} className="flex-1 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium transition-colors shadow-sm">
+                                        Approve Application
                                     </button>
-                                    <button onClick={() => { handleReject(selectedUser.id); setSelectedUser(null); }} className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+                                    <button onClick={() => { handleReject(selectedUser.id); setSelectedUser(null); }} className="flex-1 px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium transition-colors shadow-sm">
                                         Reject
                                     </button>
                                 </>
+                            ) : (
+                                <div className="flex-1 flex items-center justify-center text-green-600 font-medium bg-green-50 rounded-lg py-2 border border-green-200">
+                                    <UserCheck className="w-5 h-5 mr-2" /> Application Approved
+                                </div>
                             )}
-                            <button onClick={() => setSelectedUser(null)} className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
+                            <button onClick={() => setSelectedUser(null)} className="px-6 py-3 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors shadow-sm">
                                 Close
                             </button>
                         </div>

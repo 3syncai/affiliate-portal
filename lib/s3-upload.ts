@@ -1,10 +1,10 @@
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3"
 
-// Hardcoded credentials (environment variables not loading properly)
-const S3_ACCESS_KEY = "AKIAUWCNHNZY5V45HBOM"
-const S3_SECRET_KEY = "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"
-const S3_REGION_NAME = "ap-south-1"
-const S3_BUCKET_NAME = "oweg-product-images"
+// Use environment variables
+const S3_ACCESS_KEY = process.env.S3_ACCESS_KEY_ID || ""
+const S3_SECRET_KEY = process.env.S3_SECRET_ACCESS_KEY || ""
+const S3_REGION_NAME = process.env.S3_REGION || "ap-south-1"
+const S3_BUCKET_NAME = process.env.S3_BUCKET || "oweg-product-images"
 
 const s3Client = new S3Client({
     region: S3_REGION_NAME,

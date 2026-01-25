@@ -105,16 +105,18 @@ export async function GET(req: NextRequest) {
         // 3. Get recent commissions from affiliate_commission_log
         const commissionsQuery = `
             SELECT 
-                acl.id,
-                acl.order_amount,
-                acl.commission_amount,
-                acl.created_at,
-                u.first_name,
-                u.last_name,
-                u.branch
+                acl.id, 
+                acl.order_amount, 
+                acl.commission_amount, 
+                acl.created_at, 
+                COALESCE(u.first_name, ba.first_name) as first_name, 
+                COALESCE(u.last_name, ba.last_name) as last_name, 
+                COALESCE(u.branch, ba.branch) as branch,
+                acl.commission_source
             FROM affiliate_commission_log acl
-            JOIN affiliate_user u ON acl.affiliate_code = u.refer_code
-            WHERE u.state ILIKE $1
+            LEFT JOIN affiliate_user u ON acl.affiliate_code = u.refer_code
+            LEFT JOIN branch_admin ba ON acl.affiliate_code = ba.refer_code OR (acl.commission_source = 'branch_admin' AND acl.affiliate_user_id = ba.id::text)
+            WHERE (u.state ILIKE $1 OR ba.state ILIKE $1)
             ORDER BY acl.created_at DESC
             LIMIT 30
         `;
@@ -141,7 +143,7 @@ export async function GET(req: NextRequest) {
         // Take top 50
         const recentActivities = activities.slice(0, 50);
 
-        console.log(`Found ${recentActivities.length} activities for state: ${state}`);
+        console.log(`Found ${recentActivities.length} activities for state: ${state} `);
 
         await pool.end();
 

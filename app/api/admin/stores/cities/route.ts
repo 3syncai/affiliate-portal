@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
         const result = await pool.query(
             `SELECT DISTINCT city 
        FROM stores 
-       WHERE state = $1 AND is_active = true 
+       WHERE LOWER(state) = LOWER($1) AND is_active = true 
        ORDER BY city ASC`,
             [state]
         )

@@ -23,7 +23,7 @@ export async function GET(request: Request) {
 
         // Get pending users (not approved) - exact match or partial match
         const pendingResult = await pool.query(
-            `SELECT id, first_name, last_name, email, phone, refer_code, branch, is_agent, is_approved, created_at
+            `SELECT *
              FROM affiliate_user 
              WHERE (branch ILIKE $1 OR branch ILIKE $2) AND is_approved = false AND is_agent = true
              ORDER BY created_at DESC`,
@@ -32,7 +32,7 @@ export async function GET(request: Request) {
 
         // Get approved users
         const approvedResult = await pool.query(
-            `SELECT id, first_name, last_name, email, phone, refer_code, branch, is_agent, is_approved, created_at
+            `SELECT *
              FROM affiliate_user 
              WHERE (branch ILIKE $1 OR branch ILIKE $2) AND is_approved = true AND is_agent = true
              ORDER BY created_at DESC`,

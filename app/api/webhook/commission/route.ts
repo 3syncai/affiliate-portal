@@ -46,30 +46,60 @@ export async function POST(request: NextRequest) {
                 : false
         });
 
-        // STEP 1: Lookup commission percentage from product_commissions table
-        // Priority: product_id > category_id > collection_id > product_type_id
+        // STEP 0: Enrich Payload - Fetch Category/Collection if missing
+        if (!payload.category_id || !payload.collection_id) {
+            try {
+                // Fetch Category
+                if (!payload.category_id) {
+                    const catRes = await pool.query(`
+                        SELECT product_category_id FROM product_category_product 
+                        WHERE product_id = $1 LIMIT 1
+                    `, [payload.product_id]);
+                    if (catRes.rows.length > 0) {
+                        payload.category_id = catRes.rows[0].product_category_id;
+                        console.log(`[Enrichment] Found Category ID: ${payload.category_id}`);
+                    }
+                }
+
+                // Fetch Collection
+                if (!payload.collection_id) {
+                    const collRes = await pool.query(`
+                        SELECT collection_id FROM product WHERE id = $1
+                    `, [payload.product_id]);
+                    if (collRes.rows.length > 0) {
+                        payload.collection_id = collRes.rows[0].collection_id;
+                        console.log(`[Enrichment] Found Collection ID: ${payload.collection_id}`);
+                    }
+                }
+            } catch (enrichErr) {
+                console.error("[Enrichment] Failed to fetch product metadata:", enrichErr);
+            }
+        }
+
+        // STEP 1: Lookup commission percentage from affiliate_commission table
+        // Priority: product_id > category_id > collection_id > type_id
         let commissionPercentage = 0;
         let commissionSource = 'none';
 
         const commissionQuery = `
-            SELECT commission_percentage, 
+            SELECT commission_rate as commission_percentage, 
                    CASE 
                        WHEN product_id IS NOT NULL THEN 'product'
                        WHEN category_id IS NOT NULL THEN 'category'
                        WHEN collection_id IS NOT NULL THEN 'collection'
-                       WHEN product_type_id IS NOT NULL THEN 'product_type'
+                       WHEN type_id IS NOT NULL THEN 'product_type'
                    END as source
-            FROM product_commissions
+            FROM affiliate_commission
             WHERE (product_id = $1)
                OR (category_id = $2 AND product_id IS NULL)
                OR (collection_id = $3 AND product_id IS NULL AND category_id IS NULL)
-               OR (product_type_id = $4 AND product_id IS NULL AND category_id IS NULL AND collection_id IS NULL)
+               OR (type_id = $4 AND product_id IS NULL AND category_id IS NULL AND collection_id IS NULL)
             ORDER BY 
                 CASE 
                     WHEN product_id IS NOT NULL THEN 1
                     WHEN category_id IS NOT NULL THEN 2
                     WHEN collection_id IS NOT NULL THEN 3
-                    WHEN product_type_id IS NOT NULL THEN 4
+                    WHEN type_id IS NOT NULL THEN 4
                 END
             LIMIT 1
         `;
@@ -86,13 +116,12 @@ export async function POST(request: NextRequest) {
             commissionSource = commissionResult.rows[0].source;
             console.log(`[Commission Lookup] Found ${commissionPercentage}% commission via ${commissionSource}`);
         } else {
-            console.log('[Commission Lookup] No commission found for this product');
-            await pool.end();
-            return NextResponse.json({
-                success: false,
-                error: 'No commission configured for this product',
-                message: 'Admin needs to set commission for this product/category/collection'
-            }, { status: 404 });
+            console.log('[Commission Lookup] No commission found for this product. Using default fallback (0%).');
+            // FALLBACK: Don't fail, just log with 0% commission so the order is tracked
+            commissionPercentage = 0;
+            commissionSource = 'uncategorized_fallback';
+
+            // Optional: You could fetch a global default from a settings table here if it existed
         }
 
         // STEP 2: Calculate commission amount based on price and percentage
@@ -144,12 +173,12 @@ export async function POST(request: NextRequest) {
                 // Insert Branch Admin Commission
                 await pool.query(`
                     INSERT INTO affiliate_commission_log (
-                        order_id, affiliate_code, product_name, quantity, item_price, order_amount,
+                        order_id, affiliate_code, affiliate_user_id, product_name, quantity, item_price, order_amount,
                         commission_rate, commission_amount, affiliate_rate, affiliate_commission,
                         commission_source, status, customer_id, customer_name, customer_email, created_at
-                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, NOW())
+                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, NOW())
                 `, [
-                    payload.order_id, payload.affiliate_code, payload.product_name || 'Product',
+                    payload.order_id, payload.affiliate_code, branchAdmin.id, payload.product_name || 'Product',
                     payload.quantity || 1, payload.item_price || 0, payload.order_amount || 0,
                     commissionPercentage, commissionAmount, affiliateRate, affiliateCommission,
                     'branch_admin', payload.status || 'PENDING',

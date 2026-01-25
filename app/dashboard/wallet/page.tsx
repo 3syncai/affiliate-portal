@@ -390,27 +390,33 @@ export default function WalletPage() {
                             </div>
 
                             <div className="relative z-10">
-                            </div>
+                                <p className="text-emerald-100 font-medium mb-1">Available Balance</p>
+                                <h2 className="text-5xl font-bold mb-6 tracking-tight">
+                                    {formatCurrency(walletData.balance.current)}
+                                </h2>
+                                <p className="text-sm text-emerald-100 mb-6 max-w-sm">
+                                    Your earnings are calculated net of TDS. Withdrawals are processed within 5-7 business days.
+                                </p>
 
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3 pt-4 border-t border-white/30">
-                        <div className="bg-white/15 backdrop-blur-md rounded-xl p-3 hover:bg-white/20 transition-all">
-                            <div className="flex items-center gap-1.5 mb-1">
-                                <TrendingUp className="w-3.5 h-3.5 text-emerald-100" />
-                                <p className="text-xs text-emerald-100 font-medium">Total Earned</p>
+                                <div className="grid grid-cols-2 gap-3 pt-4 border-t border-white/30">
+                                    <div className="bg-white/15 backdrop-blur-md rounded-xl p-3 hover:bg-white/20 transition-all">
+                                        <div className="flex items-center gap-1.5 mb-1">
+                                            <TrendingUp className="w-3.5 h-3.5 text-emerald-100" />
+                                            <p className="text-xs text-emerald-100 font-medium">Total Earned</p>
+                                        </div>
+                                        <p className="text-lg font-bold">{formatCurrency(walletData.balance.totalEarned)}</p>
+                                        <p className="text-xs text-emerald-200 mt-0.5">Lifetime</p>
+                                    </div>
+                                    <div className="bg-white/15 backdrop-blur-md rounded-xl p-3 hover:bg-white/20 transition-all">
+                                        <div className="flex items-center gap-1.5 mb-1">
+                                            <History className="w-3.5 h-3.5 text-emerald-100" />
+                                            <p className="text-xs text-emerald-100 font-medium">Withdrawn</p>
+                                        </div>
+                                        <p className="text-lg font-bold">{formatCurrency(walletData.balance.withdrawn)}</p>
+                                        <p className="text-xs text-emerald-200 mt-0.5">Paid out</p>
+                                    </div>
+                                </div>
                             </div>
-                            <p className="text-lg font-bold">{formatCurrency(walletData.balance.totalEarned)}</p>
-                            <p className="text-xs text-emerald-200 mt-0.5">Lifetime</p>
-                        </div>
-                        <div className="bg-white/15 backdrop-blur-md rounded-xl p-3 hover:bg-white/20 transition-all">
-                            <div className="flex items-center gap-1.5 mb-1">
-                                <History className="w-3.5 h-3.5 text-emerald-100" />
-                                <p className="text-xs text-emerald-100 font-medium">Withdrawn</p>
-                            </div>
-                            <p className="text-lg font-bold">{formatCurrency(walletData.balance.withdrawn)}</p>
-                            <p className="text-xs text-emerald-200 mt-0.5">Paid out</p>
                         </div>
                     </div>
                 </div>

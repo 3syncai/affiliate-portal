@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Search, Plus, Edit, Trash2, Package, Tag, Boxes, Type, Save, X } from "lucide-react"
+import { Search, Plus, Edit, Trash2, Package, Tag, Boxes, Type, Save, X, ChevronDown, Check } from "lucide-react"
 import axios from "axios"
 
 interface Commission {
@@ -37,9 +37,14 @@ export default function SetCommissionPage() {
   })
   const [saving, setSaving] = useState(false)
   const [products, setProducts] = useState<any[]>([])
+  const [productsLoading, setProductsLoading] = useState(true)
   const [categories, setCategories] = useState<FilterOption[]>([])
   const [collections, setCollections] = useState<FilterOption[]>([])
   const [types, setTypes] = useState<FilterOption[]>([])
+
+  // Custom dropdown state
+  const [isProductDropdownOpen, setIsProductDropdownOpen] = useState(false)
+  const [productSearchTerm, setProductSearchTerm] = useState("")
 
   useEffect(() => {
     loadCommissions()
@@ -61,6 +66,7 @@ export default function SetCommissionPage() {
   }
 
   const loadProducts = async () => {
+    setProductsLoading(true)
     try {
       const response = await axios.get("/api/affiliate/admin/products")
       const data = response.data
@@ -102,6 +108,8 @@ export default function SetCommissionPage() {
       console.error("Failed to fetch products:", error)
       const errorMessage = error.response?.data?.message || error.message || "Unknown error"
       alert(`Error loading products: ${errorMessage}. Please check if the backend server is running.`)
+    } finally {
+      setProductsLoading(false)
     }
   }
 
@@ -332,7 +340,7 @@ export default function SetCommissionPage() {
 
       {/* Form Modal */}
       {showForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] backdrop-blur-sm">
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold">
@@ -367,7 +375,7 @@ export default function SetCommissionPage() {
                 </select>
               </div>
 
-              <div>
+              <div className="relative">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   {formData.commission_type === "product"
                     ? "Product"
@@ -377,37 +385,131 @@ export default function SetCommissionPage() {
                         ? "Collection"
                         : "Type"}
                 </label>
-                <select
-                  value={formData.entity_id}
-                  onChange={(e) => setFormData({ ...formData, entity_id: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white text-gray-900 appearance-none cursor-pointer"
-                >
-                  <option value="">Select {formData.commission_type}</option>
-                  {formData.commission_type === "product" &&
-                    products.map((product) => (
-                      <option key={product.id} value={product.id}>
-                        {product.title}
-                      </option>
-                    ))}
-                  {formData.commission_type === "category" &&
-                    categories.map((cat) => (
-                      <option key={cat.id} value={cat.id}>
-                        {cat.name}
-                      </option>
-                    ))}
-                  {formData.commission_type === "collection" &&
-                    collections.map((col) => (
-                      <option key={col.id} value={col.id}>
-                        {col.title}
-                      </option>
-                    ))}
-                  {formData.commission_type === "type" &&
-                    types.map((type) => (
-                      <option key={type.id} value={type.id}>
-                        {type.value}
-                      </option>
-                    ))}
-                </select>
+
+                {formData.commission_type === "product" ? (
+                  <div className="relative">
+                    <button
+                      onClick={() => setIsProductDropdownOpen(!isProductDropdownOpen)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-left flex items-center justify-between focus:ring-2 focus:ring-indigo-500"
+                    >
+                      {formData.entity_id ? (
+                        <div className="flex items-center overflow-hidden">
+                          {products.find(p => p.id === formData.entity_id)?.thumbnail && (
+                            <img
+                              src={products.find(p => p.id === formData.entity_id)?.thumbnail}
+                              alt=""
+                              className="w-6 h-6 rounded object-cover mr-2 flex-shrink-0"
+                            />
+                          )}
+                          <span className="truncate">
+                            {products.find(p => p.id === formData.entity_id)?.title || "Select Product"}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-gray-500">Select product</span>
+                      )}
+                      <ChevronDown className="w-4 h-4 text-gray-400 flex-shrink-0 ml-2" />
+                    </button>
+
+                    {isProductDropdownOpen && (
+                      <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 flex flex-col">
+                        <div className="p-2 border-b border-gray-100 sticky top-0 bg-white rounded-t-lg">
+                          <div className="relative">
+                            <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                            <input
+                              type="text"
+                              value={productSearchTerm}
+                              onChange={(e) => setProductSearchTerm(e.target.value)}
+                              placeholder="Search products..."
+                              className="w-full pl-8 pr-3 py-1.5 border border-gray-200 rounded text-sm focus:outline-none focus:border-indigo-500"
+                              autoFocus
+                            />
+                          </div>
+                        </div>
+                        <div className="overflow-y-auto flex-1">
+                          {productsLoading ? (
+                            <div className="px-3 py-4 text-center text-sm text-gray-500 flex items-center justify-center">
+                              <div className="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mr-2"></div>
+                              Loading products...
+                            </div>
+                          ) : (
+                            <>
+                              {products
+                                .filter(p => !productSearchTerm || p.title.toLowerCase().includes(productSearchTerm.toLowerCase()))
+                                .map((product) => (
+                                  <div
+                                    key={product.id}
+                                    onClick={() => {
+                                      setFormData({ ...formData, entity_id: product.id })
+                                      setIsProductDropdownOpen(false)
+                                      setProductSearchTerm("")
+                                    }}
+                                    className={`px-3 py-2 cursor-pointer flex items-center hover:bg-gray-50 ${formData.entity_id === product.id ? "bg-indigo-50" : ""
+                                      }`}
+                                  >
+                                    {product.thumbnail ? (
+                                      <img
+                                        src={product.thumbnail}
+                                        alt=""
+                                        className="w-8 h-8 rounded object-cover mr-3 bg-gray-100"
+                                      />
+                                    ) : (
+                                      <div className="w-8 h-8 rounded bg-gray-100 mr-3 flex items-center justify-center">
+                                        <Package className="w-4 h-4 text-gray-400" />
+                                      </div>
+                                    )}
+                                    <div className="flex-1 min-w-0">
+                                      <div className="text-sm font-medium text-gray-900 truncate">{product.title}</div>
+                                      <div className="text-xs text-gray-500 truncate">SKU: {product.variants?.[0]?.sku || "N/A"}</div>
+                                    </div>
+                                    {formData.entity_id === product.id && (
+                                      <Check className="w-4 h-4 text-indigo-600 ml-2" />
+                                    )}
+                                  </div>
+                                ))}
+                              {products.length > 0 && products.filter(p => !productSearchTerm || p.title.toLowerCase().includes(productSearchTerm.toLowerCase())).length === 0 && (
+                                <div className="px-3 py-4 text-center text-sm text-gray-500">
+                                  No products found
+                                </div>
+                              )}
+                              {products.length === 0 && !productsLoading && (
+                                <div className="px-3 py-4 text-center text-sm text-gray-500">
+                                  No products available
+                                </div>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <select
+                    value={formData.entity_id}
+                    onChange={(e) => setFormData({ ...formData, entity_id: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white text-gray-900 appearance-none cursor-pointer"
+                  >
+                    <option value="">Select {formData.commission_type}</option>
+                    {formData.commission_type === "category" &&
+                      categories.map((cat) => (
+                        <option key={cat.id} value={cat.id}>
+                          {cat.name}
+                        </option>
+                      ))}
+                    {formData.commission_type === "collection" &&
+                      collections.map((col) => (
+                        <option key={col.id} value={col.id}>
+                          {col.title}
+                        </option>
+                      ))}
+                    {formData.commission_type === "type" &&
+                      types.map((type) => (
+                        <option key={type.id} value={type.id}>
+                          {type.value}
+                        </option>
+                      ))}
+                  </select>
+                )}
               </div>
 
               <div>

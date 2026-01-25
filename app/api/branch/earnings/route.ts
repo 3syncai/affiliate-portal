@@ -38,13 +38,13 @@ export async function GET(req: NextRequest) {
         // We aggregate logs assigned to this admin (by ID or refer code)
         const statsQuery = `
             SELECT
-                -- Override Commissions (Source = 'branch_admin' OR 'BRANCH' code logic if applicable)
-                COALESCE(SUM(CASE WHEN commission_source = 'branch_admin' THEN affiliate_commission ELSE 0 END), 0) as override_earnings,
-                COUNT(CASE WHEN commission_source = 'branch_admin' THEN 1 END) as override_orders,
+                -- Override Commissions: Source 'branch_admin' AND Rate <= 50%
+                COALESCE(SUM(CASE WHEN commission_source = 'branch_admin' AND affiliate_rate <= 50 THEN affiliate_commission ELSE 0 END), 0) as override_earnings,
+                COUNT(CASE WHEN commission_source = 'branch_admin' AND affiliate_rate <= 50 THEN 1 END) as override_orders,
                 
-                -- Direct Commissions (Source != 'branch_admin')
-                COALESCE(SUM(CASE WHEN commission_source != 'branch_admin' THEN affiliate_commission ELSE 0 END), 0) as direct_earnings,
-                COUNT(CASE WHEN commission_source != 'branch_admin' THEN 1 END) as direct_orders
+                -- Direct Commissions: Source != 'branch_admin' OR (Source = 'branch_admin' AND Rate > 50%)
+                COALESCE(SUM(CASE WHEN commission_source != 'branch_admin' OR (commission_source = 'branch_admin' AND affiliate_rate > 50) THEN affiliate_commission ELSE 0 END), 0) as direct_earnings,
+                COUNT(CASE WHEN commission_source != 'branch_admin' OR (commission_source = 'branch_admin' AND affiliate_rate > 50) THEN 1 END) as direct_orders
             FROM affiliate_commission_log
             WHERE (affiliate_user_id = $1 OR affiliate_code = $2) AND status = 'CREDITED'
         `;
@@ -83,7 +83,9 @@ export async function GET(req: NextRequest) {
                 customer_name as first_name, -- Using customer name directly
                 '' as last_name,
                 affiliate_code as refer_code,
+                affiliate_rate,
                 CASE 
+                    WHEN commission_source = 'branch_admin' AND affiliate_rate > 50 THEN 'Direct Sale'
                     WHEN commission_source = 'branch_admin' THEN 'Affiliate Override'
                     ELSE 'Direct Sale'
                 END as type

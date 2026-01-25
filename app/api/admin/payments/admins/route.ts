@@ -116,14 +116,14 @@ export async function GET() {
                     (SELECT SUM(acl.commission_amount) 
                      FROM affiliate_commission_log acl
                      JOIN branch_admin ba ON acl.affiliate_code = ba.refer_code
-                     WHERE LOWER(ba.state) = LOWER(sa.state) AND acl.commission_source = 'branch_admin'),
+                     WHERE LOWER(ba.state) = LOWER(sa.state) AND acl.commission_source = 'branch_admin' AND acl.affiliate_rate > 20),
                     0
                 ) +
                 COALESCE(
                     (SELECT SUM(acl.commission_amount) 
                      FROM affiliate_commission_log acl
                      JOIN area_sales_manager asm ON acl.affiliate_code = asm.refer_code
-                     WHERE LOWER(asm.state) = LOWER(sa.state) AND acl.commission_source = 'asm_direct'),
+                     WHERE LOWER(asm.state) = LOWER(sa.state) AND acl.commission_source = 'asm_direct' AND acl.affiliate_rate > 20),
                     0
                 ) as total_commission_base,
                 

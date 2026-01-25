@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
             const response = await axios.get(`${BACKEND_URL}/store/products`, {
                 headers: storeHeaders,
                 params: {
-                    limit: 500,
+                    limit: 10000,
                     fields: "+categories,+collection,+variants.inventory_quantity,*variants,*variants.prices"
                 }
             });
@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
                 console.log("Trying /store/flash-sale/products...");
                 const response = await axios.get(`${BACKEND_URL}/store/flash-sale/products`, {
                     headers: storeHeaders,
-                    params: { limit: 500 }
+                    params: { limit: 10000 }
                 });
                 rawProducts = response.data?.products || [];
                 console.log(`Flash sale endpoint returned ${rawProducts.length} products`);

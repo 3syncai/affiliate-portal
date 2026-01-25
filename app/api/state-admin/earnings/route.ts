@@ -43,11 +43,12 @@ export async function GET(req: NextRequest) {
 
         // Note: Branch and ASM override logic would be similar (adding to baseForOverrides)
         // For simplicity adapting existing code logic:
+        // FIX: Add check for affiliate_rate > 20 to ensure we only count DIRECT sales, not overrides (which look like duplicates here)
         const branchDirectQuery = `
             SELECT COALESCE(SUM(acl.commission_amount), 0) as total, COUNT(acl.id) as count
             FROM affiliate_commission_log acl
             JOIN branch_admin ba ON acl.affiliate_code = ba.refer_code
-            WHERE ba.state ILIKE $1 AND acl.commission_source = 'branch_admin'
+            WHERE ba.state ILIKE $1 AND acl.commission_source = 'branch_admin' AND acl.affiliate_rate > 20
         `;
         const branchRes = await pool.query(branchDirectQuery, [state]);
         const baseForOverrides2 = parseFloat(branchRes.rows[0].total || '0') + baseForOverrides;
@@ -57,7 +58,7 @@ export async function GET(req: NextRequest) {
             SELECT COALESCE(SUM(acl.commission_amount), 0) as total, COUNT(acl.id) as count
             FROM affiliate_commission_log acl
             JOIN area_sales_manager asm ON acl.affiliate_code = asm.refer_code
-            WHERE asm.state ILIKE $1 AND acl.commission_source = 'asm_direct'
+            WHERE asm.state ILIKE $1 AND acl.commission_source = 'asm_direct' AND acl.affiliate_rate > 20
         `;
         const asmRes = await pool.query(asmDirectQuery, [state]);
         const totalBaseForOverrides = parseFloat(asmRes.rows[0].total || '0') + baseForOverrides2;
