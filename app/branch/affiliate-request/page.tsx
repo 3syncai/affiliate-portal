@@ -41,6 +41,7 @@ type User = {
     city?: string
     aadhar_card_photo?: string
     pan_card_photo?: string
+    pin_code?: string
 }
 
 export default function BranchAffiliateRequestPage() {
