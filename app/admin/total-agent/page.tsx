@@ -27,8 +27,8 @@ type TabType = "affiliates" | "state_admins" | "area_managers" | "branch_admins"
 const tabs: { id: TabType; label: string; icon: any; color: string }[] = [
   { id: "affiliates", label: "Affiliate Agents", icon: Users, color: "from-blue-500 to-blue-600" },
   { id: "state_admins", label: "State Admins", icon: Building2, color: "from-purple-500 to-purple-600" },
-  { id: "area_managers", label: "Area Managers", icon: MapPin, color: "from-emerald-500 to-emerald-600" },
-  { id: "branch_admins", label: "Branch Admins", icon: GitBranch, color: "from-orange-500 to-orange-600" },
+  { id: "area_managers", label: "Branch Managers", icon: MapPin, color: "from-emerald-500 to-emerald-600" },
+  { id: "branch_admins", label: "Area Sales Managers", icon: GitBranch, color: "from-orange-500 to-orange-600" },
 ]
 
 export default function AllUsersPage() {
@@ -234,7 +234,7 @@ export default function AllUsersPage() {
                   </th>
                   {activeTab !== "affiliates" && (
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      {activeTab === "state_admins" ? "State" : activeTab === "area_managers" ? "Area" : "Branch"}
+                      {activeTab === "state_admins" ? "State" : activeTab === "area_managers" ? "Branch" : "Area Sales Manager"}
                     </th>
                   )}
                   {activeTab === "affiliates" && (
@@ -371,7 +371,7 @@ export default function AllUsersPage() {
                           <MapPin className="w-5 h-5 text-emerald-600" />
                         </div>
                         <div>
-                          <p className="text-xs text-gray-500">Area</p>
+                          <p className="text-xs text-gray-500">Branch</p>
                           <p className="text-sm font-medium text-gray-900">{selectedUser.area}</p>
                         </div>
                       </div>
@@ -382,7 +382,7 @@ export default function AllUsersPage() {
                           <GitBranch className="w-5 h-5 text-orange-600" />
                         </div>
                         <div>
-                          <p className="text-xs text-gray-500">Branch</p>
+                          <p className="text-xs text-gray-500">Area Sales Manager</p>
                           <p className="text-sm font-medium text-gray-900">{selectedUser.branch}</p>
                         </div>
                       </div>

@@ -109,9 +109,9 @@ export default function CommissionSettingsPage() {
             case "state":
                 return "State Admin"
             case "area":
-                return "Area Sales Manager"
+                return "Branch Manager"
             case "branch":
-                return "Branch Admin"
+                return "Area sales Manager"
             default:
                 return roleType
         }
@@ -152,7 +152,7 @@ export default function CommissionSettingsPage() {
 
                     {/* Commission Rate Fields */}
                     <div className="space-y-6">
-                        {rates.map((rate) => (
+                        {rates.filter(rate => rate.role_type !== 'branch_direct').map((rate) => (
                             <div key={rate.id} className="border-b border-gray-200 pb-6 last:border-b-0 last:pb-0">
                                 <div className="flex items-start justify-between mb-3">
                                     <div>
@@ -237,7 +237,7 @@ export default function CommissionSettingsPage() {
                     </li>
                     <li className="flex items-start">
                         <span className="font-medium mr-2">•</span>
-                        <span><strong>Branch Admin</strong> → <strong>Area Sales Manager</strong> → <strong>State Admin</strong> each get their share</span>
+                        <span><strong>Area sales Manager</strong> → <strong>Branch Manager</strong> → <strong>State Admin</strong> each get their share</span>
                     </li>
                     <li className="flex items-start">
                         <span className="font-medium mr-2">•</span>

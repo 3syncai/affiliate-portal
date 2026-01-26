@@ -81,7 +81,7 @@ export default function BranchAdminsPage() {
     if (loading) {
         return (
             <div className="flex items-center justify-center h-64">
-                <div className="text-lg text-gray-500">Loading branch admins...</div>
+                <div className="text-lg text-gray-500">Loading Area Sales admins...</div>
             </div>
         )
     }
@@ -90,8 +90,8 @@ export default function BranchAdminsPage() {
         <div className="space-y-6">
             <div className="flex justify-between items-start">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-900">Branch Admins</h1>
-                    <p className="text-gray-600 mt-1">View and manage branch administrators in {user?.city}</p>
+                    <h1 className="text-3xl font-bold text-gray-900">Area Sales Admins</h1>
+                    <p className="text-gray-600 mt-1">View and manage Area Sales Admins in {user?.city}</p>
                 </div>
                 <a
                     href="/asm/create-branch"
@@ -107,7 +107,7 @@ export default function BranchAdminsPage() {
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <input
                         type="text"
-                        placeholder="Search by name, email, or branch..."
+                        placeholder="Search by name, email, or Asm..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -117,7 +117,7 @@ export default function BranchAdminsPage() {
 
             <div className="grid grid-cols-3 gap-4">
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                    <p className="text-sm text-gray-500">Total Branch Admins</p>
+                    <p className="text-sm text-gray-500">Total Asm Admins</p>
                     <p className="text-2xl font-bold text-gray-900">{branchAdmins.length}</p>
                 </div>
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
@@ -133,9 +133,9 @@ export default function BranchAdminsPage() {
             {filteredAdmins.length === 0 ? (
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
                     <Building className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                    <p className="text-gray-500">No branch admins found</p>
+                    <p className="text-gray-500">No Area sales Manger found</p>
                     <a href="/asm/create-branch" className="text-blue-600 hover:underline mt-2 inline-block">
-                        Create your first Branch Admin
+                        Create your first ASM Admin
                     </a>
                 </div>
             ) : (
@@ -147,7 +147,7 @@ export default function BranchAdminsPage() {
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Phone</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Branch</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Asm</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Created</th>
                                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
@@ -206,12 +206,12 @@ export default function BranchAdminsPage() {
             {selectedAdmin && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
                     <div className="bg-white rounded-lg max-w-lg w-full p-6">
-                        <h2 className="text-xl font-bold text-gray-900 mb-4">Branch Admin Details</h2>
+                        <h2 className="text-xl font-bold text-gray-900 mb-4">Area sales admin Details</h2>
                         <div className="space-y-3 text-sm">
                             <p><strong>Name:</strong> {selectedAdmin.first_name} {selectedAdmin.last_name}</p>
                             <p><strong>Email:</strong> {selectedAdmin.email}</p>
                             <p><strong>Phone:</strong> {selectedAdmin.phone || "-"}</p>
-                            <p><strong>Branch:</strong> {selectedAdmin.branch}</p>
+                            <p><strong>Asm:</strong> {selectedAdmin.branch}</p>
                             <p><strong>City:</strong> {selectedAdmin.city}</p>
                             <p><strong>State:</strong> {selectedAdmin.state}</p>
                             <p><strong>Status:</strong> {selectedAdmin.is_active ? "Active" : "Inactive"}</p>

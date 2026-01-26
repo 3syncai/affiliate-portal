@@ -30,7 +30,7 @@ const navigationItems = [
     { name: "Dashboard", href: "/branch/dashboard", icon: LayoutDashboard },
     { name: "Products", href: "/branch/products", icon: Package },
     { name: "Affiliate Request", href: "/branch/affiliate-request", icon: UserCheck },
-    { name: "Agents in Branch", href: "/branch/agents", icon: Users },
+    { name: "Agents in ASM", href: "/branch/agents", icon: Users },
     { name: "My Referrals", href: "/branch/my-referrals", icon: Link2 },
     { name: "My Earnings", href: "/branch/earnings", icon: TrendingUp },
     { name: "Pending Payout", href: "/branch/pending-payout", icon: Clock },
@@ -122,9 +122,9 @@ export default function BranchLayout({
                             <Building className="w-6 h-6 text-indigo-200" />
                         </div>
                         <div>
-                            <h1 className="text-lg font-bold text-white tracking-wide">Branch Portal</h1>
+                            <h1 className="text-lg font-bold text-white tracking-wide">Area Sales Manager</h1>
                             <p className="text-[10px] text-indigo-300 font-medium tracking-wider uppercase">Workspace</p>
-                        </div>
+                        </div>ˍ
                     </div>
                     <button
                         onClick={() => setSidebarOpen(false)}

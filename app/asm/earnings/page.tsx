@@ -103,7 +103,7 @@ export default function ASMEarningsPage() {
                         <div className="flex justify-between items-center text-sm">
                             <div className="flex items-center text-gray-500">
                                 <Users className="w-4 h-4 mr-2" />
-                                From Branch Overrides
+                                From ASM Overrides
                             </div>
                             <span className="font-semibold text-gray-900">{formatCurrency(stats.earningsFromBranch)}</span>
                         </div>
@@ -210,7 +210,7 @@ export default function ASMEarningsPage() {
                                 recentOrders.map((order) => {
                                     // Determine type based on data (logic would be improved with real source field)
                                     const isDirect = !order.branch || order.branch === 'N/A'
-                                    const typeLabel = isDirect ? 'Direct Sale' : 'Branch Override'
+                                    const typeLabel = isDirect ? 'Direct Sale' : 'Asm Override'
                                     const typeColor = isDirect
                                         ? 'bg-emerald-100 text-emerald-700'
                                         : 'bg-gray-100 text-gray-700'

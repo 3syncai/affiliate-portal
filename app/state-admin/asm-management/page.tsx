@@ -110,14 +110,14 @@ export default function ASMManagementPage() {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-900">ASM Management</h1>
+                    <h1 className="text-3xl font-bold text-gray-900">Branch Management</h1>
                     <p className="text-gray-600 mt-1">
                         Manage Area Sales Managers in {userData?.state}
                     </p>
                 </div>
                 <button className={`px-4 py-2 ${colors.primary} text-white rounded-lg ${colors.primaryHover} transition-colors flex items-center gap-2`}>
                     <Plus className="w-5 h-5" />
-                    Create ASM
+                    Create Branch Manager
                 </button>
             </div>
 

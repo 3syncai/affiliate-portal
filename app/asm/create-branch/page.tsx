@@ -125,10 +125,10 @@ export default function CreateBranchAdminPage() {
                     confirm_password: ""
                 })
             } else {
-                setError(response.data.message || "Failed to create Branch Admin")
+                setError(response.data.message || "Failed to create Area Sales Manager")
             }
         } catch (err: any) {
-            setError(err.response?.data?.message || err.message || "Failed to create Branch Admin")
+            setError(err.response?.data?.message || err.message || "Failed to create Area sales manager")
         } finally {
             setLoading(false)
         }
@@ -137,8 +137,8 @@ export default function CreateBranchAdminPage() {
     return (
         <div className="space-y-6">
             <div>
-                <h1 className="text-3xl font-bold text-gray-900">Create Branch Admin</h1>
-                <p className="text-gray-600 mt-1">Create a new branch administrator for {asmData?.city}</p>
+                <h1 className="text-3xl font-bold text-gray-900">Create Area Sales Manager</h1>
+                <p className="text-gray-600 mt-1">Create a new Area Sales Manager for {asmData?.city}</p>
             </div>
 
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 max-w-2xl">
@@ -296,7 +296,7 @@ export default function CreateBranchAdminPage() {
 
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                         <p className="text-sm text-blue-800">
-                            <strong>Note:</strong> This Branch Admin will be assigned to <strong>{asmData?.city}</strong> city. They will have access to the Branch Dashboard and can manage affiliates in their branch.
+                            <strong>Note:</strong> This Area Sales Manager will be assigned to <strong>{asmData?.city}</strong> city. They will have access to the Branch Dashboard and can manage affiliates in their branch.
                         </p>
                     </div>
 
@@ -313,7 +313,7 @@ export default function CreateBranchAdminPage() {
                         ) : (
                             <>
                                 <UserPlus className="w-5 h-5" />
-                                Create Branch Admin
+                                Create Area Sales Manager
                             </>
                         )}
                     </button>

@@ -159,9 +159,13 @@ export default function AdminDashboardPage() {
       case "state":
         return "State Admin"
       case "area":
-        return "Area Manager"
+        return "Branch Manager"
       case "branch":
-        return "Branch Admin"
+        return "Area sales Manager"
+      case "branch_direct":
+        return "Area sales Manager Direct Bonus"
+      case "affiliate":
+        return "Affiliate Base"
       default:
         return roleType
     }
@@ -358,7 +362,7 @@ export default function AdminDashboardPage() {
               <h2 className="text-lg font-semibold text-gray-900">Commission Rates</h2>
             </div>
             <div className="space-y-4">
-              {commissionRates.map((rate) => (
+              {commissionRates.filter(rate => rate.role_type !== 'branch_direct').map((rate) => (
                 <div key={rate.role_type} className="bg-white rounded-lg p-4 border border-gray-200">
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-medium text-gray-700">{getRoleLabel(rate.role_type)}</p>

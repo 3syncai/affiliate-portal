@@ -155,7 +155,7 @@ export async function POST(request: NextRequest) {
                 SELECT commission_percentage FROM commission_rates WHERE role_type = 'affiliate'
             `);
             const branchDirectRateResult = await pool.query(`
-                SELECT commission_percentage FROM commission_rates WHERE role_type = 'branch_direct'
+                SELECT commission_percentage FROM commission_rates WHERE role_type = 'branch'
             `);
 
             const baseRate = parseFloat(affiliateRateResult.rows[0]?.commission_percentage || '70');
@@ -308,7 +308,7 @@ export async function POST(request: NextRequest) {
             console.log(`[ASM Referral] ${asm.first_name} ${asm.last_name} (${asm.city}, ${asm.state})`);
 
             const affiliateRateResult = await pool.query(`SELECT commission_percentage FROM commission_rates WHERE role_type = 'affiliate'`);
-            const branchRateResult = await pool.query(`SELECT commission_percentage FROM commission_rates WHERE role_type = 'branch_direct'`);
+            const branchRateResult = await pool.query(`SELECT commission_percentage FROM commission_rates WHERE role_type = 'branch'`);
             const asmRateResult = await pool.query(`SELECT commission_percentage FROM commission_rates WHERE role_type = 'area'`);
 
             const baseRate = parseFloat(affiliateRateResult.rows[0]?.commission_percentage || '70');
@@ -410,7 +410,7 @@ export async function POST(request: NextRequest) {
                 console.log(`[State Admin Referral] ${stateAdmin.first_name} ${stateAdmin.last_name} (${stateAdmin.state})`);
 
                 const affiliateRateResult = await pool.query(`SELECT commission_percentage FROM commission_rates WHERE role_type = 'affiliate'`);
-                const branchRateResult = await pool.query(`SELECT commission_percentage FROM commission_rates WHERE role_type = 'branch_direct'`);
+                const branchRateResult = await pool.query(`SELECT commission_percentage FROM commission_rates WHERE role_type = 'branch'`);
                 const asmRateResult = await pool.query(`SELECT commission_percentage FROM commission_rates WHERE role_type = 'area'`);
                 const stateRateResult = await pool.query(`SELECT commission_percentage FROM commission_rates WHERE role_type = 'state'`);
 
@@ -554,7 +554,7 @@ export async function POST(request: NextRequest) {
 
                     if (branchAdminRes.rows.length > 0) {
                         const branchAdmin = branchAdminRes.rows[0];
-                        const brRateRes = await pool.query(`SELECT commission_percentage FROM commission_rates WHERE role_type = 'branch_direct'`);
+                        const brRateRes = await pool.query(`SELECT commission_percentage FROM commission_rates WHERE role_type = 'branch'`);
                         const brRate = parseFloat(brRateRes.rows[0]?.commission_percentage || '15');
                         const brCommission = commissionAmount * (brRate / 100);
 

@@ -139,7 +139,7 @@ export default function BranchDashboard() {
                 </div>
                 <div className="flex items-center gap-3">
                     <span className="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10">
-                        {user?.branch} Branch
+                        {user?.branch} ASM
                     </span>
                     <div className="flex items-center gap-2 text-sm text-gray-500 bg-white px-3 py-1.5 rounded-lg border border-gray-200 shadow-sm">
                         <Clock className="w-4 h-4" />

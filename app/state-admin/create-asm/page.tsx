@@ -143,8 +143,8 @@ export default function CreateASMPage() {
     return (
         <div className="space-y-6">
             <div>
-                <h1 className="text-3xl font-bold text-gray-900">Create Area Sales Manager</h1>
-                <p className="text-gray-600 mt-1">Create a new area sales manager for {stateAdminState}</p>
+                <h1 className="text-3xl font-bold text-gray-900">Create Branch Manager</h1>
+                <p className="text-gray-600 mt-1">Create a new branch manager for {stateAdminState}</p>
             </div>
 
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 max-w-2xl">
@@ -324,7 +324,7 @@ export default function CreateASMPage() {
                         ) : (
                             <>
                                 <UserPlus className="w-5 h-5" />
-                                Create Area Sales Manager
+                                Create Branch Manager
                             </>
                         )}
                     </button>

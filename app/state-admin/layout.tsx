@@ -28,8 +28,8 @@ const navigationItems = [
     { name: "Products", href: "/state-admin/products", icon: Package },
     { name: "My Referrals", href: "/state-admin/my-referrals", icon: Share2 },
     { name: "My Earnings", href: "/state-admin/earnings", icon: TrendingUp },
-    { name: "ASM Management", href: "/state-admin/asm-management", icon: Briefcase },
-    { name: "Create ASM", href: "/state-admin/create-asm", icon: UserPlus },
+    { name: "Branch Management", href: "/state-admin/asm-management", icon: Briefcase },
+    { name: "Create Branch Manager", href: "/state-admin/create-asm", icon: UserPlus },
     { name: "Agents by Branch", href: "/state-admin/agents", icon: Users },
 ]
 
@@ -118,7 +118,7 @@ export default function StateAdminLayout({
                             <MapPin className="w-6 h-6 text-indigo-200" />
                         </div>
                         <div>
-                            <h1 className="text-lg font-bold text-white tracking-wide">State Portal</h1>
+                            <h1 className="text-lg font-bold text-white tracking-wide">State Manager</h1>
                             <p className="text-[10px] text-indigo-300 font-medium tracking-wider uppercase">Workspace</p>
                         </div>
                     </div>

@@ -55,7 +55,7 @@ export default function BranchProductsPage() {
             const response = await axios.get("/api/admin/commission-rates")
             if (response.data.success && response.data.rates) {
                 const affiliateRateObj = response.data.rates.find((r: any) => r.role_type === "affiliate")
-                const branchDirectRateObj = response.data.rates.find((r: any) => r.role_type === "branch_direct")
+                const branchDirectRateObj = response.data.rates.find((r: any) => r.role_type === "branch")
 
                 const baseRate = parseFloat(affiliateRateObj?.commission_percentage || '70')
                 const bonusRate = parseFloat(branchDirectRateObj?.commission_percentage || '15')
