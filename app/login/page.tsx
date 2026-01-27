@@ -28,7 +28,7 @@ function LoginContent() {
 
     try {
       // First try regular login (for affiliates and main admin)
-      const response = await axios.post(`${BACKEND_URL}/affiliate/auth/login`, { email, password })
+      const response = await axios.post(`/api/affiliate/auth/login`, { email, password })
       const data = response.data
 
       // Store token in localStorage
