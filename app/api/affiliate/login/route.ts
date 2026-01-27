@@ -27,48 +27,55 @@ export async function POST(req: NextRequest) {
         });
 
         // Check if it's a main admin login
-        const adminQuery = `SELECT id, email, name FROM admin_users WHERE email = $1`;
+        const adminQuery = `SELECT id, email, name, password_hash FROM admin_users WHERE email = $1`;
         const adminResult = await pool.query(adminQuery, [email]);
 
         if (adminResult.rows.length > 0) {
             const admin = adminResult.rows[0];
 
-            // For now, use a simple admin password check
-            // TODO: Add password_hash column to admin_users table for production
-            if (password === "admin123") {
+            // Verify password using bcrypt
+            if (!admin.password_hash) {
                 await pool.end();
-
-                const token = jwt.sign(
-                    {
-                        id: admin.id,
-                        email: admin.email,
-                        role: "admin"
-                    },
-                    JWT_SECRET,
-                    { expiresIn: "7d" }
+                return NextResponse.json(
+                    { success: false, message: "Admin account not properly configured. Please contact support." },
+                    { status: 401 }
                 );
+            }
 
-                console.log(`Admin logged in: ${admin.email}`);
-
-                return NextResponse.json({
-                    success: true,
-                    message: "Login successful",
-                    token,
-                    role: "admin",
-                    user: {
-                        id: admin.id,
-                        email: admin.email,
-                        name: admin.name
-                    }
-                });
-            } else {
-                // Wrong password for admin
+            const isPasswordValid = await bcrypt.compare(password, admin.password_hash);
+            if (!isPasswordValid) {
                 await pool.end();
                 return NextResponse.json(
                     { success: false, message: "Invalid email or password" },
                     { status: 401 }
                 );
             }
+
+            await pool.end();
+
+            const token = jwt.sign(
+                {
+                    id: admin.id,
+                    email: admin.email,
+                    role: "admin"
+                },
+                JWT_SECRET,
+                { expiresIn: "7d" }
+            );
+
+            console.log(`Admin logged in: ${admin.email}`);
+
+            return NextResponse.json({
+                success: true,
+                message: "Login successful",
+                token,
+                role: "admin",
+                user: {
+                    id: admin.id,
+                    email: admin.email,
+                    name: admin.name
+                }
+            });
         }
 
         // If not admin, check affiliate users
