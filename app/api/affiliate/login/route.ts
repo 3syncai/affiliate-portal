@@ -108,7 +108,17 @@ export async function POST(req: NextRequest) {
         if (result.rows.length === 0) {
             await pool.end();
             return NextResponse.json(
-                { success: false, message: "Invalid email or password" },
+                {
+                    success: false,
+                    message: "Invalid email or password",
+                    debug_info: {
+                        step: "checks_completed",
+                        admin_found: false,
+                        affiliate_found: false,
+                        email_checked: email,
+                        db_url_exists: !!(process.env.DATABASE_URL || process.env.NEXT_PUBLIC_DATABASE_URL)
+                    }
+                },
                 { status: 401 }
             );
         }
@@ -120,7 +130,7 @@ export async function POST(req: NextRequest) {
         if (!isPasswordValid) {
             await pool.end();
             return NextResponse.json(
-                { success: false, message: "Invalid email or password" },
+                { success: false, message: "Invalid email or password (Password Mismatch)" },
                 { status: 401 }
             );
         }
