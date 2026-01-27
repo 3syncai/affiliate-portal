@@ -27,31 +27,32 @@ function LoginContent() {
     setLoading(true)
 
     try {
-      // First try regular login (for affiliates and main admin)
-      const response = await axios.post(`${BACKEND_URL}/affiliate/auth/login`, { email, password })
-      const data = response.data
+      // First try internal affiliate/admin login API (bypasses CORS issues)
+      const affiliateResponse = await axios.post("/api/affiliate/login", { email, password })
+      const affiliateData = affiliateResponse.data
 
-      // Store token in localStorage
-      localStorage.setItem("affiliate_token", data.token)
-      localStorage.setItem("affiliate_user", JSON.stringify(data.user))
-      localStorage.setItem("affiliate_role", data.role)
+      if (affiliateData.success) {
+        // Store token in localStorage
+        localStorage.setItem("affiliate_token", affiliateData.token)
+        localStorage.setItem("affiliate_user", JSON.stringify(affiliateData.user))
+        localStorage.setItem("affiliate_role", affiliateData.role)
 
-      // Redirect based on role and approval status
-      if (data.role === "admin") {
-        window.location.href = "/admin/dashboard"
-      } else if (data.role === "state" || data.user?.designation === "state") {
-        // State admin users go to state admin dashboard
-        localStorage.setItem("affiliate_role", "state")
-        window.location.href = "/state-admin/dashboard"
-      } else if (data.redirectTo) {
-        window.location.href = data.redirectTo
-      } else if (!data.is_approved) {
-        window.location.href = "/verification-pending"
-      } else {
-        window.location.href = "/dashboard"
+        // Redirect based on role and approval status
+        if (affiliateData.role === "admin") {
+          window.location.href = "/admin/dashboard"
+        } else if (affiliateData.role === "state") {
+          window.location.href = "/state-admin/dashboard"
+        } else if (affiliateData.redirectTo) {
+          window.location.href = affiliateData.redirectTo
+        } else if (!affiliateData.is_approved) {
+          window.location.href = "/verification-pending"
+        } else {
+          window.location.href = "/dashboard"
+        }
+        return
       }
     } catch (err: any) {
-      // If regular login fails, try state admin login
+      // If affiliate login fails, try state admin login
       try {
         const stateResponse = await axios.post("/api/state-admin/login", { email, password })
         const stateData = stateResponse.data
