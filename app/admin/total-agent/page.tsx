@@ -56,7 +56,7 @@ export default function AllUsersPage() {
     try {
       // Load all counts
       const [affiliatesRes, stateRes, areaRes, branchRes] = await Promise.all([
-        axios.get("/api/affiliate/admin/users").catch(() => ({ data: { approved: [] } })),
+        axios.get("/api/admin/users").catch(() => ({ data: { approved: [] } })),
         axios.get("/api/admin/state-admins").catch(() => ({ data: { admins: [] } })),
         axios.get("/api/admin/area-managers").catch(() => ({ data: { managers: [] } })),
         axios.get("/api/admin/branch-admins").catch(() => ({ data: { admins: [] } }))
