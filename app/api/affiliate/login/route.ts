@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic"
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-in-production";
 
 export async function POST(req: NextRequest) {
-    console.log("=== Affiliate/Admin Login ===");
+    console.log("=== Affiliate/Admin Login (Restored) ===");
 
     try {
         const body = await req.json();
@@ -22,63 +22,88 @@ export async function POST(req: NextRequest) {
         }
 
         const pool = new Pool({
-            connectionString: process.env.DATABASE_URL || process.env.NEXT_PUBLIC_DATABASE_URL,
-            ssl: { rejectUnauthorized: false }
+            connectionString: process.env.DATABASE_URL || process.env.NEXT_PUBLIC_DATABASE_URL
         });
 
-        // Check if it's a main admin login
-        const adminQuery = `SELECT id, email, name FROM admin_users WHERE email = $1`;
+        // 1. CHECK MAIN ADMIN TABLE (affiliate_admin)
+        // This table was missing but has been restored
+        const adminQuery = `
+            SELECT id, name, email, password_hash 
+            FROM affiliate_admin 
+            WHERE email = $1
+        `;
         const adminResult = await pool.query(adminQuery, [email]);
 
         if (adminResult.rows.length > 0) {
             const admin = adminResult.rows[0];
 
-            // For now, use a simple admin password check
-            // TODO: Add password_hash column to admin_users table for production
-            if (password === "admin123") {
-                await pool.end();
-
-                const token = jwt.sign(
-                    {
-                        id: admin.id,
-                        email: admin.email,
-                        role: "admin"
-                    },
-                    JWT_SECRET,
-                    { expiresIn: "7d" }
-                );
-
-                console.log(`Admin logged in: ${admin.email}`);
-
-                return NextResponse.json({
-                    success: true,
-                    message: "Login successful",
-                    token,
-                    role: "admin",
-                    user: {
-                        id: admin.id,
-                        email: admin.email,
-                        name: admin.name
-                    }
-                });
-            } else {
-                // Wrong password for admin
+            // Verify admin password
+            const isPasswordValid = await bcrypt.compare(password, admin.password_hash);
+            if (!isPasswordValid) {
                 await pool.end();
                 return NextResponse.json(
                     { success: false, message: "Invalid email or password" },
                     { status: 401 }
                 );
             }
+
+            await pool.end();
+
+            // Generate Admin Token
+            const token = jwt.sign(
+                {
+                    id: admin.id,
+                    email: admin.email,
+                    role: "admin"
+                },
+                JWT_SECRET,
+                { expiresIn: "7d" }
+            );
+
+            console.log(`Admin logged in: ${admin.email}`);
+
+            return NextResponse.json({
+                success: true,
+                message: "Login successful",
+                token,
+                role: "admin",
+                user: {
+                    id: admin.id,
+                    name: admin.name,
+                    email: admin.email,
+                    role: "admin"
+                }
+            });
         }
 
-        // If not admin, check affiliate users
-        const affiliateQuery = `
+        // 2. CHECK AFFILIATE USER TABLE
+        // Fallback for regular affiliates
+        const query = `
             SELECT id, first_name, last_name, email, password_hash, phone, refer_code, 
-                   branch, area, state, city, designation, is_approved, is_agent, created_at
+                   branch, area, state, city, designation, is_approved, created_at
             FROM affiliate_user 
             WHERE email = $1
         `;
-        const result = await pool.query(affiliateQuery, [email]);
+
+        // Note: We use try/catch here because 'area' or 'designation' columns might still be missing 
+        // in some environments, but we want to fail gracefully if so.
+        // However, based on latest checks, we believe the schema uses 'designation' and 'area'
+        // If not, we fall back to a simpler query.
+
+        let result;
+        try {
+            result = await pool.query(query, [email]);
+        } catch (e) {
+            console.log("Full query failed, trying fallback details query...");
+            // Fallback query matching verified minimal schema just in case
+            const fallbackQuery = `
+                SELECT id, first_name, last_name, email, password_hash, phone, refer_code, 
+                       branch, state, city, is_approved, created_at
+                FROM affiliate_user 
+                WHERE email = $1
+            `;
+            result = await pool.query(fallbackQuery, [email]);
+        }
 
         if (result.rows.length === 0) {
             await pool.end();
@@ -102,11 +127,11 @@ export async function POST(req: NextRequest) {
 
         await pool.end();
 
-        // Determine user role based on designation or other fields
+        // Determine user role
+        // Prioritize designation if it exists, otherwise check role column (if it existed) or default to affiliate
         let role = "affiliate";
-        if (user.designation === "state") {
-            role = "state";
-        }
+        if (user.designation === "admin") role = "admin";
+        else if (user.designation === "state") role = "state";
 
         // Generate JWT token
         const token = jwt.sign(
@@ -115,7 +140,7 @@ export async function POST(req: NextRequest) {
                 email: user.email,
                 role: role,
                 branch: user.branch,
-                area: user.area,
+                area: user.area, // might be undefined if fallback query used
                 state: user.state,
                 city: user.city
             },
@@ -144,16 +169,17 @@ export async function POST(req: NextRequest) {
                 state: user.state,
                 city: user.city,
                 designation: user.designation,
+                role: role,
                 is_approved: user.is_approved
             }
         });
 
     } catch (error: any) {
-        console.error("Affiliate/Admin login failed:", error);
+        console.error("Login critical error:", error);
         return NextResponse.json(
             {
                 success: false,
-                message: "Login failed",
+                message: "Login failed (Server Error)",
                 error: error instanceof Error ? error.message : "Unknown error"
             },
             { status: 500 }
