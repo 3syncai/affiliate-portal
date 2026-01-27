@@ -27,15 +27,15 @@ export async function POST(req: NextRequest) {
         });
 
         // Check if it's a main admin login
-        const adminQuery = `SELECT * FROM admin_users WHERE email = $1`;
+        const adminQuery = `SELECT id, email, name FROM admin_users WHERE email = $1`;
         const adminResult = await pool.query(adminQuery, [email]);
 
         if (adminResult.rows.length > 0) {
             const admin = adminResult.rows[0];
 
-            // For admin, check if password matches email (simple admin auth)
-            // You can implement proper admin password later
-            if (password === "admin123" || email.includes("admin")) {
+            // For now, use a simple admin password check
+            // TODO: Add password_hash column to admin_users table for production
+            if (password === "admin123") {
                 await pool.end();
 
                 const token = jwt.sign(
@@ -61,6 +61,13 @@ export async function POST(req: NextRequest) {
                         name: admin.name
                     }
                 });
+            } else {
+                // Wrong password for admin
+                await pool.end();
+                return NextResponse.json(
+                    { success: false, message: "Invalid email or password" },
+                    { status: 401 }
+                );
             }
         }
 
