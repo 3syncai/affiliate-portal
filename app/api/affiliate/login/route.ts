@@ -130,7 +130,7 @@ export async function POST(req: NextRequest) {
         if (!isPasswordValid) {
             await pool.end();
             return NextResponse.json(
-                { success: false, message: "Invalid email or password (Password Mismatch)" },
+                { success: false, message: "Invalid email or password" },
                 { status: 401 }
             );
         }
