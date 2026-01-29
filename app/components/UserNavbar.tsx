@@ -28,10 +28,7 @@ export default function UserNavbar({ userName }: UserNavbarProps) {
                     {/* Left side - Logo and navigation */}
                     <div className="flex items-center space-x-8">
                         <Link href="/dashboard" className="flex items-center space-x-2">
-                            <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center">
-                                <span className="text-white font-bold text-sm">AF</span>
-                            </div>
-                            <span className="text-xl font-bold text-gray-900">Partners Portal</span>
+                            <span className="text-xl font-bold text-gray-900">Partner Portal</span>
                         </Link>
 
                         {/* Navigation Links */}

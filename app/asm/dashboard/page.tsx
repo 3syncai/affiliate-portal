@@ -125,7 +125,7 @@ export default function ASMDashboard() {
                 <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
                     <div className="flex justify-between items-start">
                         <div>
-                            <p className="text-sm font-medium text-gray-500">Total Affiliates</p>
+                            <p className="text-sm font-medium text-gray-500">Total Partners</p>
                             <h3 className="text-2xl font-bold text-gray-900 mt-2">{stats.totalAgents}</h3>
                         </div>
                         <div className="p-3 bg-blue-50 rounded-xl">
@@ -265,7 +265,7 @@ export default function ASMDashboard() {
                                         <Users className="w-4 h-4" />
                                     </div>
                                     <div>
-                                        <p className="text-sm font-semibold text-gray-900">View Affiliates</p>
+                                        <p className="text-sm font-semibold text-gray-900">View Partners</p>
                                         <p className="text-xs text-gray-500">Manage team members</p>
                                     </div>
                                 </div>

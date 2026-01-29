@@ -139,12 +139,10 @@ export default function ProductsPage() {
                 {/* Header */}
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-10">
                     <div>
-                        <div className="flex items-center gap-3 mb-2">
                             <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-emerald-900 bg-clip-text text-transparent">
                                 Product Catalog
                             </h1>
                             <Sparkles className="text-emerald-500 animate-pulse" size={24} />
-                        </div>
                         <p className="text-gray-600 text-lg">Browse products and see your commission rates</p>
                     </div>
                     <div className="relative">
