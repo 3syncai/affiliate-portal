@@ -17,8 +17,6 @@ export async function GET(request: NextRequest) {
             );
         }
 
-        // Shared pool already instantiated in lib/db.ts
-
         // Get affiliate user
         const userResult = await pool.query(
             'SELECT id, refer_code FROM affiliate_user WHERE refer_code = $1',
@@ -26,7 +24,6 @@ export async function GET(request: NextRequest) {
         );
 
         if (userResult.rows.length === 0) {
-            // Do not close shared pool
             return NextResponse.json(
                 { success: false, error: 'Affiliate not found' },
                 { status: 404 }
@@ -171,7 +168,7 @@ export async function GET(request: NextRequest) {
             created_at: row.created_at
         }));
 
-        await pool.end();
+
 
         const stats = {
             referrals,

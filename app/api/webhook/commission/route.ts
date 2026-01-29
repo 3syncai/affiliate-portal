@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import pool from "@/lib/db"; // Use shared pool
+import pool from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
 interface CommissionPayload {
     order_id: string;
     affiliate_code: string;
-    product_id: string;
+    product_id: string;  // Required for commission lookup
     product_name?: string;
     category_id?: string;
     collection_id?: string;
@@ -36,7 +36,6 @@ export async function POST(request: NextRequest) {
             }, { status: 400 });
         }
 
-        // Removed local pool creation - utilizing shared pool from lib/db.ts
 
         // STEP 0: Enrich Payload - Fetch Category/Collection if missing
         if (!payload.category_id || !payload.collection_id) {
@@ -656,8 +655,6 @@ export async function POST(request: NextRequest) {
                 }
             }
         }
-
-
 
         return NextResponse.json({
             success: true,
