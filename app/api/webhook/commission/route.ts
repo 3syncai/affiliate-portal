@@ -38,12 +38,19 @@ export async function POST(request: NextRequest) {
 
         const connectionString = process.env.DATABASE_URL || process.env.NEXT_PUBLIC_DATABASE_URL;
 
+        if (!connectionString) {
+            console.error("[Webhook Critical] DATABASE_URL is missing!");
+            return NextResponse.json({ success: false, error: "Server Configuration Error: Database URL missing" }, { status: 500 });
+        }
+
+        console.log(`[Webhook Debug] Connecting to DB: ${connectionString.includes('@') ? connectionString.split('@')[1] : 'Unknown Host'}`);
+
         // Parse connection string to handle SSL
+        // AWS RDS requires rejectionUnauthorized: false for self-signed certs (common in hosted DBs)
         const pool = new Pool({
-            connectionString: connectionString?.replace('?sslmode=no-verify', ''),
-            ssl: connectionString?.includes('rds.amazonaws.com')
-                ? { rejectUnauthorized: false }
-                : false
+            connectionString: connectionString.replace('?sslmode=no-verify', ''),
+            ssl: { rejectUnauthorized: false }, // Force SSL for Vercel -> AWS RDS
+            connectionTimeoutMillis: 5000, // Fail fast if connection is bad
         });
 
         // STEP 0: Enrich Payload - Fetch Category/Collection if missing
