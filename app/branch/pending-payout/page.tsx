@@ -180,7 +180,7 @@ export default function PendingPayoutPage() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-gray-900">Withdrawal Requests</h1>
-        <p className="text-sm text-gray-500 mt-1">Manage and process affiliate withdrawal requests</p>
+        <p className="text-sm text-gray-500 mt-1">Manage and process partner withdrawal requests</p>
       </div>
 
       {/* Filter Tabs - Modern Pills */}

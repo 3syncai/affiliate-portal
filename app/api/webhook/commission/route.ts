@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Pool } from "pg";
+import pool from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
@@ -36,15 +36,6 @@ export async function POST(request: NextRequest) {
             }, { status: 400 });
         }
 
-        const connectionString = process.env.DATABASE_URL || process.env.NEXT_PUBLIC_DATABASE_URL;
-
-        // Parse connection string to handle SSL
-        const pool = new Pool({
-            connectionString: connectionString?.replace('?sslmode=no-verify', ''),
-            ssl: connectionString?.includes('rds.amazonaws.com')
-                ? { rejectUnauthorized: false }
-                : false
-        });
 
         // STEP 0: Enrich Payload - Fetch Category/Collection if missing
         if (!payload.category_id || !payload.collection_id) {
@@ -664,8 +655,6 @@ export async function POST(request: NextRequest) {
                 }
             }
         }
-
-        await pool.end();
 
         return NextResponse.json({
             success: true,

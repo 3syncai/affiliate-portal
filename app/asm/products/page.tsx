@@ -72,7 +72,7 @@ export default function ASMProductsPage() {
 
     const fetchProducts = async (token: string) => {
         try {
-            const response = await axios.get(`${BACKEND_URL}/affiliate/user/products`, {
+            const response = await axios.get("/api/products", {
                 headers: {
                     "Authorization": `Bearer ${token}`,
                     "Content-Type": "application/json",

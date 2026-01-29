@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Pool } from 'pg';
+import pool from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,11 +17,6 @@ export async function GET(request: NextRequest) {
             );
         }
 
-        const pool = new Pool({
-            connectionString: process.env.DATABASE_URL || process.env.NEXT_PUBLIC_DATABASE_URL,
-            ssl: { rejectUnauthorized: false }
-        });
-
         // Get affiliate user
         const userResult = await pool.query(
             'SELECT id, refer_code FROM affiliate_user WHERE refer_code = $1',
@@ -29,7 +24,6 @@ export async function GET(request: NextRequest) {
         );
 
         if (userResult.rows.length === 0) {
-            await pool.end();
             return NextResponse.json(
                 { success: false, error: 'Affiliate not found' },
                 { status: 404 }
@@ -120,14 +114,14 @@ export async function GET(request: NextRequest) {
                 ar.customer_id as id,
                 COALESCE(ar.customer_email, ar.customer_id) as customer_email,
                 COALESCE(ar.customer_name, 'Customer ' || SUBSTRING(ar.customer_id FROM 5 FOR 8)) as customer_name,
-                MIN(acl.created_at) as referred_at,
+                ar.referred_at,
                 COUNT(DISTINCT acl.order_id) as order_count,
                 COALESCE(SUM(COALESCE(acl.affiliate_commission, acl.commission_amount * 0.70)), 0) as total_earned
             FROM affiliate_referrals ar
             LEFT JOIN affiliate_commission_log acl ON acl.customer_id = ar.customer_id AND acl.affiliate_code = ar.affiliate_code
             WHERE ar.affiliate_code = $1
-            GROUP BY ar.customer_id, ar.customer_email, ar.customer_name
-            ORDER BY MIN(acl.created_at) DESC
+            GROUP BY ar.customer_id, ar.customer_email, ar.customer_name, ar.referred_at
+            ORDER BY ar.referred_at DESC
             LIMIT 10
         `;
         const recentReferralsResult = await pool.query(recentReferralsQuery, [affiliateCode]);
@@ -174,7 +168,7 @@ export async function GET(request: NextRequest) {
             created_at: row.created_at
         }));
 
-        await pool.end();
+
 
         const stats = {
             referrals,

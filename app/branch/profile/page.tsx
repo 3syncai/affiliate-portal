@@ -50,7 +50,7 @@ export default function BranchProfilePage() {
         <div className="max-w-4xl mx-auto space-y-6">
             {/* Header */}
             <div>
-                <h1 className="text-3xl font-bold text-gray-900">Branch Profile</h1>
+                <h1 className="text-3xl font-bold text-gray-900">Area Profile</h1>
                 <p className="text-gray-600 mt-1">View your account information and security details</p>
             </div>
 
@@ -156,7 +156,7 @@ export default function BranchProfilePage() {
 
                                 <div className="md:col-span-2">
                                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Branch Location
+                                        Area Location
                                     </label>
                                     <div className="relative">
                                         <Building className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -227,7 +227,7 @@ export default function BranchProfilePage() {
                     <div className="text-lg font-semibold text-green-600 mt-1">Active</div>
                 </div>
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                    <div className="text-sm text-gray-600">Branch</div>
+                    <div className="text-sm text-gray-600">Area</div>
                     <div className="text-lg font-semibold text-gray-900 mt-1">{user?.branch || '-'}</div>
                 </div>
             </div>

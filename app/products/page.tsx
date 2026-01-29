@@ -89,7 +89,7 @@ export default function ProductsPage() {
 
     const fetchProducts = async (token: string) => {
         try {
-            const response = await axios.get(`${BACKEND_URL}/affiliate/user/products`, {
+            const response = await axios.get("/api/products", {
                 headers: {
                     "Authorization": `Bearer ${token}`,
                     "Content-Type": "application/json",
@@ -177,8 +177,8 @@ export default function ProductsPage() {
                         <button
                             onClick={() => setSelectedCategory("all")}
                             className={`px-5 py-3 rounded-full text-sm font-semibold transition-all duration-300 transform hover:scale-105 ${selectedCategory === "all"
-                                    ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-200"
-                                    : "bg-white border-2 border-gray-200 text-gray-700 hover:border-emerald-300 shadow-sm hover:shadow-md"
+                                ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-200"
+                                : "bg-white border-2 border-gray-200 text-gray-700 hover:border-emerald-300 shadow-sm hover:shadow-md"
                                 }`}
                         >
                             All Categories
@@ -188,8 +188,8 @@ export default function ProductsPage() {
                                 key={category}
                                 onClick={() => setSelectedCategory(category)}
                                 className={`px-5 py-3 rounded-full text-sm font-semibold transition-all duration-300 transform hover:scale-105 ${selectedCategory === category
-                                        ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-200"
-                                        : "bg-white border-2 border-gray-200 text-gray-700 hover:border-emerald-300 shadow-sm hover:shadow-md"
+                                    ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-200"
+                                    : "bg-white border-2 border-gray-200 text-gray-700 hover:border-emerald-300 shadow-sm hover:shadow-md"
                                     }`}
                             >
                                 {category}
@@ -292,8 +292,8 @@ function ProductCard({ product, user, affiliateRate }: { product: Product; user:
                         {product.title}
                     </h3>
                     <span className={`px-3 py-1.5 text-xs font-bold rounded-full whitespace-nowrap shadow-sm ${product.isInStock
-                            ? "bg-gradient-to-r from-green-400 to-emerald-500 text-white"
-                            : "bg-gradient-to-r from-red-400 to-pink-500 text-white"
+                        ? "bg-gradient-to-r from-green-400 to-emerald-500 text-white"
+                        : "bg-gradient-to-r from-red-400 to-pink-500 text-white"
                         }`}>
                         {product.isInStock ? "In Stock" : "Out of Stock"}
                     </span>
