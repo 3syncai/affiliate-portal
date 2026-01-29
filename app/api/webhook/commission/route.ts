@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Pool } from "pg";
+import pool from "@/lib/db"; // Use shared pool
 
 export const dynamic = "force-dynamic";
 
 interface CommissionPayload {
     order_id: string;
     affiliate_code: string;
-    product_id: string;  // Required for commission lookup
+    product_id: string;
     product_name?: string;
     category_id?: string;
     collection_id?: string;
@@ -36,22 +36,7 @@ export async function POST(request: NextRequest) {
             }, { status: 400 });
         }
 
-        const connectionString = process.env.DATABASE_URL || process.env.NEXT_PUBLIC_DATABASE_URL;
-
-        if (!connectionString) {
-            console.error("[Webhook Critical] DATABASE_URL is missing!");
-            return NextResponse.json({ success: false, error: "Server Configuration Error: Database URL missing" }, { status: 500 });
-        }
-
-        console.log(`[Webhook Debug] Connecting to DB: ${connectionString.includes('@') ? connectionString.split('@')[1] : 'Unknown Host'}`);
-
-        // Parse connection string to handle SSL
-        // AWS RDS requires rejectionUnauthorized: false for self-signed certs (common in hosted DBs)
-        const pool = new Pool({
-            connectionString: connectionString.replace('?sslmode=no-verify', ''),
-            ssl: { rejectUnauthorized: false }, // Force SSL for Vercel -> AWS RDS
-            connectionTimeoutMillis: 5000, // Fail fast if connection is bad
-        });
+        // Removed local pool creation - utilizing shared pool from lib/db.ts
 
         // STEP 0: Enrich Payload - Fetch Category/Collection if missing
         if (!payload.category_id || !payload.collection_id) {
@@ -672,7 +657,7 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        await pool.end();
+
 
         return NextResponse.json({
             success: true,
