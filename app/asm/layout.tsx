@@ -27,10 +27,10 @@ const navigationItems = [
     { name: "Dashboard", href: "/asm/dashboard", icon: LayoutDashboard },
     { name: "Products", href: "/asm/products", icon: Package },
     { name: "My Referrals", href: "/asm/my-referrals", icon: Users },
-    { name: "Branch Manager", href: "/asm/branch-admins", icon: Building },
+    { name: "Area Sales Manager", href: "/asm/branch-admins", icon: Building },
     { name: "My Earnings", href: "/asm/earnings", icon: TrendingUp },
-    { name: "Create Branch Manager", href: "/asm/create-branch", icon: UserPlus },
-    { name: "Agents in City", href: "/asm/agents", icon: Users },
+    { name: "Create Area Sales Manager", href: "/asm/create-branch", icon: UserPlus },
+    { name: "Partners in City", href: "/asm/agents", icon: Users },
 ]
 
 

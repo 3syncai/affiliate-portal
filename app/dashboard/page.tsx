@@ -206,10 +206,8 @@ export default function DashboardPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-emerald-500 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg">AF</span>
-              </div>
-              <h1 className="text-xl font-semibold text-gray-900">Affiliate Portal</h1>
+
+              <h1 className="text-xl font-semibold text-gray-900">Partner Portal</h1>
               <span className="ml-4 inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-700 rounded-md text-sm font-medium">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
@@ -245,7 +243,7 @@ export default function DashboardPage() {
         <div className="space-y-6">
           {/* Agent Dashboard Header */}
           <div>
-            <h2 className="text-3xl font-bold text-gray-900">Agent Dashboard</h2>
+            <h2 className="text-3xl font-bold text-gray-900">Partner Dashboard</h2>
             <p className="text-sm text-gray-500 mt-1">Welcome back, {user?.first_name} {user?.last_name}</p>
           </div>
 
@@ -318,7 +316,7 @@ export default function DashboardPage() {
             <div className="bg-emerald-50/50 rounded-2xl p-6 shadow-sm border border-emerald-100">
               <div className="flex items-center gap-2 mb-4">
                 <UserCircle2 className="w-5 h-5 text-emerald-600" />
-                <h3 className="font-semibold text-gray-900 text-sm">Your Agent Code</h3>
+                <h3 className="font-semibold text-gray-900 text-sm">Your Partner Code</h3>
                 <span className="ml-auto inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500 text-white">
                   Active
                 </span>
@@ -471,7 +469,7 @@ export default function DashboardPage() {
               )}
               <div>
                 <p className="text-xs text-gray-500 mb-1">Status</p>
-                <p className="text-sm font-medium text-gray-900">{user?.is_agent ? "Agent" : "User"}</p>
+                <p className="text-sm font-medium text-gray-900">{user?.is_agent ? "Partner" : "User"}</p>
               </div>
             </div>
           </div>

@@ -80,7 +80,7 @@ export default function ASMEarningsPage() {
         <div className="space-y-6 text-gray-800">
             {/* Header */}
             <div>
-                <h1 className="text-2xl font-bold text-gray-900">Area Earnings</h1>
+                <h1 className="text-2xl font-bold text-gray-900">Branch Earning</h1>
                 <p className="text-gray-500 text-sm mt-1">Detailed breakdown of income sources from {userData?.city}</p>
             </div>
 
@@ -159,7 +159,7 @@ export default function ASMEarningsPage() {
                         <div className="flex justify-between text-xs mt-3">
                             <div className="flex items-center">
                                 <div className="w-2 h-2 rounded-full bg-blue-500 mr-2"></div>
-                                <span className="text-gray-600">{stats.ordersFromBranch} Branch Orders</span>
+                                <span className="text-gray-600">{stats.ordersFromBranch} Area's Order</span>
                             </div>
                             <div className="flex items-center">
                                 <div className="w-2 h-2 rounded-full bg-emerald-400 mr-2"></div>
@@ -176,7 +176,7 @@ export default function ASMEarningsPage() {
                 <div>
                     <h4 className="text-sm font-semibold text-blue-900">Earning Structure</h4>
                     <p className="text-sm text-blue-700 mt-0.5">
-                        You earn in two ways: <span className="font-semibold">95% commission</span> on your direct referrals, plus <span className="font-semibold"> {stats.commissionRate}% override</span> on total sales volume from branches in your area.
+                        You earn in two ways: <span className="font-semibold">95% commission</span> on your direct referrals, plus <span className="font-semibold"> {stats.commissionRate}% override</span> on total sales volume from area in your branches.
                     </p>
                 </div>
             </div>
