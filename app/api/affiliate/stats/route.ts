@@ -17,13 +17,9 @@ export async function GET(request: NextRequest) {
             );
         }
 
-        const connectionString = process.env.DATABASE_URL || process.env.NEXT_PUBLIC_DATABASE_URL;
-
         const pool = new Pool({
-            connectionString: connectionString?.replace('?sslmode=no-verify', ''),
-            ssl: connectionString?.includes('rds.amazonaws.com')
-                ? { rejectUnauthorized: false }
-                : false
+            connectionString: process.env.DATABASE_URL || process.env.NEXT_PUBLIC_DATABASE_URL,
+            ssl: { rejectUnauthorized: false }
         });
 
         // Get affiliate user
