@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Pool } from "pg";
+import pool from "@/lib/db";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
@@ -21,9 +21,7 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        const pool = new Pool({
-            connectionString: process.env.DATABASE_URL || process.env.NEXT_PUBLIC_DATABASE_URL
-        });
+        // Shared pool from lib/db.ts handles connection
 
         // 1. CHECK MAIN ADMIN TABLE (affiliate_admin)
         // This table was missing but has been restored
@@ -40,14 +38,14 @@ export async function POST(req: NextRequest) {
             // Verify admin password
             const isPasswordValid = await bcrypt.compare(password, admin.password_hash);
             if (!isPasswordValid) {
-                await pool.end();
+                // Do not close shared pool
                 return NextResponse.json(
                     { success: false, message: "Invalid email or password" },
                     { status: 401 }
                 );
             }
 
-            await pool.end();
+            // Do not close shared pool
 
             // Generate Admin Token
             const token = jwt.sign(
@@ -106,7 +104,7 @@ export async function POST(req: NextRequest) {
         }
 
         if (result.rows.length === 0) {
-            await pool.end();
+
             return NextResponse.json(
                 {
                     success: false,
@@ -128,14 +126,14 @@ export async function POST(req: NextRequest) {
         // Verify password
         const isPasswordValid = await bcrypt.compare(password, user.password_hash);
         if (!isPasswordValid) {
-            await pool.end();
+
             return NextResponse.json(
                 { success: false, message: "Invalid email or password" },
                 { status: 401 }
             );
         }
 
-        await pool.end();
+
 
         // Determine user role
         // Prioritize designation if it exists, otherwise check role column (if it existed) or default to affiliate

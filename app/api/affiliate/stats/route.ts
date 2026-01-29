@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Pool } from 'pg';
+import pool from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,10 +17,7 @@ export async function GET(request: NextRequest) {
             );
         }
 
-        const pool = new Pool({
-            connectionString: process.env.DATABASE_URL || process.env.NEXT_PUBLIC_DATABASE_URL,
-            ssl: { rejectUnauthorized: false }
-        });
+        // Shared pool already instantiated in lib/db.ts
 
         // Get affiliate user
         const userResult = await pool.query(
@@ -29,7 +26,7 @@ export async function GET(request: NextRequest) {
         );
 
         if (userResult.rows.length === 0) {
-            await pool.end();
+            // Do not close shared pool
             return NextResponse.json(
                 { success: false, error: 'Affiliate not found' },
                 { status: 404 }
