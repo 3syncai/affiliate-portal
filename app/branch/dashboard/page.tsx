@@ -121,7 +121,7 @@ export default function BranchDashboard() {
     }
 
     const statCards = [
-        { title: "Total Agents", value: stats.totalAgents, icon: Users, color: "text-orange-600", bg: "bg-orange-50" },
+        { title: "Total Partners", value: stats.totalAgents, icon: Users, color: "text-orange-600", bg: "bg-orange-50" },
         { title: "Pending Approval", value: stats.pendingApproval, icon: TrendingUp, color: "text-yellow-600", bg: "bg-yellow-50" },
         { title: "Total Commission", value: `₹${stats.totalCommission.toLocaleString("en-IN")}`, icon: DollarSign, color: "text-green-600", bg: "bg-green-50" },
         { title: "Total Orders", value: stats.totalOrders, icon: ShoppingBag, color: "text-purple-600", bg: "bg-purple-50" }
@@ -293,7 +293,7 @@ export default function BranchDashboard() {
                                     bg: "bg-yellow-50"
                                 },
                                 {
-                                    name: "View Agents",
+                                    name: "View Partners",
                                     desc: "Manage team",
                                     href: "/branch/agents",
                                     icon: Users,
