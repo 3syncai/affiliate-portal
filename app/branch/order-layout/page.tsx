@@ -162,7 +162,7 @@ export default function OrderLayoutPage() {
       <div className="flex justify-between items-start">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-gray-900">Order Layout</h1>
-          <p className="text-sm text-gray-500 mt-1">View and manage affiliate orders</p>
+          <p className="text-sm text-gray-500 mt-1">View and manage partner orders</p>
         </div>
         <button
           onClick={exportToCSV}
@@ -287,7 +287,7 @@ export default function OrderLayoutPage() {
                     Date
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
-                    Affiliate
+                    Code
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
                     Product

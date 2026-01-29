@@ -137,25 +137,7 @@ export default function Home() {
                 Join the Oweg Partners program to sell premium home appliances and earn competitive commissions.
                 Track sales, manage earnings, and grow your business with our professional tools.
               </p>
-              <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
-                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="w-full sm:w-auto">
-                  <Link
-                    href="/register"
-                    className="w-full sm:w-auto px-8 py-4 bg-emerald-600 text-white rounded-full font-semibold text-lg hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-200 flex items-center justify-center gap-2 group"
-                  >
-                    Start Earning Now
-                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                  </Link>
-                </motion.div>
-                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="w-full sm:w-auto">
-                  <Link
-                    href="/login"
-                    className="w-full sm:w-auto px-8 py-4 bg-white text-gray-700 border border-gray-200 rounded-full font-semibold text-lg hover:bg-gray-50 transition-all flex items-center justify-center gap-2"
-                  >
-                    Partner Login
-                  </Link>
-                </motion.div>
-              </div>
+
 
               <motion.div
                 initial={{ opacity: 0 }}

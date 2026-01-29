@@ -112,7 +112,7 @@ export default function EarningsPage() {
 
                     <div className="mt-4 pt-4 border-t border-gray-100 space-y-2">
                         <div className="flex justify-between text-xs">
-                            <span className="text-gray-500 flex items-center gap-1"><Users className="w-3 h-3" /> From Affiliate Agents</span>
+                            <span className="text-gray-500 flex items-center gap-1"><Users className="w-3 h-3" /> From Partners</span>
                             <span className="font-medium text-gray-900">{formatCurrency(stats.overrideEarnings)}</span>
                         </div>
                         <div className="flex justify-between text-xs">
@@ -185,7 +185,7 @@ export default function EarningsPage() {
                     <p className="text-sm text-blue-700/80 leading-relaxed">
                         You earn in two ways:
                         <span className="font-semibold"> 85% commission</span> on your direct referrals, plus
-                        <span className="font-semibold"> {stats.commissionRate}% override</span> on all sales made by affiliate agents in your branch.
+                        <span className="font-semibold"> {stats.commissionRate}% override</span> on all sales made by partners in your branch.
                     </p>
                 </div>
             </div>

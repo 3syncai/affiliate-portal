@@ -88,7 +88,7 @@ export default function BranchAffiliateRequestPage() {
     }
 
     const handleReject = async (userId: string) => {
-        if (!confirm("Are you sure you want to reject this affiliate?")) return
+        if (!confirm("Are you sure you want to reject this partner?")) return
         try {
             await axios.post(`/api/branch/affiliate-users/${userId}/reject`)
             if (branchData?.branch) fetchUsers(branchData.branch)
@@ -113,8 +113,8 @@ export default function BranchAffiliateRequestPage() {
     return (
         <div className="space-y-6">
             <div>
-                <h1 className="text-3xl font-bold text-gray-900">Affiliate Requests</h1>
-                <p className="text-gray-600 mt-1">Approve or reject affiliate requests for {branchData?.branch}</p>
+                <h1 className="text-3xl font-bold text-gray-900">Partner Requests</h1>
+                <p className="text-gray-600 mt-1">Approve or reject partner requests for {branchData?.branch}</p>
             </div>
 
             {/* Tabs */}
@@ -151,7 +151,7 @@ export default function BranchAffiliateRequestPage() {
             {filteredUsers.length === 0 ? (
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
                     <Clock className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                    <p className="text-gray-500">No {activeTab} affiliate requests</p>
+                    <p className="text-gray-500">No {activeTab} partner requests</p>
                 </div>
             ) : (
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
@@ -210,7 +210,7 @@ export default function BranchAffiliateRequestPage() {
                     <div className="relative bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl z-10 transition-transform transform scale-100">
                         <div className="p-6 border-b border-gray-100 flex justify-between items-center sticky top-0 bg-white z-20">
                             <div>
-                                <h2 className="text-2xl font-bold text-gray-900">Affiliate Details</h2>
+                                <h2 className="text-2xl font-bold text-gray-900">Partner Details</h2>
                                 <p className="text-sm text-gray-500">Applicant ID: <span className="font-mono">{selectedUser.id.slice(0, 8)}</span></p>
                             </div>
                             <button onClick={() => setSelectedUser(null)} className="text-gray-400 hover:text-gray-600">
