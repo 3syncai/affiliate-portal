@@ -1,9 +1,12 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { Users, TrendingUp, DollarSign, ShoppingBag, CheckCircle, UserPlus, CreditCard, Clock, ArrowUpRight, MapPin, Copy, Check, Link2, TrendingDown, Share2 } from "lucide-react"
+import { useEffect, useState, useCallback } from "react"
+import { Users, TrendingUp, DollarSign, ShoppingBag, CheckCircle, UserPlus, CreditCard, Clock, ArrowUpRight, MapPin, Copy, Check, Link2, TrendingDown, Share2, Wifi, WifiOff } from "lucide-react"
 import axios from "axios"
+import useSWR from 'swr'
 import { useTheme } from "@/contexts/ThemeContext"
+import { useSSE } from "@/hooks/useSSE"
+import { Toast } from "@/components/Toast"
 
 type Activity = {
     id: string
@@ -21,58 +24,75 @@ type Activity = {
     }
 }
 
+const fetcher = (url: string) => axios.get(url).then(res => res.data)
+
 export default function BranchDashboard() {
     const { theme } = useTheme()
     const [user, setUser] = useState<any>(null)
-    const [stats, setStats] = useState({
-        totalAgents: 0,
-        pendingApproval: 0,
-        totalCommission: 0,
-        totalOrders: 0
-    })
     const [copied, setCopied] = useState(false)
-    const [activities, setActivities] = useState<Activity[]>([])
-    const [loading, setLoading] = useState(true)
-    const [activitiesLoading, setActivitiesLoading] = useState(true)
+
+    // Toast notification state
+    const [showToast, setShowToast] = useState(false)
+    const [toastData, setToastData] = useState<{ message: string; amount?: number }>({ message: "" })
 
     useEffect(() => {
         const userData = localStorage.getItem("affiliate_user")
         if (userData) {
-            const parsed = JSON.parse(userData)
-            setUser(parsed)
-            fetchStats(parsed.branch)
-            fetchActivities(parsed.branch)
-        } else {
-            setLoading(false)
-            setActivitiesLoading(false)
+            setUser(JSON.parse(userData))
         }
     }, [])
 
-    const fetchStats = async (branch: string) => {
-        try {
-            const response = await axios.get(`/api/branch/stats?branch=${encodeURIComponent(branch)}`)
-            if (response.data.success) {
-                setStats(response.data.stats)
-            }
-        } catch (error) {
-            console.error("Failed to fetch stats:", error)
-        } finally {
-            setLoading(false)
-        }
+    // SWR Hooks
+    const { data: statsData, mutate: mutateStats, isLoading: statsLoading } = useSWR(
+        user?.branch ? `/api/branch/stats?branch=${encodeURIComponent(user.branch)}` : null,
+        fetcher
+    )
+
+    const { data: activityData, mutate: mutateActivities, isLoading: activitiesLoading } = useSWR(
+        user?.branch ? `/api/branch/activity?branch=${encodeURIComponent(user.branch)}` : null,
+        fetcher
+    )
+
+    const stats = statsData?.success ? statsData.stats : {
+        totalAgents: 0,
+        pendingApproval: 0,
+        totalCommission: 0,
+        totalOrders: 0
     }
 
-    const fetchActivities = async (branch: string) => {
-        try {
-            const response = await axios.get(`/api/branch/activity?branch=${encodeURIComponent(branch)}`)
-            if (response.data.success) {
-                setActivities(response.data.activities || [])
-            }
-        } catch (error) {
-            console.error("Failed to fetch activities:", error)
-        } finally {
-            setActivitiesLoading(false)
+    const activities: Activity[] = activityData?.success ? activityData.activities || [] : []
+
+    const loading = statsLoading || activitiesLoading
+
+    // Real-time updates handler
+    const handleUpdate = useCallback((data: any) => {
+        console.log("Live update received:", data);
+        if (data.type === 'stats_update' || data.type === 'payment_received') {
+            setToastData({
+                message: data.message || "New activity received!",
+                amount: data.amount
+            });
+            setShowToast(true);
+
+            // Refresh stats and activity using SWR mutate
+            mutateStats();
+            mutateActivities();
         }
-    }
+    }, [mutateStats, mutateActivities]);
+
+    const { isConnected } = useSSE({
+        affiliateCode: user?.refer_code || '',
+        onMessage: handleUpdate
+    });
+
+    useEffect(() => {
+        const userData = localStorage.getItem("affiliate_user")
+        if (userData) {
+            setUser(JSON.parse(userData))
+        }
+    }, [])
+
+
 
     const formatTimeAgo = (timestamp: string) => {
         const now = new Date()
@@ -129,6 +149,17 @@ export default function BranchDashboard() {
 
     return (
         <div className="space-y-8 max-w-[1600px] mx-auto p-2">
+
+            {/* Payment Received Toast */}
+            {showToast && (
+                <Toast
+                    message={toastData.message}
+                    type="payment"
+                    amount={toastData.amount}
+                    onClose={() => setShowToast(false)}
+                />
+            )}
+
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
@@ -138,6 +169,11 @@ export default function BranchDashboard() {
                     </p>
                 </div>
                 <div className="flex items-center gap-3">
+                    <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium ${isConnected ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                        {isConnected ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
+                        {isConnected ? 'Live Updates On' : 'Connecting...'}
+                    </div>
+
                     <span className="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10">
                         {user?.branch} ASM
                     </span>

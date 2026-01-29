@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { Pool } from 'pg';
+import pool from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,10 +18,6 @@ export async function GET(request: Request) {
                 { status: 400 }
             );
         }
-
-        const pool = new Pool({
-            connectionString: process.env.DATABASE_URL || process.env.NEXT_PUBLIC_DATABASE_URL
-        });
 
         // Fetch affiliate user with payment details
         const userQuery = `
@@ -44,7 +40,6 @@ export async function GET(request: Request) {
         const userResult = await pool.query(userQuery, [referCode]);
 
         if (userResult.rows.length === 0) {
-            await pool.end();
             return NextResponse.json(
                 { success: false, error: 'Affiliate not found' },
                 { status: 404 }
@@ -54,11 +49,12 @@ export async function GET(request: Request) {
         const user = userResult.rows[0];
 
         // Fetch total commission earned (use affiliate_amount - the 70% affiliate gets)
+        // ONLY include CREDITED commissions in the wallet balance
         const commissionQuery = `
       SELECT 
         COALESCE(SUM(COALESCE(affiliate_amount, commission_amount * 0.70)), 0) as total_earned
       FROM affiliate_commission_log
-      WHERE affiliate_code = $1
+      WHERE affiliate_code = $1 AND status = 'CREDITED'
     `;
         const commissionResult = await pool.query(commissionQuery, [referCode]);
         const totalEarned = parseFloat(commissionResult.rows[0]?.total_earned) || 0;
@@ -78,8 +74,6 @@ export async function GET(request: Request) {
         // Calculate available balance dynamically (never gets out of sync!)
         // Available = Total Earned (70% of commissions) - Total Deducted (approved/paid withdrawals)
         const availableBalance = totalEarned - totalDeducted;
-
-        await pool.end();
 
         // Format response
         const walletData = {

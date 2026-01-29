@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Pool } from "pg";
+import pool from "@/lib/db";
 
 export const dynamic = "force-dynamic"
 
@@ -13,11 +13,6 @@ export async function GET(req: NextRequest) {
         if (!branch) {
             return NextResponse.json({ success: false, error: "Branch parameter is required" }, { status: 400 });
         }
-
-        const pool = new Pool({
-            connectionString: process.env.DATABASE_URL || process.env.NEXT_PUBLIC_DATABASE_URL,
-            ssl: { rejectUnauthorized: false }
-        });
 
         // Count total approved agents in this branch
         const totalAgentsResult = await pool.query(
@@ -33,14 +28,14 @@ export async function GET(req: NextRequest) {
             [branch]
         );
 
-        // Get total commission for agents in this branch (use affiliate_amount column)
+        // Get total commission for agents in this branch (ONLY CREDITED)
         let totalCommission = 0;
         try {
             const commissionResult = await pool.query(
                 `SELECT COALESCE(SUM(COALESCE(acl.affiliate_amount, acl.commission_amount * 0.70)), 0) as total 
                  FROM affiliate_commission_log acl
                  INNER JOIN affiliate_user au ON acl.affiliate_code = au.refer_code
-                 WHERE au.branch ILIKE $1`,
+                 WHERE au.branch ILIKE $1 AND acl.status = 'CREDITED'`,
                 [branch]
             );
             totalCommission = parseFloat(commissionResult.rows[0]?.total || '0');
@@ -61,8 +56,6 @@ export async function GET(req: NextRequest) {
         } catch (e) {
             console.log("Orders query failed, using 0", e);
         }
-
-        await pool.end();
 
         const stats = {
             totalAgents: parseInt(totalAgentsResult.rows[0]?.count || '0'),

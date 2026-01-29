@@ -1,8 +1,11 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import axios from "axios"
-import { Users, DollarSign, ShoppingBag, TrendingUp, Package } from "lucide-react"
+import useSWR from 'swr'
+import { Users, DollarSign, ShoppingBag, TrendingUp, Package, Wifi, WifiOff } from "lucide-react"
+import { useSSE } from "@/hooks/useSSE"
+import { Toast } from "@/components/Toast"
 
 type Customer = {
     customer_id: string
@@ -16,50 +19,63 @@ type Customer = {
     orders: any[]
 }
 
+const fetcher = (url: string) => axios.get(url).then(res => res.data)
+
 export default function ASMMyReferralsPage() {
-    const [loading, setLoading] = useState(true)
-    const [customers, setCustomers] = useState<Customer[]>([])
-    const [stats, setStats] = useState({
+    const [userData, setUserData] = useState<any>(null)
+
+    // Toast state
+    const [showToast, setShowToast] = useState(false)
+    const [toastData, setToastData] = useState<{ message: string; amount?: number }>({ message: "" })
+
+    useEffect(() => {
+        const storedUser = localStorage.getItem("affiliate_user")
+        if (storedUser) {
+            setUserData(JSON.parse(storedUser))
+        }
+    }, [])
+
+    const { data, mutate, isLoading } = useSWR(
+        userData?.id ? `/api/asm/my-referrals?adminId=${userData.id}` : null,
+        fetcher
+    )
+
+    const customers: Customer[] = data?.success ? data.customers || [] : []
+
+    const stats = data?.success ? data.stats || {
         total_customers: 0,
         total_orders: 0,
         total_sales: 0,
         total_commissions: 0,
         pending_commissions: 0,
         credited_commissions: 0
-    })
-
-    useEffect(() => {
-        const userData = localStorage.getItem("affiliate_user")
-        if (userData) {
-            const parsed = JSON.parse(userData)
-            if (parsed.id) {
-                fetchReferrals(parsed.id)
-            }
-        } else {
-            setLoading(false)
-        }
-    }, [])
-
-    const fetchReferrals = async (adminId: string) => {
-        try {
-            const response = await axios.get(`/api/asm/my-referrals?adminId=${adminId}`)
-            if (response.data.success) {
-                setCustomers(response.data.customers || [])
-                setStats(response.data.stats || {
-                    total_customers: 0,
-                    total_orders: 0,
-                    total_sales: 0,
-                    total_commissions: 0,
-                    pending_commissions: 0,
-                    credited_commissions: 0
-                })
-            }
-        } catch (error) {
-            console.error("Failed to fetch referrals:", error)
-        } finally {
-            setLoading(false)
-        }
+    } : {
+        total_customers: 0,
+        total_orders: 0,
+        total_sales: 0,
+        total_commissions: 0,
+        pending_commissions: 0,
+        credited_commissions: 0
     }
+
+    const loading = isLoading
+
+    // Live updates
+    const handleUpdate = useCallback((data: any) => {
+        if (data.type === 'stats_update' || data.type === 'payment_received') {
+            setToastData({
+                message: "New referral activity!",
+                amount: data.amount
+            });
+            setShowToast(true);
+            mutate();
+        }
+    }, [mutate]);
+
+    const { isConnected } = useSSE({
+        affiliateCode: userData?.refer_code || '',
+        onMessage: handleUpdate
+    });
 
     const formatCurrency = (amount: number) => {
         return `₹${amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
@@ -84,10 +100,27 @@ export default function ASMMyReferralsPage() {
 
     return (
         <div className="space-y-6">
+
+            {/* Payment Received Toast */}
+            {showToast && (
+                <Toast
+                    message={toastData.message}
+                    type="payment"
+                    amount={toastData.amount}
+                    onClose={() => setShowToast(false)}
+                />
+            )}
+
             {/* Header */}
-            <div>
-                <h1 className="text-2xl font-bold text-gray-900">My Direct Referrals</h1>
-                <p className="text-gray-500 text-sm mt-1">Customers who registered using your referral code</p>
+            <div className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-2xl font-bold text-gray-900">My Direct Referrals</h1>
+                    <p className="text-gray-500 text-sm mt-1">Customers who registered using your referral code</p>
+                </div>
+                <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium ${isConnected ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                    {isConnected ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
+                    {isConnected ? 'Live Updates On' : 'Connecting...'}
+                </div>
             </div>
 
             {/* Stats Cards */}

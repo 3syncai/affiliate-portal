@@ -4,7 +4,8 @@ import { useEffect, useState, useRef } from "react"
 import { useRouter } from "next/navigation"
 import QRCode from 'qrcode'
 import axios from 'axios'
-import { Copy, Download, UserCircle2, Users, Wallet, TrendingUp, Clock, DollarSign } from 'lucide-react'
+import useSWR from 'swr'
+import { Copy, Download, UserCircle2, Users, Wallet, TrendingUp, DollarSign } from 'lucide-react'
 import { STORE_URL } from "@/lib/config"
 
 interface AffiliateStats {
@@ -51,10 +52,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const [qrDataUrl, setQrDataUrl] = useState('')
   const [copied, setCopied] = useState(false)
-  const [stats, setStats] = useState<AffiliateStats | null>(null)
-  const [statsLoading, setStatsLoading] = useState(false)
   const [affiliateRate, setAffiliateRate] = useState<number>(100) // Default 100% if not set
-  const [walletBalance, setWalletBalance] = useState<number>(0) // Dynamically calculated wallet balance
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
@@ -103,10 +101,7 @@ export default function DashboardPage() {
           }
         }).then(setQrDataUrl).catch(console.error)
 
-        // Fetch affiliate stats
-        fetchStats(parsedUser.refer_code)
         fetchAffiliateRate()
-        fetchWalletBalance(parsedUser.refer_code)
       }
     } catch (e) {
       console.error("Error parsing user data:", e)
@@ -116,21 +111,30 @@ export default function DashboardPage() {
     }
   }, [router])
 
-  const fetchStats = async (referCode: string) => {
-    setStatsLoading(true)
-    try {
-      const res = await axios.get('/api/affiliate/stats', {
-        headers: {
-          'x-affiliate-code': referCode
-        }
-      })
-      setStats(res.data)
-    } catch (err) {
-      console.error("Failed to fetch stats:", err)
-    } finally {
-      setStatsLoading(false)
+  // SWR Fetcher
+  const fetcher = (url: string) => axios.get(url).then(res => res.data)
+  const statsFetcher = (url: string, referCode: string) => axios.get(url, {
+    headers: { 'x-affiliate-code': referCode }
+  }).then(res => res.data)
+
+  // Use SWR for real-time updates (polls every 5 seconds)
+  const { data: stats } = useSWR<AffiliateStats>(
+    user?.refer_code ? ['/api/affiliate/stats', user.refer_code] : null,
+    ([url, referCode]: [string, string]) => statsFetcher(url, referCode),
+    {
+      refreshInterval: 5000, // Poll every 5 seconds
+      revalidateOnFocus: true
     }
-  }
+  )
+
+  const { data: walletData } = useSWR(
+    user?.refer_code ? `/api/affiliate/wallet?refer_code=${user.refer_code}` : null,
+    fetcher,
+    {
+      refreshInterval: 5000,
+      revalidateOnFocus: true
+    }
+  )
 
   const fetchAffiliateRate = async () => {
     try {
@@ -145,17 +149,6 @@ export default function DashboardPage() {
       }
     } catch (err) {
       console.error("Error fetching affiliate rate:", err)
-    }
-  }
-
-  const fetchWalletBalance = async (referCode: string) => {
-    try {
-      const response = await axios.get(`/api/affiliate/wallet?refer_code=${referCode}`)
-      if (response.data.success) {
-        setWalletBalance(response.data.data.balance.current || 0)
-      }
-    } catch (err) {
-      console.error("Error fetching wallet balance:", err)
     }
   }
 
@@ -199,6 +192,9 @@ export default function DashboardPage() {
     )
   }
 
+  // Use wallet balance from SWR data or default to 0
+  const walletBalance = walletData?.success ? walletData.data.balance.current : 0
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -224,7 +220,10 @@ export default function DashboardPage() {
               </a>
             </div>
             <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-600">Welcome, <strong className="text-gray-900">{user?.first_name && user?.last_name ? `${user.first_name} ${user.last_name}` : user?.email}</strong></span>
+              <span className="text-sm text-gray-600">
+                <span className="inline-block w-2 h-2 rounded-full bg-green-500 mr-2 animate-pulse"></span>
+                Live Updates | Welcome, <strong className="text-gray-900">{user?.first_name && user?.last_name ? `${user.first_name} ${user.last_name}` : user?.email}</strong>
+              </span>
               <button
                 onClick={handleLogout}
                 className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-700 hover:text-gray-900 transition-colors">
@@ -478,4 +477,3 @@ export default function DashboardPage() {
     </div>
   )
 }
-

@@ -46,7 +46,9 @@ export async function GET(req: NextRequest) {
             const ordersQuery = `
                 SELECT 
                     COUNT(*) as total_orders,
-                    COALESCE(SUM(COALESCE(acl.affiliate_amount, acl.commission_amount * 0.70)), 0) as total_commission
+                    COALESCE(SUM(acl.affiliate_commission), 0) as total_commission,
+                    COALESCE(SUM(CASE WHEN acl.status = 'PENDING' THEN acl.affiliate_commission ELSE 0 END), 0) as pending_commission,
+                    COALESCE(SUM(CASE WHEN acl.status = 'CREDITED' THEN acl.affiliate_commission ELSE 0 END), 0) as credited_commission
                 FROM affiliate_commission_log acl
                 JOIN affiliate_user u ON acl.affiliate_code = u.refer_code
                 JOIN stores s ON u.branch ILIKE s.branch_name
@@ -55,8 +57,12 @@ export async function GET(req: NextRequest) {
             const ordersResult = await pool.query(ordersQuery, [state]);
             totalOrders = parseInt(ordersResult.rows[0]?.total_orders || '0');
             totalCommission = parseFloat(ordersResult.rows[0]?.total_commission || '0');
+            var pendingCommission = parseFloat(ordersResult.rows[0]?.pending_commission || '0');
+            var creditedCommission = parseFloat(ordersResult.rows[0]?.credited_commission || '0');
         } catch (err) {
             console.error("Failed to get orders:", err);
+            var pendingCommission = 0;
+            var creditedCommission = 0;
         }
 
         await pool.end();
@@ -66,7 +72,9 @@ export async function GET(req: NextRequest) {
             totalBranches,
             totalAgents,
             totalCommission,
-            totalOrders
+            totalOrders,
+            pending_commission: pendingCommission,
+            credited_commission: creditedCommission
         };
 
         console.log("State Admin Stats:", stats);

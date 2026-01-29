@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
         // 2. Get commission stats (use STORED affiliate_commission to preserve historical rates)
         const commissionQuery = `
             SELECT 
-                COALESCE(SUM(COALESCE(affiliate_commission, commission_amount * 0.70)), 0) as total_earned,
+                COALESCE(SUM(CASE WHEN status = 'CREDITED' THEN COALESCE(affiliate_commission, commission_amount * 0.70) ELSE 0 END), 0) as total_earned,
                 COALESCE(SUM(CASE WHEN status = 'PENDING' THEN COALESCE(affiliate_commission, commission_amount * 0.70) ELSE 0 END), 0) as pending,
                 COALESCE(SUM(CASE WHEN status = 'CREDITED' THEN COALESCE(affiliate_commission, commission_amount * 0.70) ELSE 0 END), 0) as credited
             FROM affiliate_commission_log
@@ -89,7 +89,7 @@ export async function GET(request: NextRequest) {
             SELECT 
                 COALESCE(SUM(COALESCE(affiliate_commission, commission_amount * 0.70)), 0) as total_earned
             FROM affiliate_commission_log
-            WHERE affiliate_code = $1
+            WHERE affiliate_code = $1 AND status = 'CREDITED'
         `;
         const walletResult = await pool.query(walletQuery, [affiliateCode]);
         const totalEarned = parseFloat(walletResult.rows[0]?.total_earned || '0');

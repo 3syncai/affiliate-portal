@@ -1,13 +1,16 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import axios from "axios"
+import useSWR from 'swr'
 import Link from "next/link"
 import {
     Users, DollarSign, ShoppingBag, Building2,
-    Wallet, ChevronRight, UserPlus, BarChart3, Copy, Check, Share2, Clock, ArrowUpRight
+    Wallet, ChevronRight, UserPlus, BarChart3, Copy, Check, Share2, Clock, ArrowUpRight, Wifi, WifiOff
 } from "lucide-react"
 import { useTheme } from "@/hooks/useTheme"
+import { useSSE } from "@/hooks/useSSE"
+import { Toast } from "@/components/Toast"
 
 type BranchAdmin = {
     id: string
@@ -25,53 +28,69 @@ type Order = {
     first_name: string
 }
 
+const fetcher = (url: string) => axios.get(url).then(res => res.data)
+
 export default function ASMDashboard() {
     const { theme } = useTheme()
     const [user, setUser] = useState<any>(null)
-    const [stats, setStats] = useState({
-        totalAgents: 0,
-        totalOrders: 0,
-        lifetimeEarnings: 0,
-        currentEarnings: 0,
-        commissionRate: 0,
-        branchAdmins: [] as BranchAdmin[],
-        recentActivity: [] as Order[]
-    })
-    const [loading, setLoading] = useState(true)
     const [copied, setCopied] = useState(false)
+
+    // Toast state
+    const [showToast, setShowToast] = useState(false)
+    const [toastData, setToastData] = useState<{ message: string; amount?: number }>({ message: "" })
 
     useEffect(() => {
         const userData = localStorage.getItem("affiliate_user")
         if (userData) {
-            const parsed = JSON.parse(userData)
-            setUser(parsed)
-            fetchDashboardData(parsed.city, parsed.state, parsed.id)
+            setUser(JSON.parse(userData))
         }
     }, [])
 
-    const fetchDashboardData = async (city: string, state: string, adminId: string) => {
-        try {
-            const [earningsRes, branchRes, agentsRes] = await Promise.all([
-                axios.get(`/api/asm/earnings?city=${encodeURIComponent(city)}&state=${encodeURIComponent(state)}&adminId=${adminId}`),
-                axios.get(`/api/asm/branch-admins?city=${encodeURIComponent(city)}&state=${encodeURIComponent(state)}`),
-                axios.get(`/api/asm/agents?city=${encodeURIComponent(city)}&state=${encodeURIComponent(state)}`)
-            ])
+    const { data: earningsData, mutate: mutateEarnings, isLoading: earningsLoading } = useSWR(
+        user?.city && user?.state ? `/api/asm/earnings?city=${encodeURIComponent(user.city)}&state=${encodeURIComponent(user.state)}${user.id ? `&adminId=${user.id}` : ''}` : null,
+        fetcher
+    )
 
-            setStats({
-                totalAgents: agentsRes.data.success ? agentsRes.data.agents?.length || 0 : 0,
-                totalOrders: earningsRes.data.success ? earningsRes.data.stats?.totalOrders || 0 : 0,
-                lifetimeEarnings: earningsRes.data.success ? earningsRes.data.stats?.lifetimeEarnings || 0 : 0,
-                currentEarnings: earningsRes.data.success ? earningsRes.data.stats?.currentEarnings || 0 : 0,
-                commissionRate: earningsRes.data.success ? earningsRes.data.stats?.commissionRate || 0 : 0,
-                branchAdmins: branchRes.data.success ? branchRes.data.branchAdmins || [] : [],
-                recentActivity: earningsRes.data.success ? earningsRes.data.recentOrders || [] : []
-            })
-        } catch (error) {
-            console.error("Failed to fetch dashboard data:", error)
-        } finally {
-            setLoading(false)
-        }
+    const { data: branchData, mutate: mutateBranches, isLoading: branchesLoading } = useSWR(
+        user?.city && user?.state ? `/api/asm/branch-admins?city=${encodeURIComponent(user.city)}&state=${encodeURIComponent(user.state)}` : null,
+        fetcher
+    )
+
+    const { data: agentsData, mutate: mutateAgents, isLoading: agentsLoading } = useSWR(
+        user?.city && user?.state ? `/api/asm/agents?city=${encodeURIComponent(user.city)}&state=${encodeURIComponent(user.state)}` : null,
+        fetcher
+    )
+
+    const stats = {
+        totalAgents: agentsData?.success ? agentsData.agents?.length || 0 : 0,
+        totalOrders: earningsData?.success ? earningsData.stats?.totalOrders || 0 : 0,
+        lifetimeEarnings: earningsData?.success ? earningsData.stats?.lifetimeEarnings || 0 : 0,
+        currentEarnings: earningsData?.success ? earningsData.stats?.currentEarnings || 0 : 0,
+        commissionRate: earningsData?.success ? earningsData.stats?.commissionRate || 0 : 0,
+        branchAdmins: branchData?.success ? branchData.branchAdmins || [] : [] as BranchAdmin[],
+        recentActivity: earningsData?.success ? earningsData.recentOrders || [] : [] as Order[]
     }
+
+    const loading = earningsLoading || branchesLoading || agentsLoading
+
+    // Live updates
+    const handleUpdate = useCallback((data: any) => {
+        if (data.type === 'stats_update' || data.type === 'payment_received') {
+            setToastData({
+                message: data.message || "New activity received!",
+                amount: data.amount
+            });
+            setShowToast(true);
+            mutateEarnings();
+            mutateBranches();
+            mutateAgents();
+        }
+    }, [mutateEarnings, mutateBranches, mutateAgents]);
+
+    const { isConnected } = useSSE({
+        affiliateCode: user?.refer_code || '',
+        onMessage: handleUpdate
+    });
 
     const copyReferralCode = async () => {
         if (user?.refer_code) {
@@ -94,6 +113,16 @@ export default function ASMDashboard() {
 
     return (
         <div className="space-y-8">
+            {/* Payment Received Toast */}
+            {showToast && (
+                <Toast
+                    message={toastData.message}
+                    type="payment"
+                    amount={toastData.amount}
+                    onClose={() => setShowToast(false)}
+                />
+            )}
+
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
@@ -102,9 +131,15 @@ export default function ASMDashboard() {
                         Overview of your area performance in <span className="font-semibold text-gray-900">{user?.city}</span>
                     </p>
                 </div>
-                <div className="bg-white border border-gray-200 rounded-lg px-4 py-2 text-sm text-gray-600 shadow-sm flex items-center">
-                    <Clock className="w-4 h-4 mr-2" />
-                    {new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                <div className="flex items-center gap-3">
+                    <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium ${isConnected ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                        {isConnected ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
+                        {isConnected ? 'Live Updates On' : 'Connecting...'}
+                    </div>
+                    <div className="bg-white border border-gray-200 rounded-lg px-4 py-2 text-sm text-gray-600 shadow-sm flex items-center">
+                        <Clock className="w-4 h-4 mr-2" />
+                        {new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                    </div>
                 </div>
             </div>
 
@@ -173,7 +208,7 @@ export default function ASMDashboard() {
                                 No recent activity found.
                             </div>
                         ) : (
-                            stats.recentActivity.slice(0, 5).map((activity, i) => (
+                            stats.recentActivity.slice(0, 5).map((activity: Order, i: number) => (
                                 <div key={i} className="p-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
                                     <div className="flex items-center gap-4">
                                         <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center">

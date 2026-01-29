@@ -1,8 +1,11 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import axios from "axios"
-import { DollarSign, User, Users, ShoppingBag, Info, Wallet, CheckCircle2, AlertCircle } from "lucide-react"
+import useSWR from "swr"
+import { DollarSign, User, Users, ShoppingBag, Info, Wallet, CheckCircle2, AlertCircle, Wifi, WifiOff, Clock } from "lucide-react"
+import { useSSE } from "@/hooks/useSSE"
+import { Toast } from "@/components/Toast"
 
 type Order = {
     id: string
@@ -19,50 +22,61 @@ type Order = {
     type?: string // 'Direct' or 'Override'
 }
 
+const fetcher = (url: string) => axios.get(url).then(res => res.data)
+
 export default function StateAdminEarningsPage() {
-    const [stats, setStats] = useState({
+    const [userData, setUserData] = useState<any>(null)
+
+    // Toast state
+    const [showToast, setShowToast] = useState(false)
+    const [toastData, setToastData] = useState<{ message: string; amount?: number }>({ message: "" })
+
+    useEffect(() => {
+        const storedUser = localStorage.getItem("affiliate_user")
+        if (storedUser) {
+            setUserData(JSON.parse(storedUser))
+        }
+    }, [])
+
+    const { data: earningsData, mutate, isLoading } = useSWR(
+        userData?.state ? `/api/state-admin/earnings?state=${encodeURIComponent(userData.state)}${userData.id ? `&adminId=${userData.id}` : ''}` : null,
+        fetcher
+    )
+
+    const stats = earningsData?.success ? earningsData.stats : {
         totalOrders: 0,
         commissionRate: 0,
         totalEarnings: 0,
         lifetimeEarnings: 0,
         paidAmount: 0,
         currentEarnings: 0,
-        // Detailed breakdown
         earningsFromOverrides: 0,
         earningsFromDirect: 0,
         ordersFromOverrides: 0,
         ordersFromDirect: 0
-    })
-    const [recentOrders, setRecentOrders] = useState<Order[]>([])
-    const [loading, setLoading] = useState(true)
-    const [userData, setUserData] = useState<any>(null)
-
-    useEffect(() => {
-        const storedUser = localStorage.getItem("affiliate_user")
-        if (storedUser) {
-            const parsed = JSON.parse(storedUser)
-            setUserData(parsed)
-            if (parsed.state) {
-                fetchEarnings(parsed.state, parsed.id)
-            }
-        }
-    }, [])
-
-    const fetchEarnings = async (state: string, adminId?: string) => {
-        try {
-            let url = `/api/state-admin/earnings?state=${encodeURIComponent(state)}`
-            if (adminId) url += `&adminId=${adminId}`
-            const response = await axios.get(url)
-            if (response.data.success) {
-                setStats(response.data.stats)
-                setRecentOrders(response.data.recentOrders)
-            }
-        } catch (error) {
-            console.error("Failed to fetch earnings:", error)
-        } finally {
-            setLoading(false)
-        }
     }
+
+    const recentOrders: Order[] = earningsData?.success ? earningsData.recentOrders : []
+    const loading = isLoading
+
+    // Live updates
+    const handleUpdate = useCallback((data: any) => {
+        if (data.type === 'commission_update' || data.type === 'payment_received') {
+            setToastData({
+                message: data.message || "New activity received!",
+                amount: data.amount
+            });
+            setShowToast(true);
+            mutate();
+        }
+    }, [mutate]);
+
+    const { isConnected } = useSSE({
+        affiliateCode: userData?.refer_code || '',
+        onMessage: handleUpdate
+    });
+
+
 
     const formatCurrency = (amount: number) => {
         return `₹${(amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
@@ -77,10 +91,26 @@ export default function StateAdminEarningsPage() {
 
     return (
         <div className="space-y-6 text-gray-800">
+            {/* Payment Received Toast */}
+            {showToast && (
+                <Toast
+                    message={toastData.message}
+                    type="payment"
+                    amount={toastData.amount}
+                    onClose={() => setShowToast(false)}
+                />
+            )}
+
             {/* Header */}
-            <div>
-                <h1 className="text-2xl font-bold text-gray-900">State Earnings</h1>
-                <p className="text-gray-500 text-sm mt-1">Detailed breakdown of income sources from {userData?.state}</p>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-2xl font-bold text-gray-900">State Earnings</h1>
+                    <p className="text-gray-500 text-sm mt-1">Detailed breakdown of income sources from {userData?.state}</p>
+                </div>
+                <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium self-start md:self-auto ${isConnected ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                    {isConnected ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
+                    {isConnected ? 'Live Updates On' : 'Connecting...'}
+                </div>
             </div>
 
             {/* Main Stats Grid */}

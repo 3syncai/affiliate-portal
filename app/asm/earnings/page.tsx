@@ -1,8 +1,11 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import axios from "axios"
-import { DollarSign, User, Users, ShoppingBag, Info, Wallet, CheckCircle2, AlertCircle } from "lucide-react"
+import useSWR from 'swr'
+import { DollarSign, User, Users, ShoppingBag, Info, Wallet, CheckCircle2, AlertCircle, Wifi, WifiOff } from "lucide-react"
+import { useSSE } from "@/hooks/useSSE"
+import { Toast } from "@/components/Toast"
 
 type Order = {
     id: string
@@ -16,10 +19,31 @@ type Order = {
     city: string
     branch: string
     commission_source?: string
+    commission_amount?: number
 }
 
+const fetcher = (url: string) => axios.get(url).then(res => res.data)
+
 export default function ASMEarningsPage() {
-    const [stats, setStats] = useState({
+    const [userData, setUserData] = useState<any>(null)
+
+    // Toast state
+    const [showToast, setShowToast] = useState(false)
+    const [toastData, setToastData] = useState<{ message: string; amount?: number }>({ message: "" })
+
+    useEffect(() => {
+        const storedUser = localStorage.getItem("affiliate_user")
+        if (storedUser) {
+            setUserData(JSON.parse(storedUser))
+        }
+    }, [])
+
+    const { data, mutate, isLoading } = useSWR(
+        userData?.city && userData?.state ? `/api/asm/earnings?city=${encodeURIComponent(userData.city)}&state=${encodeURIComponent(userData.state)}${userData.id ? `&adminId=${userData.id}` : ''}` : null,
+        fetcher
+    )
+
+    const stats = data?.success ? data.stats : {
         totalAffiliateCommissions: 0,
         totalBranchCommissions: 0,
         totalOrders: 0,
@@ -28,42 +52,31 @@ export default function ASMEarningsPage() {
         lifetimeEarnings: 0,
         paidAmount: 0,
         currentEarnings: 0,
-        // Detailed breakdown
         earningsFromBranch: 0,
         earningsFromDirect: 0,
         ordersFromBranch: 0,
         ordersFromDirect: 0
-    })
-    const [recentOrders, setRecentOrders] = useState<Order[]>([])
-    const [loading, setLoading] = useState(true)
-    const [userData, setUserData] = useState<any>(null)
-
-    useEffect(() => {
-        const storedUser = localStorage.getItem("affiliate_user")
-        if (storedUser) {
-            const parsed = JSON.parse(storedUser)
-            setUserData(parsed)
-            if (parsed.city && parsed.state) {
-                fetchEarnings(parsed.city, parsed.state, parsed.id)
-            }
-        }
-    }, [])
-
-    const fetchEarnings = async (city: string, state: string, adminId?: string) => {
-        try {
-            let url = `/api/asm/earnings?city=${encodeURIComponent(city)}&state=${encodeURIComponent(state)}`
-            if (adminId) url += `&adminId=${adminId}`
-            const response = await axios.get(url)
-            if (response.data.success) {
-                setStats(response.data.stats)
-                setRecentOrders(response.data.recentOrders)
-            }
-        } catch (error) {
-            console.error("Failed to fetch earnings:", error)
-        } finally {
-            setLoading(false)
-        }
     }
+
+    const recentOrders: Order[] = data?.success ? data.recentOrders : []
+    const loading = isLoading
+
+    // Live updates
+    const handleUpdate = useCallback((data: any) => {
+        if (data.type === 'stats_update' || data.type === 'payment_received') {
+            setToastData({
+                message: "New earning activity!",
+                amount: data.amount
+            });
+            setShowToast(true);
+            mutate();
+        }
+    }, [mutate]);
+
+    const { isConnected } = useSSE({
+        affiliateCode: userData?.refer_code || '',
+        onMessage: handleUpdate
+    });
 
     const formatCurrency = (amount: number) => {
         return `₹${amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
@@ -78,10 +91,27 @@ export default function ASMEarningsPage() {
 
     return (
         <div className="space-y-6 text-gray-800">
+
+            {/* Payment Received Toast */}
+            {showToast && (
+                <Toast
+                    message={toastData.message}
+                    type="payment"
+                    amount={toastData.amount}
+                    onClose={() => setShowToast(false)}
+                />
+            )}
+
             {/* Header */}
-            <div>
-                <h1 className="text-2xl font-bold text-gray-900">Branch Earning</h1>
-                <p className="text-gray-500 text-sm mt-1">Detailed breakdown of income sources from {userData?.city}</p>
+            <div className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-2xl font-bold text-gray-900">Branch Earning</h1>
+                    <p className="text-gray-500 text-sm mt-1">Detailed breakdown of income sources from {userData?.city}</p>
+                </div>
+                <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium ${isConnected ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                    {isConnected ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
+                    {isConnected ? 'Live Updates On' : 'Connecting...'}
+                </div>
             </div>
 
             {/* Main Stats Grid */}
@@ -238,7 +268,7 @@ export default function ASMEarningsPage() {
                                                     {/* In real app, this should be the commission amount per order row */}
                                                     {/* Using order_amount * rate mostly, but should check if api returns commission_amount */}
                                                     {/* Assuming API helper calculates it or returns it. If not, fallback logic: */}
-                                                    {formatCurrency(Number((order as any).commission_amount) || (order.order_amount * (stats.commissionRate / 100)))}
+                                                    {formatCurrency(Number(order.commission_amount) || 0)}
                                                 </span>
                                             </td>
                                         </tr>

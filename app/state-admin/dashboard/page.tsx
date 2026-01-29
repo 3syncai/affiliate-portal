@@ -1,13 +1,16 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import axios from "axios"
+import useSWR from "swr"
 import Link from "next/link"
 import {
     Users, DollarSign, ShoppingBag, Building2,
     Briefcase, ChevronRight, UserPlus, BarChart3, Clock, ArrowUpRight, TrendingUp, Share2, Copy, Check, Sparkles, Wallet,
-    MoreHorizontal
+    MoreHorizontal, Wifi, WifiOff
 } from "lucide-react"
+import { useSSE } from "@/hooks/useSSE"
+import { Toast } from "@/components/Toast"
 
 type Activity = {
     id: string
@@ -18,31 +21,70 @@ type Activity = {
     created_at: string
 }
 
+const fetcher = (url: string) => axios.get(url).then(res => res.data)
+
 export default function StateAdminDashboard() {
     const [user, setUser] = useState<any>(null)
-    const [stats, setStats] = useState({
-        totalASMs: 0,
-        totalBranches: 0,
-        totalAgents: 0,
-        totalOrders: 0,
-        totalCommission: 0
-    })
-    const [activities, setActivities] = useState<Activity[]>([])
-    const [loading, setLoading] = useState(true)
     const [copied, setCopied] = useState(false)
+
+    // Toast state
+    const [showToast, setShowToast] = useState(false)
+    const [toastData, setToastData] = useState<{ message: string; amount?: number }>({ message: "" })
 
     useEffect(() => {
         const userData = localStorage.getItem("affiliate_user")
         if (userData) {
             const parsed = JSON.parse(userData)
             setUser(parsed)
-            fetchDashboardData(parsed.state)
 
             if (!parsed.refer_code) {
                 refreshUserProfile()
             }
         }
     }, [])
+
+    // SWR Data Fetching
+    const { data: statsData, mutate: mutateStats, isLoading: statsLoading } = useSWR(
+        user?.state ? `/api/state-admin/dashboard/stats?state=${encodeURIComponent(user.state)}` : null,
+        fetcher
+    )
+
+    const { data: activitiesData, mutate: mutateActivities, isLoading: activitiesLoading } = useSWR(
+        user?.state ? `/api/state-admin/dashboard/activities?state=${encodeURIComponent(user.state)}` : null,
+        fetcher
+    )
+
+    // Derived states
+    const stats = statsData?.success ? statsData.stats : {
+        totalASMs: 0,
+        totalBranches: 0,
+        totalAgents: 0,
+        totalOrders: 0,
+        totalCommission: 0,
+        pending_commission: 0,
+        credited_commission: 0
+    }
+
+    const activities: Activity[] = activitiesData?.success ? activitiesData.activities : []
+    const loading = statsLoading || activitiesLoading
+
+    // Live updates
+    const handleUpdate = useCallback((data: any) => {
+        if (data.type === 'commission_update' || data.type === 'new_agent' || data.type === 'stats_update') {
+            setToastData({
+                message: data.message || "New activity received!",
+                amount: data.amount
+            });
+            setShowToast(true);
+            mutateStats();
+            mutateActivities();
+        }
+    }, [mutateStats, mutateActivities]);
+
+    const { isConnected } = useSSE({
+        affiliateCode: user?.refer_code || '',
+        onMessage: handleUpdate
+    });
 
     const refreshUserProfile = async () => {
         try {
@@ -59,20 +101,7 @@ export default function StateAdminDashboard() {
         }
     }
 
-    const fetchDashboardData = async (state: string) => {
-        try {
-            const [statsRes, activitiesRes] = await Promise.all([
-                axios.get(`/api/state-admin/dashboard/stats?state=${encodeURIComponent(state)}`),
-                axios.get(`/api/state-admin/dashboard/activities?state=${encodeURIComponent(state)}`)
-            ])
-            if (statsRes.data.success) setStats(statsRes.data.stats)
-            if (activitiesRes.data.success) setActivities(activitiesRes.data.activities)
-        } catch (error) {
-            console.error("Failed to fetch dashboard data:", error)
-        } finally {
-            setLoading(false)
-        }
-    }
+
 
     const copyReferralCode = async () => {
         if (user?.refer_code) {
@@ -95,19 +124,34 @@ export default function StateAdminDashboard() {
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500 bg-gray-50/50 min-h-screen p-4">
+            {/* Payment Received Toast */}
+            {showToast && (
+                <Toast
+                    message={toastData.message}
+                    type="payment"
+                    amount={toastData.amount}
+                    onClose={() => setShowToast(false)}
+                />
+            )}
 
             <div className="flex items-center justify-between mb-8">
                 <div>
                     <h1 className="text-3xl font-bold text-slate-800">Dashboard</h1>
                     <p className="text-slate-500 mt-1">Overview of your state performance</p>
                 </div>
-                <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-xl shadow-sm border border-slate-100/50">
-                    <span className="text-xs font-semibold text-slate-500">{user?.state} State</span>
-                    <div className="h-4 w-[1px] bg-slate-200"></div>
-                    <Clock className="w-4 h-4 text-slate-400" />
-                    <span className="text-xs font-medium text-slate-600">
-                        {new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
-                    </span>
+                <div className="flex items-center gap-3">
+                    <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium ${isConnected ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                        {isConnected ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
+                        {isConnected ? 'Live Updates On' : 'Connecting...'}
+                    </div>
+                    <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-xl shadow-sm border border-slate-100/50">
+                        <span className="text-xs font-semibold text-slate-500">{user?.state} State</span>
+                        <div className="h-4 w-[1px] bg-slate-200"></div>
+                        <Clock className="w-4 h-4 text-slate-400" />
+                        <span className="text-xs font-medium text-slate-600">
+                            {new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                    </div>
                 </div>
             </div>
 
@@ -129,10 +173,11 @@ export default function StateAdminDashboard() {
                 />
                 <StatCard
                     label="Total Commission"
-                    value={formatCurrency(stats.totalCommission)}
+                    value={formatCurrency(stats.credited_commission || 0)}
                     icon={DollarSign}
                     color="green"
                     isCurrency
+                    sublabel={`Pending: ${formatCurrency(stats.pending_commission || 0)}`}
                 />
                 <StatCard
                     label="Total Orders"
@@ -164,7 +209,7 @@ export default function StateAdminDashboard() {
                             </div>
                         ) : (
                             <div className="divide-y divide-slate-50">
-                                {activities.slice(0, 5).map((activity, i) => (
+                                {activities.slice(0, 5).map((activity: Activity, i: number) => (
                                     <ActivityItem key={i} activity={activity} />
                                 ))}
                             </div>
@@ -256,6 +301,9 @@ function StatCard({ label, value, icon: Icon, color, sublabel, isCurrency }: any
                 <div>
                     <p className="text-xs font-medium text-slate-500 mb-1">{label}</p>
                     <h3 className={`text-2xl font-bold text-slate-800 ${isCurrency ? 'tracking-tight' : ''}`}>{value}</h3>
+                    {sublabel && (
+                        <p className="text-xs text-slate-400 mt-1">{sublabel}</p>
+                    )}
                 </div>
                 <div className={`p-3 rounded-xl ${currentStyle.bg} ${currentStyle.text} shadow-sm group-hover:scale-110 transition-transform duration-300`}>
                     <Icon className="w-5 h-5" />

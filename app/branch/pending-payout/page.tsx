@@ -1,9 +1,12 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import axios from "axios"
-import { Clock, Check, X, Copy, CreditCard, Calendar, FileText, AlertCircle } from "lucide-react"
+import useSWR from 'swr'
+import { Clock, Check, X, Copy, CreditCard, Calendar, FileText, AlertCircle, Wifi, WifiOff } from "lucide-react"
 import { useTheme } from "@/contexts/ThemeContext"
+import { useSSE } from "@/hooks/useSSE"
+import { Toast } from "@/components/Toast"
 
 type Withdrawal = {
   id: number
@@ -28,10 +31,10 @@ type Withdrawal = {
   payment_details?: string
 }
 
+const fetcher = (url: string) => axios.get(url).then(res => res.data)
+
 export default function PendingPayoutPage() {
   const { theme } = useTheme()
-  const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([])
-  const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<string>("ALL")
   const [selectedWithdrawal, setSelectedWithdrawal] = useState<Withdrawal | null>(null)
   const [showPaidModal, setShowPaidModal] = useState(false)
@@ -43,6 +46,10 @@ export default function PendingPayoutPage() {
   const [processing, setProcessing] = useState(false)
   const [branchData, setBranchData] = useState<any>(null)
 
+  // Toast state
+  const [showToast, setShowToast] = useState(false)
+  const [toastData, setToastData] = useState<{ message: string; amount?: number }>({ message: "" })
+
   useEffect(() => {
     const userData = localStorage.getItem("affiliate_user")
     if (userData) {
@@ -51,31 +58,32 @@ export default function PendingPayoutPage() {
     }
   }, [])
 
-  useEffect(() => {
-    if (branchData?.branch) {
-      fetchWithdrawals()
-    }
-  }, [filter, branchData])
-
-  const fetchWithdrawals = async () => {
-    if (!branchData?.branch) return
-    setLoading(true)
-    try {
-      const url = filter === "ALL"
+  const { data, mutate, isLoading } = useSWR(
+    branchData?.branch ? (
+      filter === "ALL"
         ? `/api/branch/withdrawals?branch=${encodeURIComponent(branchData.branch)}`
         : `/api/branch/withdrawals?branch=${encodeURIComponent(branchData.branch)}&status=${filter}`
+    ) : null,
+    fetcher
+  )
 
-      const response = await axios.get(url)
-      const data = response.data
-      if (data.success) {
-        setWithdrawals(data.withdrawals)
-      }
-    } catch (error) {
-      console.error('Failed to fetch withdrawals:', error)
-    } finally {
-      setLoading(false)
+  const withdrawals: Withdrawal[] = data?.success ? data.withdrawals : []
+  const loading = isLoading
+
+  // Live updates
+  const handleUpdate = useCallback((data: any) => {
+    // Refresh on any stats update (might include commission that leads to withdrawal) or specific withdrawal event if exists
+    if (data.type === 'stats_update' || data.type === 'withdrawal_request') {
+      setShowToast(true);
+      setToastData({ message: "Data updated", amount: 0 });
+      mutate();
     }
-  }
+  }, [mutate]);
+
+  const { isConnected } = useSSE({
+    affiliateCode: branchData?.refer_code || '',
+    onMessage: handleUpdate
+  });
 
 
   const handleApprove = async (withdrawalId: number) => {
@@ -91,7 +99,7 @@ export default function PendingPayoutPage() {
         adminNotes: 'Approved by branch admin'
       })
       alert('✅ Withdrawal approved! Amount deducted from wallet.\n\nNow you can mark it as paid after transferring money.')
-      fetchWithdrawals()
+      mutate()
     } catch (error) {
       console.error('Approve error:', error)
       alert('An error occurred')
@@ -112,7 +120,7 @@ export default function PendingPayoutPage() {
         adminNotes: reason || 'Rejected by branch admin'
       })
       alert('Withdrawal rejected')
-      fetchWithdrawals()
+      mutate()
     } catch (error) {
       console.error('Reject error:', error)
       alert('An error occurred')
@@ -136,7 +144,7 @@ export default function PendingPayoutPage() {
       alert('✅ Payment marked as completed!')
       setShowPaidModal(false)
       setTransactionForm({ transactionId: "", paymentDate: new Date().toISOString().split('T')[0], paymentDetails: "" })
-      fetchWithdrawals()
+      mutate()
     } catch (error) {
       console.error('Mark paid error:', error)
       alert('An error occurred')
@@ -177,10 +185,26 @@ export default function PendingPayoutPage() {
 
   return (
     <div className="space-y-8">
+      {/* Payment Received Toast */}
+      {showToast && (
+        <Toast
+          message={toastData.message || "Data Updated"}
+          type="payment"
+          amount={toastData.amount}
+          onClose={() => setShowToast(false)}
+        />
+      )}
+
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-gray-900">Withdrawal Requests</h1>
-        <p className="text-sm text-gray-500 mt-1">Manage and process partner withdrawal requests</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-gray-900">Withdrawal Requests</h1>
+          <p className="text-sm text-gray-500 mt-1">Manage and process partner withdrawal requests</p>
+        </div>
+        <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium ${isConnected ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+          {isConnected ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
+          {isConnected ? 'Live Updates On' : 'Connecting...'}
+        </div>
       </div>
 
       {/* Filter Tabs - Modern Pills */}

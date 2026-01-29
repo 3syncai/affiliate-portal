@@ -1,9 +1,12 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import axios from "axios"
-import { DollarSign, TrendingUp, ShoppingBag, Calendar, AlertCircle, Wallet, ArrowDownCircle, ArrowUpCircle, Users, Package, Info } from "lucide-react"
+import useSWR from 'swr'
+import { DollarSign, TrendingUp, ShoppingBag, Calendar, AlertCircle, Wallet, ArrowDownCircle, ArrowUpCircle, Users, Package, Info, Wifi, WifiOff } from "lucide-react"
 import { useTheme } from "@/contexts/ThemeContext"
+import { useSSE } from "@/hooks/useSSE"
+import { Toast } from "@/components/Toast"
 
 type Order = {
     id: string
@@ -17,9 +20,29 @@ type Order = {
     type: string
 }
 
+const fetcher = (url: string) => axios.get(url).then(res => res.data)
+
 export default function EarningsPage() {
     const { theme } = useTheme()
-    const [stats, setStats] = useState({
+    const [user, setUser] = useState<any>(null)
+
+    // Toast state
+    const [showToast, setShowToast] = useState(false)
+    const [toastData, setToastData] = useState<{ message: string; amount?: number }>({ message: "" })
+
+    useEffect(() => {
+        const userData = localStorage.getItem("affiliate_user")
+        if (userData) {
+            setUser(JSON.parse(userData))
+        }
+    }, [])
+
+    const { data, mutate, isLoading } = useSWR(
+        user?.branch ? `/api/branch/earnings?branch=${encodeURIComponent(user.branch)}${user.id ? `&adminId=${user.id}` : ''}` : null,
+        fetcher
+    )
+
+    const stats = data?.success ? data.stats : {
         totalEarnings: 0,
         overrideEarnings: 0,
         directEarnings: 0,
@@ -29,43 +52,27 @@ export default function EarningsPage() {
         paidAmount: 0,
         currentEarnings: 0,
         commissionRate: 0
-    })
-    const [recentOrders, setRecentOrders] = useState<Order[]>([])
-    const [loading, setLoading] = useState(true)
-    const [error, setError] = useState("")
-
-    useEffect(() => {
-        const userData = localStorage.getItem("affiliate_user")
-        if (userData) {
-            const parsed = JSON.parse(userData)
-            if (parsed.branch) {
-                fetchEarnings(parsed.branch, parsed.id)
-            } else {
-                setError("No branch information found for this user.")
-                setLoading(false)
-            }
-        } else {
-            setLoading(false)
-        }
-    }, [])
-
-    const fetchEarnings = async (branch: string, adminId?: string) => {
-        try {
-            const url = adminId
-                ? `/api/branch/earnings?branch=${encodeURIComponent(branch)}&adminId=${adminId}`
-                : `/api/branch/earnings?branch=${encodeURIComponent(branch)}` // Fallback
-            const response = await axios.get(url)
-            if (response.data.success) {
-                setStats(response.data.stats)
-                setRecentOrders(response.data.recentOrders)
-            }
-        } catch (error) {
-            console.error("Failed to fetch earnings:", error)
-            setError("Failed to load earnings data. Please try again later.")
-        } finally {
-            setLoading(false)
-        }
     }
+
+    const recentOrders: Order[] = data?.success ? data.recentOrders : []
+    const loading = isLoading
+
+    // Live updates
+    const handleUpdate = useCallback((data: any) => {
+        if (data.type === 'stats_update' || data.type === 'payment_received') {
+            setToastData({
+                message: data.message || "Earnings updated!",
+                amount: data.amount
+            });
+            setShowToast(true);
+            mutate();
+        }
+    }, [mutate]);
+
+    const { isConnected } = useSSE({
+        affiliateCode: user?.refer_code || '',
+        onMessage: handleUpdate
+    });
 
     const formatCurrency = (amount: number) => {
         const rounded = Math.round(amount * 100) / 100
@@ -81,23 +88,30 @@ export default function EarningsPage() {
         )
     }
 
-    if (error) {
-        return (
-            <div className="p-6">
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative" role="alert">
-                    <strong className="font-bold">Error! </strong>
-                    <span className="block sm:inline">{error}</span>
-                </div>
-            </div>
-        )
-    }
+
 
     return (
         <div className="space-y-8">
+            {/* Payment Received Toast */}
+            {showToast && (
+                <Toast
+                    message={toastData.message}
+                    type="payment"
+                    amount={toastData.amount}
+                    onClose={() => setShowToast(false)}
+                />
+            )}
+
             {/* Header */}
-            <div>
-                <h1 className="text-2xl font-bold tracking-tight text-gray-900">Branch Earnings</h1>
-                <p className="text-sm text-gray-500 mt-1">Detailed breakdown of your income sources</p>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-2xl font-bold tracking-tight text-gray-900">Branch Earnings</h1>
+                    <p className="text-sm text-gray-500 mt-1">Detailed breakdown of your income sources</p>
+                </div>
+                <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium ${isConnected ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                    {isConnected ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
+                    {isConnected ? 'Live Updates On' : 'Connecting...'}
+                </div>
             </div>
 
             {/* Income Breakdown Section */}

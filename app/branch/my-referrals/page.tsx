@@ -1,9 +1,12 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { Users, TrendingUp, DollarSign, ShoppingBag, Search, ArrowRight, Package, Calendar } from "lucide-react"
+import { useEffect, useState, useCallback } from "react"
+import { Users, TrendingUp, DollarSign, ShoppingBag, Search, ArrowRight, Package, Calendar, Wifi, WifiOff } from "lucide-react"
 import axios from "axios"
+import useSWR from 'swr'
 import { useTheme } from "@/contexts/ThemeContext"
+import { useSSE } from "@/hooks/useSSE"
+import { Toast } from "@/components/Toast"
 
 interface Customer {
     customer_id: string
@@ -26,48 +29,56 @@ interface Order {
     created_at: string
 }
 
+const fetcher = (url: string) => axios.get(url).then(res => res.data)
+
 export default function MyDirectReferralsPage() {
     const { theme } = useTheme()
     const [user, setUser] = useState<any>(null)
-    const [customers, setCustomers] = useState<Customer[]>([])
-    const [stats, setStats] = useState({
-        total_customers: 0,
-        total_orders: 0,
-        total_sales: 0,
-        total_commissions: 0
-    })
-    const [loading, setLoading] = useState(true)
     const [searchTerm, setSearchTerm] = useState("")
     const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
+
+    // Toast state
+    const [showToast, setShowToast] = useState(false)
+    const [toastData, setToastData] = useState<{ message: string; amount?: number }>({ message: "" })
 
     useEffect(() => {
         const userData = localStorage.getItem("affiliate_user")
         if (userData) {
-            const parsed = JSON.parse(userData)
-            setUser(parsed)
-            if (parsed.refer_code) {
-                fetchDirectReferrals(parsed.refer_code)
-            } else {
-                setLoading(false)
-            }
-        } else {
-            setLoading(false)
+            setUser(JSON.parse(userData))
         }
     }, [])
 
-    const fetchDirectReferrals = async (referCode: string) => {
-        try {
-            const response = await axios.get(`/api/branch/my-direct-referrals?refer_code=${referCode}`)
-            if (response.data.success) {
-                setStats(response.data.stats)
-                setCustomers(response.data.customers)
-            }
-        } catch (error) {
-            console.error("Failed to fetch direct referrals:", error)
-        } finally {
-            setLoading(false)
-        }
+    const { data, mutate, isLoading } = useSWR(
+        user?.refer_code ? `/api/branch/my-direct-referrals?refer_code=${user.refer_code}` : null,
+        fetcher
+    )
+
+    const stats = data?.success ? data.stats : {
+        total_customers: 0,
+        total_orders: 0,
+        total_sales: 0,
+        total_commissions: 0
     }
+
+    const customers: Customer[] = data?.success ? data.customers : []
+    const loading = isLoading
+
+    // Live updates
+    const handleUpdate = useCallback((data: any) => {
+        if (data.type === 'stats_update' || data.type === 'payment_received') {
+            setToastData({
+                message: "New referral activity!",
+                amount: data.amount
+            });
+            setShowToast(true);
+            mutate();
+        }
+    }, [mutate]);
+
+    const { isConnected } = useSSE({
+        affiliateCode: user?.refer_code || '',
+        onMessage: handleUpdate
+    });
 
     const filteredCustomers = customers.filter((customer) =>
         customer.customer_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -84,12 +95,28 @@ export default function MyDirectReferralsPage() {
 
     return (
         <div className="space-y-6">
+            {/* Payment Received Toast */}
+            {showToast && (
+                <Toast
+                    message={toastData.message}
+                    type="payment"
+                    amount={toastData.amount}
+                    onClose={() => setShowToast(false)}
+                />
+            )}
+
             {/* Header */}
-            <div>
-                <h1 className="text-3xl font-bold text-gray-900">My Direct Referrals</h1>
-                <p className="text-gray-600 mt-1">
-                    Customers you referred directly • Earning 85% commission rate
-                </p>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-3xl font-bold text-gray-900">My Direct Referrals</h1>
+                    <p className="text-gray-600 mt-1">
+                        Customers you referred directly • Earning 85% commission rate
+                    </p>
+                </div>
+                <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium ${isConnected ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                    {isConnected ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
+                    {isConnected ? 'Live Updates On' : 'Connecting...'}
+                </div>
             </div>
 
             {/* Stats Cards */}
