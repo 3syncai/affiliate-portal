@@ -193,7 +193,7 @@ export async function POST(request: NextRequest) {
                 if (currentStatus !== 'CREDITED' && (payload.status === 'CREDITED' || payload.status === 'COMPLETED')) {
                     await pool.query(`
                         UPDATE affiliate_commission_log 
-                        SET status = 'CREDITED'
+                        SET status = 'CREDITED', credited_at = NOW()
                         WHERE id = $1
                     `, [existingCheck.rows[0].id]);
 
@@ -337,7 +337,7 @@ export async function POST(request: NextRequest) {
                 if (currentStatus !== 'CREDITED' && (payload.status === 'CREDITED' || payload.status === 'COMPLETED')) {
                     await pool.query(`
                         UPDATE affiliate_commission_log 
-                        SET status = 'CREDITED'
+                        SET status = 'CREDITED', credited_at = NOW()
                         WHERE id = $1
                     `, [existingCheck.rows[0].id]);
                     console.log(`[ASM Direct] Updated to CREDITED.`);
@@ -425,7 +425,7 @@ export async function POST(request: NextRequest) {
                     if (currentStatus !== 'CREDITED' && (payload.status === 'CREDITED' || payload.status === 'COMPLETED')) {
                         await pool.query(`
                             UPDATE affiliate_commission_log 
-                            SET status = 'CREDITED', updated_at = NOW()
+                            SET status = 'CREDITED', credited_at = NOW()
                             WHERE id = $1
                         `, [existingCheck.rows[0].id]);
 
@@ -521,7 +521,7 @@ export async function POST(request: NextRequest) {
                     if (currentStatus !== 'CREDITED' && (payload.status === 'CREDITED' || payload.status === 'COMPLETED')) {
                         await pool.query(`
                             UPDATE affiliate_commission_log 
-                            SET status = 'CREDITED', updated_at = NOW()
+                            SET status = 'CREDITED', credited_at = NOW()
                             WHERE id = $1
                         `, [existingCheck.rows[0].id]);
 
@@ -559,17 +559,50 @@ export async function POST(request: NextRequest) {
                                 INSERT INTO affiliate_commission_log (
                                     order_id, affiliate_code, product_name, quantity, item_price, order_amount,
                                     commission_rate, commission_amount, affiliate_rate, affiliate_commission,
-                                    commission_source, status, customer_id, customer_name, customer_email, created_at
-                                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, NOW())
+                                    commission_source, status, customer_id, customer_name, customer_email,
+                                    affiliate_user_id, created_at
+                                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, NOW())
                             `, [
                                 payload.order_id, 'BRANCH', payload.product_name || 'Product',
                                 payload.quantity || 1, payload.item_price || 0, payload.order_amount || 0,
                                 commissionPercentage, commissionAmount, brRate, brCommission,
                                 'branch_admin', payload.status || 'PENDING',
                                 payload.customer_id || null,
-                                `${branchAdmin.first_name} ${branchAdmin.last_name}`, branchAdmin.email
+                                `${branchAdmin.first_name} ${branchAdmin.last_name}`, branchAdmin.email,
+                                branchAdmin.id // Set affiliate_user_id
                             ]);
                             console.log(`[Hierarchy] Logged Branch Override: ₹${brCommission}`);
+
+                            if (payload.status === 'CREDITED' || payload.status === 'COMPLETED') {
+                                // ... existing wallet logic
+                                await pool.query(`
+                                    INSERT INTO customer_wallet (customer_id, coins_balance)
+                                    SELECT id, $2 FROM branch_admin WHERE email = $1
+                                    ON CONFLICT (customer_id) 
+                                    DO UPDATE SET coins_balance = customer_wallet.coins_balance + $2
+                                `, [branchAdmin.email, brCommission]);
+                            }
+                        } else {
+                            // ... existing update logic
+                            // UPDATE STATUS for Branch Admin
+                            const currentStatus = brCheck.rows[0]?.status;
+                            if (currentStatus !== 'CREDITED' && (payload.status === 'CREDITED' || payload.status === 'COMPLETED')) {
+                                await pool.query(`
+                                    UPDATE affiliate_commission_log 
+                                    SET status = 'CREDITED', credited_at = NOW()
+                                    WHERE id = $1
+                                `, [brCheck.rows[0].id]);
+
+                                // ... existing wallet logic
+                                await pool.query(`
+                                    INSERT INTO customer_wallet (customer_id, coins_balance)
+                                    SELECT id, $2 FROM branch_admin WHERE email = $1
+                                    ON CONFLICT (customer_id) 
+                                    DO UPDATE SET coins_balance = customer_wallet.coins_balance + $2
+                                `, [branchAdmin.email, brCommission]);
+
+                                console.log(`[Hierarchy] Updated Branch Admin to CREDITED.`);
+                            }
                         }
                     }
                 }
@@ -592,7 +625,7 @@ export async function POST(request: NextRequest) {
                         const areaCommission = commissionAmount * (areaRate / 100);
 
                         const areaCheck = await pool.query(`
-                            SELECT id FROM affiliate_commission_log 
+                            SELECT id, status FROM affiliate_commission_log 
                             WHERE order_id = $1 AND product_name = $2 AND customer_email = $3 AND commission_source = 'area_manager'
                         `, [payload.order_id, payload.product_name, asm.email]);
 
@@ -601,17 +634,48 @@ export async function POST(request: NextRequest) {
                                 INSERT INTO affiliate_commission_log (
                                     order_id, affiliate_code, product_name, quantity, item_price, order_amount,
                                     commission_rate, commission_amount, affiliate_rate, affiliate_commission,
-                                    commission_source, status, customer_id, customer_name, customer_email, created_at
-                                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, NOW())
+                                    commission_source, status, customer_id, customer_name, customer_email,
+                                    affiliate_user_id, created_at
+                                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, NOW())
                             `, [
                                 payload.order_id, 'AREA', payload.product_name || 'Product',
                                 payload.quantity || 1, payload.item_price || 0, payload.order_amount || 0,
                                 commissionPercentage, commissionAmount, areaRate, areaCommission,
                                 'area_manager', payload.status || 'PENDING',
                                 payload.customer_id || null,
-                                `${asm.first_name} ${asm.last_name}`, asm.email
+                                `${asm.first_name} ${asm.last_name}`, asm.email,
+                                asm.id // Set affiliate_user_id
                             ]);
                             console.log(`[Hierarchy] Logged ASM Override: ₹${areaCommission}`);
+
+                            // ... wallet logic ...
+                            if (payload.status === 'CREDITED' || payload.status === 'COMPLETED') {
+                                await pool.query(`
+                                    INSERT INTO customer_wallet (customer_id, coins_balance)
+                                    SELECT id, $2 FROM area_sales_manager WHERE email = $1
+                                    ON CONFLICT (customer_id) 
+                                    DO UPDATE SET coins_balance = customer_wallet.coins_balance + $2
+                                `, [asm.email, areaCommission]);
+                            }
+                        } else {
+                            // ... update logic ...
+                            const currentStatus = areaCheck.rows[0]?.status;
+                            if (currentStatus !== 'CREDITED' && (payload.status === 'CREDITED' || payload.status === 'COMPLETED')) {
+                                await pool.query(`
+                                    UPDATE affiliate_commission_log 
+                                    SET status = 'CREDITED', credited_at = NOW()
+                                    WHERE id = $1
+                                `, [areaCheck.rows[0].id]);
+
+                                await pool.query(`
+                                    INSERT INTO customer_wallet (customer_id, coins_balance)
+                                    SELECT id, $2 FROM area_sales_manager WHERE email = $1
+                                    ON CONFLICT (customer_id) 
+                                    DO UPDATE SET coins_balance = customer_wallet.coins_balance + $2
+                                `, [asm.email, areaCommission]);
+
+                                console.log(`[Hierarchy] Updated ASM to CREDITED.`);
+                            }
                         }
                     }
                 }
@@ -630,7 +694,7 @@ export async function POST(request: NextRequest) {
                         const stateCommission = commissionAmount * (stateRate / 100);
 
                         const stateCheck = await pool.query(`
-                            SELECT id FROM affiliate_commission_log 
+                            SELECT id, status FROM affiliate_commission_log 
                             WHERE order_id = $1 AND product_name = $2 AND customer_email = $3 AND commission_source = 'state_admin'
                         `, [payload.order_id, payload.product_name, stateAdmin.email]);
 
@@ -639,17 +703,48 @@ export async function POST(request: NextRequest) {
                                 INSERT INTO affiliate_commission_log (
                                     order_id, affiliate_code, product_name, quantity, item_price, order_amount,
                                     commission_rate, commission_amount, affiliate_rate, affiliate_commission,
-                                    commission_source, status, customer_id, customer_name, customer_email, created_at
-                                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, NOW())
+                                    commission_source, status, customer_id, customer_name, customer_email,
+                                    affiliate_user_id, created_at
+                                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, NOW())
                             `, [
                                 payload.order_id, 'STATE', payload.product_name || 'Product',
                                 payload.quantity || 1, payload.item_price || 0, payload.order_amount || 0,
                                 commissionPercentage, commissionAmount, stateRate, stateCommission,
                                 'state_admin', payload.status || 'PENDING',
                                 payload.customer_id || null,
-                                `${stateAdmin.first_name} ${stateAdmin.last_name}`, stateAdmin.email
+                                `${stateAdmin.first_name} ${stateAdmin.last_name}`, stateAdmin.email,
+                                stateAdmin.id // Set affiliate_user_id
                             ]);
                             console.log(`[Hierarchy] Logged State Override: ₹${stateCommission}`);
+
+                            // ... wallet logic ...
+                            if (payload.status === 'CREDITED' || payload.status === 'COMPLETED') {
+                                await pool.query(`
+                                    INSERT INTO customer_wallet (customer_id, coins_balance)
+                                    SELECT id, $2 FROM state_admin WHERE email = $1
+                                    ON CONFLICT (customer_id) 
+                                    DO UPDATE SET coins_balance = customer_wallet.coins_balance + $2
+                                `, [stateAdmin.email, stateCommission]);
+                            }
+                        } else {
+                            // ... update logic ...
+                            const currentStatus = stateCheck.rows[0]?.status;
+                            if (currentStatus !== 'CREDITED' && (payload.status === 'CREDITED' || payload.status === 'COMPLETED')) {
+                                await pool.query(`
+                                    UPDATE affiliate_commission_log 
+                                    SET status = 'CREDITED', credited_at = NOW()
+                                    WHERE id = $1
+                                `, [stateCheck.rows[0].id]);
+
+                                await pool.query(`
+                                    INSERT INTO customer_wallet (customer_id, coins_balance)
+                                    SELECT id, $2 FROM state_admin WHERE email = $1
+                                    ON CONFLICT (customer_id) 
+                                    DO UPDATE SET coins_balance = customer_wallet.coins_balance + $2
+                                `, [stateAdmin.email, stateCommission]);
+
+                                console.log(`[Hierarchy] Updated State Admin to CREDITED.`);
+                            }
                         }
                     }
                 }
