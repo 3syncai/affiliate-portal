@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import axios from "axios"
 import { Users, Mail, MapPin, Search, Plus, Edit2, Trash2 } from "lucide-react"
 import { useTheme } from "@/hooks/useTheme"
+import { useRouter } from "next/navigation"
 
 type ASM = {
     id: string
@@ -16,6 +17,7 @@ type ASM = {
 }
 
 export default function ASMManagementPage() {
+    const router = useRouter()
     const { colors } = useTheme()
     const [asms, setASMs] = useState<ASM[]>([])
     const [filteredASMs, setFilteredASMs] = useState<ASM[]>([])
@@ -28,7 +30,7 @@ export default function ASMManagementPage() {
         if (storedUser) {
             const parsed = JSON.parse(storedUser)
             setUserData(parsed)
-            fetchASMs(parsed.state)
+            fetchASMs(parsed.state, parsed.id)
         }
     }, [])
 
@@ -46,10 +48,10 @@ export default function ASMManagementPage() {
         }
     }, [searchTerm, asms])
 
-    const fetchASMs = async (state: string) => {
+    const fetchASMs = async (state: string, adminId: string) => {
         try {
-            console.log('Fetching ASMs for state:', state);
-            const response = await axios.get(`/api/state-admin/asms?state=${encodeURIComponent(state)}`)
+            console.log('Fetching ASMs for state:', state, 'Admin:', adminId);
+            const response = await axios.get(`/api/state-admin/asms?state=${encodeURIComponent(state)}&adminId=${encodeURIComponent(adminId)}`)
             console.log('API Response:', response.data);
 
             if (response.data.success) {
@@ -85,8 +87,8 @@ export default function ASMManagementPage() {
             if (response.data.success) {
                 alert(`✅ ${response.data.message}`)
                 // Refresh the list
-                if (userData?.state) {
-                    fetchASMs(userData.state)
+                if (userData?.state && userData?.id) {
+                    fetchASMs(userData.state, userData.id)
                 }
             } else {
                 alert(`❌ Failed to delete user: ${response.data.error}`)
@@ -115,7 +117,10 @@ export default function ASMManagementPage() {
                         Manage Area Sales Managers in {userData?.state}
                     </p>
                 </div>
-                <button className={`px-4 py-2 ${colors.primary} text-white rounded-lg ${colors.primaryHover} transition-colors flex items-center gap-2`}>
+                <button
+                    onClick={() => router.push('/state-admin/create-asm')}
+                    className={`px-4 py-2 ${colors.primary} text-white rounded-lg ${colors.primaryHover} transition-colors flex items-center gap-2 cursor-pointer`}
+                >
                     <Plus className="w-5 h-5" />
                     Create Branch Manager
                 </button>

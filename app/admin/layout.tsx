@@ -35,6 +35,7 @@ const navigationItems = [
   { name: "Product Commission", href: "/admin/product-commission", icon: Percent },
   { name: "Total Agent", href: "/admin/total-agent", icon: Users },
   { name: "TDS Settings", href: "/admin/tds-settings", icon: Settings },
+  { name: "Commission Ledger", href: "/admin/ledger", icon: Banknote },
 ]
 
 
@@ -106,7 +107,7 @@ export default function AdminLayout({
         >
           <div className="flex items-center justify-between p-4" style={{ borderBottomColor: 'rgba(255,255,255,0.2)', borderBottomWidth: '1px' }}>
             <h1 className="text-xl font-bold text-white whitespace-nowrap">
-              Affiliate Admin
+              Partner's admin
             </h1>
             <button
               onClick={() => setSidebarOpen(false)}

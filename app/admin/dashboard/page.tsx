@@ -130,14 +130,14 @@ export default function AdminDashboardPage() {
         return (
           <div>
             <span className="font-semibold text-gray-900">{activity.data.name}</span>
-            <span className="text-gray-600"> submitted an affiliate request</span>
+            <span className="text-gray-600"> submitted an Partner request</span>
           </div>
         )
       case 'approval':
         return (
           <div>
             <span className="font-semibold text-gray-900">{activity.data.name}</span>
-            <span className="text-green-600"> was approved as an affiliate</span>
+            <span className="text-green-600"> was approved as an Partner</span>
           </div>
         )
       case 'order':
@@ -165,7 +165,7 @@ export default function AdminDashboardPage() {
       case "branch_direct":
         return "Area sales Manager Direct Bonus"
       case "affiliate":
-        return "Affiliate Base"
+        return "Partner Base"
       default:
         return roleType
     }
@@ -188,7 +188,7 @@ export default function AdminDashboardPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Dashboard</h1>
-          <p className="text-gray-600 mt-1">Overview of your affiliate program</p>
+          <p className="text-gray-600 mt-1">Overview of your Partner program</p>
         </div>
         <button
           onClick={fetchDashboardData}

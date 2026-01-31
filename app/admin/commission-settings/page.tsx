@@ -105,7 +105,7 @@ export default function CommissionSettingsPage() {
     const getRoleLabel = (roleType: string) => {
         switch (roleType) {
             case "affiliate":
-                return "Affiliate Agent"
+                return "Partner Agent"
             case "state":
                 return "State Admin"
             case "area":
@@ -229,7 +229,7 @@ export default function CommissionSettingsPage() {
                 <ul className="space-y-2 text-sm text-gray-700">
                     <li className="flex items-start">
                         <span className="font-medium mr-2">•</span>
-                        <span><strong>Affiliate Agent</strong> receives their percentage of the product commission first (e.g., 70% of ₹26 = ₹18.20)</span>
+                        <span><strong>Partner Agent</strong> receives their percentage of the product commission first (e.g., 70% of ₹26 = ₹18.20)</span>
                     </li>
                     <li className="flex items-start">
                         <span className="font-medium mr-2">•</span>

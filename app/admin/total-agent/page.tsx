@@ -25,7 +25,7 @@ type UserData = {
 type TabType = "affiliates" | "state_admins" | "area_managers" | "branch_admins"
 
 const tabs: { id: TabType; label: string; icon: any; color: string }[] = [
-  { id: "affiliates", label: "Affiliate Agents", icon: Users, color: "from-blue-500 to-blue-600" },
+  { id: "affiliates", label: "Partner Agents", icon: Users, color: "from-blue-500 to-blue-600" },
   { id: "state_admins", label: "State Admins", icon: Building2, color: "from-purple-500 to-purple-600" },
   { id: "area_managers", label: "Branch Managers", icon: MapPin, color: "from-emerald-500 to-emerald-600" },
   { id: "branch_admins", label: "Area Sales Managers", icon: GitBranch, color: "from-orange-500 to-orange-600" },
