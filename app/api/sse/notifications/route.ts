@@ -88,7 +88,6 @@ async function checkNotifications(affiliateCode: string, controller: ReadableStr
             );
         }
 
-        await pool.end();
     } catch (error) {
         console.error("SSE notification check error:", error);
     }

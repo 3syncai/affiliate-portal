@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Eye, Users, Building2, MapPin, GitBranch, Search, Filter, X, User, Mail, Phone, Calendar, Briefcase } from "lucide-react"
+import { Eye, Users, Building2, MapPin, GitBranch, Search, X, Mail, Phone, Calendar, LucideIcon } from "lucide-react"
 import axios from "axios"
 
 type UserData = {
@@ -19,12 +19,16 @@ type UserData = {
   is_approved?: boolean
   created_at?: string
   approved_at?: string
-  [key: string]: any
+  refer_code?: string
+  referral_code?: string
+  stateAdmins?: UserData[]
+  admins?: UserData[]
+  managers?: UserData[]
 }
 
 type TabType = "affiliates" | "state_admins" | "area_managers" | "branch_admins"
 
-const tabs: { id: TabType; label: string; icon: any; color: string }[] = [
+const tabs: { id: TabType; label: string; icon: LucideIcon; color: string }[] = [
   { id: "affiliates", label: "Partner Agents", icon: Users, color: "from-blue-500 to-blue-600" },
   { id: "state_admins", label: "State Admins", icon: Building2, color: "from-purple-500 to-purple-600" },
   { id: "area_managers", label: "Branch Managers", icon: MapPin, color: "from-emerald-500 to-emerald-600" },
@@ -63,7 +67,7 @@ export default function AllUsersPage() {
       ])
 
       setStats({
-        affiliates: (affiliatesRes.data.approved || []).filter((u: any) => u.is_agent).length,
+        affiliates: (affiliatesRes.data.approved || []).filter((u: UserData) => u.is_agent).length,
         state_admins: (stateRes.data.stateAdmins || stateRes.data.admins || []).length,
         area_managers: (areaRes.data.managers || []).length,
         branch_admins: (branchRes.data.admins || []).length
@@ -81,7 +85,7 @@ export default function AllUsersPage() {
       switch (tab) {
         case "affiliates":
           response = await axios.get("/api/affiliate/admin/users")
-          setUsers((response.data.approved || []).filter((u: any) => u.is_agent))
+          setUsers((response.data.approved || []).filter((u: UserData) => u.is_agent))
           break
         case "state_admins":
           response = await axios.get("/api/admin/state-admins")

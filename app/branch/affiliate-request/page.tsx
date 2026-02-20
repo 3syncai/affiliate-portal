@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import axios from "axios"
+import Image from "next/image"
 import { UserCheck, UserX, Eye, Search, Clock } from "lucide-react"
 
 type User = {
@@ -51,7 +52,12 @@ export default function BranchAffiliateRequestPage() {
     const [searchTerm, setSearchTerm] = useState("")
     const [selectedUser, setSelectedUser] = useState<User | null>(null)
     const [activeTab, setActiveTab] = useState<"pending" | "approved">("pending")
-    const [branchData, setBranchData] = useState<any>(null)
+    interface BranchData {
+        name: string
+        email: string
+        branch: string
+    }
+    const [branchData, setBranchData] = useState<BranchData | null>(null)
 
     useEffect(() => {
         const userData = localStorage.getItem("affiliate_user")
@@ -317,11 +323,13 @@ export default function BranchAffiliateRequestPage() {
                                     <div>
                                         <p className="text-sm font-medium mb-2">Aadhar Card</p>
                                         {selectedUser.aadhar_card_photo ? (
-                                            <a href={selectedUser.aadhar_card_photo} target="_blank" rel="noopener noreferrer" className="block group relative overflow-hidden rounded-lg border border-gray-200">
-                                                <img
+                                            <a href={selectedUser.aadhar_card_photo} target="_blank" rel="noopener noreferrer" className="block group relative overflow-hidden rounded-lg border border-gray-200 h-48">
+                                                <Image
                                                     src={selectedUser.aadhar_card_photo}
                                                     alt="Aadhar Card"
-                                                    className="w-full h-48 object-cover transition-transform group-hover:scale-105"
+                                                    fill
+                                                    className="object-cover transition-transform group-hover:scale-105"
+                                                    unoptimized
                                                 />
                                                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
                                                     <span className="bg-white/90 text-gray-900 px-3 py-1 rounded text-xs font-medium shadow-sm">View Full</span>
@@ -336,11 +344,13 @@ export default function BranchAffiliateRequestPage() {
                                     <div>
                                         <p className="text-sm font-medium mb-2">PAN Card</p>
                                         {selectedUser.pan_card_photo ? (
-                                            <a href={selectedUser.pan_card_photo} target="_blank" rel="noopener noreferrer" className="block group relative overflow-hidden rounded-lg border border-gray-200">
-                                                <img
+                                            <a href={selectedUser.pan_card_photo} target="_blank" rel="noopener noreferrer" className="block group relative overflow-hidden rounded-lg border border-gray-200 h-48">
+                                                <Image
                                                     src={selectedUser.pan_card_photo}
                                                     alt="PAN Card"
-                                                    className="w-full h-48 object-cover transition-transform group-hover:scale-105"
+                                                    fill
+                                                    className="object-cover transition-transform group-hover:scale-105"
+                                                    unoptimized
                                                 />
                                                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
                                                     <span className="bg-white/90 text-gray-900 px-3 py-1 rounded text-xs font-medium shadow-sm">View Full</span>

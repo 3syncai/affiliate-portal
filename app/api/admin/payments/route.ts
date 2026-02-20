@@ -32,18 +32,18 @@ export async function GET() {
         `;
 
         const result = await pool.query(query);
-        await pool.end();
 
         return NextResponse.json({
             success: true,
             payments: result.rows
         });
 
-    } catch (error: any) {
-        console.error("Failed to fetch payment history:", error);
+    } catch (error: unknown) {
+        const err = error as Error;
+        console.error("Failed to fetch payment history:", err);
         return NextResponse.json({
             success: false,
-            error: error.message
+            error: err.message
         }, { status: 500 });
     }
 }
@@ -147,7 +147,6 @@ export async function POST(req: NextRequest) {
             false
         ]);
 
-        await pool.end();
 
         return NextResponse.json({
             success: true,
@@ -155,11 +154,12 @@ export async function POST(req: NextRequest) {
             message: "Payment processed successfully and notification sent"
         });
 
-    } catch (error: any) {
-        console.error("Failed to process payment:", error);
+    } catch (error: unknown) {
+        const err = error as Error;
+        console.error("Failed to process payment:", err);
         return NextResponse.json({
             success: false,
-            error: error.message
+            error: err.message
         }, { status: 500 });
     }
 }

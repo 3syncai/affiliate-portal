@@ -5,6 +5,62 @@ import { Pool } from "pg";
 
 export const dynamic = "force-dynamic"
 
+interface MedusaProduct {
+    id: string;
+    title: string;
+    handle: string;
+    status: string;
+    description: string;
+    thumbnail: string;
+    images: { url: string }[];
+    variants: MedusaVariant[];
+    type: { id: string; value: string };
+    tags: { id: string; value: string }[];
+    created_at: string;
+    updated_at: string;
+}
+
+interface MedusaVariant {
+    id: string;
+    title: string;
+    sku: string;
+    inventory_quantity: number;
+    prices: { amount: number; currency_code: string }[];
+}
+
+interface DBCommission {
+    id: string;
+    product_id: string | null;
+    category_id: string | null;
+    collection_id: string | null;
+    commission_rate: number;
+}
+
+interface DBCategory {
+    product_id: string;
+    category_id: string;
+    category_name: string;
+    category_handle: string;
+}
+
+interface DBCollection {
+    product_id: string;
+    collection_id: string;
+    collection_title: string;
+    collection_handle: string;
+}
+
+interface DBInventory {
+    variant_id: string;
+    inventory_quantity: string;
+}
+
+interface DBPrice {
+    variant_id: string;
+    base_price: string;
+    discounted_price: string | null;
+}
+
 export async function GET(req: NextRequest) {
     console.log("=== Fetching Products for Admin ===");
 
@@ -16,7 +72,7 @@ export async function GET(req: NextRequest) {
 
     try {
         // Fetch products from Medusa API
-        let rawProducts: any[] = [];
+        let rawProducts: MedusaProduct[] = [];
 
         try {
             console.log("Trying /store/products with expanded fields...");
@@ -29,8 +85,9 @@ export async function GET(req: NextRequest) {
             });
             rawProducts = response.data?.products || [];
             console.log(`Store products endpoint returned ${rawProducts.length} products`);
-        } catch (e: any) {
-            console.log("Store products endpoint failed:", e.message);
+        } catch (e: unknown) {
+            const err = e as Error;
+            console.log("Store products endpoint failed:", err.message);
         }
 
         // Try flash sale as fallback
@@ -43,8 +100,9 @@ export async function GET(req: NextRequest) {
                 });
                 rawProducts = response.data?.products || [];
                 console.log(`Flash sale endpoint returned ${rawProducts.length} products`);
-            } catch (e: any) {
-                console.log("Flash sale endpoint failed:", e.message);
+            } catch (e: unknown) {
+                const err = e as Error;
+                console.log("Flash sale endpoint failed:", err.message);
             }
         }
 
@@ -64,17 +122,18 @@ export async function GET(req: NextRequest) {
         });
 
         // Get commissions from affiliate_commission table
-        let commissions: any[] = [];
+        let commissions: DBCommission[] = [];
         try {
             const commissionsResult = await pool.query(`SELECT * FROM affiliate_commission`);
             commissions = commissionsResult.rows;
             console.log(`Found ${commissions.length} commissions`);
-        } catch (dbError: any) {
-            console.log("Could not fetch commissions:", dbError.message);
+        } catch (dbError: unknown) {
+            const err = dbError as Error;
+            console.log("Could not fetch commissions:", err.message);
         }
 
         // Get product categories from database
-        let productCategories: Map<string, any[]> = new Map();
+        const productCategories: Map<string, { id: string; name: string; handle: string }[]> = new Map();
         try {
             const categoryResult = await pool.query(`
                 SELECT 
@@ -85,7 +144,7 @@ export async function GET(req: NextRequest) {
                 FROM product_category_product pcp
                 JOIN product_category pc ON pc.id = pcp.product_category_id
             `);
-            categoryResult.rows.forEach((row: any) => {
+            categoryResult.rows.forEach((row: DBCategory) => {
                 const existing = productCategories.get(row.product_id) || [];
                 existing.push({
                     id: row.category_id,
@@ -95,12 +154,13 @@ export async function GET(req: NextRequest) {
                 productCategories.set(row.product_id, existing);
             });
             console.log(`Found categories for ${productCategories.size} products`);
-        } catch (e: any) {
-            console.log("Could not fetch product categories:", e.message);
+        } catch (e: unknown) {
+            const err = e as Error;
+            console.log("Could not fetch product categories:", err.message);
         }
 
         // Get collections from database
-        let productCollections: Map<string, any> = new Map();
+        const productCollections: Map<string, { id: string; title: string; handle: string }> = new Map();
         try {
             const collectionResult = await pool.query(`
                 SELECT 
@@ -112,7 +172,7 @@ export async function GET(req: NextRequest) {
                 JOIN product_collection pc ON pc.id = p.collection_id
                 WHERE p.collection_id IS NOT NULL
             `);
-            collectionResult.rows.forEach((row: any) => {
+            collectionResult.rows.forEach((row: DBCollection) => {
                 productCollections.set(row.product_id, {
                     id: row.collection_id,
                     title: row.collection_title,
@@ -120,12 +180,13 @@ export async function GET(req: NextRequest) {
                 });
             });
             console.log(`Found collections for ${productCollections.size} products`);
-        } catch (e: any) {
-            console.log("Could not fetch product collections:", e.message);
+        } catch (e: unknown) {
+            const err = e as Error;
+            console.log("Could not fetch product collections:", err.message);
         }
 
         // Get inventory from database
-        let variantInventory: Map<string, number> = new Map();
+        const variantInventory: Map<string, number> = new Map();
         try {
             const inventoryResult = await pool.query(`
                 SELECT 
@@ -135,16 +196,17 @@ export async function GET(req: NextRequest) {
                 LEFT JOIN inventory_level il ON il.inventory_item_id = pvii.inventory_item_id
                 GROUP BY pvii.variant_id
             `);
-            inventoryResult.rows.forEach((row: any) => {
+            inventoryResult.rows.forEach((row: DBInventory) => {
                 variantInventory.set(row.variant_id, parseInt(row.inventory_quantity) || 0);
             });
             console.log(`Found inventory for ${variantInventory.size} variants`);
-        } catch (e: any) {
-            console.log("Could not fetch variant inventory:", e.message);
+        } catch (e: unknown) {
+            const err = e as Error;
+            console.log("Could not fetch variant inventory:", err.message);
         }
 
         // Get variant prices from database (base price and discounted price)
-        let variantPrices: Map<string, { base_price: number, discounted_price: number | null }> = new Map();
+        const variantPrices: Map<string, { base_price: number, discounted_price: number | null }> = new Map();
         try {
             const priceResult = await pool.query(`
                 SELECT 
@@ -166,7 +228,7 @@ export async function GET(req: NextRequest) {
                     AND disc_p.max_quantity IS NULL
                 WHERE pv.deleted_at IS NULL
             `);
-            priceResult.rows.forEach((row: any) => {
+            priceResult.rows.forEach((row: DBPrice) => {
                 // Store both prices, keep existing if there's already one (to get the sale price)
                 const existing = variantPrices.get(row.variant_id);
                 if (!existing) {
@@ -179,14 +241,14 @@ export async function GET(req: NextRequest) {
                 }
             });
             console.log(`Found prices for ${variantPrices.size} variants`);
-        } catch (e: any) {
-            console.log("Could not fetch variant prices:", e.message);
+        } catch (e: unknown) {
+            const err = e as Error;
+            console.log("Could not fetch variant prices:", err.message);
         }
 
-        await pool.end();
 
         // Map products with enriched data
-        const products = rawProducts.map((product: any) => {
+        const products = rawProducts.map((product: MedusaProduct) => {
             // Get categories from database
             const categories = productCategories.get(product.id) || [];
 
@@ -195,21 +257,21 @@ export async function GET(req: NextRequest) {
 
             // Get commission
             let commission = 0;
-            const productCommission = commissions.find((c: any) => c.product_id === product.id);
+            const productCommission = commissions.find((c: DBCommission) => c.product_id === product.id);
             if (productCommission) {
                 commission = productCommission.commission_rate;
             } else if (categories.length > 0) {
-                const categoryCommission = commissions.find((c: any) =>
-                    categories.some((cat: any) => cat.id === c.category_id)
+                const categoryCommission = commissions.find((c: DBCommission) =>
+                    categories.some((cat: { id: string }) => cat.id === c.category_id)
                 );
                 if (categoryCommission) commission = categoryCommission.commission_rate;
             } else if (collection) {
-                const collectionCommission = commissions.find((c: any) => c.collection_id === collection.id);
+                const collectionCommission = commissions.find((c: DBCommission) => c.collection_id === collection.id);
                 if (collectionCommission) commission = collectionCommission.commission_rate;
             }
 
             // Process variants with inventory and prices from database
-            const variants = (product.variants || []).map((v: any) => {
+            const variants = (product.variants || []).map((v: MedusaVariant) => {
                 const invQty = variantInventory.get(v.id) || v.inventory_quantity || 0;
 
                 // Get prices from database (already in correct format, no /100)
@@ -230,7 +292,7 @@ export async function GET(req: NextRequest) {
                 };
             });
 
-            const totalInventory = variants.reduce((sum: number, v: any) => sum + v.inventory_quantity, 0);
+            const totalInventory = variants.reduce((sum: number, v: { inventory_quantity: number }) => sum + v.inventory_quantity, 0);
 
             return {
                 id: product.id,
@@ -240,13 +302,13 @@ export async function GET(req: NextRequest) {
                 description: product.description,
                 thumbnail: product.thumbnail,
                 images: product.images || [],
-                categories: categories.map((cat: any) => ({
+                categories: categories.map((cat: { id: string; name: string; handle: string }) => ({
                     ...cat,
-                    commission: commissions.find((c: any) => c.category_id === cat.id)?.commission_rate || 0
+                    commission: commissions.find((c: DBCommission) => c.category_id === cat.id)?.commission_rate || 0
                 })),
                 collection: collection ? {
                     ...collection,
-                    commission: commissions.find((c: any) => c.collection_id === collection.id)?.commission_rate || 0
+                    commission: commissions.find((c: DBCommission) => c.collection_id === collection.id)?.commission_rate || 0
                 } : null,
                 type: product.type,
                 tags: product.tags || [],
@@ -264,8 +326,8 @@ export async function GET(req: NextRequest) {
         const collectionMap = new Map();
         const typeMap = new Map();
 
-        products.forEach((p: any) => {
-            p.categories?.forEach((cat: any) => {
+        products.forEach((p: { categories: { id: string }[], collection: { id: string } | null, type: { id: string } | null }) => {
+            p.categories?.forEach((cat: { id: string }) => {
                 if (cat.id && !categoryMap.has(cat.id)) categoryMap.set(cat.id, cat);
             });
             if (p.collection && p.collection.id && !collectionMap.has(p.collection.id)) {
@@ -278,8 +340,8 @@ export async function GET(req: NextRequest) {
 
         const stats = {
             total: products.length,
-            in_stock: products.filter((p: any) => p.in_stock).length,
-            out_of_stock: products.filter((p: any) => !p.in_stock).length
+            in_stock: products.filter((p: { in_stock: boolean }) => p.in_stock).length,
+            out_of_stock: products.filter((p: { in_stock: boolean }) => !p.in_stock).length
         };
 
         console.log(`Returning ${products.length} products with ${categoryMap.size} categories and ${collectionMap.size} collections`);
@@ -294,8 +356,9 @@ export async function GET(req: NextRequest) {
             },
             stats
         });
-    } catch (error: any) {
-        console.error("Failed to fetch products:", error.message);
+    } catch (error: unknown) {
+        const err = error as Error;
+        console.error("Failed to fetch products:", err.message);
 
         return NextResponse.json({
             success: true,

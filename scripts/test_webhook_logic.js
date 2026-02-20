@@ -1,10 +1,19 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 const { Pool } = require('pg');
 
-const connectionString = 'postgres://postgres:Oweg4719@oweg-ecom.cz282guu85co.ap-south-1.rds.amazonaws.com:5432/oweg_db?sslmode=no-verify';
+const connectionString =
+    process.env.DATABASE_URL ||
+    process.env.POSTGRES_URL ||
+    process.env.PG_CONNECTION_STRING;
+
+if (!connectionString) {
+    console.error('CRITICAL ERROR: Set DATABASE_URL (or POSTGRES_URL / PG_CONNECTION_STRING) before running this script.');
+    process.exit(1);
+}
 
 const pool = new Pool({
     connectionString: connectionString.replace('?sslmode=no-verify', ''),
-    ssl: { rejectUnauthorized: false }
+    ssl: connectionString.includes('rds.amazonaws.com') ? { rejectUnauthorized: false } : false
 });
 
 async function testWebhook() {
@@ -27,7 +36,7 @@ async function testWebhook() {
         // 1. Commission Lookup
         // Mocking 0% fallback for simplicity if not found
         let commissionPercentage = 0;
-        
+
         // 2. State Admin Check
         const stateAdminResult = await pool.query(`
             SELECT *
@@ -62,17 +71,17 @@ async function testWebhook() {
             // But here the "affiliate_commission" calculation uses commissionAmount * (totalRate / 100)
             // Wait, looking at the code:
             // const stateCommission = commissionAmount * (totalRate / 100);
-            
+
             // IF commissionPercentage is 0, then commissionAmount is 0, so stateCommission is 0.
             // THIS MIGHT BE THE ISSUE.
             // If the product has no commission rate set in `affiliate_commission` table, it defaults to 0%.
             // Then 0 * anything = 0.
-            
+
             const stateCommission = commissionAmount * (totalRate / 100);
             console.log(`Calculated Commission: ${stateCommission}`);
 
             // Insert
-             await pool.query(`
+            await pool.query(`
                 INSERT INTO affiliate_commission_log (
                     order_id, affiliate_code, product_name, quantity, item_price, order_amount,
                     commission_rate, commission_amount, affiliate_rate, affiliate_commission,

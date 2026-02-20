@@ -30,7 +30,6 @@ export async function GET() {
     `;
         const result = await pool.query(query);
 
-        await pool.end();
 
         const tdsPercentage = result.rows.length > 0
             ? parseFloat(result.rows[0].setting_value)
@@ -97,7 +96,6 @@ export async function POST(request: Request) {
     `;
 
         await pool.query(upsertQuery, [tdsPercentage.toString()]);
-        await pool.end();
 
         return NextResponse.json({
             success: true,

@@ -20,7 +20,7 @@ export default function BranchAgentsPage() {
     const [loading, setLoading] = useState(true)
     const [searchTerm, setSearchTerm] = useState("")
     const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null)
-    const [user, setUser] = useState<any>(null)
+    const [user, setUser] = useState<{ branch: string } | null>(null)
 
     useEffect(() => {
         const userData = localStorage.getItem("affiliate_user")

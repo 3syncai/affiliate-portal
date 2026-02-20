@@ -117,8 +117,9 @@ export default function CreateStateUserPage() {
             } else {
                 setError(response.data.message || "Failed to create user")
             }
-        } catch (err: any) {
-            setError(err.response?.data?.message || err.message || "Failed to create user")
+        } catch (err: unknown) {
+            const error = err as Error & { response?: { data?: { message?: string } } };
+            setError(error.response?.data?.message || error.message || "Failed to create user")
         } finally {
             setLoading(false)
         }

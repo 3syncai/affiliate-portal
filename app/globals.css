@@ -109,3 +109,38 @@ html.lenis body {
 .lenis.lenis-scrolling iframe {
   pointer-events: none;
 }
+
+/* ── Mobile Animations ──────────────────────────────────────── */
+
+/* Wallet card shimmer sweep */
+@keyframes shimmer-sweep {
+  0% { transform: translateX(-100%) skewX(-15deg); opacity: 0; }
+  50% { opacity: 1; }
+  100% { transform: translateX(200%) skewX(-15deg); opacity: 0; }
+}
+
+.wallet-shimmer {
+  background: linear-gradient(
+    105deg,
+    transparent 40%,
+    rgba(255, 255, 255, 0.25) 50%,
+    transparent 60%
+  );
+  animation: shimmer-sweep 2.8s ease-in-out infinite;
+}
+
+/* Stats card fade-in-up entrance */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.mobile-fade-in {
+  animation: fade-in-up 0.4s ease-out forwards;
+}

@@ -3,7 +3,8 @@
 import React, { useState, FormEvent } from "react"
 import { useRouter } from "next/navigation"
 import axios from "axios"
-import { User, FileText, Briefcase, CreditCard, MapPin, Lock, ChevronRight, ChevronLeft, Check, Upload, AlertCircle, Mail, Phone, Calendar, Building2, XCircle } from "lucide-react"
+import { User, FileText, Briefcase, CreditCard, Lock, ChevronRight, ChevronLeft, Check, AlertCircle, Mail, Phone, Calendar, Building2, XCircle } from "lucide-react"
+import Image from "next/image"
 
 type FormDataType = {
   refer_code: string
@@ -231,9 +232,10 @@ export default function RegisterPage() {
       } else {
         throw new Error(data.message || "Upload failed")
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const errorObj = err as { response?: { data?: { message?: string } }; message?: string };
       console.error(`Failed to upload ${field}:`, err)
-      setUploadErrors((prev) => ({ ...prev, [field]: err.response?.data?.message || err.message || "Upload failed" }))
+      setUploadErrors((prev) => ({ ...prev, [field]: errorObj.response?.data?.message || errorObj.message || "Upload failed" }))
       setUploadStatus((prev) => ({ ...prev, [field]: "error" }))
     }
   }
@@ -313,7 +315,7 @@ export default function RegisterPage() {
       const payload = new FormData()
       Object.entries(formData).forEach(([key, value]) => {
         if (typeof value === "boolean") payload.append(key, value ? "true" : "false")
-        else payload.append(key, (value as any) ?? "")
+        else payload.append(key, String(value ?? ""))
       })
 
       // Send S3 URLs from instant upload (not File objects)
@@ -335,8 +337,9 @@ export default function RegisterPage() {
       setTimeout(() => {
         router.push("/verification-pending")
       }, 2000)
-    } catch (err: any) {
-      setError(err.response?.data?.message || err?.message || "Failed to submit form")
+    } catch (err: unknown) {
+      const errorObj = err as { response?: { data?: { message?: string } }; message?: string };
+      setError(errorObj.response?.data?.message || errorObj.message || "Failed to submit form")
       setLoading(false)
     }
   }
@@ -346,10 +349,13 @@ export default function RegisterPage() {
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
-          <img
+          <Image
             src="/uploads/coin/Oweg3d-400.png"
             alt="Oweg Logo"
-            className="h-16 mx-auto mb-4"
+            width={160}
+            height={64}
+            className="h-16 w-auto mx-auto mb-4"
+            unoptimized
           />
           <h1 className="text-4xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent mb-2">
             Agent Registration
@@ -557,7 +563,7 @@ export default function RegisterPage() {
 
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        Father's Name <span className="text-red-500">*</span>
+                        Father&apos;s Name <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="text"
@@ -571,7 +577,7 @@ export default function RegisterPage() {
 
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        Mother's Name <span className="text-red-500">*</span>
+                        Mother&apos;s Name <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="text"
@@ -593,8 +599,8 @@ export default function RegisterPage() {
                         <option value="">Select qualification</option>
                         <option value="high_school">High School</option>
                         <option value="diploma">Diploma</option>
-                        <option value="bachelor">Bachelor's Degree</option>
-                        <option value="master">Master's Degree</option>
+                        <option value="bachelor">Bachelor&apos;s Degree</option>
+                        <option value="master">Master&apos;s Degree</option>
                         <option value="phd">PhD</option>
                       </select>
                     </div>
@@ -891,7 +897,7 @@ export default function RegisterPage() {
                       <CreditCard className="w-6 h-6 text-emerald-600" />
                       Payment Details
                     </h2>
-                    <p className="text-gray-600 mt-1 text-sm">Setup how you'd like to receive payments</p>
+                    <p className="text-gray-600 mt-1 text-sm">Setup how you&apos;d like to receive payments</p>
                   </div>
 
                   <div className="space-y-5">

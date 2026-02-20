@@ -33,8 +33,9 @@ export default function StateAdminsPage() {
             if (response.data.success) {
                 setStateAdmins(response.data.stateAdmins)
             }
-        } catch (error) {
-            console.error("Failed to fetch state admins:", error)
+        } catch (error: unknown) {
+            const err = error as Error;
+            console.error("Failed to fetch state admins:", err)
         } finally {
             setLoading(false)
         }
@@ -47,8 +48,9 @@ export default function StateAdminsPage() {
                 isActive: !currentStatus
             })
             fetchStateAdmins()
-        } catch (error) {
-            console.error("Failed to toggle status:", error)
+        } catch (error: unknown) {
+            const err = error as Error;
+            console.error("Failed to toggle status:", err)
             alert("Failed to update status")
         }
     }
@@ -170,8 +172,8 @@ export default function StateAdminsPage() {
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <span className={`px-2 py-1 text-xs rounded-full ${admin.is_active
-                                                    ? "bg-green-100 text-green-700"
-                                                    : "bg-red-100 text-red-700"
+                                                ? "bg-green-100 text-green-700"
+                                                : "bg-red-100 text-red-700"
                                                 }`}>
                                                 {admin.is_active ? "Active" : "Inactive"}
                                             </span>

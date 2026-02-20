@@ -18,26 +18,17 @@ type AffiliateCommission = {
     total_orders: number
 }
 
+// Define the BranchData interface
+interface BranchData {
+    branch: string;
+}
+
 export default function TotalCommissionPage() {
     const [affiliates, setAffiliates] = useState<AffiliateCommission[]>([])
     const [loading, setLoading] = useState(true)
     const [selectedAffiliate, setSelectedAffiliate] = useState<AffiliateCommission | null>(null)
     const [searchTerm, setSearchTerm] = useState("")
-    const [branchData, setBranchData] = useState<any>(null)
-
-    useEffect(() => {
-        const userData = localStorage.getItem("affiliate_user")
-        if (userData) {
-            const parsed = JSON.parse(userData)
-            setBranchData(parsed)
-        }
-    }, [])
-
-    useEffect(() => {
-        if (branchData?.branch) {
-            loadCommissions()
-        }
-    }, [branchData])
+    const [branchData, setBranchData] = useState<BranchData | null>(null) // Changed type from 'any' to 'BranchData | null'
 
     const loadCommissions = async () => {
         if (!branchData?.branch) return
@@ -51,6 +42,20 @@ export default function TotalCommissionPage() {
             setLoading(false)
         }
     }
+
+    useEffect(() => {
+        const userData = localStorage.getItem("affiliate_user")
+        if (userData) {
+            const parsed = JSON.parse(userData)
+            setBranchData(parsed)
+        }
+    }, [])
+
+    useEffect(() => {
+        if (branchData?.branch) {
+            loadCommissions()
+        }
+    }, [branchData, loadCommissions])
 
 
     const formatCurrency = (amount: number) => {

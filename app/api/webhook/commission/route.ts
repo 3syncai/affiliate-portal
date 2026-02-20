@@ -21,7 +21,7 @@ interface CommissionPayload {
     customer_email?: string;
 }
 
-// POST /api/webhook/commissionagai
+// POST /api/webhook/commission
 // Looks up commission from database and records affiliate commission
 export async function POST(request: NextRequest) {
     try {
@@ -518,9 +518,6 @@ export async function POST(request: NextRequest) {
 
 
                     console.log(`[Affiliate] Logged Base Commission: ₹${affiliateCommission}`);
-
-
-                    console.log(`[Affiliate] Logged Base Commission: ₹${affiliateCommission}`);
                 } else {
                     // UPDATE STATUS
                     const currentStatus = existingCheck.rows[0]?.status;
@@ -545,7 +542,7 @@ export async function POST(request: NextRequest) {
                 // --- B) Pay Branch Admin Override (15%) ---
                 if (affiliateUser && affiliateUser.branch) {
                     const branchAdminRes = await pool.query(`
-                        SELECT id, first_name, last_name, email, city, state FROM branch_admin
+                        SELECT id, first_name, last_name, email, city, state, refer_code FROM branch_admin
                         WHERE branch = $1
                     `, [affiliateUser.branch]);
 
@@ -556,7 +553,7 @@ export async function POST(request: NextRequest) {
                         const brCommission = commissionAmount * (brRate / 100);
 
                         const brCheck = await pool.query(`
-                            SELECT id FROM affiliate_commission_log 
+                            SELECT id, status FROM affiliate_commission_log 
                             WHERE order_id = $1 AND product_name = $2 AND customer_email = $3 AND commission_source = 'branch_admin'
                         `, [payload.order_id, payload.product_name, branchAdmin.email]);
 
@@ -572,7 +569,7 @@ export async function POST(request: NextRequest) {
                                 payload.order_id, 'BRANCH', payload.product_name || 'Product',
                                 payload.quantity || 1, payload.item_price || 0, payload.order_amount || 0,
                                 commissionPercentage, commissionAmount, brRate, brCommission,
-                                'branch_admin', 'PENDING',
+                                'branch_admin', payload.status || 'PENDING',
                                 payload.customer_id || null,
                                 `${branchAdmin.first_name} ${branchAdmin.last_name}`, branchAdmin.email,
                                 branchAdmin.id, // Set affiliate_user_id
@@ -589,7 +586,6 @@ export async function POST(request: NextRequest) {
 
 
                         } else {
-                            // ... existing update logic
                             // UPDATE STATUS for Branch Admin
                             const currentStatus = brCheck.rows[0]?.status;
                             if (currentStatus !== 'CREDITED' && (payload.status === 'CREDITED' || payload.status === 'COMPLETED')) {
@@ -599,7 +595,6 @@ export async function POST(request: NextRequest) {
                                     WHERE id = $1
                                 `, [brCheck.rows[0].id]);
 
-                                // ... existing wallet logic
                                 await pool.query(`
                                     INSERT INTO customer_wallet (customer_id, coins_balance)
                                     SELECT id, $2 FROM branch_admin WHERE email = $1
@@ -654,7 +649,7 @@ export async function POST(request: NextRequest) {
                                 payload.order_id, 'AREA', payload.product_name || 'Product',
                                 payload.quantity || 1, payload.item_price || 0, payload.order_amount || 0,
                                 commissionPercentage, commissionAmount, areaRate, areaCommission,
-                                'area_manager', 'PENDING',
+                                'area_manager', payload.status || 'PENDING',
                                 payload.customer_id || null,
                                 `${asm.first_name} ${asm.last_name}`, asm.email,
                                 asm.id, // Set affiliate_user_id
@@ -664,7 +659,6 @@ export async function POST(request: NextRequest) {
 
 
                         } else {
-                            // ... update logic ...
                             const currentStatus = areaCheck.rows[0]?.status;
                             if (currentStatus !== 'CREDITED' && (payload.status === 'CREDITED' || payload.status === 'COMPLETED')) {
                                 await pool.query(`
@@ -716,7 +710,7 @@ export async function POST(request: NextRequest) {
                                 payload.order_id, 'STATE', payload.product_name || 'Product',
                                 payload.quantity || 1, payload.item_price || 0, payload.order_amount || 0,
                                 commissionPercentage, commissionAmount, stateRate, stateCommission,
-                                'state_admin', 'PENDING',
+                                'state_admin', payload.status || 'PENDING',
                                 payload.customer_id || null,
                                 `${stateAdmin.first_name} ${stateAdmin.last_name}`, stateAdmin.email,
                                 stateAdmin.id, // Set affiliate_user_id
@@ -726,7 +720,6 @@ export async function POST(request: NextRequest) {
 
 
                         } else {
-                            // ... update logic ...
                             const currentStatus = stateCheck.rows[0]?.status;
                             if (currentStatus !== 'CREDITED' && (payload.status === 'CREDITED' || payload.status === 'COMPLETED')) {
                                 await pool.query(`
@@ -757,11 +750,12 @@ export async function POST(request: NextRequest) {
             message: "Commission processed successfully"
         });
 
-    } catch (error: any) {
-        console.error("Commission recording failed:", error);
+    } catch (error: unknown) {
+        const err = error as Error;
+        console.error("Commission recording failed:", err);
         return NextResponse.json({
             success: false,
-            error: error.message
+            error: err.message
         }, { status: 500 });
     }
 }

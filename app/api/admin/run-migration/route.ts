@@ -37,7 +37,6 @@ export async function POST() {
             WHERE affiliate_commission IS NULL
         `, [affiliateRate]);
 
-        await pool.end();
 
         return NextResponse.json({
             success: true,
@@ -45,11 +44,12 @@ export async function POST() {
             affiliateRateApplied: affiliateRate
         });
 
-    } catch (error: any) {
-        console.error("Migration failed:", error);
+    } catch (error: unknown) {
+        const err = error as Error;
+        console.error("Migration failed:", err);
         return NextResponse.json({
             success: false,
-            error: error.message
+            error: err.message
         }, { status: 500 });
     }
 }

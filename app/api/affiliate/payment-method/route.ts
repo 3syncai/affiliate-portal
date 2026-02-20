@@ -29,11 +29,10 @@ export async function PUT(request: Request) {
         });
 
         let updateQuery = '';
-        let updateValues: any[] = [];
+        let updateValues: (string | null)[] = [];
 
         if (paymentMethod === 'Bank Transfer') {
             if (!bankDetails || !bankDetails.accountName || !bankDetails.accountNumber || !bankDetails.ifscCode) {
-                await pool.end();
                 return NextResponse.json(
                     { success: false, error: 'Complete bank details required' },
                     { status: 400 }
@@ -64,7 +63,6 @@ export async function PUT(request: Request) {
             ];
         } else if (paymentMethod === 'UPI') {
             if (!upiDetails || !upiDetails.upiId) {
-                await pool.end();
                 return NextResponse.json(
                     { success: false, error: 'UPI ID required' },
                     { status: 400 }
@@ -90,14 +88,12 @@ export async function PUT(request: Request) {
         const result = await pool.query(updateQuery, updateValues);
 
         if (result.rows.length === 0) {
-            await pool.end();
             return NextResponse.json(
                 { success: false, error: 'Affiliate not found' },
                 { status: 404 }
             );
         }
 
-        await pool.end();
 
         console.log('Payment method updated successfully');
         return NextResponse.json({

@@ -30,7 +30,6 @@ export async function GET(req: NextRequest) {
         const countQuery = `SELECT COUNT(*) as total FROM affiliate_user`;
         const countResult = await pool.query(countQuery);
 
-        await pool.end();
 
         return NextResponse.json({
             success: true,
@@ -43,11 +42,12 @@ export async function GET(req: NextRequest) {
             }
         });
 
-    } catch (error: any) {
-        console.error("Debug query failed:", error);
+    } catch (error: unknown) {
+        const err = error as Error;
+        console.error("Debug query failed:", err);
         return NextResponse.json({
             success: false,
-            error: error.message
+            error: err.message
         }, { status: 500 });
     }
 }

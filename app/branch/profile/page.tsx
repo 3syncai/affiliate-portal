@@ -2,14 +2,25 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { User, Mail, Phone, Lock, Shield, Calendar, Building, MapPin, Palette } from "lucide-react"
+import { User, Mail, Lock, Calendar, Building, Palette } from "lucide-react"
 import ThemeSelector from "@/components/ThemeSelector"
 import { useTheme } from "@/contexts/ThemeContext"
+
+type UserData = {
+    first_name: string;
+    last_name: string;
+    email: string;
+    phone?: string;
+    state?: string;
+    city?: string;
+    branch?: string;
+    created_at: string;
+}
 
 export default function BranchProfilePage() {
     const router = useRouter()
     const { theme } = useTheme()
-    const [user, setUser] = useState<any>(null)
+    const [user, setUser] = useState<UserData | null>(null)
     const [loading, setLoading] = useState(true)
     const [activeTab, setActiveTab] = useState<'info' | 'security' | 'theme'>('info')
 

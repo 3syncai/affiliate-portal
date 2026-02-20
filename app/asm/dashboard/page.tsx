@@ -6,13 +6,12 @@ import useSWR from 'swr'
 import Link from "next/link"
 import {
     Users, DollarSign, ShoppingBag, Building2,
-    Wallet, ChevronRight, UserPlus, BarChart3, Copy, Check, Share2, Clock, ArrowUpRight, Wifi, WifiOff
+    Copy, Check, Share2, Clock, ArrowUpRight, Wifi, WifiOff
 } from "lucide-react"
-import { useTheme } from "@/hooks/useTheme"
 import { useSSE } from "@/hooks/useSSE"
 import { Toast } from "@/components/Toast"
 
-type BranchAdmin = {
+interface BranchAdmin {
     id: string
     first_name: string
     last_name: string
@@ -20,7 +19,7 @@ type BranchAdmin = {
     is_active: boolean
 }
 
-type Order = {
+interface Order {
     id: string
     product_name: string
     commission_amount: number
@@ -28,11 +27,23 @@ type Order = {
     first_name: string
 }
 
+interface User {
+    id: string
+    first_name: string
+    last_name: string
+    email: string
+    refer_code: string
+    city: string
+    state: string
+    role: string
+    phone?: string
+    is_active?: boolean
+}
+
 const fetcher = (url: string) => axios.get(url).then(res => res.data)
 
 export default function ASMDashboard() {
-    const { theme } = useTheme()
-    const [user, setUser] = useState<any>(null)
+    const [user, setUser] = useState<User | null>(null)
     const [copied, setCopied] = useState(false)
 
     // Toast state
@@ -42,7 +53,11 @@ export default function ASMDashboard() {
     useEffect(() => {
         const userData = localStorage.getItem("affiliate_user")
         if (userData) {
-            setUser(JSON.parse(userData))
+            const parsed = JSON.parse(userData) as User
+            // Avoid synchronous setState in effect warning
+            setTimeout(() => {
+                setUser(parsed)
+            }, 0)
         }
     }, [])
 
@@ -74,7 +89,7 @@ export default function ASMDashboard() {
     const loading = earningsLoading || branchesLoading || agentsLoading
 
     // Live updates
-    const handleUpdate = useCallback((data: any) => {
+    const handleUpdate = useCallback((data: { type: string; message?: string; amount?: number }) => {
         if (data.type === 'stats_update' || data.type === 'payment_received') {
             setToastData({
                 message: data.message || "New activity received!",

@@ -59,7 +59,6 @@ export async function GET() {
             customer_id: row.customer_id
         }));
 
-        await pool.end();
 
         console.log(`Returning ${orders.length} orders`);
         return NextResponse.json({
@@ -68,13 +67,14 @@ export async function GET() {
             count: orders.length
         });
 
-    } catch (error) {
-        console.error("Failed to fetch orders:", error);
+    } catch (error: unknown) {
+        const err = error as Error;
+        console.error("Failed to fetch orders:", err);
         return NextResponse.json(
             {
                 success: false,
                 error: "Failed to fetch orders",
-                message: error instanceof Error ? error.message : "Unknown error"
+                message: err.message
             },
             { status: 500 }
         );

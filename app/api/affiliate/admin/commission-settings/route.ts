@@ -32,7 +32,6 @@ export async function GET() {
             ORDER BY ac.id
         `);
 
-        await pool.end();
 
         // Map to expected format
         const commissions = result.rows.map(row => ({
@@ -51,9 +50,10 @@ export async function GET() {
         console.log(`Found ${commissions.length} commission settings`);
         return NextResponse.json({ success: true, commissions });
 
-    } catch (error: any) {
-        console.error("Failed to fetch commission settings:", error.message);
-        return NextResponse.json({ success: false, commissions: [], error: error.message }, { status: 500 });
+    } catch (error: unknown) {
+        const err = error as Error;
+        console.error("Failed to fetch commission settings:", err.message);
+        return NextResponse.json({ success: false, commissions: [], error: err.message }, { status: 500 });
     }
 }
 
@@ -85,13 +85,13 @@ export async function POST(req: NextRequest) {
             RETURNING *
         `, [id, product_id || null, category_id || null, collection_id || null, type_id || null, commission_rate]);
 
-        await pool.end();
 
         console.log("Created commission:", result.rows[0]);
         return NextResponse.json({ success: true, commission: result.rows[0] });
 
-    } catch (error: any) {
-        console.error("Failed to create commission:", error.message);
-        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    } catch (error: unknown) {
+        const err = error as Error;
+        console.error("Failed to create commission:", err.message);
+        return NextResponse.json({ success: false, error: err.message }, { status: 500 });
     }
 }

@@ -3,6 +3,54 @@ import pool from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
+interface DBReferralStats {
+    total: string;
+}
+
+interface DBActiveCustomers {
+    active: string;
+}
+
+interface DBOrdersStats {
+    total_orders: string;
+    total_order_value: string;
+}
+
+interface DBCommissionStats {
+    total_earned: string;
+    pending: string;
+    credited: string;
+}
+
+interface DBWalletEarned {
+    total_earned: string;
+}
+
+interface DBWithdrawn {
+    total_deducted: string;
+}
+
+interface DBRecentReferral {
+    id: string;
+    customer_email: string;
+    customer_name: string;
+    referred_at: string;
+    order_count: string;
+    total_earned: string;
+}
+
+interface DBRecentCommission {
+    id: string;
+    order_id: string;
+    product_name: string;
+    order_amount: string;
+    commission_rate: string;
+    affiliate_commission: string;
+    commission_source: string;
+    status: string;
+    created_at: string;
+}
+
 export async function GET(request: NextRequest) {
     console.log('=== Fetching Affiliate Stats ===');
 
@@ -30,7 +78,7 @@ export async function GET(request: NextRequest) {
             );
         }
 
-        const affiliateUser = userResult.rows[0];
+        // const affiliateUser = userResult.rows[0] as DBUser; // Removed unused variable
 
         // 1. Get referral stats from affiliate_referrals table
         const referralsQuery = `
@@ -44,7 +92,7 @@ export async function GET(request: NextRequest) {
         // Count active customers (those who have placed orders)
         const activeCustomersQuery = `
             SELECT COUNT(DISTINCT ar.customer_id) as active
-            FROM affiliate_referrals ar
+FROM affiliate_referrals ar
             INNER JOIN affiliate_commission_log acl ON acl.customer_id = ar.customer_id
             WHERE ar.affiliate_code = $1
         `;
@@ -61,10 +109,10 @@ export async function GET(request: NextRequest) {
         const ordersResult = await pool.query(ordersQuery, [affiliateCode]);
 
         const referrals = {
-            total: parseInt(referralsResult.rows[0]?.total || '0'),
-            active: parseInt(activeResult.rows[0]?.active || '0'),
-            total_orders: parseInt(ordersResult.rows[0]?.total_orders || '0'),
-            total_order_value: parseFloat(ordersResult.rows[0]?.total_order_value || '0')
+            total: parseInt((referralsResult.rows[0] as DBReferralStats)?.total || '0'),
+            active: parseInt((activeResult.rows[0] as DBActiveCustomers)?.active || '0'),
+            total_orders: parseInt((ordersResult.rows[0] as DBOrdersStats)?.total_orders || '0'),
+            total_order_value: parseFloat((ordersResult.rows[0] as DBOrdersStats)?.total_order_value || '0')
         };
 
         // 2. Get commission stats (use STORED affiliate_commission to preserve historical rates)
@@ -79,9 +127,9 @@ export async function GET(request: NextRequest) {
         const commissionResult = await pool.query(commissionQuery, [affiliateCode]);
 
         const commission = {
-            total_earned: parseFloat(commissionResult.rows[0]?.total_earned || '0'),
-            pending: parseFloat(commissionResult.rows[0]?.pending || '0'),
-            credited: parseFloat(commissionResult.rows[0]?.credited || '0')
+            total_earned: parseFloat((commissionResult.rows[0] as DBCommissionStats)?.total_earned || '0'),
+            pending: parseFloat((commissionResult.rows[0] as DBCommissionStats)?.pending || '0'),
+            credited: parseFloat((commissionResult.rows[0] as DBCommissionStats)?.credited || '0')
         };
 
         // 3. Get wallet balance (use stored affiliate_commission)
@@ -92,7 +140,7 @@ export async function GET(request: NextRequest) {
             WHERE affiliate_code = $1 AND status = 'CREDITED'
         `;
         const walletResult = await pool.query(walletQuery, [affiliateCode]);
-        const totalEarned = parseFloat(walletResult.rows[0]?.total_earned || '0');
+        const totalEarned = parseFloat((walletResult.rows[0] as DBWalletEarned)?.total_earned || '0');
 
         const withdrawnQuery = `
             SELECT 
@@ -101,7 +149,7 @@ export async function GET(request: NextRequest) {
             WHERE affiliate_code = $1
         `;
         const withdrawnResult = await pool.query(withdrawnQuery, [affiliateCode]);
-        const totalDeducted = parseFloat(withdrawnResult.rows[0]?.total_deducted || '0');
+        const totalDeducted = parseFloat((withdrawnResult.rows[0] as DBWithdrawn)?.total_deducted || '0');
 
         const wallet = {
             balance: totalEarned - totalDeducted,
@@ -126,7 +174,7 @@ export async function GET(request: NextRequest) {
         `;
         const recentReferralsResult = await pool.query(recentReferralsQuery, [affiliateCode]);
 
-        const recent_referrals = recentReferralsResult.rows.map(row => ({
+        const recent_referrals = recentReferralsResult.rows.map((row: DBRecentReferral) => ({
             id: row.id,
             customer_email: row.customer_email,
             customer_name: row.customer_name,
@@ -156,7 +204,7 @@ export async function GET(request: NextRequest) {
         `;
         const recentCommissionsResult = await pool.query(recentCommissionsQuery, [affiliateCode]);
 
-        const recent_commissions = recentCommissionsResult.rows.map(row => ({
+        const recent_commissions = recentCommissionsResult.rows.map((row: DBRecentCommission) => ({
             id: row.id,
             order_id: row.order_id,
             product_name: row.product_name,
@@ -181,13 +229,14 @@ export async function GET(request: NextRequest) {
         console.log('Stats fetched successfully:', stats);
         return NextResponse.json(stats);
 
-    } catch (error) {
-        console.error('Failed to fetch affiliate stats:', error);
+    } catch (error: unknown) {
+        const err = error as Error;
+        console.error('Failed to fetch affiliate stats:', err);
         return NextResponse.json(
             {
                 success: false,
                 error: 'Failed to fetch stats',
-                message: error instanceof Error ? error.message : 'Unknown error'
+                message: err.message
             },
             { status: 500 }
         );

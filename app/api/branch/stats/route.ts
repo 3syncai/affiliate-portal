@@ -39,8 +39,8 @@ export async function GET(req: NextRequest) {
                 [branch]
             );
             totalCommission = parseFloat(commissionResult.rows[0]?.total || '0');
-        } catch (e) {
-            console.log("Commission query failed, using 0", e);
+        } catch (error: unknown) {
+            console.log("Commission query failed, using 0", error);
         }
 
         // Count total orders (from affiliate_commission_log)
@@ -53,8 +53,8 @@ export async function GET(req: NextRequest) {
                 [branch]
             );
             totalOrders = parseInt(ordersResult.rows[0]?.count || '0');
-        } catch (e) {
-            console.log("Orders query failed, using 0", e);
+        } catch (error: unknown) {
+            console.log("Orders query failed, using 0", error);
         }
 
         const stats = {
@@ -67,7 +67,7 @@ export async function GET(req: NextRequest) {
         console.log(`Branch ${branch} stats:`, stats);
 
         return NextResponse.json({ success: true, stats });
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Failed to fetch branch stats:", error);
         return NextResponse.json({
             success: true,

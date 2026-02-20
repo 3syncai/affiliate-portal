@@ -30,13 +30,17 @@ export default function StateAgentsPage() {
     const [searchTerm, setSearchTerm] = useState("")
     const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null)
     const [expandedBranches, setExpandedBranches] = useState<Set<string>>(new Set())
-    const [user, setUser] = useState<any>(null)
+
+    interface LocalUser {
+        state: string;
+    }
+    const [stateUser, setStateUser] = useState<LocalUser | null>(null)
 
     useEffect(() => {
         const userData = localStorage.getItem("affiliate_user")
         if (userData) {
             const parsed = JSON.parse(userData)
-            setUser(parsed)
+            setStateUser(parsed)
             fetchAgents(parsed.state)
         }
     }, [])
@@ -52,7 +56,8 @@ export default function StateAgentsPage() {
                 const allBranches = new Set<string>(response.data.branches?.map((b: Branch) => b.name) || [])
                 setExpandedBranches(allBranches)
             }
-        } catch (error) {
+        } catch (err: unknown) {
+            const error = err as Error & { response?: { data?: { message?: string } } };
             console.error("Failed to fetch agents:", error)
         } finally {
             setLoading(false)
@@ -99,7 +104,7 @@ export default function StateAgentsPage() {
         <div className="space-y-6">
             <div>
                 <h1 className="text-3xl font-bold text-gray-900">Agents by Branch</h1>
-                <p className="text-gray-600 mt-1">View all affiliate agents grouped by their branch in {user?.state}</p>
+                <p className="text-gray-600 mt-1">View all affiliate agents grouped by their branch in {stateUser?.state}</p>
             </div>
 
             {/* Search */}
@@ -142,7 +147,7 @@ export default function StateAgentsPage() {
             {filteredBranches.length === 0 ? (
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
                     <Building2 className="w-12 h-12 mx-auto text-gray-300 mb-4" />
-                    <p className="text-gray-500">No branches found in {user?.state}</p>
+                    <p className="text-gray-500">No branches found in {stateUser?.state}</p>
                 </div>
             ) : (
                 <div className="space-y-4">

@@ -42,14 +42,13 @@ export async function POST(req: NextRequest) {
         );
 
         if (stateAdminResult.rows.length === 0) {
-            await pool.end();
             return NextResponse.json(
                 { success: false, message: "State admin not found" },
                 { status: 404 }
             );
         }
 
-        const state = stateAdminResult.rows[0].state;
+        const stateValue = stateAdminResult.rows[0].state;
 
         // Check if email already exists
         const existingASM = await pool.query(
@@ -58,7 +57,6 @@ export async function POST(req: NextRequest) {
         );
 
         if (existingASM.rows.length > 0) {
-            await pool.end();
             return NextResponse.json(
                 { success: false, message: "Email already registered" },
                 { status: 400 }
@@ -105,12 +103,11 @@ export async function POST(req: NextRequest) {
             hashedPassword,
             phone,
             city,
-            state,
+            stateValue,
             state_admin_id,
             generatedReferCode
         ]);
 
-        await pool.end();
 
         const asm = result.rows[0];
         console.log(`ASM created: ${asm.email} for city ${asm.city} in ${asm.state}`);
@@ -131,13 +128,14 @@ export async function POST(req: NextRequest) {
             }
         });
 
-    } catch (error: any) {
-        console.error("Failed to create ASM:", error);
+    } catch (error: unknown) {
+        const err = error as Error;
+        console.error("Failed to create ASM:", err);
         return NextResponse.json(
             {
                 success: false,
                 message: "Failed to create Area Sales Manager",
-                error: error instanceof Error ? error.message : "Unknown error"
+                error: err.message
             },
             { status: 500 }
         );

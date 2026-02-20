@@ -31,9 +31,19 @@ interface Order {
 
 const fetcher = (url: string) => axios.get(url).then(res => res.data)
 
+interface User {
+    id: string
+    first_name: string
+    last_name: string
+    email: string
+    refer_code: string
+    branch: string
+    role: string
+}
+
 export default function MyDirectReferralsPage() {
     const { theme } = useTheme()
-    const [user, setUser] = useState<any>(null)
+    const [user, setUser] = useState<User | null>(null)
     const [searchTerm, setSearchTerm] = useState("")
     const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
 
@@ -44,7 +54,10 @@ export default function MyDirectReferralsPage() {
     useEffect(() => {
         const userData = localStorage.getItem("affiliate_user")
         if (userData) {
-            setUser(JSON.parse(userData))
+            const parsed = JSON.parse(userData) as User
+            setTimeout(() => {
+                setUser(parsed)
+            }, 0)
         }
     }, [])
 
@@ -64,7 +77,7 @@ export default function MyDirectReferralsPage() {
     const loading = isLoading
 
     // Live updates
-    const handleUpdate = useCallback((data: any) => {
+    const handleUpdate = useCallback((data: { type: string; amount?: number }) => {
         if (data.type === 'stats_update' || data.type === 'payment_received') {
             setToastData({
                 message: "New referral activity!",
@@ -287,7 +300,7 @@ export default function MyDirectReferralsPage() {
                             <div className="flex items-center justify-between">
                                 <div>
                                     <h3 className="text-lg font-bold text-gray-900">
-                                        {selectedCustomer.customer_name}'s Orders
+                                        {selectedCustomer.customer_name}&apos;s Orders
                                     </h3>
                                     <p className="text-sm text-gray-500">{selectedCustomer.customer_email}</p>
                                 </div>

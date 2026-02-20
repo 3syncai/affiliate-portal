@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import axios from "axios"
-import { Search, DollarSign, CreditCard, Building, User, CheckCircle, Clock, AlertCircle } from "lucide-react"
+import { Search, DollarSign, CreditCard, CheckCircle } from "lucide-react"
 
 type Admin = {
     id: string
@@ -129,9 +129,10 @@ export default function PaymentsPage() {
                 // Refresh data
                 fetchData()
             }
-        } catch (error: any) {
-            console.error("Payment failed:", error)
-            alert("Failed to process payment: " + (error.response?.data?.error || error.message))
+        } catch (error: unknown) {
+            const err = error as { response?: { data?: { error?: string } }; message?: string };
+            console.error("Payment failed:", err)
+            alert("Failed to process payment: " + (err.response?.data?.error || err.message))
         } finally {
             setProcessing(false)
         }

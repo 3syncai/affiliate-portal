@@ -29,7 +29,6 @@ export async function POST(req: NextRequest) {
 
         const result = await pool.query(updateQuery, [correctState, userId]);
 
-        await pool.end();
 
         return NextResponse.json({
             success: true,
@@ -37,11 +36,12 @@ export async function POST(req: NextRequest) {
             message: `State updated to ${correctState}`
         });
 
-    } catch (error: any) {
-        console.error("Failed to fix state:", error);
+    } catch (error: unknown) {
+        const err = error as Error;
+        console.error("Failed to fix state:", err);
         return NextResponse.json({
             success: false,
-            error: error.message
+            error: err.message
         }, { status: 500 });
     }
 }

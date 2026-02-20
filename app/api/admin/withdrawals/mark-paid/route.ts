@@ -40,7 +40,6 @@ export async function POST(request: Request) {
             withdrawalId
         ]);
 
-        await pool.end();
 
         if (result.rows.length === 0) {
             return NextResponse.json(

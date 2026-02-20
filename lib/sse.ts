@@ -1,6 +1,6 @@
 export const clients = new Map<string, ReadableStreamDefaultController>();
 
-export function sendNotification(affiliateCode: string, data: any) {
+export function sendNotification(affiliateCode: string, data: unknown) {
     const controller = clients.get(affiliateCode);
     if (controller) {
         try {

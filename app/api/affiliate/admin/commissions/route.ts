@@ -55,7 +55,6 @@ export async function GET() {
             total_orders: parseInt(row.total_orders) || 0
         }));
 
-        await pool.end();
 
         console.log(`Returning ${affiliates.length} affiliates`);
         return NextResponse.json({
@@ -64,13 +63,14 @@ export async function GET() {
             count: affiliates.length
         });
 
-    } catch (error) {
-        console.error("Failed to fetch commission data:", error);
+    } catch (error: unknown) {
+        const err = error as Error;
+        console.error("Failed to fetch commission data:", err);
         return NextResponse.json(
             {
                 success: false,
                 error: "Failed to fetch commission data",
-                message: error instanceof Error ? error.message : "Unknown error"
+                message: err.message
             },
             { status: 500 }
         );

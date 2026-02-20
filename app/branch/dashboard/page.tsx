@@ -4,11 +4,10 @@ import { useEffect, useState, useCallback } from "react"
 import { Users, TrendingUp, DollarSign, ShoppingBag, CheckCircle, UserPlus, CreditCard, Clock, ArrowUpRight, MapPin, Copy, Check, Link2, TrendingDown, Share2, Wifi, WifiOff } from "lucide-react"
 import axios from "axios"
 import useSWR from 'swr'
-import { useTheme } from "@/contexts/ThemeContext"
 import { useSSE } from "@/hooks/useSSE"
 import { Toast } from "@/components/Toast"
 
-type Activity = {
+interface Activity {
     id: string
     type: 'affiliate_request' | 'order' | 'approval' | 'withdrawal' | 'payment'
     timestamp: string
@@ -24,11 +23,22 @@ type Activity = {
     }
 }
 
+interface User {
+    id: string
+    first_name: string
+    last_name: string
+    email: string
+    refer_code: string
+    branch: string
+    role: string
+    city?: string
+    state?: string
+}
+
 const fetcher = (url: string) => axios.get(url).then(res => res.data)
 
 export default function BranchDashboard() {
-    const { theme } = useTheme()
-    const [user, setUser] = useState<any>(null)
+    const [user, setUser] = useState<User | null>(null)
     const [copied, setCopied] = useState(false)
 
     // Toast notification state
@@ -38,7 +48,10 @@ export default function BranchDashboard() {
     useEffect(() => {
         const userData = localStorage.getItem("affiliate_user")
         if (userData) {
-            setUser(JSON.parse(userData))
+            const parsed = JSON.parse(userData) as User
+            setTimeout(() => {
+                setUser(parsed)
+            }, 0)
         }
     }, [])
 
@@ -65,7 +78,7 @@ export default function BranchDashboard() {
     const loading = statsLoading || activitiesLoading
 
     // Real-time updates handler
-    const handleUpdate = useCallback((data: any) => {
+    const handleUpdate = useCallback((data: { type: string; message?: string; amount?: number }) => {
         console.log("Live update received:", data);
         if (data.type === 'stats_update' || data.type === 'payment_received') {
             setToastData({
@@ -84,15 +97,6 @@ export default function BranchDashboard() {
         affiliateCode: user?.refer_code || '',
         onMessage: handleUpdate
     });
-
-    useEffect(() => {
-        const userData = localStorage.getItem("affiliate_user")
-        if (userData) {
-            setUser(JSON.parse(userData))
-        }
-    }, [])
-
-
 
     const formatTimeAgo = (timestamp: string) => {
         const now = new Date()
@@ -140,7 +144,7 @@ export default function BranchDashboard() {
         }
     }
 
-    const statCards = [
+    const statCards: { title: string; value: string | number; icon: React.ElementType; color: string; bg: string }[] = [
         { title: "Total Partners", value: stats.totalAgents, icon: Users, color: "text-orange-600", bg: "bg-orange-50" },
         { title: "Pending Approval", value: stats.pendingApproval, icon: TrendingUp, color: "text-yellow-600", bg: "bg-yellow-50" },
         { title: "Total Commission", value: `₹${stats.totalCommission.toLocaleString("en-IN")}`, icon: DollarSign, color: "text-green-600", bg: "bg-green-50" },

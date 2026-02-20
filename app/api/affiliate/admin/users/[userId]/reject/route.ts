@@ -38,14 +38,12 @@ export async function POST(
         const result = await pool.query(updateQuery, [userId]);
 
         if (result.rows.length === 0) {
-            await pool.end();
             return NextResponse.json(
                 { success: false, error: "User not found" },
                 { status: 404 }
             );
         }
 
-        await pool.end();
 
         console.log(`User ${userId} rejected successfully with reason: ${rejection_reason}`);
         return NextResponse.json({

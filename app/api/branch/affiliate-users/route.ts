@@ -39,7 +39,6 @@ export async function GET(request: Request) {
             [branch, `%${branch}%`]
         );
 
-        await pool.end();
 
         console.log(`Found ${pendingResult.rows.length} pending and ${approvedResult.rows.length} approved affiliates for branch: ${branch}`);
 

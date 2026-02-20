@@ -3,6 +3,17 @@
 import { useEffect, useState } from "react"
 import { Search, Plus, Edit, Trash2, Package, Tag, Boxes, Type, Save, X, ChevronDown, Check } from "lucide-react"
 import axios from "axios"
+import Image from "next/image"
+
+interface Product {
+  id: string
+  title: string
+  thumbnail?: string
+  categories?: { id: string; name: string }[]
+  collection?: { id: string; title: string }
+  type?: { id: string; value: string }
+  variants?: { sku: string }[]
+}
 
 interface Commission {
   id: string
@@ -36,7 +47,7 @@ export default function SetCommissionPage() {
     commission_rate: "",
   })
   const [saving, setSaving] = useState(false)
-  const [products, setProducts] = useState<any[]>([])
+  const [products, setProducts] = useState<Product[]>([])
   const [productsLoading, setProductsLoading] = useState(true)
   const [categories, setCategories] = useState<FilterOption[]>([])
   const [collections, setCollections] = useState<FilterOption[]>([])
@@ -56,9 +67,10 @@ export default function SetCommissionPage() {
       const response = await axios.get("/api/affiliate/admin/commission-settings")
       const data = response.data
       setCommissions(data.commissions || [])
-    } catch (error: any) {
-      console.error("Failed to fetch commissions:", error)
-      const errorMessage = error.response?.data?.message || error.message || "Unknown error"
+    } catch (error: unknown) {
+      const err = error as Error & { response?: { data?: { message?: string } } }
+      console.error("Failed to fetch commissions:", err)
+      const errorMessage = err.response?.data?.message || err.message || "Unknown error"
       alert(`Error loading commissions: ${errorMessage}`)
     } finally {
       setLoading(false)
@@ -70,15 +82,15 @@ export default function SetCommissionPage() {
     try {
       const response = await axios.get("/api/affiliate/admin/products")
       const data = response.data
-      setProducts(data.products || [])
+      setProducts((data.products as Product[]) || [])
 
       // Extract unique categories, collections, and types
       const uniqueCategories = new Map<string, FilterOption>()
       const uniqueCollections = new Map<string, FilterOption>()
       const uniqueTypes = new Map<string, FilterOption>()
 
-      data.products?.forEach((product: any) => {
-        product.categories?.forEach((cat: any) => {
+      data.products?.forEach((product: Product) => {
+        product.categories?.forEach((cat: { id: string; name: string }) => {
           if (!uniqueCategories.has(cat.id)) {
             uniqueCategories.set(cat.id, { id: cat.id, name: cat.name })
           }
@@ -104,9 +116,10 @@ export default function SetCommissionPage() {
       setCategories(Array.from(uniqueCategories.values()))
       setCollections(Array.from(uniqueCollections.values()))
       setTypes(Array.from(uniqueTypes.values()))
-    } catch (error: any) {
-      console.error("Failed to fetch products:", error)
-      const errorMessage = error.response?.data?.message || error.message || "Unknown error"
+    } catch (error: unknown) {
+      const err = error as Error & { response?: { data?: { message?: string } } }
+      console.error("Failed to fetch products:", err)
+      const errorMessage = err.response?.data?.message || err.message || "Unknown error"
       alert(`Error loading products: ${errorMessage}. Please check if the backend server is running.`)
     } finally {
       setProductsLoading(false)
@@ -167,8 +180,14 @@ export default function SetCommissionPage() {
 
         response = await axios.put(`/api/affiliate/admin/commission-settings/${editingCommission.id}`, requestBody)
       } else {
-        // Create new commission
-        const body: any = {
+        // Set the appropriate entity ID based on commission type
+        const body: {
+          commission_rate: number
+          product_id?: string
+          category_id?: string
+          collection_id?: string
+          type_id?: string
+        } = {
           commission_rate: commissionRate,
         }
 
@@ -206,9 +225,10 @@ export default function SetCommissionPage() {
         commission_rate: "",
       })
       alert(editingCommission ? "Commission updated successfully" : "Commission created successfully")
-    } catch (error: any) {
-      console.error("Failed to save commission:", error)
-      const errorMessage = error.response?.data?.message || error.message || "Unknown error"
+    } catch (error: unknown) {
+      const err = error as Error & { response?: { data?: { message?: string } } }
+      console.error("Failed to save commission:", err)
+      const errorMessage = err.response?.data?.message || err.message || "Unknown error"
       alert(`Error saving commission: ${errorMessage}`)
     } finally {
       setSaving(false)
@@ -224,9 +244,10 @@ export default function SetCommissionPage() {
       await axios.delete(`/api/affiliate/admin/commissions/${commissionId}`)
       await loadCommissions()
       alert("Commission deleted successfully")
-    } catch (error: any) {
-      console.error("Failed to delete commission:", error)
-      const errorMessage = error.response?.data?.message || error.message || "Unknown error"
+    } catch (error: unknown) {
+      const err = error as Error & { response?: { data?: { message?: string } } }
+      console.error("Failed to delete commission:", err)
+      const errorMessage = err.response?.data?.message || err.message || "Unknown error"
       alert(`Error deleting commission: ${errorMessage}`)
     }
   }
@@ -361,7 +382,7 @@ export default function SetCommissionPage() {
                   onChange={(e) => {
                     setFormData({
                       ...formData,
-                      commission_type: e.target.value as any,
+                      commission_type: e.target.value as "product" | "category" | "collection" | "type",
                       entity_id: "",
                     })
                   }}
@@ -392,22 +413,28 @@ export default function SetCommissionPage() {
                       onClick={() => setIsProductDropdownOpen(!isProductDropdownOpen)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-left flex items-center justify-between focus:ring-2 focus:ring-indigo-500"
                     >
-                      {formData.entity_id ? (
-                        <div className="flex items-center overflow-hidden">
-                          {products.find(p => p.id === formData.entity_id)?.thumbnail && (
-                            <img
-                              src={products.find(p => p.id === formData.entity_id)?.thumbnail}
-                              alt=""
-                              className="w-6 h-6 rounded object-cover mr-2 flex-shrink-0"
-                            />
-                          )}
-                          <span className="truncate">
-                            {products.find(p => p.id === formData.entity_id)?.title || "Select Product"}
-                          </span>
-                        </div>
-                      ) : (
-                        <span className="text-gray-500">Select product</span>
-                      )}
+                      {(() => {
+                        if (!formData.entity_id) return <span className="text-gray-500">Select product</span>;
+                        const selectedProduct = products.find(p => p.id === formData.entity_id);
+                        return (
+                          <div className="flex items-center overflow-hidden">
+                            {selectedProduct?.thumbnail && (
+                              <div className="relative w-6 h-6 mr-2 flex-shrink-0">
+                                <Image
+                                  src={selectedProduct.thumbnail}
+                                  alt=""
+                                  fill
+                                  className="rounded object-cover"
+                                  unoptimized
+                                />
+                              </div>
+                            )}
+                            <span className="truncate">
+                              {selectedProduct?.title || "Select Product"}
+                            </span>
+                          </div>
+                        );
+                      })()}
                       <ChevronDown className="w-4 h-4 text-gray-400 flex-shrink-0 ml-2" />
                     </button>
 
@@ -448,11 +475,15 @@ export default function SetCommissionPage() {
                                       }`}
                                   >
                                     {product.thumbnail ? (
-                                      <img
-                                        src={product.thumbnail}
-                                        alt=""
-                                        className="w-8 h-8 rounded object-cover mr-3 bg-gray-100"
-                                      />
+                                      <div className="relative w-8 h-8 mr-3 flex-shrink-0">
+                                        <Image
+                                          src={product.thumbnail}
+                                          alt=""
+                                          fill
+                                          className="rounded object-cover bg-gray-100"
+                                          unoptimized
+                                        />
+                                      </div>
                                     ) : (
                                       <div className="w-8 h-8 rounded bg-gray-100 mr-3 flex items-center justify-center">
                                         <Package className="w-4 h-4 text-gray-400" />

@@ -28,7 +28,6 @@ export async function POST(
             [userId]
         );
 
-        await pool.end();
 
         if (result.rows.length === 0) {
             return NextResponse.json({ success: false, message: "User not found" }, { status: 404 });

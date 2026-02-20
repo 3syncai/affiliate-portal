@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import axios from "axios"
-import { Building, Eye, ToggleLeft, ToggleRight, Search, MapPin } from "lucide-react"
+import { Building, Eye, ToggleLeft, ToggleRight, Search } from "lucide-react"
 
 type BranchAdmin = {
     id: string
@@ -18,19 +18,29 @@ type BranchAdmin = {
     created_at: string
 }
 
+interface UserData {
+    id: string;
+    city?: string;
+    [key: string]: unknown;
+}
+
 export default function BranchAdminsPage() {
     const [branchAdmins, setBranchAdmins] = useState<BranchAdmin[]>([])
     const [loading, setLoading] = useState(true)
     const [searchTerm, setSearchTerm] = useState("")
     const [selectedAdmin, setSelectedAdmin] = useState<BranchAdmin | null>(null)
-    const [user, setUser] = useState<any>(null)
+    const [user, setUser] = useState<UserData | null>(null)
 
     useEffect(() => {
         const userData = localStorage.getItem("affiliate_user")
         if (userData) {
-            const parsed = JSON.parse(userData)
-            setUser(parsed)
-            fetchBranchAdmins(parsed.id)
+            try {
+                const parsed = JSON.parse(userData) as UserData
+                setUser(parsed)
+                fetchBranchAdmins(parsed.id)
+            } catch (e) {
+                console.error("Failed to parse user data:", e)
+            }
         }
     }, [])
 
@@ -41,8 +51,9 @@ export default function BranchAdminsPage() {
             if (response.data.success) {
                 setBranchAdmins(response.data.branchAdmins)
             }
-        } catch (error) {
-            console.error("Failed to fetch branch admins:", error)
+        } catch (error: unknown) {
+            const err = error as Error;
+            console.error("Failed to fetch branch admins:", err)
         } finally {
             setLoading(false)
         }
@@ -57,8 +68,9 @@ export default function BranchAdminsPage() {
             if (user?.id) {
                 fetchBranchAdmins(user.id)
             }
-        } catch (error) {
-            console.error("Failed to toggle status:", error)
+        } catch (error: unknown) {
+            const err = error as Error;
+            console.error("Failed to toggle status:", err)
             alert("Failed to update status")
         }
     }
@@ -91,7 +103,7 @@ export default function BranchAdminsPage() {
             <div className="flex justify-between items-start">
                 <div>
                     <h1 className="text-3xl font-bold text-gray-900">Area Sales Admins</h1>
-                    <p className="text-gray-600 mt-1">View and manage Area Sales Admins in {user?.city}</p>
+                    <p className="text-gray-600 mt-1">View and manage Area Sales Admins in {user?.city || ''}</p>
                 </div>
                 <a
                     href="/asm/create-branch"

@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Clock, CheckCircle, XCircle, RefreshCw } from "lucide-react"
+import { Clock, XCircle, RefreshCw } from "lucide-react"
 import axios from "axios"
 
 export default function VerificationPendingPage() {
   const router = useRouter()
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<{ first_name: string; last_name: string; email: string; is_approved: boolean; rejected_at: string | null; rejection_reason: string | null } | null>(null)
   const [loading, setLoading] = useState(true)
   const [checking, setChecking] = useState(false)
 
@@ -133,8 +133,8 @@ export default function VerificationPendingPage() {
             </p>
             <ul className="text-sm text-blue-700 mt-2 text-left list-disc list-inside space-y-1">
               <li>Our admin team will review your application</li>
-              <li>We'll verify your documents and information</li>
-              <li>You'll receive access to your dashboard once approved</li>
+              <li>We&apos;ll verify your documents and information</li>
+              <li>You&apos;ll receive access to your dashboard once approved</li>
             </ul>
           </div>
 

@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Pool } from "pg";
+import pool from "@/lib/db";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
 export const dynamic = "force-dynamic"
 
-const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-in-production";
+const secret = process.env.JWT_SECRET;
+if (!secret) {
+    throw new Error("JWT_SECRET environment variable is not set");
+}
+const JWT_SECRET = secret as string;
 
 export async function POST(req: NextRequest) {
     console.log("=== Affiliate Login ===");
@@ -21,11 +25,6 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        const pool = new Pool({
-            connectionString: process.env.DATABASE_URL || process.env.NEXT_PUBLIC_DATABASE_URL,
-            ssl: { rejectUnauthorized: false }
-        });
-
         // Find affiliate by email
         const result = await pool.query(
             `SELECT id, first_name, last_name, email, password_hash, phone, is_approved, created_at
@@ -34,7 +33,6 @@ export async function POST(req: NextRequest) {
         );
 
         if (result.rows.length === 0) {
-            await pool.end();
             return NextResponse.json(
                 { message: "Invalid email or password" },
                 { status: 401 }
@@ -46,14 +44,11 @@ export async function POST(req: NextRequest) {
         // Verify password
         const isPasswordValid = await bcrypt.compare(password, affiliate.password_hash);
         if (!isPasswordValid) {
-            await pool.end();
             return NextResponse.json(
                 { message: "Invalid email or password" },
                 { status: 401 }
             );
         }
-
-        await pool.end();
 
         // Generate JWT token
         const token = jwt.sign(
@@ -81,12 +76,12 @@ export async function POST(req: NextRequest) {
             }
         });
 
-    } catch (error: any) {
-        console.error("Affiliate login failed:", error);
+    } catch (error: unknown) {
+        const err = error as Error;
+        console.error("Affiliate login failed:", err);
         return NextResponse.json(
             {
-                message: "Login failed",
-                error: error instanceof Error ? error.message : "Unknown error"
+                message: "Login failed"
             },
             { status: 500 }
         );

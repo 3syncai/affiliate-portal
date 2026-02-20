@@ -65,7 +65,6 @@ export async function GET() {
         const result = await pool.query(query);
         console.log(`Found ${result.rows.length} total users`);
 
-        await pool.end();
 
         // Separate pending (not approved) and approved users
         const pending = result.rows.filter(user => !user.is_approved);
@@ -81,13 +80,14 @@ export async function GET() {
             count: result.rows.length
         });
 
-    } catch (error) {
-        console.error("Failed to fetch affiliate users:", error);
+    } catch (error: unknown) {
+        const err = error as Error;
+        console.error("Failed to fetch affiliate users:", err);
         return NextResponse.json(
             {
                 success: false,
                 error: "Failed to fetch affiliate users",
-                message: error instanceof Error ? error.message : "Unknown error"
+                message: err.message
             },
             { status: 500 }
         );

@@ -16,6 +16,15 @@ type ASM = {
     created_at: string
 }
 
+interface User {
+    id: string
+    name: string
+    email: string
+    refer_code: string
+    state: string
+    role: string
+}
+
 export default function ASMManagementPage() {
     const router = useRouter()
     const { colors } = useTheme()
@@ -23,7 +32,7 @@ export default function ASMManagementPage() {
     const [filteredASMs, setFilteredASMs] = useState<ASM[]>([])
     const [searchTerm, setSearchTerm] = useState("")
     const [loading, setLoading] = useState(true)
-    const [userData, setUserData] = useState<any>(null)
+    const [userData, setUserData] = useState<User | null>(null)
 
     useEffect(() => {
         const storedUser = localStorage.getItem("affiliate_user")
@@ -93,9 +102,10 @@ export default function ASMManagementPage() {
             } else {
                 alert(`❌ Failed to delete user: ${response.data.error}`)
             }
-        } catch (error: any) {
-            console.error("Delete error:", error)
-            alert(`❌ Error deleting user: ${error.response?.data?.error || error.message}`)
+        } catch (error: unknown) {
+            const err = error as Error & { response?: { data?: { error?: string } } };
+            console.error("Delete error:", err)
+            alert(`❌ Error deleting user: ${err.response?.data?.error || err.message}`)
         }
     }
 

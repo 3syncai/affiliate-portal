@@ -39,7 +39,6 @@ export async function POST(req: NextRequest) {
         );
 
         if (asmResult.rows.length === 0) {
-            await pool.end();
             return NextResponse.json(
                 { success: false, message: "Area Sales Manager not found" },
                 { status: 404 }
@@ -55,7 +54,6 @@ export async function POST(req: NextRequest) {
         );
 
         if (existingBranch.rows.length > 0) {
-            await pool.end();
             return NextResponse.json(
                 { success: false, message: "Email already registered" },
                 { status: 400 }
@@ -108,7 +106,6 @@ export async function POST(req: NextRequest) {
             generatedReferCode
         ]);
 
-        await pool.end();
 
         const branchAdmin = result.rows[0];
         console.log(`Branch Admin created: ${branchAdmin.email} for branch ${branchAdmin.branch}`);
@@ -130,13 +127,14 @@ export async function POST(req: NextRequest) {
             }
         });
 
-    } catch (error: any) {
-        console.error("Failed to create Branch Admin:", error);
+    } catch (error: unknown) {
+        const err = error as Error;
+        console.error("Failed to create Branch Admin:", err);
         return NextResponse.json(
             {
                 success: false,
                 message: "Failed to create Branch Admin",
-                error: error instanceof Error ? error.message : "Unknown error"
+                error: err.message
             },
             { status: 500 }
         );

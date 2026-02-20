@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { Pool } from 'pg'
 
 const pool = new Pool({
@@ -6,7 +6,7 @@ const pool = new Pool({
     ssl: { rejectUnauthorized: false }
 })
 
-export async function GET(request: NextRequest) {
+export async function GET() {
     try {
         // Create stores table
         await pool.query(`
@@ -63,10 +63,11 @@ export async function GET(request: NextRequest) {
             message: 'Stores table initialized successfully',
             tableExists: checkTable.rows[0].exists
         })
-    } catch (error: any) {
-        console.error('Error initializing stores table:', error)
+    } catch (error: unknown) {
+        const err = error as Error;
+        console.error('Error initializing stores table:', err)
         return NextResponse.json(
-            { success: false, error: error.message },
+            { success: false, error: err.message },
             { status: 500 }
         )
     }

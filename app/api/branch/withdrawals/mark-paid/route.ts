@@ -57,16 +57,16 @@ export async function POST(req: NextRequest) {
                         JSON.stringify({ transactionId, paymentDate })
                     ]
                 );
-            } catch (e) {
-                console.log("Activity log insert failed:", e);
+            } catch (error: unknown) {
+                console.log("Activity log insert failed:", error);
             }
         }
 
-        await pool.end();
 
         return NextResponse.json({ success: true, message: "Marked as paid" });
-    } catch (error: any) {
-        console.error("Failed to mark as paid:", error);
+    } catch (error: unknown) {
+        const err = error as Error;
+        console.error("Failed to mark as paid:", err);
         return NextResponse.json({ success: false, message: "Failed to mark as paid" }, { status: 500 });
     }
 }

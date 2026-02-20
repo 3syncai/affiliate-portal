@@ -44,7 +44,7 @@ export default function PendingPayoutPage() {
     paymentDetails: ""
   })
   const [processing, setProcessing] = useState(false)
-  const [branchData, setBranchData] = useState<any>(null)
+  const [branchData, setBranchData] = useState<{ branch: string; refer_code: string } | null>(null)
 
   // Toast state
   const [showToast, setShowToast] = useState(false)
@@ -71,7 +71,7 @@ export default function PendingPayoutPage() {
   const loading = isLoading
 
   // Live updates
-  const handleUpdate = useCallback((data: any) => {
+  const handleUpdate = useCallback((data: { type: string; amount?: number }) => {
     // Refresh on any stats update (might include commission that leads to withdrawal) or specific withdrawal event if exists
     if (data.type === 'stats_update' || data.type === 'withdrawal_request') {
       setShowToast(true);

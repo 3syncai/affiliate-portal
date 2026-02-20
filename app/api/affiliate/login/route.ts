@@ -5,7 +5,11 @@ import jwt from "jsonwebtoken";
 
 export const dynamic = "force-dynamic"
 
-const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-in-production";
+const secret = process.env.JWT_SECRET;
+if (!secret) {
+    throw new Error("JWT_SECRET environment variable is not set");
+}
+const JWT_SECRET = secret as string;
 
 export async function POST(req: NextRequest) {
     console.log("=== Affiliate/Admin Login (Restored) ===");
@@ -173,13 +177,14 @@ export async function POST(req: NextRequest) {
             }
         });
 
-    } catch (error: any) {
-        console.error("Login critical error:", error);
+    } catch (error: unknown) {
+        const err = error as Error;
+        console.error("Login critical error:", err);
         return NextResponse.json(
             {
                 success: false,
                 message: "Login failed (Server Error)",
-                error: error instanceof Error ? error.message : "Unknown error"
+                error: err.message
             },
             { status: 500 }
         );
