@@ -1,12 +1,19 @@
-/* eslint-disable @typescript-eslint/no-require-imports */  
+/* eslint-disable @typescript-eslint/no-require-imports */
 const { Pool } = require('pg');
 
 async function checkPending() {
     console.log('Checking for Pending Commissions...');
+    const connectionString = process.env.DATABASE_URL || process.env.NEXT_PUBLIC_DATABASE_URL;
+
+    if (!connectionString) {
+        console.error('CRITICAL ERROR: DATABASE_URL environment variable is not set.');
+        process.exit(1);
+    }
+
     const pool = new Pool({
         // Hardcoding based on .env
-        connectionString: "postgres://postgres:Oweg4719@oweg-ecom.cz282guu85co.ap-south-1.rds.amazonaws.com:5432/oweg_db?sslmode=no-verify",
-        ssl: { rejectUnauthorized: false }
+        connectionString,
+        ssl: connectionString.includes('rds.amazonaws.com') ? { rejectUnauthorized: false } : false
     });
 
     try {

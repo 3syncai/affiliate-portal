@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Pool } from "pg";
+import pool from "@/lib/db";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
 export const dynamic = "force-dynamic"
 
-const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-in-production";
+const secret = process.env.JWT_SECRET;
+if (!secret) {
+    throw new Error("JWT_SECRET environment variable is not set");
+}
+const JWT_SECRET = secret as string;
 
 export async function POST(req: NextRequest) {
     console.log("=== Affiliate Login ===");
@@ -34,7 +38,6 @@ export async function POST(req: NextRequest) {
         );
 
         if (result.rows.length === 0) {
-            await pool.end();
             return NextResponse.json(
                 { message: "Invalid email or password" },
                 { status: 401 }
@@ -46,7 +49,6 @@ export async function POST(req: NextRequest) {
         // Verify password
         const isPasswordValid = await bcrypt.compare(password, affiliate.password_hash);
         if (!isPasswordValid) {
-            await pool.end();
             return NextResponse.json(
                 { message: "Invalid email or password" },
                 { status: 401 }

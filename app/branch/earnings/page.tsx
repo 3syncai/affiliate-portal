@@ -75,7 +75,12 @@ export default function BranchEarningsPage() {
                     <h3 className="text-2xl font-bold text-gray-900">{formatCurrency(value)}</h3>
                     {subtitle && <p className="text-xs text-gray-400 mt-1">{subtitle}</p>}
                 </div>
-                <div className={`p-3 rounded-xl bg-${color}-50 text-${color}-600`}>
+                <div className={`p-3 rounded-xl ${color === 'blue' ? 'bg-blue-50 text-blue-600' :
+                        color === 'amber' ? 'bg-amber-50 text-amber-600' :
+                            color === 'emerald' ? 'bg-emerald-50 text-emerald-600' :
+                                color === 'violet' ? 'bg-violet-50 text-violet-600' :
+                                    'bg-gray-50 text-gray-600'
+                    }`}>
                     <Icon className="w-6 h-6" />
                 </div>
             </div>
@@ -162,7 +167,7 @@ export default function BranchEarningsPage() {
                                                 {tx.type === 'WITHDRAWAL' ? '-' : '+'}{formatCurrency(tx.amount)}
                                             </p>
                                             <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${tx.status === 'COMPLETED' || tx.status === 'PAID' || tx.status === 'CREDITED' ? 'bg-green-100 text-green-700' :
-                                                    tx.status === 'PENDING' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'
+                                                tx.status === 'PENDING' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'
                                                 }`}>
                                                 {tx.status}
                                             </span>

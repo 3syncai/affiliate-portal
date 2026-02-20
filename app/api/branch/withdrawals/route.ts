@@ -68,7 +68,7 @@ export async function GET(req: NextRequest) {
     } catch (error: unknown) {
         const err = error as Error;
         console.error("Failed to fetch branch withdrawals:", err);
-        return NextResponse.json({ success: true, withdrawals: [] });
+        return NextResponse.json({ success: false, message: "Internal server error" }, { status: 500 });
     }
 }
 

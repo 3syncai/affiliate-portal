@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Pool } from "pg";
+import pool from "@/lib/db";
 
 export const dynamic = "force-dynamic"
 
@@ -13,11 +13,6 @@ export async function GET(req: NextRequest) {
         if (!asmId) {
             return NextResponse.json({ success: false, error: "ASM ID is required" }, { status: 400 });
         }
-
-        const pool = new Pool({
-            connectionString: process.env.DATABASE_URL || process.env.NEXT_PUBLIC_DATABASE_URL,
-            ssl: { rejectUnauthorized: false }
-        });
 
         // 1. Get Direct Earnings (as an agent/affiliate)
         // Check if this ASM is also an agent using refer_code
@@ -92,6 +87,9 @@ export async function GET(req: NextRequest) {
         }
 
         // 5. Get Recent 20 Transactions
+        // We need to pass referCode for the direct commissions and asmId for withdrawals
+        const referCode = asmInfo.rows[0]?.refer_code || 'NONE';
+
         const transactionsResult = await pool.query(
             `SELECT 'DIRECT' as type, product_name as description, 
              COALESCE(affiliate_amount, commission_amount * 0.70) as amount, 
@@ -102,13 +100,12 @@ export async function GET(req: NextRequest) {
              SELECT 'WITHDRAWAL' as type, 'Withdrawal' as description, 
              withdrawal_amount as amount, requested_at as date, status
              FROM withdrawal_request
-             WHERE affiliate_id = $1
+             WHERE affiliate_id = $2
              ORDER BY date DESC
              LIMIT 20`,
-            [asmId]
+            [referCode, asmId]
         );
 
-        await pool.end();
 
         return NextResponse.json({
             success: true,

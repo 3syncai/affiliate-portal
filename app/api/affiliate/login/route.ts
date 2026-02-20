@@ -5,7 +5,11 @@ import jwt from "jsonwebtoken";
 
 export const dynamic = "force-dynamic"
 
-const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-in-production";
+const secret = process.env.JWT_SECRET;
+if (!secret) {
+    throw new Error("JWT_SECRET environment variable is not set");
+}
+const JWT_SECRET = secret as string;
 
 export async function POST(req: NextRequest) {
     console.log("=== Affiliate/Admin Login (Restored) ===");

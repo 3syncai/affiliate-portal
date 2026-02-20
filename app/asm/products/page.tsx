@@ -200,7 +200,7 @@ export default function ASMProductsPage() {
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {filteredProducts.map((product) => (
-                        <ProductCard key={product.id} product={product} user={user} theme={theme} commissionRate={commissionRate} />
+                        <ProductCard key={product.id} product={product} user={user} commissionRate={commissionRate} />
                     ))}
                 </div>
             )}
@@ -208,7 +208,7 @@ export default function ASMProductsPage() {
     )
 }
 
-function ProductCard({ product, user, theme, commissionRate }: { product: Product; user: User | null; theme: { primary: string; background: string; sidebar: string }; commissionRate: number }) {
+function ProductCard({ product, user, commissionRate }: { product: Product; user: User | null; commissionRate: number }) {
     const [copied, setCopied] = useState(false)
 
     const actualCommission = commissionRate > 0

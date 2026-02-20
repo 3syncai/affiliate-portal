@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Pool } from "pg";
+import pool from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
@@ -10,10 +10,9 @@ interface ASM {
     email: string;
     city: string;
     state: string;
-    created_at: string;
+    created_at: Date;
     role: string;
     is_active: boolean;
-    refer_code: string;
 }
 
 export async function GET(req: NextRequest) {
@@ -28,15 +27,12 @@ export async function GET(req: NextRequest) {
 
         console.log("Fetching ASMs for state:", state, "Admin ID:", adminId);
 
-        const pool = new Pool({
-            connectionString: process.env.DATABASE_URL || process.env.NEXT_PUBLIC_DATABASE_URL,
-            ssl: { rejectUnauthorized: false }
-        });
+        console.log("Fetching ASMs for state:", state, "Admin ID:", adminId);
 
         // Query the REAL area_sales_manager table
         // Filter by created_by if adminId is provided, otherwise fallback to state
         let query = `
-            SELECT id, first_name, last_name, email, city, state, created_at, role, is_active, refer_code
+            SELECT id, first_name, last_name, email, city, state, created_at, role, is_active
             FROM area_sales_manager
             WHERE state ILIKE $1
         `;
@@ -52,7 +48,6 @@ export async function GET(req: NextRequest) {
 
         const result = await pool.query(query, params);
 
-        await pool.end();
 
         return NextResponse.json({
             success: true,

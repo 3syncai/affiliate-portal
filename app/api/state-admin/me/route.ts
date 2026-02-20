@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Pool } from "pg";
+import pool from "@/lib/db";
 import jwt from "jsonwebtoken";
 
 export const dynamic = "force-dynamic";
 
-const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-in-production";
+const secret = process.env.JWT_SECRET;
+if (!secret) {
+    throw new Error("JWT_SECRET environment variable is not set");
+}
+const JWT_SECRET = secret as string;
 
 interface DecodedToken {
     id: string;
@@ -32,17 +36,11 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ success: false, message: "Invalid role" }, { status: 403 });
         }
 
-        const pool = new Pool({
-            connectionString: process.env.DATABASE_URL || process.env.NEXT_PUBLIC_DATABASE_URL,
-            ssl: { rejectUnauthorized: false }
-        });
-
         const query = `
             SELECT id, first_name, last_name, email, phone, state, refer_code
             FROM state_admin WHERE id = $1
         `;
         const result = await pool.query(query, [decoded.id]);
-        await pool.end();
 
         if (result.rows.length === 0) {
             return NextResponse.json({ success: false, message: "User not found" }, { status: 404 });

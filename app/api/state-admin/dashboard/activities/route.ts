@@ -124,7 +124,7 @@ export async function GET(req: NextRequest) {
                 acl.commission_source
             FROM affiliate_commission_log acl
             LEFT JOIN affiliate_user u ON acl.affiliate_code = u.refer_code
-            LEFT JOIN branch_admin ba ON acl.refer_code = ba.refer_code OR (acl.commission_source = 'branch_admin' AND acl.affiliate_user_id = ba.id::text)
+            LEFT JOIN branch_admin ba ON acl.affiliate_code = ba.refer_code OR (acl.commission_source = 'branch_admin' AND acl.affiliate_user_id = ba.id::text)
             WHERE (u.state ILIKE $1 OR ba.state ILIKE $1)
             ORDER BY acl.created_at DESC
             LIMIT 30
