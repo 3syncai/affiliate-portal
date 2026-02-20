@@ -3,10 +3,13 @@
 const { Pool } = require('pg');
 const https = require('http'); // sending to localhost
 
-const connectionString = process.env.DATABASE_URL || process.env.NEXT_PUBLIC_DATABASE_URL;
+const connectionString =
+    process.env.DATABASE_URL ||
+    process.env.POSTGRES_URL ||
+    process.env.PG_CONNECTION_STRING;
 
 if (!connectionString) {
-    console.error('CRITICAL ERROR: DATABASE_URL environment variable is not set.');
+    console.error('CRITICAL ERROR: Set DATABASE_URL (or POSTGRES_URL / PG_CONNECTION_STRING) before running this script.');
     process.exit(1);
 }
 

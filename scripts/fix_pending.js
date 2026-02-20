@@ -3,9 +3,19 @@ const { Pool } = require('pg');
 
 async function fixPending() {
     console.log('Fixing Pending Commissions (Starting from 2026-01-01)...');
+    const connectionString =
+        process.env.DATABASE_URL ||
+        process.env.POSTGRES_URL ||
+        process.env.PG_CONNECTION_STRING;
+
+    if (!connectionString) {
+        console.error('CRITICAL ERROR: Set DATABASE_URL (or POSTGRES_URL / PG_CONNECTION_STRING) before running this script.');
+        process.exit(1);
+    }
+
     const pool = new Pool({
-        connectionString: "postgres://postgres:Oweg4719@oweg-ecom.cz282guu85co.ap-south-1.rds.amazonaws.com:5432/oweg_db?sslmode=no-verify",
-        ssl: { rejectUnauthorized: false }
+        connectionString: connectionString.replace('?sslmode=no-verify', ''),
+        ssl: connectionString.includes('rds.amazonaws.com') ? { rejectUnauthorized: false } : false
     });
 
     try {

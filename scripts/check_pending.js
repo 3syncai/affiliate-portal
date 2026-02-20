@@ -3,15 +3,17 @@ const { Pool } = require('pg');
 
 async function checkPending() {
     console.log('Checking for Pending Commissions...');
-    const connectionString = process.env.DATABASE_URL || process.env.NEXT_PUBLIC_DATABASE_URL;
+    const connectionString =
+        process.env.DATABASE_URL ||
+        process.env.POSTGRES_URL ||
+        process.env.PG_CONNECTION_STRING;
 
     if (!connectionString) {
-        console.error('CRITICAL ERROR: DATABASE_URL environment variable is not set.');
+        console.error('CRITICAL ERROR: Set DATABASE_URL (or POSTGRES_URL / PG_CONNECTION_STRING) before running this script.');
         process.exit(1);
     }
 
     const pool = new Pool({
-        // Hardcoding based on .env
         connectionString,
         ssl: connectionString.includes('rds.amazonaws.com') ? { rejectUnauthorized: false } : false
     });
