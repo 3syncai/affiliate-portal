@@ -25,11 +25,6 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        const pool = new Pool({
-            connectionString: process.env.DATABASE_URL || process.env.NEXT_PUBLIC_DATABASE_URL,
-            ssl: { rejectUnauthorized: false }
-        });
-
         // Find ASM by email
         const result = await pool.query(
             `SELECT id, first_name, last_name, email, password_hash, phone, city, state, role, is_active, refer_code, created_at
@@ -62,8 +57,6 @@ export async function POST(req: NextRequest) {
                 { status: 401 }
             );
         }
-
-        await pool.end();
 
         // Generate JWT token
         const token = jwt.sign(

@@ -25,11 +25,6 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        const pool = new Pool({
-            connectionString: process.env.DATABASE_URL || process.env.NEXT_PUBLIC_DATABASE_URL,
-            ssl: { rejectUnauthorized: false }
-        });
-
         // Find affiliate by email
         const result = await pool.query(
             `SELECT id, first_name, last_name, email, password_hash, phone, is_approved, created_at
@@ -54,8 +49,6 @@ export async function POST(req: NextRequest) {
                 { status: 401 }
             );
         }
-
-        await pool.end();
 
         // Generate JWT token
         const token = jwt.sign(
