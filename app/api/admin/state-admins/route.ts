@@ -18,7 +18,6 @@ export async function GET() {
             ORDER BY created_at DESC
         `);
 
-        await pool.end();
 
         console.log(`Found ${result.rows.length} state admins`);
 

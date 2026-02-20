@@ -59,7 +59,6 @@ export async function POST() {
             WHERE city IS NOT NULL OR state IS NOT NULL OR branch_name IS NOT NULL
         `);
 
-        await pool.end();
 
         return NextResponse.json({
             success: true,

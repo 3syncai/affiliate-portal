@@ -120,7 +120,6 @@ export async function GET(req: NextRequest) {
         `;
         const recentOrdersResult = await pool.query(recentOrdersQuery, [state, referCode || 'INVALID']);
 
-        await pool.end();
 
         return NextResponse.json({
             success: true,

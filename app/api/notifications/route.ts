@@ -42,7 +42,6 @@ export async function GET(req: NextRequest) {
         // Count unread notifications
         const unreadCount = result.rows.filter(n => !n.is_read).length;
 
-        await pool.end();
 
         return NextResponse.json({
             success: true,
@@ -86,7 +85,6 @@ export async function PATCH(req: NextRequest) {
         `;
 
         const result = await pool.query(query, [notificationId]);
-        await pool.end();
 
         return NextResponse.json({
             success: true,

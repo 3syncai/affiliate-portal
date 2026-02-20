@@ -55,7 +55,6 @@ export async function GET(request: Request) {
 
         const result = await pool.query(query, params);
 
-        await pool.end();
 
         console.log(`Found ${result.rows.length} agents in ${city}`);
 

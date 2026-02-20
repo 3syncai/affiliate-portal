@@ -54,7 +54,6 @@ export async function GET(request: Request) {
             [state]
         );
 
-        await pool.end();
 
         console.log(`Found ${result.rows.length} agents in ${state}`);
 

@@ -32,7 +32,6 @@ export async function GET() {
             ORDER BY ac.id
         `);
 
-        await pool.end();
 
         // Map to expected format
         const commissions = result.rows.map(row => ({
@@ -86,7 +85,6 @@ export async function POST(req: NextRequest) {
             RETURNING *
         `, [id, product_id || null, category_id || null, collection_id || null, type_id || null, commission_rate]);
 
-        await pool.end();
 
         console.log("Created commission:", result.rows[0]);
         return NextResponse.json({ success: true, commission: result.rows[0] });

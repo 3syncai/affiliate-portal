@@ -30,7 +30,6 @@ export async function GET(req: NextRequest) {
         const countQuery = `SELECT COUNT(*) as total FROM affiliate_user`;
         const countResult = await pool.query(countQuery);
 
-        await pool.end();
 
         return NextResponse.json({
             success: true,

@@ -81,8 +81,7 @@ export async function POST(req: NextRequest) {
         console.error("Affiliate login failed:", err);
         return NextResponse.json(
             {
-                message: "Login failed",
-                error: err.message
+                message: "Login failed"
             },
             { status: 500 }
         );

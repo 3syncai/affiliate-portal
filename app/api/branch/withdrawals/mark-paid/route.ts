@@ -62,7 +62,6 @@ export async function POST(req: NextRequest) {
             }
         }
 
-        await pool.end();
 
         return NextResponse.json({ success: true, message: "Marked as paid" });
     } catch (error: unknown) {

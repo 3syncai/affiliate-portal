@@ -67,7 +67,6 @@ export async function GET(req: NextRequest) {
             creditedCommission = 0;
         }
 
-        await pool.end();
 
         const stats = {
             totalASMs,

@@ -31,7 +31,6 @@ export async function POST(req: NextRequest) {
         );
 
         if (result.rowCount === 0) {
-            await pool.end();
             console.log(`[Commission Update] No commissions found for Order #${order_id}`);
             return NextResponse.json({
                 success: true,
@@ -62,7 +61,6 @@ export async function POST(req: NextRequest) {
             }
         }
 
-        await pool.end();
 
         return NextResponse.json({
             success: true,

@@ -58,7 +58,6 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        await pool.end();
 
         // Generate JWT token
         const token = jwt.sign(

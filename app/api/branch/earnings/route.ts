@@ -95,7 +95,6 @@ export async function GET(req: NextRequest) {
         `;
         const recentOrdersResult = await pool.query(recentOrdersQuery, [adminId]);
 
-        await pool.end();
 
         return NextResponse.json({
             success: true,

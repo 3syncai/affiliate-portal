@@ -132,7 +132,6 @@ export async function GET(req: NextRequest) {
             console.log("Could not fetch payment completions:", error);
         }
 
-        await pool.end();
 
         // Combine and format activities
         const activities: Activity[] = [];

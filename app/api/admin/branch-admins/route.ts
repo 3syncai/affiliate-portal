@@ -34,7 +34,6 @@ export async function GET() {
             ORDER BY created_at DESC
         `);
 
-        await pool.end();
 
         // Map to add 'name' field and 'area' as city
         const admins = result.rows.map((row: BranchAdmin) => ({

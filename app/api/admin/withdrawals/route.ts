@@ -52,7 +52,6 @@ export async function GET(request: Request) {
         query += ` ORDER BY requested_at DESC`;
 
         const result = await pool.query(query, values);
-        await pool.end();
 
         return NextResponse.json({
             success: true,
@@ -99,7 +98,6 @@ export async function POST(request: Request) {
             const withdrawalResult = await pool.query(getWithdrawal, [withdrawalId]);
 
             if (withdrawalResult.rows.length === 0) {
-                await pool.end();
                 return NextResponse.json(
                     { success: false, error: 'Withdrawal request not found or already processed' },
                     { status: 404 }
@@ -120,7 +118,6 @@ export async function POST(request: Request) {
             ]);
 
             if (deductResult.rowCount === 0) {
-                await pool.end();
                 return NextResponse.json(
                     { success: false, error: 'Insufficient wallet balance' },
                     { status: 400 }
@@ -151,7 +148,6 @@ export async function POST(request: Request) {
             await pool.query(updateQuery, [adminNotes || 'Rejected', withdrawalId]);
         }
 
-        await pool.end();
 
         return NextResponse.json({
             success: true,

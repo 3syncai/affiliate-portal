@@ -59,7 +59,6 @@ export async function GET() {
             customer_id: row.customer_id
         }));
 
-        await pool.end();
 
         console.log(`Returning ${orders.length} orders`);
         return NextResponse.json({

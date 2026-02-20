@@ -79,7 +79,6 @@ export async function GET(req: NextRequest) {
             }
         }
 
-        await pool.end();
 
         console.log(`Found ${asms.length} areas with branches for state: ${state}`);
 

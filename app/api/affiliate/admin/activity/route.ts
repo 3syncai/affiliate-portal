@@ -55,7 +55,6 @@ export async function GET() {
         `;
         const recentOrdersResult = await pool.query(recentOrdersQuery);
 
-        await pool.end();
 
         // Combine and format activities
         const activities: Activity[] = [];

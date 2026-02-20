@@ -32,7 +32,6 @@ export async function GET() {
         `;
 
         const result = await pool.query(query);
-        await pool.end();
 
         return NextResponse.json({
             success: true,
@@ -148,7 +147,6 @@ export async function POST(req: NextRequest) {
             false
         ]);
 
-        await pool.end();
 
         return NextResponse.json({
             success: true,

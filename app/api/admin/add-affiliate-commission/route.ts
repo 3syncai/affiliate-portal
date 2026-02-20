@@ -18,7 +18,6 @@ export async function POST() {
             ON CONFLICT (role_type) DO NOTHING
         `);
 
-        await pool.end();
 
         return NextResponse.json({
             success: true,

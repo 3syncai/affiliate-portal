@@ -42,7 +42,6 @@ export async function POST(req: NextRequest) {
         );
 
         if (stateAdminResult.rows.length === 0) {
-            await pool.end();
             return NextResponse.json(
                 { success: false, message: "State admin not found" },
                 { status: 404 }
@@ -58,7 +57,6 @@ export async function POST(req: NextRequest) {
         );
 
         if (existingASM.rows.length > 0) {
-            await pool.end();
             return NextResponse.json(
                 { success: false, message: "Email already registered" },
                 { status: 400 }
@@ -110,7 +108,6 @@ export async function POST(req: NextRequest) {
             generatedReferCode
         ]);
 
-        await pool.end();
 
         const asm = result.rows[0];
         console.log(`ASM created: ${asm.email} for city ${asm.city} in ${asm.state}`);

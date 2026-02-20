@@ -219,7 +219,6 @@ export async function GET() {
             })
         ];
 
-        await pool.end();
 
         return NextResponse.json({
             success: true,

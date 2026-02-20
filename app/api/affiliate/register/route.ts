@@ -133,7 +133,6 @@ export async function POST(req: NextRequest) {
         )
 
         if (existingUser.rows.length > 0) {
-            await pool.end()
             return NextResponse.json(
                 { success: false, message: "Email already registered" },
                 { status: 400 }
@@ -216,7 +215,6 @@ export async function POST(req: NextRequest) {
             upi_id || null
         ])
 
-        await pool.end()
 
         const user = result.rows[0]
 

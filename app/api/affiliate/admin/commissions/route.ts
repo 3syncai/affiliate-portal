@@ -55,7 +55,6 @@ export async function GET() {
             total_orders: parseInt(row.total_orders) || 0
         }));
 
-        await pool.end();
 
         console.log(`Returning ${affiliates.length} affiliates`);
         return NextResponse.json({

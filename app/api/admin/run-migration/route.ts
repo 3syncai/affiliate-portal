@@ -37,7 +37,6 @@ export async function POST() {
             WHERE affiliate_commission IS NULL
         `, [affiliateRate]);
 
-        await pool.end();
 
         return NextResponse.json({
             success: true,

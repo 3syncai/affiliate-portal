@@ -57,7 +57,6 @@ export async function GET(request: Request) {
     `;
 
         const result = await pool.query(query, [referCode]);
-        await pool.end();
 
         return NextResponse.json({
             success: true,

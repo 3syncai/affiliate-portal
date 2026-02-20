@@ -42,7 +42,6 @@ export async function POST(req: NextRequest) {
         );
 
         if (existingStateAdmin.rows.length > 0) {
-            await pool.end();
             return NextResponse.json(
                 { success: false, message: "Email already registered as state admin" },
                 { status: 400 }
@@ -93,7 +92,6 @@ export async function POST(req: NextRequest) {
             generatedReferCode
         ]);
 
-        await pool.end();
 
         const user = result.rows[0];
         console.log(`State admin created: ${user.email} for state ${user.state}`);

@@ -154,7 +154,6 @@ export async function GET(req: NextRequest) {
 
         console.log(`Found ${recentActivities.length} activities for state: ${state} `);
 
-        await pool.end();
 
         return NextResponse.json({
             success: true,

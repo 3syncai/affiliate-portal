@@ -43,7 +43,6 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ success: false, message: "Invalid email or password" }, { status: 401 });
         }
 
-        await pool.end();
 
         const token = jwt.sign(
             { id: branchAdmin.id, email: branchAdmin.email, role: "branch", branch: branchAdmin.branch, city: branchAdmin.city, state: branchAdmin.state },

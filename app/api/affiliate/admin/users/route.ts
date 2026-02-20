@@ -65,7 +65,6 @@ export async function GET() {
         const result = await pool.query(query);
         console.log(`Found ${result.rows.length} total users`);
 
-        await pool.end();
 
         // Separate pending (not approved) and approved users
         const pending = result.rows.filter(user => !user.is_approved);

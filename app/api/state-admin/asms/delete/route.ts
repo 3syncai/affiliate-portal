@@ -21,7 +21,6 @@ export async function DELETE(req: NextRequest) {
         const deleteQuery = `DELETE FROM affiliate_user WHERE id = $1 RETURNING first_name, last_name, email`;
         const result = await pool.query(deleteQuery, [userId]);
 
-        await pool.end();
 
         if (result.rows.length === 0) {
             return NextResponse.json({

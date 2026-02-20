@@ -31,7 +31,6 @@ export async function PUT(
             RETURNING *
         `, [commission_rate, id]);
 
-        await pool.end();
 
         if (result.rows.length === 0) {
             return NextResponse.json({ success: false, error: "Commission not found" }, { status: 404 });
@@ -67,7 +66,6 @@ export async function DELETE(
             RETURNING *
         `, [id]);
 
-        await pool.end();
 
         if (result.rows.length === 0) {
             return NextResponse.json({ success: false, error: "Commission not found" }, { status: 404 });

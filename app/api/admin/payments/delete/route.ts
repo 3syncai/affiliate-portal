@@ -31,7 +31,6 @@ export async function POST(req: NextRequest) {
 
         const result = await pool.query(deleteQuery, [paymentIds]);
 
-        await pool.end();
 
         return NextResponse.json({
             success: true,

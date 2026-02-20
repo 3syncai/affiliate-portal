@@ -57,7 +57,6 @@ export async function GET(req: NextRequest) {
         query += ` ORDER BY wr.requested_at DESC`;
 
         const result = await pool.query(query, params);
-        await pool.end();
 
         console.log(`Found ${result.rows.length} withdrawals for branch: ${branch}`);
 
@@ -99,7 +98,6 @@ export async function POST(req: NextRequest) {
             );
 
             if (withdrawalResult.rows.length === 0) {
-                await pool.end();
                 return NextResponse.json({ success: false, message: "Withdrawal not found" }, { status: 404 });
             }
 
@@ -142,7 +140,6 @@ export async function POST(req: NextRequest) {
                 console.log("Activity log insert failed (table may not exist):", error);
             }
 
-            await pool.end();
             return NextResponse.json({ success: true, message: "Withdrawal approved" });
 
         } else if (action === 'REJECT') {
@@ -184,11 +181,9 @@ export async function POST(req: NextRequest) {
                 }
             }
 
-            await pool.end();
             return NextResponse.json({ success: true, message: "Withdrawal rejected" });
         }
 
-        await pool.end();
         return NextResponse.json({ success: false, message: "Invalid action" }, { status: 400 });
 
     } catch (error: unknown) {

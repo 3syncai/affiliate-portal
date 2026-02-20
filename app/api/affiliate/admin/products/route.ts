@@ -246,7 +246,6 @@ export async function GET(req: NextRequest) {
             console.log("Could not fetch variant prices:", err.message);
         }
 
-        await pool.end();
 
         // Map products with enriched data
         const products = rawProducts.map((product: MedusaProduct) => {
