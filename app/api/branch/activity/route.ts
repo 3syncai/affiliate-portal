@@ -7,8 +7,27 @@ type Activity = {
     id: string;
     type: 'affiliate_request' | 'order' | 'approval' | 'withdrawal' | 'payment';
     timestamp: string;
-    data: any;
+    data: Record<string, string | number | boolean | null | undefined>;
 };
+
+interface WithdrawalRow {
+    id: string;
+    amount: string;
+    status: string;
+    created_at: string;
+    first_name: string;
+    last_name: string;
+}
+
+interface PaymentRow {
+    id: string;
+    amount: string;
+    transaction_id: string;
+    payment_date: string;
+    updated_at: string;
+    first_name: string;
+    last_name: string;
+}
 
 export async function GET(req: NextRequest) {
     console.log("=== Fetching Branch Recent Activity ===");
@@ -75,17 +94,18 @@ export async function GET(req: NextRequest) {
                 wr.created_at,
                 u.first_name,
                 u.last_name
-            FROM withdrawal_requests wr
-            JOIN affiliate_user u ON wr.user_id = u.id
+            FROM withdrawal_request wr
+            JOIN affiliate_user u ON wr.affiliate_id = u.id
             WHERE u.branch ILIKE $1
             ORDER BY wr.created_at DESC
             LIMIT 5
         `;
-        let withdrawalsResult = { rows: [] };
+        let withdrawalsResultRows: WithdrawalRow[] = [];
         try {
-            withdrawalsResult = await pool.query(withdrawalsQuery, [branch]);
-        } catch (e) {
-            console.log("Could not fetch withdrawals");
+            const res = await pool.query(withdrawalsQuery, [branch]);
+            withdrawalsResultRows = res.rows;
+        } catch (error: unknown) {
+            console.log("Could not fetch withdrawals:", error);
         }
 
         // Fetch recent payment completions (PAID withdrawals with transaction details)
@@ -98,17 +118,18 @@ export async function GET(req: NextRequest) {
                 wr.updated_at,
                 u.first_name,
                 u.last_name
-            FROM withdrawal_requests wr
-            JOIN affiliate_user u ON wr.user_id = u.id
+            FROM withdrawal_request wr
+            JOIN affiliate_user u ON wr.affiliate_id = u.id
             WHERE u.branch ILIKE $1 AND wr.status = 'PAID'
             ORDER BY wr.payment_date DESC
             LIMIT 10
         `;
-        let paymentsResult = { rows: [] };
+        let paymentsResultRows: PaymentRow[] = [];
         try {
-            paymentsResult = await pool.query(paymentsQuery, [branch]);
-        } catch (e) {
-            console.log("Could not fetch payment completions");
+            const res = await pool.query(paymentsQuery, [branch]);
+            paymentsResultRows = res.rows;
+        } catch (error: unknown) {
+            console.log("Could not fetch payment completions:", error);
         }
 
         await pool.end();
@@ -162,7 +183,7 @@ export async function GET(req: NextRequest) {
         });
 
         // Add withdrawals
-        withdrawalsResult.rows.forEach((row: any) => {
+        withdrawalsResultRows.forEach((row) => {
             activities.push({
                 id: `withdrawal_${row.id}`,
                 type: 'withdrawal',
@@ -177,7 +198,7 @@ export async function GET(req: NextRequest) {
         });
 
         // Add payment completions
-        paymentsResult.rows.forEach((row: any) => {
+        paymentsResultRows.forEach((row) => {
             activities.push({
                 id: `payment_${row.id}`,
                 type: 'payment',
@@ -202,12 +223,13 @@ export async function GET(req: NextRequest) {
             count: recentActivities.length
         });
 
-    } catch (error) {
-        console.error("Failed to fetch branch activity:", error);
+    } catch (error: unknown) {
+        const err = error as Error;
+        console.error("Failed to fetch branch activity:", err);
         return NextResponse.json({
             success: false,
             activities: [],
-            error: error instanceof Error ? error.message : "Unknown error"
+            error: err.message
         }, { status: 500 });
     }
 }

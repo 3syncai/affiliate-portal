@@ -29,7 +29,7 @@ export async function PUT(request: Request) {
         });
 
         let updateQuery = '';
-        let updateValues: any[] = [];
+        let updateValues: (string | null)[] = [];
 
         if (paymentMethod === 'Bank Transfer') {
             if (!bankDetails || !bankDetails.accountName || !bankDetails.accountNumber || !bankDetails.ifscCode) {

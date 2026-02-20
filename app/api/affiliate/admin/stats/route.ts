@@ -64,13 +64,14 @@ export async function GET() {
             stats
         });
 
-    } catch (error) {
-        console.error("Failed to fetch dashboard stats:", error);
+    } catch (error: unknown) {
+        const err = error as Error;
+        console.error("Failed to fetch dashboard stats:", err);
         return NextResponse.json(
             {
                 success: false,
                 error: "Failed to fetch dashboard stats",
-                message: error instanceof Error ? error.message : "Unknown error"
+                message: err.message
             },
             { status: 500 }
         );

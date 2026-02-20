@@ -1,8 +1,9 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { Search, Filter, Package, DollarSign, TrendingUp, CheckCircle, XCircle } from "lucide-react"
+import { useEffect, useState, useCallback } from "react"
+import { Search, Filter, Package, TrendingUp, CheckCircle, XCircle } from "lucide-react"
 import axios from "axios"
+import Image from "next/image"
 
 type Product = {
   id: string
@@ -11,7 +12,7 @@ type Product = {
   status: string
   description?: string
   thumbnail?: string
-  images: any[]
+  images: string[]
   categories: Array<{ id: string; name: string; handle: string; commission: number }>
   collection: { id: string; title: string; handle: string; commission: number } | null
   tags: Array<{ id: string; value: string }>
@@ -66,16 +67,17 @@ export default function ProductCommissionPage() {
       setProducts(data.products || [])
       setFilters(data.filters || { categories: [], collections: [], types: [] })
       setStats(data.stats || { total: 0, in_stock: 0, out_of_stock: 0 })
-    } catch (error: any) {
-      console.error("Failed to fetch products:", error)
-      const errorMessage = error.response?.data?.message || error.message || "Unknown error"
+    } catch (error: unknown) {
+      const err = error as Error & { response?: { data?: { message?: string } } };
+      console.error("Failed to fetch products:", err)
+      const errorMessage = err.response?.data?.message || err.message || "Unknown error"
       alert(`Error loading products: ${errorMessage}`)
     } finally {
       setLoading(false)
     }
   }
 
-  const filterProducts = () => {
+  const filterProducts = useCallback(() => {
     let filtered = [...products]
 
     // Search filter
@@ -113,7 +115,7 @@ export default function ProductCommissionPage() {
     }
 
     setFilteredProducts(filtered)
-  }
+  }, [products, searchTerm, selectedCategory, selectedCollection, selectedType, stockFilter])
 
   const formatCurrency = (amount: number) => {
     // Backend returns price directly, no division needed
@@ -321,11 +323,15 @@ export default function ProductCommissionPage() {
                     <td className="px-6 py-4">
                       <div className="flex items-center">
                         {product.thumbnail && (
-                          <img
-                            src={product.thumbnail}
-                            alt={product.title}
-                            className="w-12 h-12 rounded-lg object-cover mr-3"
-                          />
+                          <div className="relative w-12 h-12 mr-3 flex-shrink-0">
+                            <Image
+                              src={product.thumbnail}
+                              alt={product.title}
+                              fill
+                              className="rounded-lg object-cover"
+                              unoptimized
+                            />
+                          </div>
                         )}
                         <div>
                           <div className="text-sm font-medium text-gray-900">{product.title}</div>

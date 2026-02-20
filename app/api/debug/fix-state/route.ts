@@ -37,11 +37,12 @@ export async function POST(req: NextRequest) {
             message: `State updated to ${correctState}`
         });
 
-    } catch (error: any) {
-        console.error("Failed to fix state:", error);
+    } catch (error: unknown) {
+        const err = error as Error;
+        console.error("Failed to fix state:", err);
         return NextResponse.json({
             success: false,
-            error: error.message
+            error: err.message
         }, { status: 500 });
     }
 }

@@ -1,8 +1,8 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import axios from "axios"
-import { Clock, Check, X, Copy, CreditCard, Calendar, FileText } from "lucide-react"
+import { Check, X, Copy, CreditCard } from "lucide-react"
 
 type Withdrawal = {
   id: number
@@ -43,7 +43,7 @@ export default function PendingPayoutPage() {
     fetchWithdrawals()
   }, [filter])
 
-  const fetchWithdrawals = async () => {
+  const fetchWithdrawals = useCallback(async () => {
     setLoading(true)
     try {
       const url = filter === "ALL"
@@ -60,7 +60,7 @@ export default function PendingPayoutPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [filter])
 
   const handleApprove = async (withdrawalId: number) => {
     if (!confirm('Are you sure you want to approve this withdrawal request?\n\nThis will deduct the amount from affiliate\'s wallet.')) {

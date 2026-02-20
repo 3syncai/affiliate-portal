@@ -28,13 +28,14 @@ export async function GET() {
             count: result.rows.length
         });
 
-    } catch (error) {
-        console.error("Failed to fetch state admins:", error);
+    } catch (error: unknown) {
+        const err = error as Error;
+        console.error("Failed to fetch state admins:", err);
         return NextResponse.json(
             {
                 success: false,
                 error: "Failed to fetch state admins",
-                message: error instanceof Error ? error.message : "Unknown error"
+                message: err.message
             },
             { status: 500 }
         );

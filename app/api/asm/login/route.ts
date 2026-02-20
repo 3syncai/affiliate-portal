@@ -96,13 +96,14 @@ export async function POST(req: NextRequest) {
             }
         });
 
-    } catch (error: any) {
-        console.error("ASM login failed:", error);
+    } catch (error: unknown) {
+        const err = error as Error;
+        console.error("ASM login failed:", err);
         return NextResponse.json(
             {
                 success: false,
                 message: "Login failed",
-                error: error instanceof Error ? error.message : "Unknown error"
+                error: err.message
             },
             { status: 500 }
         );

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, createContext, useContext } from "react"
+import { useEffect, useState, createContext, useContext } from "react"
 import Lenis from "lenis"
 
 type LenisContextType = {
@@ -16,11 +16,11 @@ interface LenisProviderProps {
 }
 
 export default function LenisProvider({ children }: LenisProviderProps) {
-    const lenisRef = useRef<Lenis | null>(null)
+    const [lenis, setLenis] = useState<Lenis | null>(null)
 
     useEffect(() => {
         // Initialize Lenis
-        const lenis = new Lenis({
+        const instance = new Lenis({
             duration: 1.2,
             easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
             orientation: 'vertical',
@@ -29,25 +29,28 @@ export default function LenisProvider({ children }: LenisProviderProps) {
             touchMultiplier: 2,
         })
 
-        lenisRef.current = lenis
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setLenis(instance)
 
         // Animation frame loop
+        let rafId: number
         function raf(time: number) {
-            lenis.raf(time)
-            requestAnimationFrame(raf)
+            instance.raf(time)
+            rafId = requestAnimationFrame(raf)
         }
 
-        requestAnimationFrame(raf)
+        rafId = requestAnimationFrame(raf)
 
         // Cleanup
         return () => {
-            lenis.destroy()
-            lenisRef.current = null
+            instance.destroy()
+            setLenis(null)
+            cancelAnimationFrame(rafId)
         }
     }, [])
 
     return (
-        <LenisContext.Provider value={{ lenis: lenisRef.current }}>
+        <LenisContext.Provider value={{ lenis }}>
             {children}
         </LenisContext.Provider>
     )

@@ -30,9 +30,8 @@ export async function POST(req: NextRequest) {
             [status, order_id]
         );
 
-        await pool.end();
-
         if (result.rowCount === 0) {
+            await pool.end();
             console.log(`[Commission Update] No commissions found for Order #${order_id}`);
             return NextResponse.json({
                 success: true,
@@ -63,6 +62,8 @@ export async function POST(req: NextRequest) {
             }
         }
 
+        await pool.end();
+
         return NextResponse.json({
             success: true,
             message: "Commission status updated successfully",
@@ -70,13 +71,14 @@ export async function POST(req: NextRequest) {
             updated_records: result.rows
         });
 
-    } catch (error: any) {
-        console.error("Commission status update failed:", error);
+    } catch (error: unknown) {
+        const err = error as Error;
+        console.error("Commission status update failed:", err);
         return NextResponse.json(
             {
                 success: false,
                 message: "Internal server error",
-                error: error instanceof Error ? error.message : "Unknown error"
+                error: err.message
             },
             { status: 500 }
         );

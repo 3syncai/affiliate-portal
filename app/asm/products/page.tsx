@@ -3,8 +3,15 @@
 import { useEffect, useState } from "react"
 import { Search, Package, IndianRupee, Percent, Box, Share2 } from "lucide-react"
 import axios from "axios"
-import { BACKEND_URL, STORE_URL } from "@/lib/config"
+import Image from "next/image"
+import { STORE_URL } from "@/lib/config"
 import { useTheme } from "@/contexts/ThemeContext"
+
+interface User {
+    refer_code?: string
+    name?: string
+    email?: string
+}
 
 interface Product {
     id: string
@@ -23,6 +30,11 @@ interface Product {
     hasCommission: boolean
 }
 
+interface CommissionRate {
+    role_type: string;
+    commission_percentage: string;
+}
+
 export default function ASMProductsPage() {
     const { theme } = useTheme()
     const [loading, setLoading] = useState(true)
@@ -31,7 +43,7 @@ export default function ASMProductsPage() {
     const [selectedCategory, setSelectedCategory] = useState<string>("all")
     const [searchQuery, setSearchQuery] = useState("")
     const [error, setError] = useState<string | null>(null)
-    const [user, setUser] = useState<any>(null)
+    const [user, setUser] = useState<User | null>(null)
 
     const [commissionRate, setCommissionRate] = useState<number>(0)
 
@@ -39,7 +51,11 @@ export default function ASMProductsPage() {
         const userData = localStorage.getItem("affiliate_user")
         const token = localStorage.getItem("affiliate_token")
         if (userData) {
-            setUser(JSON.parse(userData))
+            try {
+                setUser(JSON.parse(userData))
+            } catch (e) {
+                console.error("Failed to parse user data:", e)
+            }
         }
         if (token) {
             fetchProducts(token)
@@ -54,9 +70,10 @@ export default function ASMProductsPage() {
         try {
             const response = await axios.get("/api/admin/commission-rates")
             if (response.data.success && response.data.rates) {
-                const affiliateRateObj = response.data.rates.find((r: any) => r.role_type === "affiliate")
-                const branchDirectRateObj = response.data.rates.find((r: any) => r.role_type === "branch_direct")
-                const asmRateObj = response.data.rates.find((r: any) => r.role_type === "area")
+                const rates = response.data.rates as CommissionRate[];
+                const affiliateRateObj = rates.find((r) => r.role_type === "affiliate")
+                const branchDirectRateObj = rates.find((r) => r.role_type === "branch_direct")
+                const asmRateObj = rates.find((r) => r.role_type === "area")
 
                 const baseRate = parseFloat(affiliateRateObj?.commission_percentage || '70')
                 const branchBonus = parseFloat(branchDirectRateObj?.commission_percentage || '15')
@@ -64,7 +81,7 @@ export default function ASMProductsPage() {
 
                 setCommissionRate(baseRate + branchBonus + asmBonus) // 95%
             }
-        } catch (err) {
+        } catch (err: unknown) {
             console.error("Error fetching commission rates:", err)
             setCommissionRate(95) // Default fallback
         }
@@ -82,9 +99,10 @@ export default function ASMProductsPage() {
             const data = response.data
             setProducts(data.products || data.allProducts || [])
             setCategories(data.categories || [])
-        } catch (err: any) {
+        } catch (err: unknown) {
+            const errorObj = err as { response?: { data?: { message?: string } }; message?: string };
             console.error("Error fetching products:", err)
-            setError(err.response?.data?.message || err.message || "Failed to load products")
+            setError(errorObj.response?.data?.message || errorObj.message || "Failed to load products")
         } finally {
             setLoading(false)
         }
@@ -190,7 +208,7 @@ export default function ASMProductsPage() {
     )
 }
 
-function ProductCard({ product, user, theme, commissionRate }: { product: Product; user: any; theme: any; commissionRate: number }) {
+function ProductCard({ product, user, theme, commissionRate }: { product: Product; user: User | null; theme: { primary: string; background: string; sidebar: string }; commissionRate: number }) {
     const [copied, setCopied] = useState(false)
 
     const actualCommission = commissionRate > 0
@@ -226,7 +244,15 @@ function ProductCard({ product, user, theme, commissionRate }: { product: Produc
 
             <div className="h-48 bg-white flex items-center justify-center p-4">
                 {product.thumbnail ? (
-                    <img src={product.thumbnail} alt={product.title} className="w-full h-full object-contain" />
+                    <div className="relative w-full h-full">
+                        <Image
+                            src={product.thumbnail}
+                            alt={product.title}
+                            fill
+                            className="object-contain"
+                            unoptimized
+                        />
+                    </div>
                 ) : (
                     <Box className="text-gray-300" size={64} />
                 )}

@@ -6,7 +6,6 @@ export const dynamic = "force-dynamic"
 export async function GET(req: NextRequest) {
     try {
         const { searchParams } = new URL(req.url);
-        const branch = searchParams.get('branch');
         const adminId = searchParams.get('adminId');
 
         if (!adminId) {
@@ -118,8 +117,9 @@ export async function GET(req: NextRequest) {
             recentOrders: recentOrdersResult.rows
         });
 
-    } catch (error: any) {
-        console.error("Failed to fetch branch earnings:", error);
-        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    } catch (error: unknown) {
+        const err = error as Error;
+        console.error("Failed to fetch branch earnings:", err);
+        return NextResponse.json({ success: false, error: err.message }, { status: 500 });
     }
 }

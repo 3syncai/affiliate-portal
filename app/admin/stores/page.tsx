@@ -30,7 +30,7 @@ export default function StoresPage() {
         contact_phone: "",
         contact_email: "",
     })
-    const [formErrors, setFormErrors] = useState<any>({})
+    const [formErrors, setFormErrors] = useState<Record<string, string>>({})
     const [submitting, setSubmitting] = useState(false)
 
     useEffect(() => {
@@ -56,7 +56,7 @@ export default function StoresPage() {
         e.preventDefault()
 
         // Validation
-        const errors: any = {}
+        const errors: Record<string, string> = {}
         if (!formData.branch_name.trim()) errors.branch_name = "Branch name is required"
         if (!formData.city.trim()) errors.city = "City is required"
         if (!formData.state.trim()) errors.state = "State is required"

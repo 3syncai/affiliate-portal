@@ -139,13 +139,12 @@ export async function GET(req: NextRequest) {
             recentOrders: recentOrdersResult.rows
         });
 
-    } catch (error: any) {
-        console.error("Failed to fetch state admin earnings:", error);
+    } catch (error: unknown) {
+        const err = error as Error;
+        console.error("Failed to fetch state admin earnings:", err);
         return NextResponse.json({
             success: false,
-            error: error.message
+            error: err.message
         }, { status: 500 });
     }
 }
-
-

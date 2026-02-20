@@ -112,13 +112,14 @@ export async function POST(req: NextRequest) {
             }
         });
 
-    } catch (error: any) {
-        console.error("Failed to create state admin:", error);
+    } catch (error: unknown) {
+        const err = error as Error;
+        console.error("Failed to create state admin:", err);
         return NextResponse.json(
             {
                 success: false,
                 message: "Failed to create state admin",
-                error: error instanceof Error ? error.message : "Unknown error"
+                error: err.message
             },
             { status: 500 }
         );

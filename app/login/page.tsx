@@ -1,13 +1,14 @@
 "use client"
 
 import { useState, FormEvent, useEffect, Suspense } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+// import { useRouter } from "next/navigation"
+import { useSearchParams } from "next/navigation"
 import axios from "axios"
 import { Mail, Lock, ArrowRight, CheckCircle, AlertCircle, Eye, EyeOff } from "lucide-react"
-import { BACKEND_URL } from "@/lib/config"
+import Image from "next/image"
 
 function LoginContent() {
-  const router = useRouter()
+  // const router = useRouter()
   const searchParams = useSearchParams()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -52,8 +53,9 @@ function LoginContent() {
         }
         return
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       // If affiliate login fails, try state admin login
+      const errorObj = err as { response?: { data?: { message?: string } }; message?: string };
       try {
         const stateResponse = await axios.post("/api/state-admin/login", { email, password })
         const stateData = stateResponse.data
@@ -96,7 +98,7 @@ function LoginContent() {
           }
         }
       }
-      setError(err.response?.data?.message || err.message || "An error occurred. Please try again.")
+      setError(errorObj.response?.data?.message || errorObj.message || "An error occurred. Please try again.")
     } finally {
       setLoading(false)
     }
@@ -117,20 +119,25 @@ function LoginContent() {
 
         {/* Coin Decoration */}
         <div className="absolute right-0 top-1/2 -translate-y-1/2 w-[600px] h-[600px] opacity-20">
-          <img
+          <Image
             src="/uploads/coin/coin.png"
             alt="Coin"
-            className="w-full h-full object-contain"
+            fill
+            className="object-contain"
+            unoptimized
           />
         </div>
 
         {/* Content */}
         <div className="relative z-10 flex flex-col justify-center px-16 text-white">
           <div className="mb-12">
-            <img
+            <Image
               src="/uploads/coin/Oweg3d-400.png"
               alt="Oweg Logo"
-              className="h-20 mb-8"
+              width={200}
+              height={80}
+              className="h-20 w-auto mb-8"
+              unoptimized
             />
             <h1 className="text-5xl font-bold mb-6 leading-tight">
               Welcome to<br />Oweg Partners
@@ -162,10 +169,13 @@ function LoginContent() {
         <div className="w-full max-w-md">
           {/* Mobile Logo */}
           <div className="lg:hidden mb-8 text-center">
-            <img
+            <Image
               src="/uploads/coin/Oweg3d-400.png"
               alt="Oweg Logo"
-              className="h-16 mx-auto mb-4"
+              width={160}
+              height={64}
+              className="h-16 w-auto mx-auto mb-4"
+              unoptimized
             />
           </div>
 
@@ -275,7 +285,7 @@ function LoginContent() {
           {/* Sign Up Link */}
           <div className="mt-8 text-center">
             <p className="text-gray-600">
-              Don't have an account?{" "}
+              Don&apos;t have an account?{" "}
               <a
                 href="/register"
                 className="font-semibold text-emerald-600 hover:text-emerald-700 transition-colors"

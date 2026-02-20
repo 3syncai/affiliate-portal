@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
                 refer_code: branchAdmin.refer_code
             }
         });
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Branch Admin login failed:", error);
         return NextResponse.json({ success: false, message: "Login failed" }, { status: 500 });
     }

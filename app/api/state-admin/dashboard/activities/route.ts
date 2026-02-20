@@ -3,6 +3,15 @@ import { Pool } from "pg";
 
 export const dynamic = "force-dynamic";
 
+interface Activity {
+    id: string;
+    type: string;
+    message: string;
+    branch_name: string;
+    amount?: number;
+    created_at: string;
+}
+
 export async function GET(req: NextRequest) {
     try {
         const { searchParams } = new URL(req.url);
@@ -21,7 +30,7 @@ export async function GET(req: NextRequest) {
             ssl: { rejectUnauthorized: false }
         });
 
-        const activities: any[] = [];
+        const activities: Activity[] = [];
 
         // 1. Get payment activities from activity_log (most important!)
         try {
@@ -52,7 +61,7 @@ export async function GET(req: NextRequest) {
                     created_at: row.created_at
                 });
             });
-        } catch (err) {
+        } catch (err: unknown) {
             console.log("Activity log query failed (table may not exist):", err);
         }
 
@@ -98,7 +107,7 @@ export async function GET(req: NextRequest) {
                     created_at: row.created_at
                 });
             });
-        } catch (err) {
+        } catch (err: unknown) {
             console.error("Failed to fetch approvals:", err);
         }
 
@@ -115,7 +124,7 @@ export async function GET(req: NextRequest) {
                 acl.commission_source
             FROM affiliate_commission_log acl
             LEFT JOIN affiliate_user u ON acl.affiliate_code = u.refer_code
-            LEFT JOIN branch_admin ba ON acl.affiliate_code = ba.refer_code OR (acl.commission_source = 'branch_admin' AND acl.affiliate_user_id = ba.id::text)
+            LEFT JOIN branch_admin ba ON acl.refer_code = ba.refer_code OR (acl.commission_source = 'branch_admin' AND acl.affiliate_user_id = ba.id::text)
             WHERE (u.state ILIKE $1 OR ba.state ILIKE $1)
             ORDER BY acl.created_at DESC
             LIMIT 30
@@ -133,7 +142,7 @@ export async function GET(req: NextRequest) {
                     created_at: row.created_at
                 });
             });
-        } catch (err) {
+        } catch (err: unknown) {
             console.error("Failed to fetch commissions:", err);
         }
 
@@ -152,11 +161,12 @@ export async function GET(req: NextRequest) {
             activities: recentActivities
         });
 
-    } catch (error: any) {
-        console.error("Failed to fetch recent activities:", error);
+    } catch (error: unknown) {
+        const err = error as Error;
+        console.error("Failed to fetch recent activities:", err);
         return NextResponse.json({
             success: false,
-            error: error.message
+            error: err.message
         }, { status: 500 });
     }
 }

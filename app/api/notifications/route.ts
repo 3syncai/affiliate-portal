@@ -50,11 +50,12 @@ export async function GET(req: NextRequest) {
             unreadCount
         });
 
-    } catch (error: any) {
-        console.error("Failed to fetch notifications:", error);
+    } catch (error: unknown) {
+        const err = error as Error;
+        console.error("Failed to fetch notifications:", err);
         return NextResponse.json({
             success: false,
-            error: error.message
+            error: err.message
         }, { status: 500 });
     }
 }
@@ -92,11 +93,12 @@ export async function PATCH(req: NextRequest) {
             notification: result.rows[0]
         });
 
-    } catch (error: any) {
-        console.error("Failed to update notification:", error);
+    } catch (error: unknown) {
+        const err = error as Error;
+        console.error("Failed to update notification:", err);
         return NextResponse.json({
             success: false,
-            error: error.message
+            error: err.message
         }, { status: 500 });
     }
 }

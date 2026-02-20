@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        const state = stateAdminResult.rows[0].state;
+        const stateValue = stateAdminResult.rows[0].state;
 
         // Check if email already exists
         const existingASM = await pool.query(
@@ -105,7 +105,7 @@ export async function POST(req: NextRequest) {
             hashedPassword,
             phone,
             city,
-            state,
+            stateValue,
             state_admin_id,
             generatedReferCode
         ]);
@@ -131,13 +131,14 @@ export async function POST(req: NextRequest) {
             }
         });
 
-    } catch (error: any) {
-        console.error("Failed to create ASM:", error);
+    } catch (error: unknown) {
+        const err = error as Error;
+        console.error("Failed to create ASM:", err);
         return NextResponse.json(
             {
                 success: false,
                 message: "Failed to create Area Sales Manager",
-                error: error instanceof Error ? error.message : "Unknown error"
+                error: err.message
             },
             { status: 500 }
         );

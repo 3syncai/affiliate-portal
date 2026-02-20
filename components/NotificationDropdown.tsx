@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import axios from "axios"
 import { Bell, X, CheckCircle, AlertCircle, DollarSign, Info } from "lucide-react"
 
@@ -22,15 +22,8 @@ export default function NotificationDropdown({ userId, userRole }: NotificationD
     const [isOpen, setIsOpen] = useState(false)
     const [notifications, setNotifications] = useState<Notification[]>([])
     const [unreadCount, setUnreadCount] = useState(0)
-    const [loading, setLoading] = useState(false)
 
-    useEffect(() => {
-        if (userId) {
-            fetchNotifications()
-        }
-    }, [userId])
-
-    const fetchNotifications = async () => {
+    const fetchNotifications = useCallback(async () => {
         try {
             const response = await axios.get(`/api/notifications?recipientId=${userId}&recipientRole=${userRole}`)
             if (response.data.success) {
@@ -40,7 +33,14 @@ export default function NotificationDropdown({ userId, userRole }: NotificationD
         } catch (error) {
             console.error("Failed to fetch notifications:", error)
         }
-    }
+    }, [userId, userRole])
+
+    useEffect(() => {
+        if (userId) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            fetchNotifications()
+        }
+    }, [userId, fetchNotifications])
 
     const markAsRead = async (notificationId: string) => {
         try {
@@ -127,7 +127,7 @@ export default function NotificationDropdown({ userId, userRole }: NotificationD
                                 <div className="p-8 text-center">
                                     <Bell className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                                     <p className="text-gray-500 font-medium">No notifications yet</p>
-                                    <p className="text-sm text-gray-400 mt-1">You're all caught up!</p>
+                                    <p className="text-sm text-gray-400 mt-1">You&apos;re all caught up!</p>
                                 </div>
                             ) : (
                                 <div className="divide-y divide-gray-100">

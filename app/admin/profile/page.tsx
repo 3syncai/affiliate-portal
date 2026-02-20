@@ -2,14 +2,19 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { User, Mail, Phone, Lock, Camera, Shield, Calendar, Palette } from "lucide-react"
+import { User, Mail, Phone, Lock, Shield, Calendar, Palette } from "lucide-react"
 import ThemeSelector from "@/components/ThemeSelector"
 import { useTheme } from "@/contexts/ThemeContext"
 
 export default function AdminProfilePage() {
     const router = useRouter()
     const { theme } = useTheme()
-    const [user, setUser] = useState<any>(null)
+    interface User {
+        name: string
+        email: string
+        phone?: string
+    }
+    const [user, setUser] = useState<User | null>(null)
     const [loading, setLoading] = useState(true)
     const [activeTab, setActiveTab] = useState<'info' | 'security' | 'theme'>('info')
 

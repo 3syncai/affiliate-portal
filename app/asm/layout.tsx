@@ -34,6 +34,15 @@ const navigationItems = [
 ]
 
 
+interface UserData {
+    id: string;
+    first_name: string;
+    last_name: string;
+    email: string;
+    city?: string;
+    state?: string;
+}
+
 export default function ASMLayout({
     children,
 }: {
@@ -42,7 +51,7 @@ export default function ASMLayout({
     const router = useRouter()
     const pathname = usePathname()
     const { theme } = useTheme()
-    const [user, setUser] = useState<any>(null)
+    const [user, setUser] = useState<UserData | null>(null)
     const [loading, setLoading] = useState(true)
     const [sidebarOpen, setSidebarOpen] = useState(true)
     const [showUserMenu, setShowUserMenu] = useState(false)

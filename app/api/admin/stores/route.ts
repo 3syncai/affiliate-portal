@@ -7,7 +7,7 @@ const pool = new Pool({
 })
 
 // GET - Fetch all stores
-export async function GET(request: NextRequest) {
+export async function GET() {
     try {
         const result = await pool.query(`
             SELECT 
@@ -29,10 +29,11 @@ export async function GET(request: NextRequest) {
             success: true,
             stores: result.rows
         })
-    } catch (error: any) {
-        console.error('Error fetching stores:', error)
+    } catch (error: unknown) {
+        const err = error as Error;
+        console.error('Error fetching stores:', err)
         return NextResponse.json(
-            { success: false, error: error.message },
+            { success: false, error: err.message },
             { status: 500 }
         )
     }
@@ -71,10 +72,11 @@ export async function POST(request: NextRequest) {
             message: 'Store created successfully',
             store: result.rows[0]
         })
-    } catch (error: any) {
-        console.error('Error creating store:', error)
+    } catch (error: unknown) {
+        const err = error as Error;
+        console.error('Error creating store:', err)
         return NextResponse.json(
-            { success: false, error: error.message },
+            { success: false, error: err.message },
             { status: 500 }
         )
     }

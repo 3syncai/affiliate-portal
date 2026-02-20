@@ -36,12 +36,13 @@ export async function GET() {
             count: managers.length
         });
 
-    } catch (error) {
-        console.error("Failed to fetch area managers:", error);
+    } catch (error: unknown) {
+        const err = error as Error;
+        console.error("Failed to fetch area managers:", err);
         return NextResponse.json({
             success: false,
             managers: [],
-            error: error instanceof Error ? error.message : "Unknown error"
+            error: err.message
         }, { status: 500 });
     }
 }

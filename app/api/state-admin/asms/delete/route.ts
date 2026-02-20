@@ -36,11 +36,12 @@ export async function DELETE(req: NextRequest) {
             deletedUser: result.rows[0]
         });
 
-    } catch (error: any) {
-        console.error("Failed to delete user:", error);
+    } catch (error: unknown) {
+        const err = error as Error;
+        console.error("Failed to delete user:", err);
         return NextResponse.json({
             success: false,
-            error: error.message
+            error: err.message
         }, { status: 500 });
     }
 }

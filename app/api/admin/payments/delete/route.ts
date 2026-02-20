@@ -39,11 +39,12 @@ export async function POST(req: NextRequest) {
             deleted: result.rows
         });
 
-    } catch (error: any) {
-        console.error("Failed to delete payments:", error);
+    } catch (error: unknown) {
+        const err = error as Error;
+        console.error("Failed to delete payments:", err);
         return NextResponse.json({
             success: false,
-            error: error.message
+            error: err.message
         }, { status: 500 });
     }
 }

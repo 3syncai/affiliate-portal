@@ -6,6 +6,13 @@ export const dynamic = "force-dynamic";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-in-production";
 
+interface DecodedToken {
+    id: string;
+    email: string;
+    role: string;
+    state: string;
+}
+
 export async function GET(req: NextRequest) {
     try {
         const authHeader = req.headers.get("Authorization");
@@ -14,10 +21,10 @@ export async function GET(req: NextRequest) {
         }
 
         const token = authHeader.split(" ")[1];
-        let decoded: any;
+        let decoded: DecodedToken;
         try {
-            decoded = jwt.verify(token, JWT_SECRET);
-        } catch (err) {
+            decoded = jwt.verify(token, JWT_SECRET) as DecodedToken;
+        } catch {
             return NextResponse.json({ success: false, message: "Invalid token" }, { status: 401 });
         }
 
@@ -46,8 +53,9 @@ export async function GET(req: NextRequest) {
             user: result.rows[0]
         });
 
-    } catch (error: any) {
-        console.error("Failed to fetch state admin profile:", error);
-        return NextResponse.json({ success: false, message: error.message }, { status: 500 });
+    } catch (error: unknown) {
+        const err = error as Error;
+        console.error("Failed to fetch state admin profile:", err);
+        return NextResponse.json({ success: false, message: err.message }, { status: 500 });
     }
 }

@@ -18,7 +18,6 @@ import {
     User,
     Palette,
     TrendingUp,
-    Bell,
     Package,
     Share2
 } from "lucide-react"
@@ -34,6 +33,14 @@ const navigationItems = [
 ]
 
 
+interface UserData {
+    id: string;
+    first_name: string;
+    last_name: string;
+    email: string;
+    state?: string;
+}
+
 export default function StateAdminLayout({
     children,
 }: {
@@ -42,7 +49,7 @@ export default function StateAdminLayout({
     const router = useRouter()
     const pathname = usePathname()
     const { theme } = useTheme()
-    const [user, setUser] = useState<any>(null)
+    const [user, setUser] = useState<UserData | null>(null)
     const [loading, setLoading] = useState(true)
     const [sidebarOpen, setSidebarOpen] = useState(true)
     const [showUserMenu, setShowUserMenu] = useState(false)

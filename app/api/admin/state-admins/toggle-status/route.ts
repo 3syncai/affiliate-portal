@@ -44,13 +44,14 @@ export async function POST(req: NextRequest) {
             admin: result.rows[0]
         });
 
-    } catch (error) {
-        console.error("Failed to toggle state admin status:", error);
+    } catch (error: unknown) {
+        const err = error as Error;
+        console.error("Failed to toggle state admin status:", err);
         return NextResponse.json(
             {
                 success: false,
                 message: "Failed to update status",
-                error: error instanceof Error ? error.message : "Unknown error"
+                error: err.message
             },
             { status: 500 }
         );

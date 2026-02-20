@@ -39,3 +39,13 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Generated reports, logs and scripts
+*.txt
+*.md
+!README.md
+debug_commissions.js
+fix-db-pools.sh
+migrate_db_payments.js
+restore_admin.js
+test-branch-commission.sh

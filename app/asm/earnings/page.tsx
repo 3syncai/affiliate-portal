@@ -1,282 +1,225 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState } from "react"
+import { Wallet, TrendingUp, ArrowUpRight, ArrowDownRight, Clock, ChevronRight, DollarSign, Target, Award, PieChart, LucideIcon } from "lucide-react"
 import axios from "axios"
-import useSWR from 'swr'
-import { DollarSign, User, Users, ShoppingBag, Info, Wallet, CheckCircle2, AlertCircle, Wifi, WifiOff } from "lucide-react"
-import { useSSE } from "@/hooks/useSSE"
-import { Toast } from "@/components/Toast"
 
-type Order = {
+interface Transaction {
     id: string
-    order_id: string
-    order_amount: number
-    created_at: string
-    product_name: string
-    first_name: string
-    last_name: string
-    refer_code: string
-    city: string
-    branch: string
-    commission_source?: string
-    commission_amount?: number
+    type: "DIRECT" | "OVERRIDE" | "WITHDRAWAL"
+    description: string
+    amount: number
+    date: string
+    status: "PENDING" | "CREDITED" | "COMPLETED" | "PAID" | "REJECTED"
 }
 
-const fetcher = (url: string) => axios.get(url).then(res => res.data)
+interface EarningsData {
+    lifetime: number
+    monthly: number
+    currentBalance: number
+    pendingAmount: number
+    teamEarnings: number
+}
 
 export default function ASMEarningsPage() {
-    const [userData, setUserData] = useState<any>(null)
-
-    // Toast state
-    const [showToast, setShowToast] = useState(false)
-    const [toastData, setToastData] = useState<{ message: string; amount?: number }>({ message: "" })
+    const [earnings, setEarnings] = useState<EarningsData>({
+        lifetime: 0,
+        monthly: 0,
+        currentBalance: 0,
+        pendingAmount: 0,
+        teamEarnings: 0
+    })
+    const [transactions, setTransactions] = useState<Transaction[]>([])
+    const [loading, setLoading] = useState(true)
 
     useEffect(() => {
-        const storedUser = localStorage.getItem("affiliate_user")
-        if (storedUser) {
-            setUserData(JSON.parse(storedUser))
-        }
+        loadEarnings()
     }, [])
 
-    const { data, mutate, isLoading } = useSWR(
-        userData?.city && userData?.state ? `/api/asm/earnings?city=${encodeURIComponent(userData.city)}&state=${encodeURIComponent(userData.state)}${userData.id ? `&adminId=${userData.id}` : ''}` : null,
-        fetcher
-    )
+    const loadEarnings = async () => {
+        try {
+            const userData = localStorage.getItem("affiliate_user")
+            if (!userData) return
+            const user = JSON.parse(userData)
 
-    const stats = data?.success ? data.stats : {
-        totalAffiliateCommissions: 0,
-        totalBranchCommissions: 0,
-        totalOrders: 0,
-        commissionRate: 0,
-        totalEarnings: 0,
-        lifetimeEarnings: 0,
-        paidAmount: 0,
-        currentEarnings: 0,
-        earningsFromBranch: 0,
-        earningsFromDirect: 0,
-        ordersFromBranch: 0,
-        ordersFromDirect: 0
-    }
-
-    const recentOrders: Order[] = data?.success ? data.recentOrders : []
-    const loading = isLoading
-
-    // Live updates
-    const handleUpdate = useCallback((data: any) => {
-        if (data.type === 'stats_update' || data.type === 'payment_received') {
-            setToastData({
-                message: "New earning activity!",
-                amount: data.amount
-            });
-            setShowToast(true);
-            mutate();
+            const response = await axios.get(`/api/asm/earnings?asmId=${user.id}`)
+            if (response.data.success) {
+                setEarnings(response.data.earnings)
+                setTransactions(response.data.recentTransactions || [])
+            }
+        } catch (error) {
+            console.error("Failed to load earnings:", error)
+        } finally {
+            setLoading(false)
         }
-    }, [mutate]);
-
-    const { isConnected } = useSSE({
-        affiliateCode: userData?.refer_code || '',
-        onMessage: handleUpdate
-    });
+    }
 
     const formatCurrency = (amount: number) => {
-        return `₹${amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+        return new Intl.NumberFormat('en-IN', {
+            style: 'currency',
+            currency: 'INR',
+            maximumFractionDigits: 0
+        }).format(amount)
     }
 
-    if (loading) return <div className="p-8 flex justify-center"><div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div></div>
+    const StatCard = ({ title, value, icon: Icon, color, subtitle }: {
+        title: string;
+        value: number;
+        icon: LucideIcon;
+        color: string;
+        subtitle?: string;
+    }) => (
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+            <div className="flex items-start justify-between">
+                <div>
+                    <p className="text-sm font-medium text-gray-500 mb-1">{title}</p>
+                    <h3 className="text-2xl font-bold text-gray-900">{formatCurrency(value)}</h3>
+                    {subtitle && <p className="text-xs text-gray-400 mt-1">{subtitle}</p>}
+                </div>
+                <div className={`p-3 rounded-xl bg-${color}-50 text-${color}-600`}>
+                    <Icon className="w-6 h-6" />
+                </div>
+            </div>
+        </div>
+    )
 
-    // Calculations for progress bar
-    const totalOrders = stats.totalOrders || 1
-    const branchPercent = (stats.ordersFromBranch / totalOrders) * 100
-    const directPercent = 100 - branchPercent
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center min-h-[400px]">
+                <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+            </div>
+        )
+    }
 
     return (
-        <div className="space-y-6 text-gray-800">
+        <div className="space-y-8 animate-in fade-in duration-500">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-2xl font-bold text-gray-900">Earnings & Performance</h1>
+                    <p className="text-gray-500">Track your income and team performance</p>
+                </div>
+                <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors shadow-lg shadow-blue-200">
+                    <DollarSign className="w-4 h-4" />
+                    Request Withdrawal
+                </button>
+            </div>
 
-            {/* Payment Received Toast */}
-            {showToast && (
-                <Toast
-                    message={toastData.message}
-                    type="payment"
-                    amount={toastData.amount}
-                    onClose={() => setShowToast(false)}
+            {/* Main Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <StatCard
+                    title="Current Balance"
+                    value={earnings.currentBalance}
+                    icon={Wallet}
+                    color="blue"
+                    subtitle="Available for withdrawal"
                 />
-            )}
-
-            {/* Header */}
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Branch Earning</h1>
-                    <p className="text-gray-500 text-sm mt-1">Detailed breakdown of income sources from {userData?.city}</p>
-                </div>
-                <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium ${isConnected ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-                    {isConnected ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
-                    {isConnected ? 'Live Updates On' : 'Connecting...'}
-                </div>
+                <StatCard
+                    title="Pending Amount"
+                    value={earnings.pendingAmount}
+                    icon={Clock}
+                    color="amber"
+                    subtitle="Awaiting processing"
+                />
+                <StatCard
+                    title="Team Override"
+                    value={earnings.teamEarnings}
+                    icon={Target}
+                    color="emerald"
+                    subtitle="From branch performance"
+                />
+                <StatCard
+                    title="Lifetime Earnings"
+                    value={earnings.lifetime}
+                    icon={Award}
+                    color="violet"
+                    subtitle="Total earned till date"
+                />
             </div>
 
-            {/* Main Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-
-                {/* 1. Lifetime Earnings Card (White) */}
-                <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm relative overflow-hidden">
-                    <div className="flex justify-between items-start mb-6">
-                        <div>
-                            <p className="text-gray-500 text-sm font-medium">Total Lifetime Earnings</p>
-                            <h2 className="text-3xl font-bold text-gray-900 mt-2">{formatCurrency(stats.lifetimeEarnings || stats.totalEarnings)}</h2>
-                        </div>
-                        <div className="bg-green-50 p-3 rounded-lg">
-                            <DollarSign className="w-6 h-6 text-green-600" />
-                        </div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Recent Transactions */}
+                <div className="lg:col-span-2 space-y-4">
+                    <div className="flex items-center justify-between">
+                        <h2 className="text-lg font-bold text-gray-900">Recent Transactions</h2>
+                        <button className="text-sm text-blue-600 font-medium hover:underline">View All</button>
                     </div>
-
-                    <div className="space-y-3 pt-4 border-t border-gray-50">
-                        <div className="flex justify-between items-center text-sm">
-                            <div className="flex items-center text-gray-500">
-                                <Users className="w-4 h-4 mr-2" />
-                                From ASM Overrides
+                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden text-sm">
+                        {transactions.length > 0 ? (
+                            <div className="divide-y divide-gray-50">
+                                {transactions.map((tx, idx) => (
+                                    <div key={tx.id || idx} className="p-4 hover:bg-gray-50 transition-colors flex items-center justify-between">
+                                        <div className="flex items-center gap-4">
+                                            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${tx.type === 'WITHDRAWAL' ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'
+                                                }`}>
+                                                {tx.type === 'WITHDRAWAL' ? <ArrowUpRight className="w-5 h-5" /> : <ArrowDownRight className="w-5 h-5" />}
+                                            </div>
+                                            <div>
+                                                <p className="font-semibold text-gray-900">{tx.description}</p>
+                                                <p className="text-xs text-gray-500">{new Date(tx.date).toLocaleDateString()}</p>
+                                            </div>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className={`font-bold ${tx.type === 'WITHDRAWAL' ? 'text-red-600' : 'text-green-600'}`}>
+                                                {tx.type === 'WITHDRAWAL' ? '-' : '+'}{formatCurrency(tx.amount)}
+                                            </p>
+                                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${tx.status === 'COMPLETED' || tx.status === 'PAID' || tx.status === 'CREDITED' ? 'bg-green-100 text-green-700' :
+                                                    tx.status === 'PENDING' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'
+                                                }`}>
+                                                {tx.status}
+                                            </span>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
-                            <span className="font-semibold text-gray-900">{formatCurrency(stats.earningsFromBranch)}</span>
-                        </div>
-                        <div className="flex justify-between items-center text-sm">
-                            <div className="flex items-center text-gray-500">
-                                <User className="w-4 h-4 mr-2" />
-                                From Direct Referrals
+                        ) : (
+                            <div className="p-12 text-center text-gray-400">
+                                <PieChart className="w-12 h-12 mx-auto mb-3 opacity-20" />
+                                <p>No transactions found</p>
                             </div>
-                            <span className="font-semibold text-gray-900">{formatCurrency(stats.earningsFromDirect)}</span>
-                        </div>
+                        )}
                     </div>
                 </div>
 
-                {/* 2. Available to Withdraw (Dark) */}
-                <div className="bg-[#0f172a] rounded-xl p-6 text-white relative overflow-hidden shadow-lg">
-                    <div className="absolute top-0 right-0 p-6 opacity-10">
-                        <Wallet className="w-24 h-24" />
+                {/* Growth Sidebar */}
+                <div className="space-y-6">
+                    <h2 className="text-lg font-bold text-gray-900">Performance Overview</h2>
+                    <div className="bg-gradient-to-br from-blue-600 to-blue-800 rounded-2xl p-6 text-white shadow-xl shadow-blue-200">
+                        <div className="flex items-center justify-between mb-4">
+                            <TrendingUp className="w-8 h-8 opacity-50" />
+                            <span className="text-xs bg-white/20 px-2 py-1 rounded-full">Monthly Goal</span>
+                        </div>
+                        <p className="text-blue-100 text-sm">Monthly Target Reach</p>
+                        <h3 className="text-3xl font-bold mb-4">78%</h3>
+                        <div className="w-full bg-white/20 h-2 rounded-full overflow-hidden">
+                            <div className="bg-white h-full" style={{ width: '78%' }}></div>
+                        </div>
+                        <p className="text-xs text-blue-100 mt-4 flex items-center gap-1">
+                            <TrendingUp className="w-3 h-3" />
+                            +12% from last month
+                        </p>
                     </div>
 
-                    <div className="relative z-10">
-                        <p className="text-gray-400 text-sm font-medium">Available to Withdraw</p>
-                        <h2 className="text-4xl font-bold text-white mt-2">{formatCurrency(stats.currentEarnings || stats.totalEarnings)}</h2>
-
-                        <div className="flex items-center mt-8 gap-4">
-                            <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-3 py-1 rounded-md text-xs font-semibold flex items-center">
-                                <CheckCircle2 className="w-3 h-3 mr-1.5" />
-                                Ready
-                            </span>
-                            <span className="text-xs text-gray-400">
-                                Paid Out: <span className="text-gray-300 ml-1">{formatCurrency(stats.paidAmount)}</span>
-                            </span>
-                        </div>
-                    </div>
-                </div>
-
-                {/* 3. Total Orders (White with Progress) */}
-                <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm relative">
-                    <div className="flex justify-between items-start mb-2">
-                        <div>
-                            <p className="text-gray-500 text-sm font-medium">Total Orders</p>
-                            <h2 className="text-3xl font-bold text-gray-900 mt-2">{stats.totalOrders}</h2>
-                        </div>
-                        <div className="bg-orange-50 p-2 rounded-lg">
-                            <ShoppingBag className="w-5 h-5 text-orange-500" />
-                        </div>
-                    </div>
-
-                    <div className="mt-8">
-                        <div className="flex h-2 w-full rounded-full overflow-hidden bg-gray-100 mb-2">
-                            <div style={{ width: `${branchPercent}%` }} className="h-full bg-blue-500 rounded-full"></div>
-                            <div style={{ width: `${directPercent}%` }} className="h-full bg-emerald-400 rounded-full ml-1"></div>
-                        </div>
-                        <div className="flex justify-between text-xs mt-3">
-                            <div className="flex items-center">
-                                <div className="w-2 h-2 rounded-full bg-blue-500 mr-2"></div>
-                                <span className="text-gray-600">{stats.ordersFromBranch} Area's Order</span>
+                    <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                        <h4 className="font-bold text-gray-900 mb-4">Quick Insights</h4>
+                        <div className="space-y-4">
+                            <div className="flex items-center justify-between text-sm">
+                                <span className="text-gray-500">Active Branches</span>
+                                <span className="font-semibold">24</span>
                             </div>
-                            <div className="flex items-center">
-                                <div className="w-2 h-2 rounded-full bg-emerald-400 mr-2"></div>
-                                <span className="text-gray-600">{stats.ordersFromDirect} Direct Orders</span>
+                            <div className="flex items-center justify-between text-sm">
+                                <span className="text-gray-500">Pending Approvals</span>
+                                <span className="font-semibold text-amber-600">12</span>
                             </div>
+                            <div className="flex items-center justify-between text-sm">
+                                <span className="text-gray-500">Team Size</span>
+                                <span className="font-semibold">142</span>
+                            </div>
+                            <button className="w-full mt-4 flex items-center justify-center gap-2 py-2 text-blue-600 font-medium hover:bg-blue-50 rounded-lg transition-colors border border-blue-100">
+                                Generate Report
+                                <ChevronRight className="w-4 h-4" />
+                            </button>
                         </div>
                     </div>
-                </div>
-            </div>
-
-            {/* Info Banner */}
-            <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 flex items-start">
-                <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5 mr-3 flex-shrink-0" />
-                <div>
-                    <h4 className="text-sm font-semibold text-blue-900">Earning Structure</h4>
-                    <p className="text-sm text-blue-700 mt-0.5">
-                        You earn in two ways: <span className="font-semibold">95% commission</span> on your direct referrals, plus <span className="font-semibold"> {stats.commissionRate}% override</span> on total sales volume from area in your branches.
-                    </p>
-                </div>
-            </div>
-
-            {/* Transaction Table */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
-                    <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider">Recent Transactions</h2>
-                    <span className="text-xs font-medium text-gray-500 border border-gray-200 px-2 py-1 rounded">Last 10 records</span>
-                </div>
-
-                <div className="overflow-x-auto">
-                    <table className="min-w-full">
-                        <thead className="bg-gray-50/50">
-                            <tr>
-                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider w-32">Date</th>
-                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider w-40">Type</th>
-                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Details</th>
-                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Customer/Branch</th>
-                                <th className="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Your Earning</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100">
-                            {recentOrders.length === 0 ? (
-                                <tr>
-                                    <td colSpan={5} className="px-6 py-12 text-center text-gray-500 text-sm">
-                                        No transactions found.
-                                    </td>
-                                </tr>
-                            ) : (
-                                recentOrders.map((order) => {
-                                    // Determine type based on data (logic would be improved with real source field)
-                                    const isDirect = !order.branch || order.branch === 'N/A'
-                                    const typeLabel = isDirect ? 'Direct Sale' : 'Asm Override'
-                                    const typeColor = isDirect
-                                        ? 'bg-emerald-100 text-emerald-700'
-                                        : 'bg-gray-100 text-gray-700'
-
-                                    return (
-                                        <tr key={order.id} className="hover:bg-gray-50/30 transition-colors">
-                                            <td className="px-6 py-4 text-sm text-gray-500">
-                                                {new Date(order.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <span className={`text-[11px] uppercase font-bold px-2.5 py-1 rounded-md ${typeColor}`}>
-                                                    {typeLabel}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <div className="text-sm font-medium text-gray-900 line-clamp-1">{order.product_name}</div>
-                                                <div className="text-xs text-gray-400 mt-0.5">#{order.order_id}</div>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <div className="text-sm text-gray-900">{order.first_name || 'Customer'}</div>
-                                                <div className="text-xs text-gray-400 mt-0.5 uppercase">{isDirect ? order.refer_code : order.branch}</div>
-                                            </td>
-                                            <td className="px-6 py-4 text-right">
-                                                <span className="text-sm font-bold text-gray-900">
-                                                    {/* In real app, this should be the commission amount per order row */}
-                                                    {/* Using order_amount * rate mostly, but should check if api returns commission_amount */}
-                                                    {/* Assuming API helper calculates it or returns it. If not, fallback logic: */}
-                                                    {formatCurrency(Number(order.commission_amount) || 0)}
-                                                </span>
-                                            </td>
-                                        </tr>
-                                    )
-                                })
-                            )}
-                        </tbody>
-                    </table>
                 </div>
             </div>
         </div>

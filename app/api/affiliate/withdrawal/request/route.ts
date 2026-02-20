@@ -3,11 +3,38 @@ import pool from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
+interface WithdrawalRequestBody {
+  referCode: string;
+  withdrawalAmount: number;
+  gstPercentage: number;
+  gstAmount: number;
+  netPayable: number;
+  paymentMethod: string;
+  bankDetails?: {
+    bankName: string;
+    branch: string;
+    ifscCode: string;
+    accountName: string;
+    accountNumber: string;
+  };
+  upiDetails?: {
+    id: string;
+  };
+  walletBalance: number;
+}
+
+interface AffiliateUser {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+}
+
 export async function POST(request: Request) {
   console.log('=== Submitting Withdrawal Request ===');
 
   try {
-    const body = await request.json();
+    const body = await request.json() as WithdrawalRequestBody;
     const {
       referCode,
       withdrawalAmount,
@@ -79,7 +106,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const affiliate = affiliateResult.rows[0];
+    const affiliate = affiliateResult.rows[0] as AffiliateUser;
 
     // Check for existing pending request
     const pendingCheck = `
@@ -111,7 +138,7 @@ export async function POST(request: Request) {
       RETURNING id
     `;
 
-    const values = [
+    const values: (string | number | boolean | null)[] = [
       affiliate.id,
       referCode,
       `${affiliate.first_name} ${affiliate.last_name}`,
@@ -121,12 +148,12 @@ export async function POST(request: Request) {
       gstAmount,
       netPayable,
       paymentMethod,
-      paymentMethod === 'Bank Transfer' ? bankDetails?.bankName : null,
-      paymentMethod === 'Bank Transfer' ? bankDetails?.branch : null,
-      paymentMethod === 'Bank Transfer' ? bankDetails?.ifscCode : null,
-      paymentMethod === 'Bank Transfer' ? bankDetails?.accountName : null,
-      paymentMethod === 'Bank Transfer' ? bankDetails?.accountNumber : null,
-      paymentMethod === 'UPI' ? upiDetails?.id : null,  // Fixed: use 'id' instead of 'upiId'
+      paymentMethod === 'Bank Transfer' ? (bankDetails?.bankName || null) : null,
+      paymentMethod === 'Bank Transfer' ? (bankDetails?.branch || null) : null,
+      paymentMethod === 'Bank Transfer' ? (bankDetails?.ifscCode || null) : null,
+      paymentMethod === 'Bank Transfer' ? (bankDetails?.accountName || null) : null,
+      paymentMethod === 'Bank Transfer' ? (bankDetails?.accountNumber || null) : null,
+      paymentMethod === 'UPI' ? (upiDetails?.id || null) : null,
       walletBalance
     ];
 
@@ -142,13 +169,14 @@ export async function POST(request: Request) {
       requestId: result.rows[0].id
     });
 
-  } catch (error) {
-    console.error('Error submitting withdrawal request:', error);
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error('Error submitting withdrawal request:', err);
     return NextResponse.json(
       {
         success: false,
         error: 'Failed to submit withdrawal request',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        message: err.message
       },
       { status: 500 }
     );

@@ -173,13 +173,14 @@ export async function POST(req: NextRequest) {
             }
         });
 
-    } catch (error: any) {
-        console.error("Login critical error:", error);
+    } catch (error: unknown) {
+        const err = error as Error;
+        console.error("Login critical error:", err);
         return NextResponse.json(
             {
                 success: false,
                 message: "Login failed (Server Error)",
-                error: error instanceof Error ? error.message : "Unknown error"
+                error: err.message
             },
             { status: 500 }
         );

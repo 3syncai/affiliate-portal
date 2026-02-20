@@ -14,6 +14,12 @@ type FormData = {
     confirm_password: string
 }
 
+interface UserData {
+    id: string;
+    city?: string;
+    [key: string]: unknown;
+}
+
 export default function CreateBranchAdminPage() {
     const [formData, setFormData] = useState<FormData>({
         first_name: "",
@@ -29,14 +35,18 @@ export default function CreateBranchAdminPage() {
     const [success, setSuccess] = useState("")
     const [showPassword, setShowPassword] = useState(false)
     const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-    const [asmData, setAsmData] = useState<any>(null)
+    const [asmData, setAsmData] = useState<UserData | null>(null)
     const [availableBranches, setAvailableBranches] = useState<string[]>([])
     const [loadingBranches, setLoadingBranches] = useState(false)
 
     useEffect(() => {
         const userData = localStorage.getItem("affiliate_user")
         if (userData) {
-            setAsmData(JSON.parse(userData))
+            try {
+                setAsmData(JSON.parse(userData) as UserData)
+            } catch (e) {
+                console.error("Failed to parse user data:", e)
+            }
         }
     }, [])
 
@@ -127,7 +137,8 @@ export default function CreateBranchAdminPage() {
             } else {
                 setError(response.data.message || "Failed to create Area Sales Manager")
             }
-        } catch (err: any) {
+        } catch (error: unknown) {
+            const err = error as Error & { response?: { data?: { message?: string } } };
             setError(err.response?.data?.message || err.message || "Failed to create Area sales manager")
         } finally {
             setLoading(false)
@@ -138,7 +149,7 @@ export default function CreateBranchAdminPage() {
         <div className="space-y-6">
             <div>
                 <h1 className="text-3xl font-bold text-gray-900">Create Area Sales Manager</h1>
-                <p className="text-gray-600 mt-1">Create a new Area Sales Manager for {asmData?.city}</p>
+                <p className="text-gray-600 mt-1">Create a new Area Sales Manager for {asmData?.city || ''}</p>
             </div>
 
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 max-w-2xl">
@@ -229,7 +240,7 @@ export default function CreateBranchAdminPage() {
                                 {loadingBranches
                                     ? "Loading branches..."
                                     : availableBranches.length === 0
-                                        ? `No branches available for ${asmData?.city}`
+                                        ? `No branches available for ${asmData?.city || ''}`
                                         : "Select branch"}
                             </option>
                             {availableBranches.map(branch => (
@@ -296,7 +307,7 @@ export default function CreateBranchAdminPage() {
 
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                         <p className="text-sm text-blue-800">
-                            <strong>Note:</strong> This Area Sales Manager will be assigned to <strong>{asmData?.city}</strong> city. They will have access to the Branch Dashboard and can manage affiliates in their branch.
+                            <strong>Note:</strong> This Area Sales Manager will be assigned to <strong>{asmData?.city || ''}</strong> city. They will have access to the Branch Dashboard and can manage affiliates in their branch.
                         </p>
                     </div>
 

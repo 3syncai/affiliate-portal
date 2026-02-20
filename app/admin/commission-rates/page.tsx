@@ -51,9 +51,10 @@ export default function CommissionRatesPage() {
                 })
                 setEditedRates(initialEdits)
             }
-        } catch (error: any) {
-            console.error("Failed to load commission rates:", error)
-            alert("Failed to load commission rates: " + (error.response?.data?.error || error.message))
+        } catch (error: unknown) {
+            const err = error as Error & { response?: { data?: { error?: string } } };
+            console.error("Failed to load commission rates:", err)
+            alert("Failed to load commission rates: " + (err.response?.data?.error || err.message))
         } finally {
             setLoading(false)
         }
@@ -84,9 +85,10 @@ export default function CommissionRatesPage() {
                 await loadRates()
                 setHasChanges(false)
             }
-        } catch (error: any) {
-            console.error("Failed to save commission rates:", error)
-            alert("Failed to save: " + (error.response?.data?.error || error.message))
+        } catch (error: unknown) {
+            const err = error as Error & { response?: { data?: { error?: string } } };
+            console.error("Failed to save commission rates:", err)
+            alert("Failed to save: " + (err.response?.data?.error || err.message))
         } finally {
             setSaving(false)
         }

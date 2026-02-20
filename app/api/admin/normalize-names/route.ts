@@ -66,11 +66,12 @@ export async function POST() {
             message: "All names normalized to proper case (First letter capitalized)"
         });
 
-    } catch (error: any) {
-        console.error("Normalization failed:", error);
+    } catch (error: unknown) {
+        const err = error as Error;
+        console.error("Normalization failed:", err);
         return NextResponse.json({
             success: false,
-            error: error.message
+            error: err.message
         }, { status: 500 });
     }
 }

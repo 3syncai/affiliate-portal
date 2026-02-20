@@ -3,6 +3,19 @@ import { Pool } from "pg";
 
 export const dynamic = "force-dynamic";
 
+interface ASM {
+    id: string;
+    first_name: string;
+    last_name: string;
+    email: string;
+    city: string;
+    state: string;
+    created_at: string;
+    role: string;
+    is_active: boolean;
+    refer_code: string;
+}
+
 export async function GET(req: NextRequest) {
     try {
         const { searchParams } = new URL(req.url);
@@ -28,7 +41,7 @@ export async function GET(req: NextRequest) {
             WHERE state ILIKE $1
         `;
 
-        const params: any[] = [state];
+        const params: (string | number)[] = [state];
 
         if (adminId) {
             query += ` AND created_by = $2`;
@@ -46,16 +59,17 @@ export async function GET(req: NextRequest) {
             asms: result.rows,
             stats: {
                 totalBranches: result.rows.length,
-                totalCities: new Set(result.rows.map((r: any) => r.city)).size,
+                totalCities: new Set(result.rows.map((r: ASM) => r.city)).size,
                 totalAgents: 0 // We can add agent count logic later if needed by joining affiliate_user
             }
         });
 
-    } catch (error: any) {
-        console.error("Failed to fetch ASMs:", error);
+    } catch (error: unknown) {
+        const err = error as Error;
+        console.error("Failed to fetch ASMs:", err);
         return NextResponse.json({
             success: false,
-            error: error.message
+            error: err.message
         }, { status: 500 });
     }
 }

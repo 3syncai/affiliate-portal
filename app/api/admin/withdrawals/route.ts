@@ -40,11 +40,13 @@ export async function GET(request: Request) {
       FROM withdrawal_request
     `;
 
-        const values: any[] = [];
+        const values: (string | number)[] = [];
+        let valueIndex = 1;
 
         if (status) {
-            query += ` WHERE status = $1`;
+            query += ` WHERE status = $${valueIndex}`;
             values.push(status);
+            valueIndex++;
         }
 
         query += ` ORDER BY requested_at DESC`;
@@ -57,8 +59,9 @@ export async function GET(request: Request) {
             withdrawals: result.rows
         });
 
-    } catch (error) {
-        console.error('Error fetching withdrawal requests:', error);
+    } catch (error: unknown) {
+        const err = error as Error;
+        console.error('Error fetching withdrawal requests:', err);
         return NextResponse.json(
             {
                 success: false,
@@ -155,8 +158,9 @@ export async function POST(request: Request) {
             message: `Withdrawal request ${action.toLowerCase()}ed successfully`
         });
 
-    } catch (error) {
-        console.error('Error processing withdrawal:', error);
+    } catch (error: unknown) {
+        const err = error as Error;
+        console.error('Error processing withdrawal:', err);
         return NextResponse.json(
             {
                 success: false,

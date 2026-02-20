@@ -42,6 +42,8 @@ export async function GET(req: NextRequest) {
         // Get total orders and commission in this state (using stores table)
         let totalOrders = 0;
         let totalCommission = 0;
+        let pendingCommission = 0;
+        let creditedCommission = 0;
         try {
             const ordersQuery = `
                 SELECT 
@@ -57,12 +59,12 @@ export async function GET(req: NextRequest) {
             const ordersResult = await pool.query(ordersQuery, [state]);
             totalOrders = parseInt(ordersResult.rows[0]?.total_orders || '0');
             totalCommission = parseFloat(ordersResult.rows[0]?.total_commission || '0');
-            var pendingCommission = parseFloat(ordersResult.rows[0]?.pending_commission || '0');
-            var creditedCommission = parseFloat(ordersResult.rows[0]?.credited_commission || '0');
+            pendingCommission = parseFloat(ordersResult.rows[0]?.pending_commission || '0');
+            creditedCommission = parseFloat(ordersResult.rows[0]?.credited_commission || '0');
         } catch (err) {
             console.error("Failed to get orders:", err);
-            var pendingCommission = 0;
-            var creditedCommission = 0;
+            pendingCommission = 0;
+            creditedCommission = 0;
         }
 
         await pool.end();
@@ -84,11 +86,12 @@ export async function GET(req: NextRequest) {
             stats
         });
 
-    } catch (error: any) {
-        console.error("Failed to fetch state admin stats:", error);
+    } catch (error: unknown) {
+        const err = error as Error;
+        console.error("Failed to fetch state admin stats:", err);
         return NextResponse.json({
             success: false,
-            error: error.message
+            error: err.message
         }, { status: 500 });
     }
 }

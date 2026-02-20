@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import axios from "axios"
-import { Package, DollarSign, TrendingUp, Eye, Download, Filter, Calendar } from "lucide-react"
+import { Package, DollarSign, TrendingUp, Eye, Download } from "lucide-react"
 
 type AffiliateOrder = {
   id: string

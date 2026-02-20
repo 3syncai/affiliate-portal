@@ -45,11 +45,12 @@ export async function POST() {
             affiliateRateApplied: affiliateRate
         });
 
-    } catch (error: any) {
-        console.error("Migration failed:", error);
+    } catch (error: unknown) {
+        const err = error as Error;
+        console.error("Migration failed:", err);
         return NextResponse.json({
             success: false,
-            error: error.message
+            error: err.message
         }, { status: 500 });
     }
 }

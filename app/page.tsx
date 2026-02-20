@@ -1,8 +1,8 @@
 "use client"
 import Link from "next/link"
 import Image from "next/image"
-import { ArrowRight, CheckCircle, TrendingUp, Users, Wallet, ShieldCheck, Gift, BarChart3 } from "lucide-react"
-import { motion, useScroll, useTransform } from "framer-motion"
+import { ArrowRight, CheckCircle, TrendingUp, Users, Wallet, ShieldCheck, Gift, BarChart3, Search, Rocket, BarChart2, Shield, Menu, X, ChevronRight, ShoppingCart } from "lucide-react"
+import { motion, AnimatePresence, useScroll, useTransform, Variants } from "framer-motion"
 import { useRef } from "react"
 
 export default function Home() {
@@ -28,7 +28,7 @@ export default function Home() {
         staggerChildren: 0.1
       }
     }
-  }
+  } as const
 
   const itemVariants = {
     hidden: { y: 20, opacity: 0 },
@@ -40,7 +40,7 @@ export default function Home() {
         stiffness: 100
       }
     }
-  }
+  } as const
 
   return (
     <div className="min-h-screen bg-white overflow-hidden" ref={containerRef}>
@@ -317,7 +317,7 @@ export default function Home() {
   )
 }
 
-function BenefitCard({ icon, title, description, variants }: { icon: React.ReactNode, title: string, description: string, variants?: any }) {
+function BenefitCard({ icon, title, description, variants }: { icon: React.ReactNode, title: string, description: string, variants?: Variants }) {
   return (
     <motion.div
       variants={variants}

@@ -50,7 +50,7 @@ export default function AdminLayout({
   const router = useRouter()
   const pathname = usePathname()
   const { theme } = useTheme()
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<{ name?: string; email?: string } | null>(null)
   const [loading, setLoading] = useState(true)
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [showUserMenu, setShowUserMenu] = useState(false)
@@ -107,7 +107,7 @@ export default function AdminLayout({
         >
           <div className="flex items-center justify-between p-4" style={{ borderBottomColor: 'rgba(255,255,255,0.2)', borderBottomWidth: '1px' }}>
             <h1 className="text-xl font-bold text-white whitespace-nowrap">
-              Partner's admin
+              Partner&apos;s admin
             </h1>
             <button
               onClick={() => setSidebarOpen(false)}

@@ -5,12 +5,19 @@ import { uploadAffiliateDocument } from "@/lib/s3-upload";
 
 export const dynamic = "force-dynamic"
 
+interface RegistrationError {
+    code?: string;
+    detail?: string;
+    stack?: string;
+    [key: string]: unknown;
+}
+
 export async function POST(req: NextRequest) {
     try {
         const formData = await req.formData()
 
         // Extract form fields
-        const refer_code = formData.get("refer_code") as string
+        // const refer_code = formData.get("refer_code") as string // Removed unused variable
         const entry_sponsor = formData.get("entry_sponsor") as string
         const is_agent = formData.get("is_agent") === "true"
         const first_name = formData.get("first_name") as string
@@ -226,18 +233,19 @@ export async function POST(req: NextRequest) {
             }
         })
 
-    } catch (error: any) {
-        console.error("Registration error:", error)
-        console.error("Error stack:", error?.stack)
-        console.error("Error code:", error?.code)
-        console.error("Error detail:", error?.detail)
+    } catch (error: unknown) {
+        const err = error as RegistrationError;
+        console.error("Registration error:", err)
+        console.error("Error stack:", err?.stack)
+        console.error("Error code:", err?.code)
+        console.error("Error detail:", err?.detail)
         return NextResponse.json(
             {
                 success: false,
                 message: "Registration failed",
-                error: error instanceof Error ? error.message : "Unknown error",
-                detail: error?.detail || null,
-                code: error?.code || null
+                error: err instanceof Error ? err.message : "Unknown error",
+                detail: err?.detail || null,
+                code: err?.code || null
             },
             { status: 500 }
         )

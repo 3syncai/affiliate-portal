@@ -3,6 +3,22 @@ import { Pool } from 'pg';
 
 export const dynamic = 'force-dynamic';
 
+interface WithdrawalHistoryItem {
+    id: number;
+    withdrawal_amount: string;
+    gst_percentage: string;
+    gst_amount: string;
+    net_payable: string;
+    payment_method: string;
+    status: string;
+    requested_at: string;
+    reviewed_at: string | null;
+    transaction_id: string | null;
+    payment_date: string | null;
+    payment_details: string | null;
+    admin_notes: string | null;
+}
+
 // GET - Fetch withdrawal history for an affiliate
 export async function GET(request: Request) {
     try {
@@ -45,15 +61,17 @@ export async function GET(request: Request) {
 
         return NextResponse.json({
             success: true,
-            withdrawals: result.rows
+            withdrawals: result.rows as WithdrawalHistoryItem[]
         });
 
-    } catch (error) {
-        console.error('Error fetching withdrawal history:', error);
+    } catch (error: unknown) {
+        const err = error as Error;
+        console.error('Error fetching withdrawal history:', err);
         return NextResponse.json(
             {
                 success: false,
-                error: 'Failed to fetch withdrawal history'
+                error: 'Failed to fetch withdrawal history',
+                message: err.message
             },
             { status: 500 }
         );

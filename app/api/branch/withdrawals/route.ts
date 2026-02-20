@@ -47,7 +47,7 @@ export async function GET(req: NextRequest) {
             WHERE au.branch ILIKE $1
         `;
 
-        const params: any[] = [branch];
+        const params: (string | number)[] = [branch];
 
         if (status && status !== 'ALL') {
             query += ` AND wr.status = $2`;
@@ -65,8 +65,9 @@ export async function GET(req: NextRequest) {
             success: true,
             withdrawals: result.rows
         });
-    } catch (error: any) {
-        console.error("Failed to fetch branch withdrawals:", error);
+    } catch (error: unknown) {
+        const err = error as Error;
+        console.error("Failed to fetch branch withdrawals:", err);
         return NextResponse.json({ success: true, withdrawals: [] });
     }
 }
@@ -137,8 +138,8 @@ export async function POST(req: NextRequest) {
                         `${withdrawal.branch} branch approved ₹${parseFloat(withdrawal.withdrawal_amount).toFixed(2)} withdrawal for ${withdrawal.first_name} ${withdrawal.last_name}`
                     ]
                 );
-            } catch (e) {
-                console.log("Activity log insert failed (table may not exist):", e);
+            } catch (error: unknown) {
+                console.log("Activity log insert failed (table may not exist):", error);
             }
 
             await pool.end();
@@ -178,8 +179,8 @@ export async function POST(req: NextRequest) {
                             `${withdrawal.branch} branch rejected ₹${parseFloat(withdrawal.withdrawal_amount).toFixed(2)} withdrawal for ${withdrawal.first_name} ${withdrawal.last_name}`
                         ]
                     );
-                } catch (e) {
-                    console.log("Activity log insert failed:", e);
+                } catch (error: unknown) {
+                    console.log("Activity log insert failed:", error);
                 }
             }
 
@@ -190,8 +191,9 @@ export async function POST(req: NextRequest) {
         await pool.end();
         return NextResponse.json({ success: false, message: "Invalid action" }, { status: 400 });
 
-    } catch (error: any) {
-        console.error("Failed to process withdrawal:", error);
+    } catch (error: unknown) {
+        const err = error as Error;
+        console.error("Failed to process withdrawal:", err);
         return NextResponse.json({ success: false, message: "Failed to process" }, { status: 500 });
     }
 }

@@ -47,7 +47,7 @@ export async function GET(req: NextRequest) {
             success: true,
             affiliates: result.rows
         });
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Failed to fetch branch commissions:", error);
         return NextResponse.json({ success: true, affiliates: [] });
     }
