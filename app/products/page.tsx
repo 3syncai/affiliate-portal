@@ -273,6 +273,10 @@ function ProductDetailModal({ product, user, affiliateRate, onClose }: { product
     // Native Web Share API
     const handleShare = async (e: React.MouseEvent) => {
         e.stopPropagation()
+        if (!STORE_URL) {
+            console.error("STORE_URL is not configured")
+            return
+        }
         const referralCode = user?.refer_code || ''
         const slug = product.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
         const shareLink = `${STORE_URL}/productDetail/${slug}?id=${product.id}&sourceTag=${encodeURIComponent(product.category)}&ref=${referralCode}`
@@ -446,6 +450,10 @@ function ProductCard({ product, user, affiliateRate, onMobileClick }: { product:
 
     const handleShare = async (e: React.MouseEvent) => {
         e.stopPropagation()
+        if (!STORE_URL) {
+            console.error("STORE_URL is not configured")
+            return
+        }
         const referralCode = user?.refer_code || ''
         const slug = product.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
         const shareLink = `${STORE_URL}/productDetail/${slug}?id=${product.id}&sourceTag=${encodeURIComponent(product.category)}&ref=${referralCode}`

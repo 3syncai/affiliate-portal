@@ -539,23 +539,29 @@ export default function OrderLayoutPage() {
 
       {/* View Order Modal */}
       {selectedOrder && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
-            <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4">
+          <button
+            type="button"
+            aria-label="Close order details modal"
+            onClick={() => setSelectedOrder(null)}
+            className="absolute inset-0 bg-black/30 md:bg-black/40 backdrop-blur-sm"
+          />
+          <div className="relative bg-white rounded-t-2xl md:rounded-2xl max-w-4xl w-full max-h-[92vh] md:max-h-[90vh] overflow-y-auto shadow-2xl">
+            <div className="p-4 md:p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
               <h2 className="text-xl font-bold text-gray-900">Order Details</h2>
               <button
                 onClick={() => setSelectedOrder(null)}
                 className="text-gray-400 hover:text-gray-600 w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors"
               >
-                <span className="text-2xl leading-none">×</span>
+                <span className="text-2xl leading-none">{"\u2715"}</span>
               </button>
             </div>
 
-            <div className="p-6 space-y-6">
+            <div className="p-4 md:p-6 space-y-5 md:space-y-6">
               {/* Order Information */}
               <div>
                 <h3 className="text-xs font-bold text-gray-500 mb-3 uppercase tracking-wide">Order Information</h3>
-                <div className="grid grid-cols-2 gap-4 bg-gray-50/50 p-4 rounded-xl border border-gray-100">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 bg-gray-50/50 p-4 rounded-xl border border-gray-100">
                   <div>
                     <p className="text-xs text-gray-500 mb-1">Order ID</p>
                     <p className="text-sm font-mono font-semibold" style={{ color: theme.primary }}>{selectedOrder.order_id}</p>
@@ -581,19 +587,19 @@ export default function OrderLayoutPage() {
               <div>
                 <h3 className="text-xs font-bold text-gray-500 mb-3 uppercase tracking-wide">Product Details</h3>
                 <div className="bg-gray-50/50 p-4 rounded-xl border border-gray-100 space-y-3">
-                  <div className="flex justify-between items-center pb-3 border-b border-gray-200">
+                  <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-1 pb-3 border-b border-gray-200">
                     <span className="text-sm text-gray-600">Product Name</span>
                     <span className="text-sm font-semibold text-gray-900">{selectedOrder.product_name}</span>
                   </div>
-                  <div className="flex justify-between items-center pb-3 border-b border-gray-200">
+                  <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-1 pb-3 border-b border-gray-200">
                     <span className="text-sm text-gray-600">Quantity</span>
                     <span className="text-sm font-semibold text-gray-900 tabular-nums">{selectedOrder.quantity}</span>
                   </div>
-                  <div className="flex justify-between items-center pb-3 border-b border-gray-200">
+                  <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-1 pb-3 border-b border-gray-200">
                     <span className="text-sm text-gray-600">Item Price</span>
                     <span className="text-sm font-semibold text-gray-900 tabular-nums">{formatCurrency(selectedOrder.item_price)}</span>
                   </div>
-                  <div className="flex justify-between items-center pt-2">
+                  <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-1 pt-2">
                     <span className="text-sm font-bold text-gray-700">Order Amount</span>
                     <span className="text-lg font-bold text-blue-600 tabular-nums">{formatCurrency(selectedOrder.order_amount)}</span>
                   </div>
@@ -603,7 +609,7 @@ export default function OrderLayoutPage() {
               {/* Affiliate Information */}
               <div>
                 <h3 className="text-xs font-bold text-gray-500 mb-3 uppercase tracking-wide">Affiliate Information</h3>
-                <div className="grid grid-cols-2 gap-4 p-4 rounded-xl border border-gray-200 bg-white">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 p-4 rounded-xl border border-gray-200 bg-white">
                   <div>
                     <p className="text-xs text-gray-500 mb-1">Affiliate Name</p>
                     <p className="text-sm font-semibold text-gray-900">{selectedOrder.affiliate_name}</p>
@@ -622,27 +628,27 @@ export default function OrderLayoutPage() {
               {/* Commission Information */}
               <div>
                 <h3 className="text-xs font-bold text-gray-500 mb-3 uppercase tracking-wide">Commission Details</h3>
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
                   <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-xl">
                     <p className="text-xs text-emerald-700 font-bold uppercase mb-2">Commission Rate</p>
-                    <p className="text-2xl font-bold text-emerald-600">{selectedOrder.commission_rate}%</p>
+                    <p className="text-xl md:text-2xl font-bold text-emerald-600">{selectedOrder.commission_rate}%</p>
                   </div>
                   <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-xl">
                     <p className="text-xs text-emerald-700 font-bold uppercase mb-2">Commission Amount</p>
-                    <p className="text-2xl font-bold text-emerald-600 tabular-nums">{formatCurrency(selectedOrder.commission_amount)}</p>
+                    <p className="text-xl md:text-2xl font-bold text-emerald-600 tabular-nums">{formatCurrency(selectedOrder.commission_amount)}</p>
                   </div>
                   <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-xl">
                     <p className="text-xs text-emerald-700 font-bold uppercase mb-2">Source</p>
-                    <p className="text-lg font-bold text-emerald-600 capitalize">{selectedOrder.commission_source}</p>
+                    <p className="text-base md:text-lg font-bold text-emerald-600 capitalize">{selectedOrder.commission_source}</p>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="p-6 border-t border-gray-100 bg-gray-50/50 flex justify-end">
+            <div className="p-4 md:p-6 border-t border-gray-100 bg-gray-50/50 flex justify-end">
               <button
                 onClick={() => setSelectedOrder(null)}
-                className="px-6 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 font-semibold transition-colors shadow-sm"
+                className="w-full md:w-auto px-6 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 font-semibold transition-colors shadow-sm"
               >
                 Close
               </button>
@@ -653,4 +659,5 @@ export default function OrderLayoutPage() {
     </div>
   )
 }
+
 
