@@ -3,6 +3,17 @@ import { Pool } from "pg";
 
 export const dynamic = "force-dynamic";
 
+const getSafeErrorMessage = (error: unknown) => {
+    if (error instanceof Error) {
+        return error.message;
+    }
+    try {
+        return typeof error === "string" ? error : JSON.stringify(error);
+    } catch {
+        return String(error);
+    }
+};
+
 export async function POST(req: NextRequest) {
     try {
         const payload = await req.json();
@@ -56,7 +67,8 @@ export async function POST(req: NextRequest) {
 
                     console.log(` - Wallet Credited for ${row.affiliate_code}: +₹${row.affiliate_commission}`);
                 } catch (walletError) {
-                    console.error(` - Failed to credit wallet for ${row.affiliate_code}:`, walletError);
+                    const safeWalletError = getSafeErrorMessage(walletError);
+                    console.error(` - Failed to credit wallet for ${row.affiliate_code}:`, safeWalletError, walletError);
                 }
             }
         }
@@ -70,13 +82,13 @@ export async function POST(req: NextRequest) {
         });
 
     } catch (error: unknown) {
-        const err = error as Error;
-        console.error("Commission status update failed:", err);
+        const safeMessage = getSafeErrorMessage(error);
+        console.error("Commission status update failed:", safeMessage, error);
         return NextResponse.json(
             {
                 success: false,
                 message: "Internal server error",
-                error: err.message
+                error: safeMessage
             },
             { status: 500 }
         );

@@ -43,7 +43,7 @@ export async function GET() {
         console.error("Failed to fetch payment history:", err);
         return NextResponse.json({
             success: false,
-            error: err.message
+            error: "Internal server error"
         }, { status: 500 });
     }
 }
@@ -159,7 +159,7 @@ export async function POST(req: NextRequest) {
         console.error("Failed to process payment:", err);
         return NextResponse.json({
             success: false,
-            error: err.message
+            error: "Internal server error"
         }, { status: 500 });
     }
 }

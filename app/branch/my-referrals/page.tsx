@@ -224,7 +224,73 @@ export default function MyDirectReferralsPage() {
                         </p>
                     </div>
                 ) : (
-                    <div className="overflow-x-auto">
+                    <>
+                    <div className="md:hidden overflow-x-auto -mx-2 px-2">
+                        <table className="min-w-[760px] w-full divide-y divide-gray-200">
+                            <thead className="bg-gray-50">
+                                <tr>
+                                    <th className="px-3 py-2.5 text-left text-[10px] font-medium text-gray-500 uppercase tracking-wide">
+                                        Customer
+                                    </th>
+                                    <th className="px-3 py-2.5 text-left text-[10px] font-medium text-gray-500 uppercase tracking-wide">
+                                        First Order
+                                    </th>
+                                    <th className="px-3 py-2.5 text-left text-[10px] font-medium text-gray-500 uppercase tracking-wide">
+                                        Orders
+                                    </th>
+                                    <th className="px-3 py-2.5 text-left text-[10px] font-medium text-gray-500 uppercase tracking-wide">
+                                        Sales
+                                    </th>
+                                    <th className="px-3 py-2.5 text-left text-[10px] font-medium text-gray-500 uppercase tracking-wide">
+                                        Commission
+                                    </th>
+                                    <th className="px-3 py-2.5 text-left text-[10px] font-medium text-gray-500 uppercase tracking-wide">
+                                        Actions
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                                {filteredCustomers.map((customer) => (
+                                    <tr key={customer.customer_id} className="hover:bg-gray-50">
+                                        <td className="px-3 py-3">
+                                            <div>
+                                                <div className="text-xs font-medium text-gray-900">
+                                                    {customer.customer_name}
+                                                </div>
+                                                <div className="text-xs text-gray-500 max-w-[180px] truncate" title={customer.customer_email}>
+                                                    {customer.customer_email}
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="px-3 py-3 whitespace-nowrap text-xs text-gray-500">
+                                            {customer.first_order_at ? formatDate(customer.first_order_at) : "N/A"}
+                                        </td>
+                                        <td className="px-3 py-3 whitespace-nowrap">
+                                            <span className="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-blue-100 text-blue-800">
+                                                {customer.total_orders} orders
+                                            </span>
+                                        </td>
+                                        <td className="px-3 py-3 whitespace-nowrap text-xs font-medium text-gray-900">
+                                            {"\u20B9"}{customer.total_order_value.toLocaleString("en-IN")}
+                                        </td>
+                                        <td className="px-3 py-3 whitespace-nowrap text-xs font-semibold text-green-600">
+                                            {"\u20B9"}{customer.total_commission.toLocaleString("en-IN")}
+                                        </td>
+                                        <td className="px-3 py-3 whitespace-nowrap text-xs">
+                                            <button
+                                                onClick={() => setSelectedCustomer(customer)}
+                                                className="text-indigo-600 hover:text-indigo-900 font-medium inline-flex items-center gap-1"
+                                            >
+                                                View Orders
+                                                <ArrowRight className="w-3.5 h-3.5" />
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div className="hidden md:block overflow-x-auto">
                         <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-gray-50">
                                 <tr>
@@ -289,35 +355,42 @@ export default function MyDirectReferralsPage() {
                             </tbody>
                         </table>
                     </div>
+                    </>
                 )}
             </div>
 
             {/* Customer Orders Modal */}
             {selectedCustomer && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-                    <div className="bg-white rounded-lg max-w-4xl w-full max-h-[80vh] overflow-hidden">
-                        <div className="p-6 border-b border-gray-200">
+                <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4 animate-in fade-in duration-200">
+                    <button
+                        type="button"
+                        aria-label="Close orders modal"
+                        onClick={() => setSelectedCustomer(null)}
+                        className="absolute inset-0 bg-black/30 md:bg-black/60 backdrop-blur-sm"
+                    />
+                    <div className="relative bg-white rounded-t-2xl md:rounded-lg max-w-4xl w-full max-h-[92vh] md:max-h-[80vh] overflow-hidden">
+                        <div className="p-4 md:p-6 border-b border-gray-200">
                             <div className="flex items-center justify-between">
                                 <div>
                                     <h3 className="text-lg font-bold text-gray-900">
                                         {selectedCustomer.customer_name}&apos;s Orders
                                     </h3>
-                                    <p className="text-sm text-gray-500">{selectedCustomer.customer_email}</p>
+                                    <p className="text-xs md:text-sm text-gray-500 break-all">{selectedCustomer.customer_email}</p>
                                 </div>
                                 <button
                                     onClick={() => setSelectedCustomer(null)}
-                                    className="text-gray-400 hover:text-gray-600"
+                                    className="text-gray-400 hover:text-gray-600 p-1"
                                 >
                                     ✕
                                 </button>
                             </div>
                         </div>
-                        <div className="p-6 overflow-y-auto max-h-[60vh]">
+                        <div className="p-4 md:p-6 overflow-y-auto max-h-[72vh] md:max-h-[60vh]">
                             <div className="space-y-4">
                                 {selectedCustomer.orders.map((order) => (
                                     <div
                                         key={order.id}
-                                        className="bg-gray-50 rounded-lg p-4 border border-gray-200"
+                                        className="bg-gray-50 rounded-lg p-3 md:p-4 border border-gray-200"
                                     >
                                         <div className="flex items-start justify-between mb-3">
                                             <div>
@@ -332,7 +405,7 @@ export default function MyDirectReferralsPage() {
                                                 </p>
                                             </div>
                                             <span
-                                                className={`px-2 py-1 text-xs font-semibold rounded-full ${order.status === "CREDITED"
+                                                className={`px-2 py-1 text-[10px] md:text-xs font-semibold rounded-full ${order.status === "CREDITED"
                                                     ? "bg-green-100 text-green-800"
                                                     : "bg-yellow-100 text-yellow-800"
                                                     }`}
@@ -340,22 +413,22 @@ export default function MyDirectReferralsPage() {
                                                 {order.status}
                                             </span>
                                         </div>
-                                        <div className="grid grid-cols-3 gap-4">
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
                                             <div>
                                                 <p className="text-xs text-gray-500">Order Amount</p>
-                                                <p className="font-semibold text-gray-900">
+                                                <p className="text-sm md:text-base font-semibold text-gray-900">
                                                     ₹{order.order_amount.toLocaleString("en-IN")}
                                                 </p>
                                             </div>
                                             <div>
                                                 <p className="text-xs text-gray-500">Commission (85%)</p>
-                                                <p className="font-semibold text-green-600">
+                                                <p className="text-sm md:text-base font-semibold text-green-600">
                                                     ₹{order.commission_earned.toLocaleString("en-IN")}
                                                 </p>
                                             </div>
                                             <div>
                                                 <p className="text-xs text-gray-500">Order Date</p>
-                                                <p className="font-semibold text-gray-900">
+                                                <p className="text-sm md:text-base font-semibold text-gray-900">
                                                     {formatDate(order.created_at)}
                                                 </p>
                                             </div>

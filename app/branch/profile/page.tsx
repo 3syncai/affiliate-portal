@@ -58,32 +58,32 @@ export default function BranchProfilePage() {
     }
 
     return (
-        <div className="max-w-4xl mx-auto space-y-6">
+        <div className="max-w-4xl mx-auto space-y-4 lg:space-y-6 px-1 sm:px-0">
             {/* Header */}
             <div>
-                <h1 className="text-3xl font-bold text-gray-900">Area Profile</h1>
-                <p className="text-gray-600 mt-1">View your account information and security details</p>
+                <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">Area Profile</h1>
+                <p className="text-sm lg:text-base text-gray-600 mt-1">View your account information and security details</p>
             </div>
 
             {/* Profile Card with Photo */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <div className="flex items-center gap-6">
+            <div className="bg-white rounded-xl lg:rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+                <div className="flex flex-col items-center text-center sm:flex-row sm:items-center sm:text-left gap-4 sm:gap-6">
                     <div className="relative">
-                        <div className="w-24 h-24 rounded-full flex items-center justify-center text-white text-3xl font-bold" style={{ background: `linear-gradient(to bottom right, ${theme.primary}, ${theme.sidebar})` }}>
+                        <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full flex items-center justify-center text-white text-2xl sm:text-3xl font-bold" style={{ background: `linear-gradient(to bottom right, ${theme.primary}, ${theme.sidebar})` }}>
                             {(user?.first_name || 'B').charAt(0).toUpperCase()}
                         </div>
                     </div>
 
                     {/* User Info */}
-                    <div className="flex-1">
-                        <h2 className="text-2xl font-bold text-gray-900">{user?.first_name} {user?.last_name}</h2>
-                        <p className="text-gray-600">{user?.email}</p>
-                        <div className="flex items-center gap-4 mt-3">
+                    <div className="flex-1 w-full">
+                        <h2 className="text-xl sm:text-2xl font-bold text-gray-900">{user?.first_name} {user?.last_name}</h2>
+                        <p className="text-sm sm:text-base text-gray-600 break-all">{user?.email}</p>
+                        <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 sm:gap-4 mt-3">
                             <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
                                 <Building className="w-3 h-3 mr-1" />
                                 {user?.branch || 'Branch Admin'}
                             </span>
-                            <span className="text-sm text-gray-500 flex items-center">
+                            <span className="text-xs sm:text-sm text-gray-500 flex items-center">
                                 <Calendar className="w-4 h-4 mr-1" />
                                 Active User
                             </span>
@@ -95,52 +95,53 @@ export default function BranchProfilePage() {
             {/* Tabs */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200">
                 <div className="border-b border-gray-200">
-                    <nav className="flex -mb-px">
+                    <nav className="flex -mb-px overflow-x-auto">
                         <button
                             onClick={() => setActiveTab('info')}
-                            className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors ${activeTab === 'info'
+                            className={`min-w-fit px-4 sm:px-6 py-3 sm:py-4 text-sm font-medium border-b-2 transition-colors ${activeTab === 'info'
                                 ? 'border-orange-600 text-orange-600'
                                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                                 }`}
                         >
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 whitespace-nowrap">
                                 <User className="w-4 h-4" />
-                                Personal Information
+                                <span className="sm:hidden">Info</span>
+                                <span className="hidden sm:inline">Personal Information</span>
                             </div>
                         </button>
                         <button
                             onClick={() => setActiveTab('security')}
-                            className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors ${activeTab === 'security'
+                            className={`min-w-fit px-4 sm:px-6 py-3 sm:py-4 text-sm font-medium border-b-2 transition-colors ${activeTab === 'security'
                                 ? 'border-orange-600 text-orange-600'
                                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                                 }`}
                         >
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 whitespace-nowrap">
                                 <Lock className="w-4 h-4" />
-                                Security
+                                <span>Security</span>
                             </div>
                         </button>
                         <button
                             onClick={() => setActiveTab('theme')}
-                            className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors ${activeTab === 'theme'
+                            className={`min-w-fit px-4 sm:px-6 py-3 sm:py-4 text-sm font-medium border-b-2 transition-colors ${activeTab === 'theme'
                                 ? 'border-orange-600 text-orange-600'
                                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                                 }`}
                             style={activeTab === 'theme' ? { borderColor: theme.primary, color: theme.primary } : {}}
                         >
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 whitespace-nowrap">
                                 <Palette className="w-4 h-4" />
-                                Theme
+                                <span>Theme</span>
                             </div>
                         </button>
                     </nav>
                 </div>
 
-                <div className="p-6">
+                <div className="p-4 sm:p-6">
                     {/* Personal Information Tab */}
                     {activeTab === 'info' && (
                         <div className="space-y-6">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">
                                         Full Name

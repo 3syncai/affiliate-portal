@@ -86,7 +86,57 @@ export default function BranchAgentsPage() {
                 </div>
             ) : (
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-                    <div className="overflow-x-auto">
+                    <div className="md:hidden overflow-x-auto -mx-2 px-2">
+                        <table className="min-w-[840px] w-full divide-y divide-gray-200">
+                            <thead className="bg-gray-50">
+                                <tr>
+                                    <th className="px-3 py-2.5 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wide">Name</th>
+                                    <th className="px-3 py-2.5 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wide">Email</th>
+                                    <th className="px-3 py-2.5 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wide">Phone</th>
+                                    <th className="px-3 py-2.5 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wide">Referral Code</th>
+                                    <th className="px-3 py-2.5 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wide">Status</th>
+                                    <th className="px-3 py-2.5 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wide">Joined</th>
+                                    <th className="px-3 py-2.5 text-right text-[10px] font-semibold text-gray-500 uppercase tracking-wide">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                                {filteredAgents.map((agent) => (
+                                    <tr key={agent.id} className="hover:bg-gray-50">
+                                        <td className="px-3 py-3 whitespace-nowrap text-xs font-semibold text-gray-900">
+                                            {agent.first_name} {agent.last_name}
+                                        </td>
+                                        <td className="px-3 py-3 whitespace-nowrap text-xs text-gray-600 max-w-[180px] truncate" title={agent.email}>
+                                            {agent.email}
+                                        </td>
+                                        <td className="px-3 py-3 whitespace-nowrap text-xs text-gray-600">
+                                            {agent.phone || "-"}
+                                        </td>
+                                        <td className="px-3 py-3 whitespace-nowrap font-mono text-xs text-indigo-600">
+                                            {agent.refer_code}
+                                        </td>
+                                        <td className="px-3 py-3 whitespace-nowrap">
+                                            <span className={`px-2 py-0.5 text-[10px] rounded-full font-semibold ${agent.is_approved ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"}`}>
+                                                {agent.is_approved ? "Approved" : "Pending"}
+                                            </span>
+                                        </td>
+                                        <td className="px-3 py-3 whitespace-nowrap text-xs text-gray-500">
+                                            {formatDate(agent.created_at)}
+                                        </td>
+                                        <td className="px-3 py-3 whitespace-nowrap text-right">
+                                            <button
+                                                onClick={() => setSelectedAgent(agent)}
+                                                className="inline-flex items-center gap-1 rounded-md border border-orange-200 bg-orange-50 px-2 py-1 text-[10px] font-semibold text-orange-700"
+                                            >
+                                                <Eye className="w-3 h-3" /> View
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div className="hidden md:block overflow-x-auto">
                         <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-gray-50">
                                 <tr>
@@ -126,8 +176,14 @@ export default function BranchAgentsPage() {
             )}
 
             {selectedAgent && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-lg max-w-lg w-full p-6">
+                <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-3 md:p-4">
+                    <button
+                        type="button"
+                        aria-label="Close modal overlay"
+                        onClick={() => setSelectedAgent(null)}
+                        className="absolute inset-0 bg-black/25 md:bg-black/50 backdrop-blur-[1px]"
+                    />
+                    <div className="relative bg-white rounded-t-2xl md:rounded-lg max-w-lg w-full p-5 md:p-6">
                         <h2 className="text-xl font-bold text-gray-900 mb-4">Partner Details</h2>
                         <div className="space-y-3 text-sm">
                             <p><strong>Name:</strong> {selectedAgent.first_name} {selectedAgent.last_name}</p>

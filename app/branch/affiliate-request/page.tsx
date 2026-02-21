@@ -161,7 +161,69 @@ export default function BranchAffiliateRequestPage() {
                 </div>
             ) : (
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-                    <div className="overflow-x-auto">
+                    <div className="md:hidden overflow-x-auto -mx-2 px-2">
+                        <table className="min-w-[760px] w-full divide-y divide-gray-200">
+                            <thead className="bg-gray-50">
+                                <tr>
+                                    <th className="px-3 py-2.5 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wide">Name</th>
+                                    <th className="px-3 py-2.5 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wide">Email</th>
+                                    <th className="px-3 py-2.5 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wide">Phone</th>
+                                    <th className="px-3 py-2.5 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wide">Ref Code</th>
+                                    <th className="px-3 py-2.5 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wide">Date</th>
+                                    <th className="px-3 py-2.5 text-right text-[10px] font-semibold text-gray-500 uppercase tracking-wide">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                                {filteredUsers.map((user) => (
+                                    <tr key={user.id} className="hover:bg-gray-50">
+                                        <td className="px-3 py-3 whitespace-nowrap text-xs font-semibold text-gray-900">
+                                            {user.first_name} {user.last_name}
+                                        </td>
+                                        <td className="px-3 py-3 whitespace-nowrap text-xs text-gray-600 max-w-[180px] truncate" title={user.email}>
+                                            {user.email}
+                                        </td>
+                                        <td className="px-3 py-3 whitespace-nowrap text-xs text-gray-600">
+                                            {user.phone || "-"}
+                                        </td>
+                                        <td className="px-3 py-3 whitespace-nowrap font-mono text-xs text-indigo-600">
+                                            {user.refer_code}
+                                        </td>
+                                        <td className="px-3 py-3 whitespace-nowrap text-xs text-gray-500">
+                                            {formatDate(user.created_at)}
+                                        </td>
+                                        <td className="px-3 py-3 whitespace-nowrap text-right">
+                                            <div className="flex items-center justify-end gap-1.5">
+                                                <button
+                                                    onClick={() => setSelectedUser(user)}
+                                                    className="inline-flex items-center gap-1 rounded-md border border-blue-200 bg-blue-50 px-2 py-1 text-[10px] font-semibold text-blue-700"
+                                                >
+                                                    <Eye className="w-3 h-3" /> View
+                                                </button>
+                                                {activeTab === "pending" && (
+                                                    <>
+                                                        <button
+                                                            onClick={() => handleApprove(user.id)}
+                                                            className="inline-flex items-center gap-1 rounded-md border border-green-200 bg-green-50 px-2 py-1 text-[10px] font-semibold text-green-700"
+                                                        >
+                                                            <UserCheck className="w-3 h-3" /> Approve
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleReject(user.id)}
+                                                            className="inline-flex items-center gap-1 rounded-md border border-red-200 bg-red-50 px-2 py-1 text-[10px] font-semibold text-red-700"
+                                                        >
+                                                            <UserX className="w-3 h-3" /> Reject
+                                                        </button>
+                                                    </>
+                                                )}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div className="hidden md:block overflow-x-auto">
                         <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-gray-50">
                                 <tr>
