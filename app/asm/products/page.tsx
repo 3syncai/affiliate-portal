@@ -216,6 +216,10 @@ function ProductCard({ product, user, commissionRate }: { product: Product; user
         : product.commissionAmount * 0.95 // Fallback to 95%
 
     const handleShare = () => {
+        if (!STORE_URL) {
+            console.error("STORE_URL is not configured")
+            return
+        }
         const referralCode = user?.refer_code || ''
         const slug = product.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
         const shareLink = `${STORE_URL}/productDetail/${slug}?id=${product.id}&sourceTag=${encodeURIComponent(product.category)}&ref=${referralCode}`

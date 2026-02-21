@@ -107,6 +107,10 @@ export default function DashboardPage() {
 
       // Generate QR code when user data is loaded
       if (parsedUser.refer_code) {
+        if (!STORE_URL) {
+          console.error("STORE_URL is not configured")
+          return
+        }
         const signupUrl = `${STORE_URL}/signup?ref=${parsedUser.refer_code}`
         QRCode.toDataURL(signupUrl, {
           width: 300,

@@ -48,7 +48,13 @@ export default function BranchProductsPage() {
         const userData = localStorage.getItem("affiliate_user")
         const token = localStorage.getItem("affiliate_token")
         if (userData) {
-            setUser(JSON.parse(userData))
+            try {
+                const parsed = JSON.parse(userData) as User
+                setUser(parsed)
+            } catch (parseError) {
+                console.error("Failed to parse affiliate_user from localStorage:", parseError)
+                setUser(null)
+            }
         }
         if (token) {
             fetchProducts(token)
@@ -120,7 +126,7 @@ export default function BranchProductsPage() {
     }
 
     return (
-        <div className="space-y-6 min-h-screen bg-gradient-to-br from-gray-50 via-white to-emerald-50 md:bg-none">
+        <div className="space-y-6 min-h-screen bg-gradient-to-br  to-emerald-50 md:bg-none">
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 md:gap-6">
                 <div>
@@ -255,6 +261,10 @@ function ProductDetailModal({
 
     const handleShare = async (e: React.MouseEvent) => {
         e.stopPropagation()
+        if (!STORE_URL) {
+            console.error("STORE_URL is not configured")
+            return
+        }
         const referralCode = user?.refer_code || ""
         const slug = product.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")
         const shareLink = `${STORE_URL}/productDetail/${slug}?id=${product.id}&sourceTag=${encodeURIComponent(product.category)}&ref=${referralCode}`
@@ -351,7 +361,9 @@ function ProductDetailModal({
                             <div className="space-y-0.5 text-right">
                                 <span className="text-[8px] text-gray-400 uppercase font-bold tracking-widest opacity-60">Commission</span>
                                 <div className="flex items-center justify-end gap-1">
-                                    <span className="text-xl font-bold text-emerald-400">{product.commissionRate}%</span>
+                                    <span className="text-xl font-bold text-emerald-400">
+                                        {product.commissionRate !== null ? `${product.commissionRate}%` : "N/A"}
+                                    </span>
                                 </div>
                             </div>
                         </div>
@@ -432,6 +444,10 @@ function ProductCard({
 
     const handleShare = (e: React.MouseEvent<HTMLButtonElement>) => {
         e.stopPropagation()
+        if (!STORE_URL) {
+            console.error("STORE_URL is not configured")
+            return
+        }
         const referralCode = user?.refer_code || ''
         const slug = product.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
         const shareLink = `${STORE_URL}/productDetail/${slug}?id=${product.id}&sourceTag=${encodeURIComponent(product.category)}&ref=${referralCode}`
@@ -587,5 +603,6 @@ function ProductCard({
         </div>
     )
 }
+
 
 

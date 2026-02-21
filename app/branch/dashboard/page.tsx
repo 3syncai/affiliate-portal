@@ -35,6 +35,55 @@ interface User {
     state?: string
 }
 
+type ReferralCardProps = {
+    referCode: string
+    copied: boolean
+    onCopy: () => void
+    className?: string
+}
+
+function ReferralCard({ referCode, copied, onCopy, className = "" }: ReferralCardProps) {
+    return (
+        <div className={`bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden ${className}`}>
+            <div className="p-6">
+                <div className="flex items-center gap-3 mb-4">
+                    <div className="p-2 bg-blue-50 rounded-lg">
+                        <Share2 className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div>
+                        <h3 className="font-bold text-gray-900">Your Referral Code</h3>
+                        <p className="text-xs text-gray-500">Share to earn direct commissions</p>
+                    </div>
+                </div>
+
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-1 flex items-center gap-2 mb-4">
+                    <div className="flex-1 px-3 py-2 font-mono text-lg font-bold text-gray-800 tracking-wider text-center">
+                        {referCode}
+                    </div>
+                    <button
+                        onClick={onCopy}
+                        className="p-2 bg-white border border-gray-200 rounded-md hover:bg-gray-50 transition-all text-gray-600 hover:text-gray-900 shadow-sm"
+                        title="Copy Code"
+                    >
+                        {copied ? <Check className="w-5 h-5 text-green-600" /> : <Copy className="w-5 h-5" />}
+                    </button>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 text-center">
+                    <div className="p-3 rounded-lg bg-emerald-50 border border-emerald-100">
+                        <p className="text-emerald-700 text-lg font-bold">85%</p>
+                        <p className="text-emerald-600/80 text-[10px] uppercase font-semibold tracking-wide">Direct Sales</p>
+                    </div>
+                    <div className="p-3 rounded-lg bg-blue-50 border border-blue-100">
+                        <p className="text-blue-700 text-lg font-bold">15%</p>
+                        <p className="text-blue-600/80 text-[10px] uppercase font-semibold tracking-wide">Override</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    )
+}
+
 const fetcher = (url: string) => axios.get(url).then(res => res.data)
 
 export default function BranchDashboard() {
@@ -225,43 +274,12 @@ export default function BranchDashboard() {
 
             {/* Mobile: Referral card below stats and above recent activity */}
             {user?.refer_code && (
-                <div className="sm:hidden bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-                    <div className="p-6">
-                        <div className="flex items-center gap-3 mb-4">
-                            <div className="p-2 bg-blue-50 rounded-lg">
-                                <Share2 className="w-5 h-5 text-blue-600" />
-                            </div>
-                            <div>
-                                <h3 className="font-bold text-gray-900">Your Referral Code</h3>
-                                <p className="text-xs text-gray-500">Share to earn direct commissions</p>
-                            </div>
-                        </div>
-
-                        <div className="bg-gray-50 border border-gray-200 rounded-lg p-1 flex items-center gap-2 mb-4">
-                            <div className="flex-1 px-3 py-2 font-mono text-lg font-bold text-gray-800 tracking-wider text-center">
-                                {user.refer_code}
-                            </div>
-                            <button
-                                onClick={copyReferralCode}
-                                className="p-2 bg-white border border-gray-200 rounded-md hover:bg-gray-50 transition-all text-gray-600 hover:text-gray-900 shadow-sm"
-                                title="Copy Code"
-                            >
-                                {copied ? <Check className="w-5 h-5 text-green-600" /> : <Copy className="w-5 h-5" />}
-                            </button>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-3 text-center">
-                            <div className="p-3 rounded-lg bg-emerald-50 border border-emerald-100">
-                                <p className="text-emerald-700 text-lg font-bold">85%</p>
-                                <p className="text-emerald-600/80 text-[10px] uppercase font-semibold tracking-wide">Direct Sales</p>
-                            </div>
-                            <div className="p-3 rounded-lg bg-blue-50 border border-blue-100">
-                                <p className="text-blue-700 text-lg font-bold">15%</p>
-                                <p className="text-blue-600/80 text-[10px] uppercase font-semibold tracking-wide">Override</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <ReferralCard
+                    referCode={user.refer_code}
+                    copied={copied}
+                    onCopy={copyReferralCode}
+                    className="lg:hidden"
+                />
             )}
 
             {/* Main Content Grid */}
@@ -361,43 +379,12 @@ export default function BranchDashboard() {
 
                     {/* Referral Card - Professional & Clean */}
                     {user?.refer_code && (
-                        <div className="hidden lg:block bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-                            <div className="p-6">
-                                <div className="flex items-center gap-3 mb-4">
-                                    <div className="p-2 bg-blue-50 rounded-lg">
-                                        <Share2 className="w-5 h-5 text-blue-600" />
-                                    </div>
-                                    <div>
-                                        <h3 className="font-bold text-gray-900">Your Referral Code</h3>
-                                        <p className="text-xs text-gray-500">Share to earn direct commissions</p>
-                                    </div>
-                                </div>
-
-                                <div className="bg-gray-50 border border-gray-200 rounded-lg p-1 flex items-center gap-2 mb-4">
-                                    <div className="flex-1 px-3 py-2 font-mono text-lg font-bold text-gray-800 tracking-wider text-center">
-                                        {user.refer_code}
-                                    </div>
-                                    <button
-                                        onClick={copyReferralCode}
-                                        className="p-2 bg-white border border-gray-200 rounded-md hover:bg-gray-50 transition-all text-gray-600 hover:text-gray-900 shadow-sm"
-                                        title="Copy Code"
-                                    >
-                                        {copied ? <Check className="w-5 h-5 text-green-600" /> : <Copy className="w-5 h-5" />}
-                                    </button>
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-3 text-center">
-                                    <div className="p-3 rounded-lg bg-emerald-50 border border-emerald-100">
-                                        <p className="text-emerald-700 text-lg font-bold">85%</p>
-                                        <p className="text-emerald-600/80 text-[10px] uppercase font-semibold tracking-wide">Direct Sales</p>
-                                    </div>
-                                    <div className="p-3 rounded-lg bg-blue-50 border border-blue-100">
-                                        <p className="text-blue-700 text-lg font-bold">15%</p>
-                                        <p className="text-blue-600/80 text-[10px] uppercase font-semibold tracking-wide">Override</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                        <ReferralCard
+                            referCode={user.refer_code}
+                            copied={copied}
+                            onCopy={copyReferralCode}
+                            className="hidden lg:block"
+                        />
                     )}
 
                     {/* Quick Attributes */}
