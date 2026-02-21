@@ -165,8 +165,28 @@ function LoginContent() {
       </div>
 
       {/* Right Side - Login Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center px-6 sm:px-12 bg-white">
-        <div className="w-full max-w-md">
+      <div className="w-full lg:w-1/2 flex items-center justify-center px-6 sm:px-12 bg-white relative overflow-hidden lg:overflow-visible">
+        {/* Mobile Gradient Background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-700 lg:hidden"></div>
+
+        {/* Mobile Decorative Background */}
+        <div className="absolute inset-0 opacity-10 lg:hidden">
+          <div className="absolute top-20 left-20 w-96 h-96 bg-white rounded-full blur-3xl"></div>
+          <div className="absolute bottom-20 right-20 w-80 h-80 bg-white rounded-full blur-3xl"></div>
+        </div>
+
+        {/* Mobile Coin Decoration */}
+        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-[600px] h-[600px] opacity-20 lg:hidden">
+          <Image
+            src="/uploads/coin/coin.png"
+            alt="Coin"
+            fill
+            className="object-contain"
+            unoptimized
+          />
+        </div>
+
+        <div className="relative z-10 w-full max-w-md">
           {/* Mobile Logo */}
           <div className="lg:hidden mb-8 text-center">
             <Image
@@ -183,7 +203,7 @@ function LoginContent() {
             <h2 className="text-3xl font-bold text-gray-900 mb-2">
               Sign in to your account
             </h2>
-            <p className="text-gray-600">
+            <p className="text-gray-700">
               Enter your credentials to access your affiliate dashboard
             </p>
           </div>
@@ -284,11 +304,11 @@ function LoginContent() {
 
           {/* Sign Up Link */}
           <div className="mt-8 text-center">
-            <p className="text-gray-600">
+            <p className="text-gray-800">
               Don&apos;t have an account?{" "}
               <a
                 href="/register"
-                className="font-semibold text-emerald-600 hover:text-emerald-700 transition-colors"
+                className="font-semibold text-emerald-800 hover:text-emerald-900 transition-colors"
               >
                 Sign up for free
               </a>
@@ -296,7 +316,7 @@ function LoginContent() {
           </div>
 
           {/* Footer */}
-          <div className="mt-12 pt-6 border-t border-gray-200 text-center text-sm text-gray-500">
+          <div className="mt-12 pt-6 border-t border-gray-200 text-center text-sm text-gray-800">
             <p>© 2025 Oweg. All rights reserved.</p>
           </div>
         </div>

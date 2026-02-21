@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react"
 import axios from "axios"
 import useSWR from 'swr'
-import { Clock, Check, X, Copy, CreditCard, Calendar, FileText, AlertCircle, Wifi, WifiOff } from "lucide-react"
+import { Clock, Check, X, Copy, CreditCard, Calendar, FileText, AlertCircle, Wifi, WifiOff, ChevronDown } from "lucide-react"
 import { useTheme } from "@/contexts/ThemeContext"
 import { useSSE } from "@/hooks/useSSE"
 import { Toast } from "@/components/Toast"
@@ -36,6 +36,7 @@ const fetcher = (url: string) => axios.get(url).then(res => res.data)
 export default function PendingPayoutPage() {
   const { theme } = useTheme()
   const [filter, setFilter] = useState<string>("ALL")
+  const [showMobileFilterMenu, setShowMobileFilterMenu] = useState(false)
   const [selectedWithdrawal, setSelectedWithdrawal] = useState<Withdrawal | null>(null)
   const [showPaidModal, setShowPaidModal] = useState(false)
   const [transactionForm, setTransactionForm] = useState({
@@ -183,6 +184,8 @@ export default function PendingPayoutPage() {
     return styles[status as keyof typeof styles] || 'bg-gray-50 text-gray-700 border-gray-200 ring-gray-100'
   }
 
+  const filterLabel = filter === "ALL" ? "All Requests" : filter.charAt(0) + filter.slice(1).toLowerCase()
+
   return (
     <div className="space-y-8">
       {/* Payment Received Toast */}
@@ -201,14 +204,52 @@ export default function PendingPayoutPage() {
           <h1 className="text-2xl font-bold tracking-tight text-gray-900">Withdrawal Requests</h1>
           <p className="text-sm text-gray-500 mt-1">Manage and process partner withdrawal requests</p>
         </div>
-        <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium ${isConnected ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-          {isConnected ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
-          {isConnected ? 'Live Updates On' : 'Connecting...'}
+        <div className="flex items-center gap-2">
+          <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium ${isConnected ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+            {isConnected ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
+            {isConnected ? 'Live Updates On' : 'Connecting...'}
+          </div>
+          <div className="relative md:hidden ml-2">
+            <button
+              type="button"
+              onClick={() => setShowMobileFilterMenu((prev) => !prev)}
+              className="inline-flex items-center gap-2 px-4 py-2 border border-gray-200 bg-white text-sm font-semibold text-gray-700 rounded-none"
+              aria-label="Filter requests"
+            >
+              <span>{filterLabel}</span>
+              <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${showMobileFilterMenu ? "rotate-180" : "rotate-0"}`} />
+            </button>
+
+            {showMobileFilterMenu && (
+              <>
+                <button
+                  type="button"
+                  aria-label="Close filter menu"
+                  onClick={() => setShowMobileFilterMenu(false)}
+                  className="fixed inset-0 z-10 bg-transparent"
+                />
+                <div className="absolute right-0 top-full mt-2 w-44 border border-gray-200 bg-white shadow-lg overflow-hidden z-20 rounded-none">
+                  {["ALL", "PENDING", "APPROVED", "PAID", "REJECTED"].map((tab) => (
+                    <button
+                      key={tab}
+                      type="button"
+                      onClick={() => {
+                        setFilter(tab)
+                        setShowMobileFilterMenu(false)
+                      }}
+                      className={`w-full px-3 py-2.5 text-left text-xs font-semibold transition-colors ${filter === tab ? "bg-gray-100 text-gray-900" : "text-gray-700 hover:bg-gray-50"}`}
+                    >
+                      {tab === "ALL" ? "All Requests" : tab.charAt(0) + tab.slice(1).toLowerCase()}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Filter Tabs - Modern Pills */}
-      <div className="flex gap-2 p-1 bg-gray-100/80 rounded-xl w-fit">
+      <div className="hidden md:flex gap-2 p-1 bg-gray-100/80 rounded-xl w-fit">
         {['ALL', 'PENDING', 'APPROVED', 'PAID', 'REJECTED'].map((tab) => {
           const isActive = filter === tab
           return (

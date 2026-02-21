@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { TouchEvent, useEffect, useRef, useState } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import Link from "next/link"
 import NotificationDropdown from "@/components/NotificationDropdown"
@@ -22,8 +22,8 @@ import {
     User,
     Palette,
     TrendingUp,
-    Bell,
-    Link2
+    Link2,
+    ChevronDown
 } from "lucide-react"
 
 const navigationItems = [
@@ -60,7 +60,10 @@ export default function BranchLayout({
     const [loading, setLoading] = useState(true)
     const [sidebarOpen, setSidebarOpen] = useState(true)
     const [showUserMenu, setShowUserMenu] = useState(false)
+    const [showMobileProfileMenu, setShowMobileProfileMenu] = useState(false)
     const [unreadCount, setUnreadCount] = useState(0)
+    const touchStartXRef = useRef<number | null>(null)
+    const touchStartYRef = useRef<number | null>(null)
 
     useEffect(() => {
         const token = localStorage.getItem("affiliate_token")
@@ -100,6 +103,43 @@ export default function BranchLayout({
         }
     }, [router])
 
+    useEffect(() => {
+        if (typeof window !== "undefined" && window.innerWidth < 1024) {
+            setSidebarOpen(false)
+        }
+    }, [])
+
+    const handleTouchStart = (e: TouchEvent<HTMLElement>) => {
+        if (typeof window !== "undefined" && window.innerWidth >= 1024) return
+        const touch = e.touches[0]
+        touchStartXRef.current = touch.clientX
+        touchStartYRef.current = touch.clientY
+    }
+
+    const handleTouchEnd = (e: TouchEvent<HTMLElement>) => {
+        if (typeof window !== "undefined" && window.innerWidth >= 1024) return
+        if (touchStartXRef.current === null || touchStartYRef.current === null) return
+
+        const touch = e.changedTouches[0]
+        const deltaX = touch.clientX - touchStartXRef.current
+        const deltaY = Math.abs(touch.clientY - touchStartYRef.current)
+
+        const horizontalSwipeThreshold = 70
+        const verticalTolerance = 60
+        const edgeActivationZone = 28
+
+        if (deltaY < verticalTolerance) {
+            if (!sidebarOpen && touchStartXRef.current <= edgeActivationZone && deltaX > horizontalSwipeThreshold) {
+                setSidebarOpen(true)
+            } else if (sidebarOpen && deltaX < -horizontalSwipeThreshold) {
+                setSidebarOpen(false)
+            }
+        }
+
+        touchStartXRef.current = null
+        touchStartYRef.current = null
+    }
+
     const handleLogout = () => {
         localStorage.removeItem("affiliate_token")
         localStorage.removeItem("affiliate_user")
@@ -116,13 +156,20 @@ export default function BranchLayout({
     }
 
     return (
-        <div className="min-h-screen flex overflow-x-hidden" style={{ backgroundColor: theme.background }}>
+        <div
+            className="h-screen flex overflow-x-hidden overflow-y-hidden"
+            style={{ backgroundColor: theme.background }}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+        >
             <aside
-                className={`${sidebarOpen ? "w-72" : "w-0"} transition-all duration-300 overflow-hidden flex flex-col fixed h-screen z-30 shadow-xl`}
+                className={`fixed top-0 left-0 h-screen z-40 shadow-xl overflow-hidden flex flex-col w-72 transform transition-transform duration-300 lg:transition-all ${sidebarOpen ? "translate-x-0 lg:w-72" : "-translate-x-full lg:w-0"} lg:translate-x-0`}
                 style={{
                     background: theme.sidebar,
                     backgroundImage: `linear-gradient(to bottom, ${theme.sidebar}, ${theme.sidebar}dd)`
                 }}
+                onTouchStart={handleTouchStart}
+                onTouchEnd={handleTouchEnd}
             >
                 <div className="flex items-center justify-between p-6" style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
                     <div className="flex items-center gap-3">
@@ -132,7 +179,7 @@ export default function BranchLayout({
                         <div>
                             <h1 className="text-lg font-bold text-white tracking-wide">Area Sales Manager</h1>
                             <p className="text-[10px] text-indigo-300 font-medium tracking-wider uppercase">Workspace</p>
-                        </div>ˍ
+                        </div>
                     </div>
                     <button
                         onClick={() => setSidebarOpen(false)}
@@ -225,33 +272,98 @@ export default function BranchLayout({
                 </div>
             </aside>
 
-            <div className={`flex-1 flex flex-col ${sidebarOpen ? "ml-72" : "ml-0"} transition-all duration-300 overflow-x-hidden min-w-0`}>
-                <header className="bg-white/80 backdrop-blur-xl border-b border-indigo-50 px-8 py-5 sticky top-0 z-20 flex items-center justify-between">
+            {sidebarOpen && (
+                <button
+                    aria-label="Close sidebar"
+                    onClick={() => setSidebarOpen(false)}
+                    className="fixed inset-0 bg-black/30 z-30 lg:hidden"
+                />
+            )}
+
+            <div className={`flex-1 flex flex-col ml-0 ${sidebarOpen ? "lg:ml-72" : "lg:ml-0"} transition-all duration-300 overflow-x-hidden min-w-0 min-h-0`}>
+                <header className="bg-white/80 backdrop-blur-xl border-b border-indigo-50 px-4 py-3 sm:px-6 lg:px-8 lg:py-5 sticky top-0 z-20 flex items-center justify-between">
                     <div className="flex items-center gap-4">
                         <button
                             onClick={() => setSidebarOpen(!sidebarOpen)}
-                            className="text-gray-400 hover:text-indigo-600 transition-colors lg:hidden"
+                            className="p-1 text-gray-400 hover:text-indigo-600 transition-colors lg:hidden"
                         >
                             <Menu className="w-6 h-6" />
                         </button>
                     </div>
 
-                    <div className="flex items-center space-x-6">
+                    <div className="flex items-center space-x-2 sm:space-x-6">
                         {/* Notification Bell */}
                         {user?.id && (
                             <NotificationDropdown userId={user.id} userRole="branch" />
                         )}
 
-                        <div className="h-8 w-[1px] bg-gray-200 mx-2"></div>
+                        <div className="relative lg:hidden">
+                            <button
+                                onClick={() => setShowMobileProfileMenu((prev) => !prev)}
+                                className="flex items-center gap-1 rounded-full border border-gray-200 bg-white px-1.5 py-1 shadow-sm"
+                            >
+                                <span className="w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 text-xs font-semibold flex items-center justify-center">
+                                    {(user?.first_name || "B").charAt(0).toUpperCase()}
+                                </span>
+                                <ChevronDown
+                                    className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${showMobileProfileMenu ? "rotate-180" : "rotate-0"}`}
+                                />
+                            </button>
 
-                        <span className="px-4 py-1.5 rounded-full text-sm font-semibold flex items-center gap-2 bg-indigo-50 text-indigo-700 border border-indigo-100 shadow-sm">
+                            {showMobileProfileMenu && (
+                                <>
+                                    <button
+                                        aria-label="Close profile menu"
+                                        onClick={() => setShowMobileProfileMenu(false)}
+                                        className="fixed inset-0 z-30 bg-transparent"
+                                    />
+                                    <div className="absolute right-0 mt-2 w-60 rounded-xl border border-gray-200 bg-white shadow-xl z-40 overflow-hidden">
+                                        <div className="px-4 py-3 bg-gray-50 border-b border-gray-100">
+                                            <div className="flex items-start gap-3">
+                                                <MapPin className="w-4 h-4 text-indigo-600 mt-0.5" />
+                                                <div>
+                                                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Location</p>
+                                                    <p className="text-sm font-medium text-gray-900 mt-0.5">{user?.branch || "Not set"}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <button
+                                            onClick={() => {
+                                                setShowMobileProfileMenu(false)
+                                                router.push("/branch/profile")
+                                            }}
+                                            className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3"
+                                        >
+                                            <User className="w-4 h-4 text-gray-500" />
+                                            <span>Profile</span>
+                                        </button>
+
+                                        <button
+                                            onClick={() => {
+                                                setShowMobileProfileMenu(false)
+                                                handleLogout()
+                                            }}
+                                            className="w-full px-4 py-3 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-3 border-t border-gray-100"
+                                        >
+                                            <LogOut className="w-4 h-4" />
+                                            <span>Logout</span>
+                                        </button>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+
+                        <div className="hidden sm:block h-8 w-[1px] bg-gray-200 mx-2"></div>
+
+                        <span className="hidden sm:inline-flex px-4 py-1.5 rounded-full text-sm font-semibold items-center gap-2 bg-indigo-50 text-indigo-700 border border-indigo-100 shadow-sm">
                             <Building className="w-3.5 h-3.5" />
                             {user?.branch || "Branch Admin"}
                         </span>
                     </div>
                 </header>
 
-                <main className="flex-1 overflow-y-auto overflow-x-hidden p-6 lg:p-8 scroll-smooth">
+                <main data-lenis-prevent className="flex-1 overflow-y-auto overflow-x-hidden p-6 lg:p-8 scroll-smooth">
                     {children}
                 </main>
             </div>

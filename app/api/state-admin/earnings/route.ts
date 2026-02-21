@@ -3,6 +3,13 @@ import { Pool } from "pg";
 
 export const dynamic = "force-dynamic";
 
+const getErrorMessage = (error: unknown) => {
+    if (error instanceof Error) {
+        return error.message;
+    }
+    return String(error);
+};
+
 export async function GET(req: NextRequest) {
     try {
         const { searchParams } = new URL(req.url);
@@ -139,11 +146,11 @@ export async function GET(req: NextRequest) {
         });
 
     } catch (error: unknown) {
-        const err = error as Error;
-        console.error("Failed to fetch state admin earnings:", err);
+        const errorMessage = getErrorMessage(error);
+        console.error("Failed to fetch state admin earnings:", error, errorMessage);
         return NextResponse.json({
             success: false,
-            error: err.message
+            error: "Internal server error"
         }, { status: 500 });
     }
 }

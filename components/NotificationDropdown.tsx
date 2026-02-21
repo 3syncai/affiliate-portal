@@ -84,7 +84,7 @@ export default function NotificationDropdown({ userId, userRole }: NotificationD
             {/* Bell Button */}
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="relative p-2 text-gray-400 hover:text-gray-500 rounded-full hover:bg-gray-100 transition-colors"
+                className="relative p-2.5 sm:p-2 text-gray-400 hover:text-gray-500 rounded-full hover:bg-gray-100 transition-colors"
             >
                 <Bell className="w-5 h-5" />
                 {unreadCount > 0 && (
@@ -99,12 +99,12 @@ export default function NotificationDropdown({ userId, userRole }: NotificationD
                 <>
                     {/* Backdrop */}
                     <div
-                        className="fixed inset-0 z-30"
+                        className="fixed inset-0 z-40 bg-black/10 sm:bg-transparent"
                         onClick={() => setIsOpen(false)}
                     />
 
                     {/* Dropdown Panel */}
-                    <div className="absolute right-0 mt-2 w-96 bg-white rounded-xl shadow-2xl border border-gray-200 z-40 max-h-[500px] flex flex-col">
+                    <div className="fixed left-3 right-3 top-16 max-h-[calc(100vh-5rem)] bg-white rounded-2xl shadow-2xl border border-gray-200 z-50 flex flex-col sm:absolute sm:left-auto sm:right-0 sm:top-full sm:mt-2 sm:w-96 sm:max-h-[500px]">
                         {/* Header */}
                         <div className="flex items-center justify-between p-4 border-b border-gray-200">
                             <div>
@@ -122,7 +122,7 @@ export default function NotificationDropdown({ userId, userRole }: NotificationD
                         </div>
 
                         {/* Notifications List */}
-                        <div className="overflow-y-auto flex-1">
+                        <div className="overflow-y-auto overscroll-contain flex-1">
                             {notifications.length === 0 ? (
                                 <div className="p-8 text-center">
                                     <Bell className="w-12 h-12 text-gray-300 mx-auto mb-3" />

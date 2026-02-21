@@ -240,10 +240,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json(
             {
                 success: false,
-                message: "Registration failed",
-                error: err instanceof Error ? err.message : "Unknown error",
-                detail: err?.detail || null,
-                code: err?.code || null
+                message: "Registration failed"
             },
             { status: 500 }
         )

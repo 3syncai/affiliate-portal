@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
         console.error("Failed to delete payments:", err);
         return NextResponse.json({
             success: false,
-            error: err.message
+            error: "Failed to delete payments"
         }, { status: 500 });
     }
 }
