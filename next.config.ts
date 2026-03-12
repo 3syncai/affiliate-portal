@@ -8,12 +8,16 @@ const nextConfig: NextConfig = {
     root: __dirname,
   },
   async rewrites() {
-    return [
-      {
-        source: '/api/affiliate/:path*',
-        destination: `${storeUrl}/api/affiliate/:path*`,
-      },
-    ];
+    return {
+      beforeFiles: [],
+      afterFiles: [],
+      fallback: [
+        {
+          source: '/api/affiliate/:path*',
+          destination: `${storeUrl}/api/affiliate/:path*`,
+        },
+      ],
+    };
   },
 };
 

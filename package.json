@@ -26,6 +26,7 @@
     "swr": "^2.3.8"
   },
   "devDependencies": {
+    "@next/swc-darwin-arm64": "^16.0.7",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/pg": "^8.16.0",

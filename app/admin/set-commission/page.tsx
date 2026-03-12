@@ -47,6 +47,13 @@ export default function SetCommissionPage() {
     commission_rate: "",
   })
   const [saving, setSaving] = useState(false)
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null)
+
+  const showToast = (message: string, type: "success" | "error" = "success") => {
+    setToast({ message, type })
+    setTimeout(() => setToast(null), 3500)
+  }
+
   const [products, setProducts] = useState<Product[]>([])
   const [productsLoading, setProductsLoading] = useState(true)
   const [categories, setCategories] = useState<FilterOption[]>([])
@@ -67,11 +74,10 @@ export default function SetCommissionPage() {
       const response = await axios.get("/api/affiliate/admin/commission-settings")
       const data = response.data
       setCommissions(data.commissions || [])
-    } catch (error: unknown) {
-      const err = error as Error & { response?: { data?: { message?: string } } }
-      console.error("Failed to fetch commissions:", err)
-      const errorMessage = err.response?.data?.message || err.message || "Unknown error"
-      alert(`Error loading commissions: ${errorMessage}`)
+    } catch (error: any) {
+      console.error("Failed to fetch commissions:", error)
+      const errorMessage = error.response?.data?.message || error.message || "Unknown error"
+      showToast(`Error loading commissions: ${errorMessage}`, "error")
     } finally {
       setLoading(false)
     }
@@ -116,11 +122,10 @@ export default function SetCommissionPage() {
       setCategories(Array.from(uniqueCategories.values()))
       setCollections(Array.from(uniqueCollections.values()))
       setTypes(Array.from(uniqueTypes.values()))
-    } catch (error: unknown) {
-      const err = error as Error & { response?: { data?: { message?: string } } }
-      console.error("Failed to fetch products:", err)
-      const errorMessage = err.response?.data?.message || err.message || "Unknown error"
-      alert(`Error loading products: ${errorMessage}. Please check if the backend server is running.`)
+    } catch (error: any) {
+      console.error("Failed to fetch products:", error)
+      const errorMessage = error.response?.data?.message || error.message || "Unknown error"
+      showToast(`Error loading products: ${errorMessage}`, "error")
     } finally {
       setProductsLoading(false)
     }
@@ -129,126 +134,76 @@ export default function SetCommissionPage() {
   const handleSave = async () => {
     // Validate entity_id
     if (!formData.entity_id || formData.entity_id.trim() === "") {
-      alert("Please select a " + formData.commission_type)
+      showToast("Please select a " + formData.commission_type, "error")
       return
     }
 
     // Validate commission_rate
     if (!formData.commission_rate || formData.commission_rate.trim() === "") {
-      alert("Please enter a commission rate")
+      showToast("Please enter a commission rate", "error")
       return
     }
 
     const trimmedRate = formData.commission_rate.trim()
-
-    // Check if trimmed rate is empty
-    if (!trimmedRate || trimmedRate === "") {
-      alert("Please enter a commission rate")
-      return
-    }
-
     const commissionRate = parseFloat(trimmedRate)
 
     if (isNaN(commissionRate) || !isFinite(commissionRate)) {
-      alert("Commission rate must be a valid number")
+      showToast("Commission rate must be a valid number", "error")
       return
     }
 
     if (commissionRate < 0 || commissionRate > 100) {
-      alert("Commission rate must be between 0 and 100")
+      showToast("Commission rate must be between 0 and 100", "error")
       return
     }
 
-    // Double-check we have a valid number
-    if (typeof commissionRate !== 'number') {
-      alert("Please enter a valid commission rate")
-      return
-    }
-
-    console.log("Validated commission rate:", commissionRate, "Type:", typeof commissionRate)
-
+    const wasEditing = !!editingCommission
     setSaving(true)
     try {
       let response
-
       if (editingCommission) {
         // Update existing commission
-        const requestBody = {
-          commission_rate: commissionRate,
-        }
-        console.log("Updating commission:", requestBody)
-
+        const requestBody = { commission_rate: commissionRate }
         response = await axios.put(`/api/affiliate/admin/commission-settings/${editingCommission.id}`, requestBody)
+        if (!response.data?.success) throw new Error(response.data?.error || "Update failed")
       } else {
-        // Set the appropriate entity ID based on commission type
-        const body: {
-          commission_rate: number
-          product_id?: string
-          category_id?: string
-          collection_id?: string
-          type_id?: string
-        } = {
-          commission_rate: commissionRate,
-        }
-
-        // Set the appropriate entity ID based on commission type
-        if (formData.commission_type === "product") {
-          body.product_id = formData.entity_id
-        } else if (formData.commission_type === "category") {
-          body.category_id = formData.entity_id
-        } else if (formData.commission_type === "collection") {
-          body.collection_id = formData.entity_id
-        } else if (formData.commission_type === "type") {
-          body.type_id = formData.entity_id
-        }
-
-        const requestBody = {
-          ...body,
-          commission_rate: commissionRate, // Ensure it's explicitly set as a number
-        }
-
-        console.log("Creating commission with body:", JSON.stringify(requestBody, null, 2))
-        console.log("Commission rate value:", commissionRate, "Type:", typeof commissionRate)
-        console.log("Request body stringified:", JSON.stringify(requestBody))
-
-        response = await axios.post("/api/affiliate/admin/commission-settings", requestBody)
-
-        console.log("Response status:", response.status)
+        // Create new commission
+        const body: any = { commission_rate: commissionRate }
+        if (formData.commission_type === "product") body.product_id = formData.entity_id
+        else if (formData.commission_type === "category") body.category_id = formData.entity_id
+        else if (formData.commission_type === "collection") body.collection_id = formData.entity_id
+        else if (formData.commission_type === "type") body.type_id = formData.entity_id
+        
+        response = await axios.post("/api/affiliate/admin/commission-settings", body)
+        if (!response.data?.success) throw new Error(response.data?.error || "Create failed")
       }
 
-      await loadCommissions()
       setShowForm(false)
       setEditingCommission(null)
-      setFormData({
-        commission_type: "product",
-        entity_id: "",
-        commission_rate: "",
-      })
-      alert(editingCommission ? "Commission updated successfully" : "Commission created successfully")
-    } catch (error: unknown) {
-      const err = error as Error & { response?: { data?: { message?: string } } }
-      console.error("Failed to save commission:", err)
-      const errorMessage = err.response?.data?.message || err.message || "Unknown error"
-      alert(`Error saving commission: ${errorMessage}`)
+      setFormData({ commission_type: "product", entity_id: "", commission_rate: "" })
+      await loadCommissions()
+      showToast(wasEditing ? "Commission updated successfully" : "Commission created successfully", "success")
+    } catch (error: any) {
+      console.error("Failed to save commission:", error)
+      const errorMessage = error.response?.data?.error || error.response?.data?.message || error.message || "Unknown error"
+      showToast(`Error: ${errorMessage}`, "error")
     } finally {
       setSaving(false)
     }
   }
 
   const handleDelete = async (commissionId: string) => {
-    if (!confirm("Are you sure you want to delete this commission?")) {
-      return
-    }
+    if (!confirm("Are you sure you want to delete this commission?")) return
 
     try {
-      await axios.delete(`/api/affiliate/admin/commissions/${commissionId}`)
+      const response = await axios.delete(`/api/affiliate/admin/commission-settings/${commissionId}`)
+      if (!response.data?.success) throw new Error(response.data?.error || "Delete failed")
       await loadCommissions()
-      alert("Commission deleted successfully")
-    } catch (error: unknown) {
-      const err = error as Error & { response?: { data?: { message?: string } } }
-      console.error("Failed to delete commission:", err)
-      const errorMessage = err.response?.data?.message || err.message || "Unknown error"
-      alert(`Error deleting commission: ${errorMessage}`)
+      showToast("Commission deleted successfully", "success")
+    } catch (error: any) {
+      console.error("Failed to delete commission:", error)
+      const errorMessage = error.response?.data?.error || error.response?.data?.message || error.message || "Unknown error"
+      showToast(`Error: ${errorMessage}`, "error")
     }
   }
 
@@ -344,6 +299,14 @@ export default function SetCommissionPage() {
           Add Commission
         </button>
       </div>
+
+      {/* Toast Notification */}
+      {toast && (
+        <div className={`fixed top-6 right-6 z-[100] px-5 py-3 rounded-lg shadow-lg text-white text-sm font-medium flex items-center gap-2 ${toast.type === "success" ? "bg-green-600" : "bg-red-600 shadow-red-200 shadow-xl"}`}>
+          <span>{toast.type === "success" ? "✓" : "✕"}</span>
+          <span>{toast.message}</span>
+        </div>
+      )}
 
       {/* Search */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
@@ -553,16 +516,7 @@ export default function SetCommissionPage() {
                   max="100"
                   step="0.01"
                   value={formData.commission_rate}
-                  onChange={(e) => {
-                    const value = e.target.value
-                    // Allow empty string for typing, but validate on submit
-                    setFormData((prev) => ({ ...prev, commission_rate: value }))
-                  }}
-                  onBlur={(e) => {
-                    // Trim whitespace on blur
-                    const value = e.target.value.trim()
-                    setFormData((prev) => ({ ...prev, commission_rate: value }))
-                  }}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, commission_rate: e.target.value }))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
                   placeholder="e.g., 5 for 5%"
                   required
@@ -575,7 +529,7 @@ export default function SetCommissionPage() {
               <div className="flex gap-3 justify-end pt-4">
                 <button
                   onClick={handleCancel}
-                  className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                  className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm font-semibold"
                   disabled={saving}
                 >
                   Cancel
@@ -583,7 +537,7 @@ export default function SetCommissionPage() {
                 <button
                   onClick={handleSave}
                   disabled={saving}
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 flex items-center"
+                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 flex items-center text-sm font-semibold shadow-md shadow-indigo-100 transition-all"
                 >
                   {saving ? (
                     <>
@@ -593,7 +547,7 @@ export default function SetCommissionPage() {
                   ) : (
                     <>
                       <Save className="w-4 h-4 mr-2" />
-                      {editingCommission ? "Update" : "Create"}
+                      {editingCommission ? "Update Commission" : "Create Commission"}
                     </>
                   )}
                 </button>
@@ -604,67 +558,67 @@ export default function SetCommissionPage() {
       )}
 
       {/* Commissions Table */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Type
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Entity
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Commission Rate
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
+                <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Type</th>
+                <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Entity</th>
+                <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Commission Rate</th>
+                <th className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white divide-y divide-gray-100">
               {filteredCommissions.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="px-6 py-12 text-center text-gray-500">
-                    {commissions.length === 0
-                      ? "No commissions set. Click 'Add Commission' to create one."
-                      : "No commissions match your search."}
+                    <div className="flex flex-col items-center gap-2">
+                       <Package className="w-8 h-8 text-gray-200" />
+                       <p className="font-medium">{commissions.length === 0 ? "No commissions set yet." : "No matching commissions found."}</p>
+                    </div>
                   </td>
                 </tr>
               ) : (
                 filteredCommissions.map((commission) => (
-                  <tr key={commission.id} className="hover:bg-gray-50">
+                  <tr key={commission.id} className="hover:bg-gray-50/50 transition-colors group">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        {commission.product_id && <Package className="w-4 h-4 mr-2 text-blue-500" />}
-                        {commission.category_id && <Tag className="w-4 h-4 mr-2 text-green-500" />}
-                        {commission.collection_id && <Boxes className="w-4 h-4 mr-2 text-purple-500" />}
-                        {commission.type_id && <Type className="w-4 h-4 mr-2 text-orange-500" />}
-                        <span className="text-sm font-medium text-gray-900">
-                          {getEntityType(commission)}
-                        </span>
+                        <div className={`p-2 rounded-lg mr-3 ${
+                          commission.product_id ? "bg-blue-50 text-blue-600" :
+                          commission.category_id ? "bg-emerald-50 text-emerald-600" :
+                          commission.collection_id ? "bg-purple-50 text-purple-600" :
+                          "bg-orange-50 text-orange-600"
+                        }`}>
+                          {commission.product_id && <Package className="w-4 h-4" />}
+                          {commission.category_id && <Tag className="w-4 h-4" />}
+                          {commission.collection_id && <Boxes className="w-4 h-4" />}
+                          {commission.type_id && <Type className="w-4 h-4" />}
+                        </div>
+                        <span className="text-sm font-bold text-gray-900">{getEntityType(commission)}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900">{getEntityName(commission)}</div>
+                      <div className="text-sm font-medium text-gray-700">{getEntityName(commission)}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-indigo-600">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-100">
                         {commission.commission_rate}%
-                      </div>
+                      </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex items-center gap-2">
+                    <td className="px-6 py-4 whitespace-nowrap text-right">
+                      <div className="flex items-center justify-end gap-2">
                         <button
                           onClick={() => handleEdit(commission)}
-                          className="text-indigo-600 hover:text-indigo-900"
+                          className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                          title="Edit"
                         >
                           <Edit className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleDelete(commission.id)}
-                          className="text-red-600 hover:text-red-900"
+                          className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                          title="Delete"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -680,4 +634,3 @@ export default function SetCommissionPage() {
     </div>
   )
 }
-
