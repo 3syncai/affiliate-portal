@@ -22,13 +22,7 @@ type Activity = {
   id: string
   type: 'affiliate_request' | 'order' | 'approval'
   timestamp: string
-  data: {
-    name?: string
-    affiliate_name?: string
-    commission_amount?: number
-    order_id?: string
-    product_name?: string
-  }
+  data: any
 }
 
 type CommissionRate = {
@@ -37,6 +31,7 @@ type CommissionRate = {
 }
 
 export default function AdminDashboardPage() {
+  const router = useRouter()
   const [stats, setStats] = useState({
     totalAgents: 0,
     pendingRequests: 0,
@@ -150,7 +145,7 @@ export default function AdminDashboardPage() {
           <div>
             <span className="font-semibold text-gray-900">{activity.data.affiliate_name}</span>
             <span className="text-gray-600"> earned </span>
-            <span className="font-semibold text-green-600">{formatCurrency(activity.data.commission_amount || 0)}</span>
+            <span className="font-semibold text-green-600">{formatCurrency(activity.data.commission_amount)}</span>
             <span className="text-gray-600"> commission</span>
           </div>
         )

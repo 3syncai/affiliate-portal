@@ -36,12 +36,14 @@ export async function GET(req: NextRequest) {
                 ORDER BY created_at DESC
             `, [city, state]);
         } else {
+            await pool.end();
             return NextResponse.json(
                 { success: false, message: "ASM ID or City/State is required" },
                 { status: 400 }
             );
         }
 
+        await pool.end();
 
         console.log(`Found ${result.rows.length} branch admins`);
 

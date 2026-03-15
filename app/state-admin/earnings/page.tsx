@@ -3,9 +3,7 @@
 import { useEffect, useState, useCallback } from "react"
 import axios from "axios"
 import useSWR from "swr"
-import {
-    DollarSign, User, Users, ShoppingBag, Info, Briefcase, ChevronRight, BarChart3, ArrowUpRight, TrendingUp, Share2, Wallet, CheckCircle2, AlertCircle, Wifi, WifiOff
-} from "lucide-react"
+import { DollarSign, User, Users, ShoppingBag, Info, Wallet, CheckCircle2, AlertCircle, Wifi, WifiOff, Clock } from "lucide-react"
 import { useSSE } from "@/hooks/useSSE"
 import { Toast } from "@/components/Toast"
 
@@ -26,17 +24,8 @@ type Order = {
 
 const fetcher = (url: string) => axios.get(url).then(res => res.data)
 
-interface User {
-    id: string
-    name: string
-    email: string
-    refer_code: string
-    state: string
-    role: string
-}
-
 export default function StateAdminEarningsPage() {
-    const [userData, setUserData] = useState<User | null>(null)
+    const [userData, setUserData] = useState<any>(null)
 
     // Toast state
     const [showToast, setShowToast] = useState(false)
@@ -45,10 +34,7 @@ export default function StateAdminEarningsPage() {
     useEffect(() => {
         const storedUser = localStorage.getItem("affiliate_user")
         if (storedUser) {
-            const parsed = JSON.parse(storedUser) as User
-            setTimeout(() => {
-                setUserData(parsed)
-            }, 0)
+            setUserData(JSON.parse(storedUser))
         }
     }, [])
 
@@ -74,7 +60,7 @@ export default function StateAdminEarningsPage() {
     const loading = isLoading
 
     // Live updates
-    const handleUpdate = useCallback((data: { type: string; message?: string; amount?: number }) => {
+    const handleUpdate = useCallback((data: any) => {
         if (data.type === 'commission_update' || data.type === 'payment_received') {
             setToastData({
                 message: data.message || "New activity received!",

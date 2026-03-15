@@ -1,15 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import pool from "@/lib/db";
+import { Pool } from "pg";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
 export const dynamic = "force-dynamic"
 
-const secret = process.env.JWT_SECRET;
-if (!secret) {
-    throw new Error("JWT_SECRET environment variable is not set");
-}
-const JWT_SECRET = secret as string;
+const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-in-production";
 
 export async function POST(req: NextRequest) {
     console.log("=== ASM Login ===");
@@ -25,6 +21,11 @@ export async function POST(req: NextRequest) {
             );
         }
 
+        const pool = new Pool({
+            connectionString: process.env.DATABASE_URL || process.env.NEXT_PUBLIC_DATABASE_URL,
+            ssl: { rejectUnauthorized: false }
+        });
+
         // Find ASM by email
         const result = await pool.query(
             `SELECT id, first_name, last_name, email, password_hash, phone, city, state, role, is_active, refer_code, created_at
@@ -33,6 +34,7 @@ export async function POST(req: NextRequest) {
         );
 
         if (result.rows.length === 0) {
+            await pool.end();
             return NextResponse.json(
                 { success: false, message: "Invalid email or password" },
                 { status: 401 }
@@ -43,6 +45,7 @@ export async function POST(req: NextRequest) {
 
         // Check if account is active
         if (!asm.is_active) {
+            await pool.end();
             return NextResponse.json(
                 { success: false, message: "Account is deactivated. Please contact your state admin." },
                 { status: 403 }
@@ -52,11 +55,14 @@ export async function POST(req: NextRequest) {
         // Verify password
         const isPasswordValid = await bcrypt.compare(password, asm.password_hash);
         if (!isPasswordValid) {
+            await pool.end();
             return NextResponse.json(
                 { success: false, message: "Invalid email or password" },
                 { status: 401 }
             );
         }
+
+        await pool.end();
 
         // Generate JWT token
         const token = jwt.sign(
@@ -90,14 +96,13 @@ export async function POST(req: NextRequest) {
             }
         });
 
-    } catch (error: unknown) {
-        const err = error as Error;
-        console.error("ASM login failed:", err);
+    } catch (error: any) {
+        console.error("ASM login failed:", error);
         return NextResponse.json(
             {
                 success: false,
                 message: "Login failed",
-                error: err.message
+                error: error instanceof Error ? error.message : "Unknown error"
             },
             { status: 500 }
         );

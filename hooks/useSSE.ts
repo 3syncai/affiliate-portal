@@ -22,8 +22,6 @@ export function useSSE({ affiliateCode, onPaymentReceived, onMessage }: UseSSEOp
     const eventSourceRef = useRef<EventSource | null>(null);
     const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-    const connectRef = useRef<() => void>(() => { });
-
     const connect = useCallback(() => {
         if (!affiliateCode || affiliateCode.trim() === '') {
             console.log("SSE: No affiliate code, skipping connection");
@@ -70,14 +68,10 @@ export function useSSE({ affiliateCode, onPaymentReceived, onMessage }: UseSSEOp
             // Reconnect after 5 seconds
             reconnectTimeoutRef.current = setTimeout(() => {
                 console.log("SSE: Reconnecting...");
-                connectRef.current?.();
+                connect();
             }, 5000);
         };
     }, [affiliateCode, onPaymentReceived, onMessage]);
-
-    useEffect(() => {
-        connectRef.current = connect;
-    }, [connect]);
 
     useEffect(() => {
         connect();

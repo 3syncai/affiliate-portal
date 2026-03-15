@@ -7,7 +7,7 @@ type Activity = {
     id: string;
     type: 'affiliate_request' | 'order' | 'approval';
     timestamp: string;
-    data: Record<string, string | number | boolean | null | undefined>;
+    data: any;
 };
 
 export async function GET() {
@@ -55,6 +55,7 @@ export async function GET() {
         `;
         const recentOrdersResult = await pool.query(recentOrdersQuery);
 
+        await pool.end();
 
         // Combine and format activities
         const activities: Activity[] = [];
@@ -106,14 +107,13 @@ export async function GET() {
             count: recentActivities.length
         });
 
-    } catch (error: unknown) {
-        const err = error as Error;
-        console.error("Failed to fetch recent activity:", err);
+    } catch (error) {
+        console.error("Failed to fetch recent activity:", error);
         return NextResponse.json(
             {
                 success: false,
                 error: "Failed to fetch recent activity",
-                message: err.message
+                message: error instanceof Error ? error.message : "Unknown error"
             },
             { status: 500 }
         );

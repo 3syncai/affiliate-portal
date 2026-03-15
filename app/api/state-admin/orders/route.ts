@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
             connectionString: process.env.DATABASE_URL || process.env.NEXT_PUBLIC_DATABASE_URL,
             ssl: { rejectUnauthorized: false }
         });
-        
+
         // State Admins can see their own overrides, downline ASMs, downline Branch Admins, and bottom Affiliates
         const validSources = ['state_admin', 'area_manager', 'branch_admin', 'affiliate'];
 
@@ -112,7 +112,7 @@ export async function GET(req: NextRequest) {
             }
         }
 
-        const orders = Array.from(orderMap.values()).sort((a, b) => 
+        const orders = Array.from(orderMap.values()).sort((a, b) =>
             new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
         );
 

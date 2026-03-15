@@ -52,10 +52,9 @@ export async function GET(request: NextRequest) {
             theme: result.rows[0].theme || 'blue'
         })
 
-    } catch (error: unknown) {
-        const err = error as Error;
-        console.error('Error fetching theme:', err)
-        return NextResponse.json({ success: false, error: err.message }, { status: 500 })
+    } catch (error: any) {
+        console.error('Error fetching theme:', error)
+        return NextResponse.json({ success: false, error: error.message }, { status: 500 })
     }
 }
 
@@ -99,7 +98,7 @@ export async function POST(request: NextRequest) {
         // First, check if the theme column exists, if not add it
         try {
             await pool.query(`ALTER TABLE ${tableName} ADD COLUMN IF NOT EXISTS theme VARCHAR(20) DEFAULT 'blue'`)
-        } catch {
+        } catch (alterError) {
             // Column might already exist, continue
             console.log('Theme column may already exist')
         }
@@ -120,9 +119,8 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json({ success: true, message: 'Theme saved successfully' })
 
-    } catch (error: unknown) {
-        const err = error as Error;
-        console.error('Error saving theme:', err)
-        return NextResponse.json({ success: false, error: err.message }, { status: 500 })
+    } catch (error: any) {
+        console.error('Error saving theme:', error)
+        return NextResponse.json({ success: false, error: error.message }, { status: 500 })
     }
 }

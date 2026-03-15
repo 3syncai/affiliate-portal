@@ -3,21 +3,6 @@ import { Pool } from "pg";
 
 export const dynamic = "force-dynamic";
 
-interface Branch {
-    branch_name: string;
-    agent_count: number;
-    total_earnings: number;
-}
-
-interface Area {
-    id: string;
-    first_name: string;
-    last_name: string;
-    city: string;
-    email: string;
-    branches: Branch[];
-}
-
 export async function GET(req: NextRequest) {
     try {
         const { searchParams } = new URL(req.url);
@@ -44,7 +29,7 @@ export async function GET(req: NextRequest) {
 
         const citiesResult = await pool.query(citiesQuery, [state]);
 
-        const asms: Area[] = [];
+        const asms = [];
 
         // Create an area entry for each city
         for (const cityRow of citiesResult.rows) {
@@ -61,7 +46,7 @@ export async function GET(req: NextRequest) {
 
             const branchesResult = await pool.query(branchesQuery, [cityRow.city, state]);
 
-            const branches: Branch[] = branchesResult.rows.map(row => ({
+            const branches = branchesResult.rows.map(row => ({
                 branch_name: row.branch_name,
                 agent_count: parseInt(row.agent_count) || 0,
                 total_earnings: 0
@@ -79,6 +64,7 @@ export async function GET(req: NextRequest) {
             }
         }
 
+        await pool.end();
 
         console.log(`Found ${asms.length} areas with branches for state: ${state}`);
 
@@ -87,12 +73,11 @@ export async function GET(req: NextRequest) {
             asms
         });
 
-    } catch (error: unknown) {
-        const err = error as Error;
-        console.error("Failed to fetch ASM structure:", err);
+    } catch (error: any) {
+        console.error("Failed to fetch ASM structure:", error);
         return NextResponse.json({
             success: false,
-            error: err.message
+            error: error.message
         }, { status: 500 });
     }
 }

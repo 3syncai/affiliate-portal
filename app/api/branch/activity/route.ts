@@ -7,27 +7,8 @@ type Activity = {
     id: string;
     type: 'affiliate_request' | 'order' | 'approval' | 'withdrawal' | 'payment';
     timestamp: string;
-    data: Record<string, string | number | boolean | null | undefined>;
+    data: any;
 };
-
-interface WithdrawalRow {
-    id: string;
-    amount: string;
-    status: string;
-    created_at: string;
-    first_name: string;
-    last_name: string;
-}
-
-interface PaymentRow {
-    id: string;
-    amount: string;
-    transaction_id: string;
-    payment_date: string;
-    updated_at: string;
-    first_name: string;
-    last_name: string;
-}
 
 export async function GET(req: NextRequest) {
     console.log("=== Fetching Branch Recent Activity ===");
@@ -94,18 +75,17 @@ export async function GET(req: NextRequest) {
                 wr.created_at,
                 u.first_name,
                 u.last_name
-            FROM withdrawal_request wr
-            JOIN affiliate_user u ON wr.affiliate_id = u.id
+            FROM withdrawal_requests wr
+            JOIN affiliate_user u ON wr.user_id = u.id
             WHERE u.branch ILIKE $1
             ORDER BY wr.created_at DESC
             LIMIT 5
         `;
-        let withdrawalsResultRows: WithdrawalRow[] = [];
+        let withdrawalsResult = { rows: [] };
         try {
-            const res = await pool.query(withdrawalsQuery, [branch]);
-            withdrawalsResultRows = res.rows;
-        } catch (error: unknown) {
-            console.log("Could not fetch withdrawals:", error);
+            withdrawalsResult = await pool.query(withdrawalsQuery, [branch]);
+        } catch (e) {
+            console.log("Could not fetch withdrawals");
         }
 
         // Fetch recent payment completions (PAID withdrawals with transaction details)
@@ -118,20 +98,20 @@ export async function GET(req: NextRequest) {
                 wr.updated_at,
                 u.first_name,
                 u.last_name
-            FROM withdrawal_request wr
-            JOIN affiliate_user u ON wr.affiliate_id = u.id
+            FROM withdrawal_requests wr
+            JOIN affiliate_user u ON wr.user_id = u.id
             WHERE u.branch ILIKE $1 AND wr.status = 'PAID'
             ORDER BY wr.payment_date DESC
             LIMIT 10
         `;
-        let paymentsResultRows: PaymentRow[] = [];
+        let paymentsResult = { rows: [] };
         try {
-            const res = await pool.query(paymentsQuery, [branch]);
-            paymentsResultRows = res.rows;
-        } catch (error: unknown) {
-            console.log("Could not fetch payment completions:", error);
+            paymentsResult = await pool.query(paymentsQuery, [branch]);
+        } catch (e) {
+            console.log("Could not fetch payment completions");
         }
 
+        await pool.end();
 
         // Combine and format activities
         const activities: Activity[] = [];
@@ -182,7 +162,7 @@ export async function GET(req: NextRequest) {
         });
 
         // Add withdrawals
-        withdrawalsResultRows.forEach((row) => {
+        withdrawalsResult.rows.forEach((row: any) => {
             activities.push({
                 id: `withdrawal_${row.id}`,
                 type: 'withdrawal',
@@ -197,7 +177,7 @@ export async function GET(req: NextRequest) {
         });
 
         // Add payment completions
-        paymentsResultRows.forEach((row) => {
+        paymentsResult.rows.forEach((row: any) => {
             activities.push({
                 id: `payment_${row.id}`,
                 type: 'payment',
@@ -222,13 +202,12 @@ export async function GET(req: NextRequest) {
             count: recentActivities.length
         });
 
-    } catch (error: unknown) {
-        const err = error as Error;
-        console.error("Failed to fetch branch activity:", err);
+    } catch (error) {
+        console.error("Failed to fetch branch activity:", error);
         return NextResponse.json({
             success: false,
             activities: [],
-            error: err.message
+            error: error instanceof Error ? error.message : "Unknown error"
         }, { status: 500 });
     }
 }

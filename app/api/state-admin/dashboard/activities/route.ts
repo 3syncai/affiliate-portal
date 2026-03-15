@@ -3,15 +3,6 @@ import { Pool } from "pg";
 
 export const dynamic = "force-dynamic";
 
-interface Activity {
-    id: string;
-    type: string;
-    message: string;
-    branch_name: string;
-    amount?: number;
-    created_at: string;
-}
-
 export async function GET(req: NextRequest) {
     try {
         const { searchParams } = new URL(req.url);
@@ -30,7 +21,7 @@ export async function GET(req: NextRequest) {
             ssl: { rejectUnauthorized: false }
         });
 
-        const activities: Activity[] = [];
+        const activities: any[] = [];
 
         // 1. Get payment activities from activity_log (most important!)
         try {
@@ -61,7 +52,7 @@ export async function GET(req: NextRequest) {
                     created_at: row.created_at
                 });
             });
-        } catch (err: unknown) {
+        } catch (err) {
             console.log("Activity log query failed (table may not exist):", err);
         }
 
@@ -107,7 +98,7 @@ export async function GET(req: NextRequest) {
                     created_at: row.created_at
                 });
             });
-        } catch (err: unknown) {
+        } catch (err) {
             console.error("Failed to fetch approvals:", err);
         }
 
@@ -142,7 +133,7 @@ export async function GET(req: NextRequest) {
                     created_at: row.created_at
                 });
             });
-        } catch (err: unknown) {
+        } catch (err) {
             console.error("Failed to fetch commissions:", err);
         }
 
@@ -154,18 +145,18 @@ export async function GET(req: NextRequest) {
 
         console.log(`Found ${recentActivities.length} activities for state: ${state} `);
 
+        await pool.end();
 
         return NextResponse.json({
             success: true,
             activities: recentActivities
         });
 
-    } catch (error: unknown) {
-        const err = error as Error;
-        console.error("Failed to fetch recent activities:", err);
+    } catch (error: any) {
+        console.error("Failed to fetch recent activities:", error);
         return NextResponse.json({
             success: false,
-            error: err.message
+            error: error.message
         }, { status: 500 });
     }
 }

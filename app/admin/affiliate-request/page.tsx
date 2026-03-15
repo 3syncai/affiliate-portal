@@ -1,9 +1,8 @@
 "use client"
 
 import { useEffect, useState } from "react"
-// import { useRouter } from "next/navigation"
+import { useRouter } from "next/navigation"
 import axios from "axios"
-import Image from "next/image"
 import { Eye, CheckCircle, XCircle } from "lucide-react"
 
 type AffiliateUser = {
@@ -16,34 +15,12 @@ type AffiliateUser = {
   is_approved: boolean
   rejected_at?: string | null
   created_at: string
-  gender?: string | null
-  birth_date?: string | null
-  refer_code?: string | null
-  entry_sponsor?: string | null
-  father_name?: string | null
-  mother_name?: string | null
-  marital_status?: string | null
-  designation?: string | null
-  branch?: string | null
-  area?: string | null
-  state?: string | null
-  payment_method?: string | null
-  bank_name?: string | null
-  account_name?: string | null
-  ifsc_code?: string | null
-  aadhar_card_no?: string | null
-  aadhar_card_photo?: string | null
-  pan_card_no?: string | null
-  pan_card_photo?: string | null
-  address_1?: string | null
-  city?: string | null
-  pin_code?: string | null
-  address_state?: string | null
+  [key: string]: any
 }
 
 export default function AffiliateRequestPage() {
-  // const router = useRouter()
-  const [users, setUsers] = useState<AffiliateUser[]>([]) // eslint-disable-line @typescript-eslint/no-unused-vars
+  const router = useRouter()
+  const [users, setUsers] = useState<AffiliateUser[]>([])
   const [pendingUsers, setPendingUsers] = useState<AffiliateUser[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedUser, setSelectedUser] = useState<AffiliateUser | null>(null)
@@ -318,14 +295,18 @@ export default function AffiliateRequestPage() {
                         <a href={selectedUser.aadhar_card_photo} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline block mb-2">
                           📎 View Aadhar Card (Open in new tab)
                         </a>
-                        <div className="relative w-full aspect-video border border-gray-300 rounded overflow-hidden">
-                          <Image
+                        <div className="border border-gray-300 rounded p-2 bg-gray-50">
+                          <img
                             src={selectedUser.aadhar_card_photo}
                             alt="Aadhar Card"
-                            fill
-                            className="object-contain"
-                            unoptimized
+                            className="max-w-full h-auto"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none'
+                              const errorMsg = e.currentTarget.nextElementSibling as HTMLElement
+                              if (errorMsg) errorMsg.classList.remove('hidden')
+                            }}
                           />
+                          <p className="text-red-600 text-xs hidden">⚠️ Image failed to load. Check the file path above.</p>
                         </div>
                       </div>
                     ) : (
@@ -340,14 +321,18 @@ export default function AffiliateRequestPage() {
                         <a href={selectedUser.pan_card_photo} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline block mb-2">
                           📎 View PAN Card (Open in new tab)
                         </a>
-                        <div className="relative w-full aspect-video border border-gray-300 rounded overflow-hidden">
-                          <Image
+                        <div className="border border-gray-300 rounded p-2 bg-gray-50">
+                          <img
                             src={selectedUser.pan_card_photo}
                             alt="PAN Card"
-                            fill
-                            className="object-contain"
-                            unoptimized
+                            className="max-w-full h-auto"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none'
+                              const errorMsg = e.currentTarget.nextElementSibling as HTMLElement
+                              if (errorMsg) errorMsg.classList.remove('hidden')
+                            }}
                           />
+                          <p className="text-red-600 text-xs hidden">⚠️ Image failed to load. Check the file path above.</p>
                         </div>
                       </div>
                     ) : (

@@ -22,7 +22,7 @@ export default function AreaManagersPage() {
     const [loading, setLoading] = useState(true)
     const [searchTerm, setSearchTerm] = useState("")
     const [selectedManager, setSelectedManager] = useState<AreaManager | null>(null)
-    const [user, setUser] = useState<{ id: string, state: string } | null>(null)
+    const [user, setUser] = useState<any>(null)
 
     useEffect(() => {
         const userData = localStorage.getItem("affiliate_user")
@@ -40,8 +40,7 @@ export default function AreaManagersPage() {
             if (response.data.success) {
                 setAreaManagers(response.data.areaManagers)
             }
-        } catch (err: unknown) {
-            const error = err as Error & { response?: { data?: { message?: string } } };
+        } catch (error) {
             console.error("Failed to fetch area managers:", error)
         } finally {
             setLoading(false)
@@ -57,10 +56,9 @@ export default function AreaManagersPage() {
             if (user?.id) {
                 fetchAreaManagers(user.id)
             }
-        } catch (err: unknown) {
-            const error = err as Error & { response?: { data?: { message?: string } } };
+        } catch (error) {
             console.error("Failed to toggle status:", error)
-            alert(error.response?.data?.message || "Failed to update status")
+            alert("Failed to update status")
         }
     }
 

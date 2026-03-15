@@ -2,24 +2,14 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { User, Mail, Phone, Lock, Calendar, MapPin, Briefcase, Palette } from "lucide-react"
+import { User, Mail, Phone, Lock, Shield, Calendar, MapPin, Briefcase, Palette } from "lucide-react"
 import ThemeSelector from "@/components/ThemeSelector"
 import { useTheme } from "@/contexts/ThemeContext"
-
-interface UserData {
-    first_name: string;
-    last_name: string;
-    email: string;
-    phone?: string;
-    city: string;
-    state: string;
-    [key: string]: unknown;
-}
 
 export default function ASMProfilePage() {
     const router = useRouter()
     const { theme } = useTheme()
-    const [user, setUser] = useState<UserData | null>(null)
+    const [user, setUser] = useState<any>(null)
     const [loading, setLoading] = useState(true)
     const [activeTab, setActiveTab] = useState<'info' | 'security' | 'theme'>('info')
 
@@ -33,7 +23,7 @@ export default function ASMProfilePage() {
         }
 
         try {
-            const parsed = JSON.parse(userData) as UserData
+            const parsed = JSON.parse(userData)
             setUser(parsed)
         } catch (e) {
             console.error("Error parsing user data:", e)

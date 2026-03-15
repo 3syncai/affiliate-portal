@@ -27,6 +27,7 @@ export async function GET(request: Request) {
             [`%${branch}%`]
         );
 
+        await pool.end();
 
         console.log(`Found ${result.rows.length} agents in branch ${branch}`);
 

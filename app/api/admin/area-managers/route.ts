@@ -19,6 +19,7 @@ export async function GET() {
             ORDER BY created_at DESC
         `);
 
+        await pool.end();
 
         // Map to add 'name' field and 'area' as city
         const managers = result.rows.map(row => ({
@@ -35,13 +36,12 @@ export async function GET() {
             count: managers.length
         });
 
-    } catch (error: unknown) {
-        const err = error as Error;
-        console.error("Failed to fetch area managers:", err);
+    } catch (error) {
+        console.error("Failed to fetch area managers:", error);
         return NextResponse.json({
             success: false,
             managers: [],
-            error: err.message
+            error: error instanceof Error ? error.message : "Unknown error"
         }, { status: 500 });
     }
 }

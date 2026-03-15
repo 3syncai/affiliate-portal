@@ -42,6 +42,7 @@ export async function POST(req: NextRequest) {
         );
 
         if (existingStateAdmin.rows.length > 0) {
+            await pool.end();
             return NextResponse.json(
                 { success: false, message: "Email already registered as state admin" },
                 { status: 400 }
@@ -92,6 +93,7 @@ export async function POST(req: NextRequest) {
             generatedReferCode
         ]);
 
+        await pool.end();
 
         const user = result.rows[0];
         console.log(`State admin created: ${user.email} for state ${user.state}`);
@@ -110,14 +112,13 @@ export async function POST(req: NextRequest) {
             }
         });
 
-    } catch (error: unknown) {
-        const err = error as Error;
-        console.error("Failed to create state admin:", err);
+    } catch (error: any) {
+        console.error("Failed to create state admin:", error);
         return NextResponse.json(
             {
                 success: false,
                 message: "Failed to create state admin",
-                error: err.message
+                error: error instanceof Error ? error.message : "Unknown error"
             },
             { status: 500 }
         );

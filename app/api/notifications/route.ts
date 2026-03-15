@@ -42,6 +42,7 @@ export async function GET(req: NextRequest) {
         // Count unread notifications
         const unreadCount = result.rows.filter(n => !n.is_read).length;
 
+        await pool.end();
 
         return NextResponse.json({
             success: true,
@@ -49,12 +50,11 @@ export async function GET(req: NextRequest) {
             unreadCount
         });
 
-    } catch (error: unknown) {
-        const err = error as Error;
-        console.error("Failed to fetch notifications:", err);
+    } catch (error: any) {
+        console.error("Failed to fetch notifications:", error);
         return NextResponse.json({
             success: false,
-            error: err.message
+            error: error.message
         }, { status: 500 });
     }
 }
@@ -85,18 +85,18 @@ export async function PATCH(req: NextRequest) {
         `;
 
         const result = await pool.query(query, [notificationId]);
+        await pool.end();
 
         return NextResponse.json({
             success: true,
             notification: result.rows[0]
         });
 
-    } catch (error: unknown) {
-        const err = error as Error;
-        console.error("Failed to update notification:", err);
+    } catch (error: any) {
+        console.error("Failed to update notification:", error);
         return NextResponse.json({
             success: false,
-            error: err.message
+            error: error.message
         }, { status: 500 });
     }
 }

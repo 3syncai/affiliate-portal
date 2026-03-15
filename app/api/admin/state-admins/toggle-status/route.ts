@@ -27,6 +27,7 @@ export async function POST(req: NextRequest) {
             [isActive, adminId]
         );
 
+        await pool.end();
 
         if (result.rows.length === 0) {
             return NextResponse.json(
@@ -43,14 +44,13 @@ export async function POST(req: NextRequest) {
             admin: result.rows[0]
         });
 
-    } catch (error: unknown) {
-        const err = error as Error;
-        console.error("Failed to toggle state admin status:", err);
+    } catch (error) {
+        console.error("Failed to toggle state admin status:", error);
         return NextResponse.json(
             {
                 success: false,
                 message: "Failed to update status",
-                error: err.message
+                error: error instanceof Error ? error.message : "Unknown error"
             },
             { status: 500 }
         );

@@ -58,6 +58,7 @@ export async function GET(request: Request) {
         );
         const totalOrders = parseInt(ordersResult.rows[0]?.count) || 0;
 
+        await pool.end();
 
         const stats = {
             totalAgents,

@@ -16,30 +16,19 @@ type Agent = {
     created_at: string
 }
 
-interface UserData {
-    id: string;
-    city: string;
-    state: string;
-    [key: string]: unknown;
-}
-
 export default function ASMAgentsPage() {
     const [agents, setAgents] = useState<Agent[]>([])
     const [loading, setLoading] = useState(true)
     const [searchTerm, setSearchTerm] = useState("")
     const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null)
-    const [user, setUser] = useState<UserData | null>(null)
+    const [user, setUser] = useState<any>(null)
 
     useEffect(() => {
         const userData = localStorage.getItem("affiliate_user")
         if (userData) {
-            try {
-                const parsed = JSON.parse(userData) as UserData
-                setUser(parsed)
-                fetchAgents(parsed.city, parsed.state)
-            } catch (e) {
-                console.error("Failed to parse user data:", e)
-            }
+            const parsed = JSON.parse(userData)
+            setUser(parsed)
+            fetchAgents(parsed.city, parsed.state)
         }
     }, [])
 
@@ -52,7 +41,7 @@ export default function ASMAgentsPage() {
             if (response.data.success) {
                 setAgents(response.data.agents)
             }
-        } catch (error: unknown) {
+        } catch (error) {
             console.error("Failed to fetch agents:", error)
         } finally {
             setLoading(false)

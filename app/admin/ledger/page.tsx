@@ -7,8 +7,10 @@ import {
     Search,
     ChevronLeft,
     ChevronRight,
+    ArrowUpDown,
     Download,
-    Filter
+    Filter,
+    Calendar
 } from "lucide-react";
 
 interface LedgerItem {
@@ -34,7 +36,7 @@ const fetcher = (url: string) => axios.get(url).then((res) => res.data);
 
 export default function CommissionLedgerPage() {
     const [page, setPage] = useState(1);
-    const [limit] = useState(20);
+    const [limit, setLimit] = useState(20);
     const [searchTerm, setSearchTerm] = useState("");
     const [statusFilter, setStatusFilter] = useState("ALL");
 

@@ -49,7 +49,7 @@ export async function GET(req: NextRequest) {
       WHERE 1=1
     `;
 
-        const params: (string | number)[] = [];
+        const params: any[] = [];
         let paramIndex = 1;
 
         if (search) {
@@ -109,11 +109,10 @@ export async function GET(req: NextRequest) {
             client.release();
         }
 
-    } catch (error: unknown) {
-        const err = error as Error;
-        console.error("Error fetching ledger:", err);
+    } catch (error: any) {
+        console.error("Error fetching ledger:", error);
         return NextResponse.json(
-            { success: false, error: err.message },
+            { success: false, error: error.message },
             { status: 500 }
         );
     }

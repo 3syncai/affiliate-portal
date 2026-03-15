@@ -3,17 +3,6 @@ import { Pool } from "pg";
 
 export const dynamic = "force-dynamic";
 
-const getSafeErrorMessage = (error: unknown) => {
-    if (error instanceof Error) {
-        return error.message;
-    }
-    try {
-        return typeof error === "string" ? error : JSON.stringify(error);
-    } catch {
-        return String(error);
-    }
-};
-
 export async function POST(req: NextRequest) {
     try {
         const payload = await req.json();
@@ -41,6 +30,8 @@ export async function POST(req: NextRequest) {
             [status, order_id]
         );
 
+        await pool.end();
+
         if (result.rowCount === 0) {
             console.log(`[Commission Update] No commissions found for Order #${order_id}`);
             return NextResponse.json({
@@ -67,12 +58,10 @@ export async function POST(req: NextRequest) {
 
                     console.log(` - Wallet Credited for ${row.affiliate_code}: +₹${row.affiliate_commission}`);
                 } catch (walletError) {
-                    const safeWalletError = getSafeErrorMessage(walletError);
-                    console.error(` - Failed to credit wallet for ${row.affiliate_code}:`, safeWalletError, walletError);
+                    console.error(` - Failed to credit wallet for ${row.affiliate_code}:`, walletError);
                 }
             }
         }
-
 
         return NextResponse.json({
             success: true,
@@ -81,13 +70,13 @@ export async function POST(req: NextRequest) {
             updated_records: result.rows
         });
 
-    } catch (error: unknown) {
-        const safeMessage = getSafeErrorMessage(error);
-        console.error("Commission status update failed:", safeMessage, error);
+    } catch (error: any) {
+        console.error("Commission status update failed:", error);
         return NextResponse.json(
             {
                 success: false,
-                message: "Internal server error"
+                message: "Internal server error",
+                error: error instanceof Error ? error.message : "Unknown error"
             },
             { status: 500 }
         );

@@ -19,9 +19,9 @@ export async function GET(req: NextRequest) {
             connectionString: process.env.DATABASE_URL || process.env.NEXT_PUBLIC_DATABASE_URL,
             ssl: { rejectUnauthorized: false }
         });
-        
+
         let validSources: string[] = [];
-        
+
         // Handle both area_manager (Branch Admin) and branch_admin (ASM)
         if (role === 'area_manager') {
             // Branch Admins (Area Managers) can see their own overrides, downline ASMs, and bottom Affiliates
@@ -120,7 +120,7 @@ export async function GET(req: NextRequest) {
             }
         }
 
-        const orders = Array.from(orderMap.values()).sort((a, b) => 
+        const orders = Array.from(orderMap.values()).sort((a, b) =>
             new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
         );
 

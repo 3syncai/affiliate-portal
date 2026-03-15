@@ -173,7 +173,7 @@ export default function SetCommissionPage() {
         else if (formData.commission_type === "category") body.category_id = formData.entity_id
         else if (formData.commission_type === "collection") body.collection_id = formData.entity_id
         else if (formData.commission_type === "type") body.type_id = formData.entity_id
-        
+
         response = await axios.post("/api/affiliate/admin/commission-settings", body)
         if (!response.data?.success) throw new Error(response.data?.error || "Create failed")
       }
@@ -574,8 +574,8 @@ export default function SetCommissionPage() {
                 <tr>
                   <td colSpan={4} className="px-6 py-12 text-center text-gray-500">
                     <div className="flex flex-col items-center gap-2">
-                       <Package className="w-8 h-8 text-gray-200" />
-                       <p className="font-medium">{commissions.length === 0 ? "No commissions set yet." : "No matching commissions found."}</p>
+                      <Package className="w-8 h-8 text-gray-200" />
+                      <p className="font-medium">{commissions.length === 0 ? "No commissions set yet." : "No matching commissions found."}</p>
                     </div>
                   </td>
                 </tr>
@@ -584,12 +584,11 @@ export default function SetCommissionPage() {
                   <tr key={commission.id} className="hover:bg-gray-50/50 transition-colors group">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        <div className={`p-2 rounded-lg mr-3 ${
-                          commission.product_id ? "bg-blue-50 text-blue-600" :
-                          commission.category_id ? "bg-emerald-50 text-emerald-600" :
-                          commission.collection_id ? "bg-purple-50 text-purple-600" :
-                          "bg-orange-50 text-orange-600"
-                        }`}>
+                        <div className={`p-2 rounded-lg mr-3 ${commission.product_id ? "bg-blue-50 text-blue-600" :
+                            commission.category_id ? "bg-emerald-50 text-emerald-600" :
+                              commission.collection_id ? "bg-purple-50 text-purple-600" :
+                                "bg-orange-50 text-orange-600"
+                          }`}>
                           {commission.product_id && <Package className="w-4 h-4" />}
                           {commission.category_id && <Tag className="w-4 h-4" />}
                           {commission.collection_id && <Boxes className="w-4 h-4" />}

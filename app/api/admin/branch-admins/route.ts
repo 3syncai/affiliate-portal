@@ -3,21 +3,6 @@ import { Pool } from "pg";
 
 export const dynamic = "force-dynamic";
 
-interface BranchAdmin {
-    id: string;
-    first_name: string;
-    last_name: string;
-    email: string;
-    phone: string | null;
-    branch: string;
-    city: string;
-    state: string;
-    role: string;
-    is_active: boolean;
-    created_at: string;
-    updated_at: string;
-}
-
 export async function GET() {
     console.log("=== Fetching All Branch Admins ===");
 
@@ -34,9 +19,10 @@ export async function GET() {
             ORDER BY created_at DESC
         `);
 
+        await pool.end();
 
         // Map to add 'name' field and 'area' as city
-        const admins = result.rows.map((row: BranchAdmin) => ({
+        const admins = result.rows.map(row => ({
             ...row,
             name: `${row.first_name} ${row.last_name}`.trim(),
             area: row.city // Use city as area
@@ -50,13 +36,12 @@ export async function GET() {
             count: admins.length
         });
 
-    } catch (error: unknown) {
-        const err = error as Error;
-        console.error("Failed to fetch branch admins:", err);
+    } catch (error) {
+        console.error("Failed to fetch branch admins:", error);
         return NextResponse.json({
             success: false,
             admins: [],
-            error: err.message
+            error: error instanceof Error ? error.message : "Unknown error"
         }, { status: 500 });
     }
 }

@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { Pool } from 'pg'
 
 const pool = new Pool({
@@ -7,7 +7,7 @@ const pool = new Pool({
 })
 
 // POST - Run theme column migration
-export async function POST() {
+export async function POST(request: NextRequest) {
     try {
         const results: string[] = []
 
@@ -23,12 +23,11 @@ export async function POST() {
             try {
                 await pool.query(`ALTER TABLE ${table} ADD COLUMN IF NOT EXISTS theme VARCHAR(20) DEFAULT '${defaultTheme}'`)
                 results.push(`✅ Added theme column to ${table} (default: ${defaultTheme})`)
-            } catch (error: unknown) {
-                const err = error as Error;
-                if (err.message.includes('already exists')) {
+            } catch (error: any) {
+                if (error.message.includes('already exists')) {
                     results.push(`ℹ️ Theme column already exists in ${table}`)
                 } else {
-                    results.push(`❌ Error in ${table}: ${err.message}`)
+                    results.push(`❌ Error in ${table}: ${error.message}`)
                 }
             }
         }
@@ -39,18 +38,17 @@ export async function POST() {
             results
         })
 
-    } catch (error: unknown) {
-        const err = error as Error;
-        console.error('Migration error:', err)
+    } catch (error: any) {
+        console.error('Migration error:', error)
         return NextResponse.json({
             success: false,
-            error: err.message
+            error: error.message
         }, { status: 500 })
     }
 }
 
 // GET - Check migration status
-export async function GET() {
+export async function GET(request: NextRequest) {
     try {
         const status: { table: string; hasColumn: boolean }[] = []
         const tables = ['area_sales_manager', 'state_admin', 'branch_admin', 'affiliate_user']
@@ -76,12 +74,11 @@ export async function GET() {
             status
         })
 
-    } catch (error: unknown) {
-        const err = error as Error;
-        console.error('Status check error:', err)
+    } catch (error: any) {
+        console.error('Status check error:', error)
         return NextResponse.json({
             success: false,
-            error: err.message
+            error: error.message
         }, { status: 500 })
     }
 }

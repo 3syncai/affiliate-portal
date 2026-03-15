@@ -18,17 +18,17 @@ export async function POST() {
             ON CONFLICT (role_type) DO NOTHING
         `);
 
+        await pool.end();
 
         return NextResponse.json({
             success: true,
             message: "Affiliate commission rate added successfully"
         });
-    } catch (error: unknown) {
-        const err = error as Error;
-        console.error("Failed to add affiliate commission:", err);
+    } catch (error: any) {
+        console.error("Failed to add affiliate commission:", error);
         return NextResponse.json({
             success: false,
-            error: err.message
+            error: error.message
         }, { status: 500 });
     }
 }

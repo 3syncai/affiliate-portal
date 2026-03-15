@@ -18,30 +18,12 @@ type AffiliateCommission = {
     total_orders: number
 }
 
-// Define the BranchData interface
-interface BranchData {
-    branch: string;
-}
-
 export default function TotalCommissionPage() {
     const [affiliates, setAffiliates] = useState<AffiliateCommission[]>([])
     const [loading, setLoading] = useState(true)
     const [selectedAffiliate, setSelectedAffiliate] = useState<AffiliateCommission | null>(null)
     const [searchTerm, setSearchTerm] = useState("")
-    const [branchData, setBranchData] = useState<BranchData | null>(null) // Changed type from 'any' to 'BranchData | null'
-
-    const loadCommissions = async () => {
-        if (!branchData?.branch) return
-        setLoading(true)
-        try {
-            const response = await axios.get(`/api/branch/commissions?branch=${encodeURIComponent(branchData.branch)}`)
-            setAffiliates(response.data.affiliates || [])
-        } catch (error) {
-            console.error("Failed to fetch commissions:", error)
-        } finally {
-            setLoading(false)
-        }
-    }
+    const [branchData, setBranchData] = useState<any>(null)
 
     useEffect(() => {
         const userData = localStorage.getItem("affiliate_user")
@@ -55,7 +37,20 @@ export default function TotalCommissionPage() {
         if (branchData?.branch) {
             loadCommissions()
         }
-    }, [branchData, loadCommissions])
+    }, [branchData])
+
+    const loadCommissions = async () => {
+        if (!branchData?.branch) return
+        setLoading(true)
+        try {
+            const response = await axios.get(`/api/branch/commissions?branch=${encodeURIComponent(branchData.branch)}`)
+            setAffiliates(response.data.affiliates || [])
+        } catch (error) {
+            console.error("Failed to fetch commissions:", error)
+        } finally {
+            setLoading(false)
+        }
+    }
 
 
     const formatCurrency = (amount: number) => {

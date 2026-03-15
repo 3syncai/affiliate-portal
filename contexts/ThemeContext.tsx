@@ -142,9 +142,6 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     const [mounted, setMounted] = useState(false)
     const [isLoading, setIsLoading] = useState(true)
 
-    // Derived theme object
-    const currentTheme = themes.find(t => t.name === themeName) || themes[0]
-
     // Fetch theme from database on mount
     useEffect(() => {
         setMounted(true)
@@ -198,20 +195,22 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         }
 
         fetchTheme()
-    }, [themeName])
+    }, [])
 
     // Apply theme CSS variables
     useEffect(() => {
         if (!mounted) return
 
-        document.documentElement.style.setProperty('--theme-primary', currentTheme.primary)
-        document.documentElement.style.setProperty('--theme-primary-hover', currentTheme.primaryHover)
-        document.documentElement.style.setProperty('--theme-primary-light', currentTheme.primaryLight)
-        document.documentElement.style.setProperty('--theme-sidebar', currentTheme.sidebar)
-        document.documentElement.style.setProperty('--theme-sidebar-text', currentTheme.sidebarText)
-        document.documentElement.style.setProperty('--theme-accent', currentTheme.accent)
-        document.documentElement.style.setProperty('--theme-background', currentTheme.background)
-        document.documentElement.style.setProperty('--theme-card-bg', currentTheme.cardBg)
+        const theme = themes.find(t => t.name === themeName) || themes[0]
+
+        document.documentElement.style.setProperty('--theme-primary', theme.primary)
+        document.documentElement.style.setProperty('--theme-primary-hover', theme.primaryHover)
+        document.documentElement.style.setProperty('--theme-primary-light', theme.primaryLight)
+        document.documentElement.style.setProperty('--theme-sidebar', theme.sidebar)
+        document.documentElement.style.setProperty('--theme-sidebar-text', theme.sidebarText)
+        document.documentElement.style.setProperty('--theme-accent', theme.accent)
+        document.documentElement.style.setProperty('--theme-background', theme.background)
+        document.documentElement.style.setProperty('--theme-card-bg', theme.cardBg)
 
         // Save to user-specific localStorage key
         const userData = localStorage.getItem('affiliate_user')
@@ -221,7 +220,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
             const userSpecificKey = `app_theme_${user.id}_${userRole}`
             localStorage.setItem(userSpecificKey, themeName)
         }
-    }, [themeName, mounted, currentTheme])
+    }, [themeName, mounted])
 
     // Save theme to database
     const saveThemeToDatabase = useCallback(async (newTheme: ThemeName) => {
@@ -251,8 +250,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         saveThemeToDatabase(name)
     }, [saveThemeToDatabase])
 
+    const theme = themes.find(t => t.name === themeName) || themes[0]
+
     return (
-        <ThemeContext.Provider value={{ theme: currentTheme, themeName, setTheme, isLoading }}>
+        <ThemeContext.Provider value={{ theme, themeName, setTheme, isLoading }}>
             {children}
         </ThemeContext.Provider>
     )

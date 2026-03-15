@@ -3,15 +3,8 @@
 import { useEffect, useState } from "react"
 import { Search, Package, IndianRupee, Percent, Box, Share2 } from "lucide-react"
 import axios from "axios"
-import Image from "next/image"
-import { STORE_URL } from "@/lib/config"
+import { BACKEND_URL, STORE_URL } from "@/lib/config"
 import { useTheme } from "@/contexts/ThemeContext"
-
-interface User {
-    refer_code?: string
-    name?: string
-    email?: string
-}
 
 interface Product {
     id: string
@@ -30,11 +23,6 @@ interface Product {
     hasCommission: boolean
 }
 
-interface CommissionRate {
-    role_type: string;
-    commission_percentage: string;
-}
-
 export default function ASMProductsPage() {
     const { theme } = useTheme()
     const [loading, setLoading] = useState(true)
@@ -43,7 +31,7 @@ export default function ASMProductsPage() {
     const [selectedCategory, setSelectedCategory] = useState<string>("all")
     const [searchQuery, setSearchQuery] = useState("")
     const [error, setError] = useState<string | null>(null)
-    const [user, setUser] = useState<User | null>(null)
+    const [user, setUser] = useState<any>(null)
 
     const [commissionRate, setCommissionRate] = useState<number>(0)
 
@@ -51,11 +39,7 @@ export default function ASMProductsPage() {
         const userData = localStorage.getItem("affiliate_user")
         const token = localStorage.getItem("affiliate_token")
         if (userData) {
-            try {
-                setUser(JSON.parse(userData))
-            } catch (e) {
-                console.error("Failed to parse user data:", e)
-            }
+            setUser(JSON.parse(userData))
         }
         if (token) {
             fetchProducts(token)
@@ -70,10 +54,9 @@ export default function ASMProductsPage() {
         try {
             const response = await axios.get("/api/admin/commission-rates")
             if (response.data.success && response.data.rates) {
-                const rates = response.data.rates as CommissionRate[];
-                const affiliateRateObj = rates.find((r) => r.role_type === "affiliate")
-                const branchDirectRateObj = rates.find((r) => r.role_type === "branch_direct")
-                const asmRateObj = rates.find((r) => r.role_type === "area")
+                const affiliateRateObj = response.data.rates.find((r: any) => r.role_type === "affiliate")
+                const branchDirectRateObj = response.data.rates.find((r: any) => r.role_type === "branch_direct")
+                const asmRateObj = response.data.rates.find((r: any) => r.role_type === "area")
 
                 const baseRate = parseFloat(affiliateRateObj?.commission_percentage || '70')
                 const branchBonus = parseFloat(branchDirectRateObj?.commission_percentage || '15')
@@ -81,7 +64,7 @@ export default function ASMProductsPage() {
 
                 setCommissionRate(baseRate + branchBonus + asmBonus) // 95%
             }
-        } catch (err: unknown) {
+        } catch (err) {
             console.error("Error fetching commission rates:", err)
             setCommissionRate(95) // Default fallback
         }
@@ -99,10 +82,9 @@ export default function ASMProductsPage() {
             const data = response.data
             setProducts(data.products || data.allProducts || [])
             setCategories(data.categories || [])
-        } catch (err: unknown) {
-            const errorObj = err as { response?: { data?: { message?: string } }; message?: string };
+        } catch (err: any) {
             console.error("Error fetching products:", err)
-            setError(errorObj.response?.data?.message || errorObj.message || "Failed to load products")
+            setError(err.response?.data?.message || err.message || "Failed to load products")
         } finally {
             setLoading(false)
         }
@@ -200,7 +182,7 @@ export default function ASMProductsPage() {
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {filteredProducts.map((product) => (
-                        <ProductCard key={product.id} product={product} user={user} commissionRate={commissionRate} />
+                        <ProductCard key={product.id} product={product} user={user} theme={theme} commissionRate={commissionRate} />
                     ))}
                 </div>
             )}
@@ -208,7 +190,7 @@ export default function ASMProductsPage() {
     )
 }
 
-function ProductCard({ product, user, commissionRate }: { product: Product; user: User | null; commissionRate: number }) {
+function ProductCard({ product, user, theme, commissionRate }: { product: Product; user: any; theme: any; commissionRate: number }) {
     const [copied, setCopied] = useState(false)
 
     const actualCommission = commissionRate > 0
@@ -216,10 +198,6 @@ function ProductCard({ product, user, commissionRate }: { product: Product; user
         : product.commissionAmount * 0.95 // Fallback to 95%
 
     const handleShare = () => {
-        if (!STORE_URL) {
-            console.error("STORE_URL is not configured")
-            return
-        }
         const referralCode = user?.refer_code || ''
         const slug = product.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
         const shareLink = `${STORE_URL}/productDetail/${slug}?id=${product.id}&sourceTag=${encodeURIComponent(product.category)}&ref=${referralCode}`
@@ -248,15 +226,7 @@ function ProductCard({ product, user, commissionRate }: { product: Product; user
 
             <div className="h-48 bg-white flex items-center justify-center p-4">
                 {product.thumbnail ? (
-                    <div className="relative w-full h-full">
-                        <Image
-                            src={product.thumbnail}
-                            alt={product.title}
-                            fill
-                            className="object-contain"
-                            unoptimized
-                        />
-                    </div>
+                    <img src={product.thumbnail} alt={product.title} className="w-full h-full object-contain" />
                 ) : (
                     <Box className="text-gray-300" size={64} />
                 )}

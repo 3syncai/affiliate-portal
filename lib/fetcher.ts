@@ -1,19 +1,16 @@
 import axios from 'axios';
 
-/**
- * Generic fetcher utility for axios requests with automatic auth token handling.
- * Used primarily with SWR for client-side data fetching.
- */
-export const fetcher = async <T = unknown>(url: string): Promise<T> => {
-    // SSR Safety: Ensure code only runs on client
+// Generic fetcher for better type safety
+export const fetcher = async <T = any>(url: string): Promise<T> => {
+    // 1. SSR Safety: Ensure code only runs on client
     if (typeof window === 'undefined') {
-        throw new Error("Cannot fetch on server-side using this utility");
+        return Promise.reject("Cannot fetch on server");
     }
 
     const token = localStorage.getItem("affiliate_token");
 
     if (!token) {
-        throw new Error("Authentication required");
+        throw new Error("No auth token found");
     }
 
     try {
@@ -25,15 +22,9 @@ export const fetcher = async <T = unknown>(url: string): Promise<T> => {
         });
 
         return response.data;
-    } catch (error: unknown) {
-        if (axios.isAxiosError(error)) {
-            const message = error.response?.data?.message ||
-                error.response?.data?.error ||
-                error.message ||
-                "An unexpected error occurred during the request";
-            throw new Error(message);
-        }
-
-        throw error instanceof Error ? error : new Error("An unknown error occurred");
+    } catch (error: any) {
+        // 2. Production Error Handling: Return clean error message
+        const message = error.response?.data?.message || error.response?.data?.error || error.message || "An error occurred";
+        throw new Error(message);
     }
 };

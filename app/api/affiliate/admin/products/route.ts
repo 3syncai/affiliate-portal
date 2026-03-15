@@ -135,7 +135,7 @@ export async function GET(req: NextRequest) {
         console.log(`Loaded ${productsRes.rows.length} products directly from database.`);
 
         const commissions = commissionsRes.rows;
-        
+
         const productCategories = new Map<string, any[]>();
         categoryRes.rows.forEach(row => {
             const existing = productCategories.get(row.product_id) || [];
@@ -208,7 +208,7 @@ export async function GET(req: NextRequest) {
             if (productCommission) {
                 commission = productCommission.commission_rate;
             } else if (categories.length > 0) {
-                const categoryCommission = commissions.find((c: any) => 
+                const categoryCommission = commissions.find((c: any) =>
                     categories.some((cat: any) => cat.id === c.category_id)
                 );
                 if (categoryCommission) commission = categoryCommission.commission_rate;

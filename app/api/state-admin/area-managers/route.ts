@@ -29,6 +29,7 @@ export async function GET(req: NextRequest) {
             ORDER BY created_at DESC
         `, [stateAdminId]);
 
+        await pool.end();
 
         console.log(`Found ${result.rows.length} ASMs for state admin ${stateAdminId}`);
 

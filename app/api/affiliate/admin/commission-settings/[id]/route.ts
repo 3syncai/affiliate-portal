@@ -31,6 +31,7 @@ export async function PUT(
             RETURNING *
         `, [commission_rate, id]);
 
+        await pool.end();
 
         if (result.rows.length === 0) {
             return NextResponse.json({ success: false, error: "Commission not found" }, { status: 404 });
@@ -39,10 +40,9 @@ export async function PUT(
         console.log("Updated commission:", result.rows[0]);
         return NextResponse.json({ success: true, commission: result.rows[0] });
 
-    } catch (error: unknown) {
-        const err = error as Error;
-        console.error("Failed to update commission:", err.message);
-        return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+    } catch (error: any) {
+        console.error("Failed to update commission:", error.message);
+        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }
 }
 
@@ -66,6 +66,7 @@ export async function DELETE(
             RETURNING *
         `, [id]);
 
+        await pool.end();
 
         if (result.rows.length === 0) {
             return NextResponse.json({ success: false, error: "Commission not found" }, { status: 404 });
@@ -74,9 +75,8 @@ export async function DELETE(
         console.log("Deleted commission:", result.rows[0]);
         return NextResponse.json({ success: true, message: "Commission deleted" });
 
-    } catch (error: unknown) {
-        const err = error as Error;
-        console.error("Failed to delete commission:", err.message);
-        return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+    } catch (error: any) {
+        console.error("Failed to delete commission:", error.message);
+        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }
 }

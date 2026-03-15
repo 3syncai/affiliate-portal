@@ -31,6 +31,7 @@ export async function POST(req: NextRequest) {
 
         const result = await pool.query(deleteQuery, [paymentIds]);
 
+        await pool.end();
 
         return NextResponse.json({
             success: true,
@@ -38,12 +39,11 @@ export async function POST(req: NextRequest) {
             deleted: result.rows
         });
 
-    } catch (error: unknown) {
-        const err = error as Error;
-        console.error("Failed to delete payments:", err);
+    } catch (error: any) {
+        console.error("Failed to delete payments:", error);
         return NextResponse.json({
             success: false,
-            error: "Failed to delete payments"
+            error: error.message
         }, { status: 500 });
     }
 }

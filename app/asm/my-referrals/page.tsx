@@ -16,30 +16,13 @@ type Customer = {
     total_orders: number
     total_order_value: number
     total_commission: number
-    orders: unknown[]
+    orders: any[]
 }
 
 const fetcher = (url: string) => axios.get(url).then(res => res.data)
 
-interface User {
-    id: string
-    first_name: string
-    last_name: string
-    email: string
-    refer_code: string
-    city: string
-    state: string
-    role: string
-}
-
-interface SSEData {
-    type: string;
-    amount?: number;
-    [key: string]: unknown;
-}
-
 export default function ASMMyReferralsPage() {
-    const [userData, setUserData] = useState<User | null>(null)
+    const [userData, setUserData] = useState<any>(null)
 
     // Toast state
     const [showToast, setShowToast] = useState(false)
@@ -48,14 +31,7 @@ export default function ASMMyReferralsPage() {
     useEffect(() => {
         const storedUser = localStorage.getItem("affiliate_user")
         if (storedUser) {
-            try {
-                const parsed = JSON.parse(storedUser) as User
-                setTimeout(() => {
-                    setUserData(parsed)
-                }, 0)
-            } catch (e) {
-                console.error("Failed to parse user data:", e)
-            }
+            setUserData(JSON.parse(storedUser))
         }
     }, [])
 
@@ -85,12 +61,11 @@ export default function ASMMyReferralsPage() {
     const loading = isLoading
 
     // Live updates
-    const handleUpdate = useCallback((data: unknown) => {
-        const sseData = data as SSEData;
-        if (sseData.type === 'stats_update' || sseData.type === 'payment_received') {
+    const handleUpdate = useCallback((data: any) => {
+        if (data.type === 'stats_update' || data.type === 'payment_received') {
             setToastData({
                 message: "New referral activity!",
-                amount: sseData.amount
+                amount: data.amount
             });
             setShowToast(true);
             mutate();

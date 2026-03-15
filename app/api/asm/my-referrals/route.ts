@@ -33,6 +33,7 @@ export async function GET(request: Request) {
         );
 
         if (asmResult.rows.length === 0) {
+            await pool.end();
             return NextResponse.json(
                 { success: false, error: 'ASM not found' },
                 { status: 404 }
@@ -42,6 +43,7 @@ export async function GET(request: Request) {
         const referCode = asmResult.rows[0].refer_code;
 
         if (!referCode) {
+            await pool.end();
             return NextResponse.json({
                 success: true,
                 stats: {
@@ -179,6 +181,7 @@ export async function GET(request: Request) {
             credited_commissions: creditedCommissions
         };
 
+        await pool.end();
 
         return NextResponse.json({
             success: true,

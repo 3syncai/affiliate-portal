@@ -219,6 +219,7 @@ export async function GET() {
             })
         ];
 
+        await pool.end();
 
         return NextResponse.json({
             success: true,
@@ -226,12 +227,11 @@ export async function GET() {
             count: allAdmins.length
         });
 
-    } catch (error: unknown) {
-        const err = error as Error;
-        console.error("Failed to fetch payable admins:", err);
+    } catch (error: any) {
+        console.error("Failed to fetch payable admins:", error);
         return NextResponse.json({
             success: false,
-            error: err.message
+            error: error.message
         }, { status: 500 });
     }
 }

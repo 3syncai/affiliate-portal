@@ -3,13 +3,6 @@ import { Pool } from "pg";
 
 export const dynamic = "force-dynamic";
 
-const getErrorMessage = (error: unknown) => {
-    if (error instanceof Error) {
-        return error.message;
-    }
-    return String(error);
-};
-
 export async function GET(req: NextRequest) {
     try {
         const { searchParams } = new URL(req.url);
@@ -127,6 +120,7 @@ export async function GET(req: NextRequest) {
         `;
         const recentOrdersResult = await pool.query(recentOrdersQuery, [state, referCode || 'INVALID']);
 
+        await pool.end();
 
         return NextResponse.json({
             success: true,
@@ -145,12 +139,13 @@ export async function GET(req: NextRequest) {
             recentOrders: recentOrdersResult.rows
         });
 
-    } catch (error: unknown) {
-        const errorMessage = getErrorMessage(error);
-        console.error("Failed to fetch state admin earnings:", error, errorMessage);
+    } catch (error: any) {
+        console.error("Failed to fetch state admin earnings:", error);
         return NextResponse.json({
             success: false,
-            error: "Internal server error"
+            error: error.message
         }, { status: 500 });
     }
 }
+
+

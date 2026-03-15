@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useCallback, useRef } from "react"
+import { useEffect, useState } from "react"
 import axios from "axios"
 import { Bell, X, CheckCircle, AlertCircle, DollarSign, Info } from "lucide-react"
 
@@ -22,12 +22,15 @@ export default function NotificationDropdown({ userId, userRole }: NotificationD
     const [isOpen, setIsOpen] = useState(false)
     const [notifications, setNotifications] = useState<Notification[]>([])
     const [unreadCount, setUnreadCount] = useState(0)
-    const bellButtonRef = useRef<HTMLButtonElement | null>(null)
-    const panelRef = useRef<HTMLDivElement | null>(null)
-    const previousFocusRef = useRef<HTMLElement | null>(null)
-    const panelId = `notifications-panel-${userRole}-${userId}`
+    const [loading, setLoading] = useState(false)
 
-    const fetchNotifications = useCallback(async () => {
+    useEffect(() => {
+        if (userId) {
+            fetchNotifications()
+        }
+    }, [userId])
+
+    const fetchNotifications = async () => {
         try {
             const response = await axios.get(`/api/notifications?recipientId=${userId}&recipientRole=${userRole}`)
             if (response.data.success) {
@@ -37,71 +40,7 @@ export default function NotificationDropdown({ userId, userRole }: NotificationD
         } catch (error) {
             console.error("Failed to fetch notifications:", error)
         }
-    }, [userId, userRole])
-
-    useEffect(() => {
-        if (userId) {
-            // eslint-disable-next-line react-hooks/set-state-in-effect
-            fetchNotifications()
-        }
-    }, [userId, fetchNotifications])
-
-    useEffect(() => {
-        if (!isOpen) return
-
-        previousFocusRef.current = document.activeElement as HTMLElement | null
-        const panel = panelRef.current
-        if (!panel) return
-
-        const focusableSelector = 'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
-        const getFocusableElements = () =>
-            Array.from(panel.querySelectorAll<HTMLElement>(focusableSelector)).filter((element) => !element.hasAttribute("disabled"))
-
-        const focusableElements = getFocusableElements()
-        if (focusableElements.length > 0) {
-            focusableElements[0].focus()
-        } else {
-            panel.focus()
-        }
-
-        const handleKeyDown = (event: KeyboardEvent) => {
-            if (event.key === "Escape") {
-                event.preventDefault()
-                setIsOpen(false)
-                return
-            }
-
-            if (event.key !== "Tab") return
-
-            const elements = getFocusableElements()
-            if (elements.length === 0) {
-                event.preventDefault()
-                panel.focus()
-                return
-            }
-
-            const firstElement = elements[0]
-            const lastElement = elements[elements.length - 1]
-            const activeElement = document.activeElement as HTMLElement | null
-
-            if (event.shiftKey) {
-                if (activeElement === firstElement || activeElement === panel) {
-                    event.preventDefault()
-                    lastElement.focus()
-                }
-            } else if (activeElement === lastElement) {
-                event.preventDefault()
-                firstElement.focus()
-            }
-        }
-
-        document.addEventListener("keydown", handleKeyDown)
-        return () => {
-            document.removeEventListener("keydown", handleKeyDown)
-            const focusTarget = bellButtonRef.current ?? previousFocusRef.current
-            focusTarget?.focus()
-        }
-    }, [isOpen])
+    }
 
     const markAsRead = async (notificationId: string) => {
         try {
@@ -144,12 +83,8 @@ export default function NotificationDropdown({ userId, userRole }: NotificationD
         <div className="relative">
             {/* Bell Button */}
             <button
-                ref={bellButtonRef}
                 onClick={() => setIsOpen(!isOpen)}
-                aria-expanded={isOpen}
-                aria-haspopup="dialog"
-                aria-controls={panelId}
-                className="relative p-2.5 sm:p-2 text-gray-400 hover:text-gray-500 rounded-full hover:bg-gray-100 transition-colors"
+                className="relative p-2 text-gray-400 hover:text-gray-500 rounded-full hover:bg-gray-100 transition-colors"
             >
                 <Bell className="w-5 h-5" />
                 {unreadCount > 0 && (
@@ -164,20 +99,12 @@ export default function NotificationDropdown({ userId, userRole }: NotificationD
                 <>
                     {/* Backdrop */}
                     <div
-                        className="fixed inset-0 z-40 bg-black/10 sm:bg-transparent"
+                        className="fixed inset-0 z-30"
                         onClick={() => setIsOpen(false)}
                     />
 
                     {/* Dropdown Panel */}
-                    <div
-                        ref={panelRef}
-                        id={panelId}
-                        role="dialog"
-                        aria-modal="true"
-                        aria-label="Notifications"
-                        tabIndex={-1}
-                        className="fixed left-3 right-3 top-16 max-h-[calc(100vh-5rem)] bg-white rounded-2xl shadow-2xl border border-gray-200 z-50 flex flex-col sm:absolute sm:left-auto sm:right-0 sm:top-full sm:mt-2 sm:w-96 sm:max-h-[500px]"
-                    >
+                    <div className="absolute right-0 mt-2 w-96 bg-white rounded-xl shadow-2xl border border-gray-200 z-40 max-h-[500px] flex flex-col">
                         {/* Header */}
                         <div className="flex items-center justify-between p-4 border-b border-gray-200">
                             <div>
@@ -195,12 +122,12 @@ export default function NotificationDropdown({ userId, userRole }: NotificationD
                         </div>
 
                         {/* Notifications List */}
-                        <div className="overflow-y-auto overscroll-contain flex-1">
+                        <div className="overflow-y-auto flex-1">
                             {notifications.length === 0 ? (
                                 <div className="p-8 text-center">
                                     <Bell className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                                     <p className="text-gray-500 font-medium">No notifications yet</p>
-                                    <p className="text-sm text-gray-400 mt-1">You&apos;re all caught up!</p>
+                                    <p className="text-sm text-gray-400 mt-1">You're all caught up!</p>
                                 </div>
                             ) : (
                                 <div className="divide-y divide-gray-100">

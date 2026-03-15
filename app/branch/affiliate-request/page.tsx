@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react"
 import axios from "axios"
-import Image from "next/image"
 import { UserCheck, UserX, Eye, Search, Clock } from "lucide-react"
 
 type User = {
@@ -52,12 +51,7 @@ export default function BranchAffiliateRequestPage() {
     const [searchTerm, setSearchTerm] = useState("")
     const [selectedUser, setSelectedUser] = useState<User | null>(null)
     const [activeTab, setActiveTab] = useState<"pending" | "approved">("pending")
-    interface BranchData {
-        name: string
-        email: string
-        branch: string
-    }
-    const [branchData, setBranchData] = useState<BranchData | null>(null)
+    const [branchData, setBranchData] = useState<any>(null)
 
     useEffect(() => {
         const userData = localStorage.getItem("affiliate_user")
@@ -161,69 +155,7 @@ export default function BranchAffiliateRequestPage() {
                 </div>
             ) : (
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-                    <div className="md:hidden overflow-x-auto -mx-2 px-2">
-                        <table className="min-w-[760px] w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
-                                <tr>
-                                    <th className="px-3 py-2.5 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wide">Name</th>
-                                    <th className="px-3 py-2.5 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wide">Email</th>
-                                    <th className="px-3 py-2.5 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wide">Phone</th>
-                                    <th className="px-3 py-2.5 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wide">Ref Code</th>
-                                    <th className="px-3 py-2.5 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wide">Date</th>
-                                    <th className="px-3 py-2.5 text-right text-[10px] font-semibold text-gray-500 uppercase tracking-wide">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
-                                {filteredUsers.map((user) => (
-                                    <tr key={user.id} className="hover:bg-gray-50">
-                                        <td className="px-3 py-3 whitespace-nowrap text-xs font-semibold text-gray-900">
-                                            {user.first_name} {user.last_name}
-                                        </td>
-                                        <td className="px-3 py-3 whitespace-nowrap text-xs text-gray-600 max-w-[180px] truncate" title={user.email}>
-                                            {user.email}
-                                        </td>
-                                        <td className="px-3 py-3 whitespace-nowrap text-xs text-gray-600">
-                                            {user.phone || "-"}
-                                        </td>
-                                        <td className="px-3 py-3 whitespace-nowrap font-mono text-xs text-indigo-600">
-                                            {user.refer_code}
-                                        </td>
-                                        <td className="px-3 py-3 whitespace-nowrap text-xs text-gray-500">
-                                            {formatDate(user.created_at)}
-                                        </td>
-                                        <td className="px-3 py-3 whitespace-nowrap text-right">
-                                            <div className="flex items-center justify-end gap-1.5">
-                                                <button
-                                                    onClick={() => setSelectedUser(user)}
-                                                    className="inline-flex items-center gap-1 rounded-md border border-blue-200 bg-blue-50 px-2 py-1 text-[10px] font-semibold text-blue-700"
-                                                >
-                                                    <Eye className="w-3 h-3" /> View
-                                                </button>
-                                                {activeTab === "pending" && (
-                                                    <>
-                                                        <button
-                                                            onClick={() => handleApprove(user.id)}
-                                                            className="inline-flex items-center gap-1 rounded-md border border-green-200 bg-green-50 px-2 py-1 text-[10px] font-semibold text-green-700"
-                                                        >
-                                                            <UserCheck className="w-3 h-3" /> Approve
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleReject(user.id)}
-                                                            className="inline-flex items-center gap-1 rounded-md border border-red-200 bg-red-50 px-2 py-1 text-[10px] font-semibold text-red-700"
-                                                        >
-                                                            <UserX className="w-3 h-3" /> Reject
-                                                        </button>
-                                                    </>
-                                                )}
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <div className="hidden md:block overflow-x-auto">
+                    <div className="overflow-x-auto">
                         <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-gray-50">
                                 <tr>
@@ -385,13 +317,11 @@ export default function BranchAffiliateRequestPage() {
                                     <div>
                                         <p className="text-sm font-medium mb-2">Aadhar Card</p>
                                         {selectedUser.aadhar_card_photo ? (
-                                            <a href={selectedUser.aadhar_card_photo} target="_blank" rel="noopener noreferrer" className="block group relative overflow-hidden rounded-lg border border-gray-200 h-48">
-                                                <Image
+                                            <a href={selectedUser.aadhar_card_photo} target="_blank" rel="noopener noreferrer" className="block group relative overflow-hidden rounded-lg border border-gray-200">
+                                                <img
                                                     src={selectedUser.aadhar_card_photo}
                                                     alt="Aadhar Card"
-                                                    fill
-                                                    className="object-cover transition-transform group-hover:scale-105"
-                                                    unoptimized
+                                                    className="w-full h-48 object-cover transition-transform group-hover:scale-105"
                                                 />
                                                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
                                                     <span className="bg-white/90 text-gray-900 px-3 py-1 rounded text-xs font-medium shadow-sm">View Full</span>
@@ -406,13 +336,11 @@ export default function BranchAffiliateRequestPage() {
                                     <div>
                                         <p className="text-sm font-medium mb-2">PAN Card</p>
                                         {selectedUser.pan_card_photo ? (
-                                            <a href={selectedUser.pan_card_photo} target="_blank" rel="noopener noreferrer" className="block group relative overflow-hidden rounded-lg border border-gray-200 h-48">
-                                                <Image
+                                            <a href={selectedUser.pan_card_photo} target="_blank" rel="noopener noreferrer" className="block group relative overflow-hidden rounded-lg border border-gray-200">
+                                                <img
                                                     src={selectedUser.pan_card_photo}
                                                     alt="PAN Card"
-                                                    fill
-                                                    className="object-cover transition-transform group-hover:scale-105"
-                                                    unoptimized
+                                                    className="w-full h-48 object-cover transition-transform group-hover:scale-105"
                                                 />
                                                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
                                                     <span className="bg-white/90 text-gray-900 px-3 py-1 rounded text-xs font-medium shadow-sm">View Full</span>

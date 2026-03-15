@@ -22,6 +22,7 @@ export async function POST(req: NextRequest) {
             [isActive, adminId]
         );
 
+        await pool.end();
 
         if (result.rows.length === 0) {
             return NextResponse.json({ success: false, message: "Branch Admin not found" }, { status: 404 });

@@ -1,13 +1,14 @@
 "use client"
 
 import { useEffect, useState, useCallback } from "react"
-import { Users, TrendingUp, DollarSign, ShoppingBag, CheckCircle, UserPlus, CreditCard, Clock, ArrowUpRight, Copy, Check, Share2, Wifi, WifiOff } from "lucide-react"
+import { Users, TrendingUp, DollarSign, ShoppingBag, CheckCircle, UserPlus, CreditCard, Clock, ArrowUpRight, MapPin, Copy, Check, Link2, TrendingDown, Share2, Wifi, WifiOff } from "lucide-react"
 import axios from "axios"
 import useSWR from 'swr'
+import { useTheme } from "@/contexts/ThemeContext"
 import { useSSE } from "@/hooks/useSSE"
 import { Toast } from "@/components/Toast"
 
-interface Activity {
+type Activity = {
     id: string
     type: 'affiliate_request' | 'order' | 'approval' | 'withdrawal' | 'payment'
     timestamp: string
@@ -23,71 +24,11 @@ interface Activity {
     }
 }
 
-interface User {
-    id: string
-    first_name: string
-    last_name: string
-    email: string
-    refer_code: string
-    branch: string
-    role: string
-    city?: string
-    state?: string
-}
-
-type ReferralCardProps = {
-    referCode: string
-    copied: boolean
-    onCopy: () => void
-    className?: string
-}
-
-function ReferralCard({ referCode, copied, onCopy, className = "" }: ReferralCardProps) {
-    return (
-        <div className={`bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden ${className}`}>
-            <div className="p-6">
-                <div className="flex items-center gap-3 mb-4">
-                    <div className="p-2 bg-blue-50 rounded-lg">
-                        <Share2 className="w-5 h-5 text-blue-600" />
-                    </div>
-                    <div>
-                        <h3 className="font-bold text-gray-900">Your Referral Code</h3>
-                        <p className="text-xs text-gray-500">Share to earn direct commissions</p>
-                    </div>
-                </div>
-
-                <div className="bg-gray-50 border border-gray-200 rounded-lg p-1 flex items-center gap-2 mb-4">
-                    <div className="flex-1 px-3 py-2 font-mono text-lg font-bold text-gray-800 tracking-wider text-center">
-                        {referCode}
-                    </div>
-                    <button
-                        onClick={onCopy}
-                        className="p-2 bg-white border border-gray-200 rounded-md hover:bg-gray-50 transition-all text-gray-600 hover:text-gray-900 shadow-sm"
-                        title="Copy Code"
-                    >
-                        {copied ? <Check className="w-5 h-5 text-green-600" /> : <Copy className="w-5 h-5" />}
-                    </button>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3 text-center">
-                    <div className="p-3 rounded-lg bg-emerald-50 border border-emerald-100">
-                        <p className="text-emerald-700 text-lg font-bold">85%</p>
-                        <p className="text-emerald-600/80 text-[10px] uppercase font-semibold tracking-wide">Direct Sales</p>
-                    </div>
-                    <div className="p-3 rounded-lg bg-blue-50 border border-blue-100">
-                        <p className="text-blue-700 text-lg font-bold">15%</p>
-                        <p className="text-blue-600/80 text-[10px] uppercase font-semibold tracking-wide">Override</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    )
-}
-
 const fetcher = (url: string) => axios.get(url).then(res => res.data)
 
 export default function BranchDashboard() {
-    const [user, setUser] = useState<User | null>(null)
+    const { theme } = useTheme()
+    const [user, setUser] = useState<any>(null)
     const [copied, setCopied] = useState(false)
 
     // Toast notification state
@@ -97,10 +38,7 @@ export default function BranchDashboard() {
     useEffect(() => {
         const userData = localStorage.getItem("affiliate_user")
         if (userData) {
-            const parsed = JSON.parse(userData) as User
-            setTimeout(() => {
-                setUser(parsed)
-            }, 0)
+            setUser(JSON.parse(userData))
         }
     }, [])
 
@@ -127,7 +65,7 @@ export default function BranchDashboard() {
     const loading = statsLoading || activitiesLoading
 
     // Real-time updates handler
-    const handleUpdate = useCallback((data: { type: string; message?: string; amount?: number }) => {
+    const handleUpdate = useCallback((data: any) => {
         console.log("Live update received:", data);
         if (data.type === 'stats_update' || data.type === 'payment_received') {
             setToastData({
@@ -146,6 +84,15 @@ export default function BranchDashboard() {
         affiliateCode: user?.refer_code || '',
         onMessage: handleUpdate
     });
+
+    useEffect(() => {
+        const userData = localStorage.getItem("affiliate_user")
+        if (userData) {
+            setUser(JSON.parse(userData))
+        }
+    }, [])
+
+
 
     const formatTimeAgo = (timestamp: string) => {
         const now = new Date()
@@ -193,7 +140,7 @@ export default function BranchDashboard() {
         }
     }
 
-    const statCards: { title: string; value: string | number; icon: React.ElementType; color: string; bg: string }[] = [
+    const statCards = [
         { title: "Total Partners", value: stats.totalAgents, icon: Users, color: "text-orange-600", bg: "bg-orange-50" },
         { title: "Pending Approval", value: stats.pendingApproval, icon: TrendingUp, color: "text-yellow-600", bg: "bg-yellow-50" },
         { title: "Total Commission", value: `₹${stats.totalCommission.toLocaleString("en-IN")}`, icon: DollarSign, color: "text-green-600", bg: "bg-green-50" },
@@ -214,20 +161,7 @@ export default function BranchDashboard() {
             )}
 
             {/* Header */}
-            <div className="sm:hidden">
-                <div className="flex items-center justify-between gap-3">
-                    <h1 className="text-2xl font-bold tracking-tight text-gray-900">Dashboard</h1>
-                    <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium ${isConnected ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-                        {isConnected ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
-                        {isConnected ? 'Live Updates On' : 'Connecting...'}
-                    </div>
-                </div>
-                <p className="text-sm text-gray-500 mt-1">
-                    Overview of your branch performance
-                </p>
-            </div>
-
-            <div className="hidden sm:flex sm:items-center justify-between gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-bold tracking-tight text-gray-900">Dashboard</h1>
                     <p className="text-sm text-gray-500 mt-1">
@@ -272,16 +206,6 @@ export default function BranchDashboard() {
                 })}
             </div>
 
-            {/* Mobile: Referral card below stats and above recent activity */}
-            {user?.refer_code && (
-                <ReferralCard
-                    referCode={user.refer_code}
-                    copied={copied}
-                    onCopy={copyReferralCode}
-                    className="lg:hidden"
-                />
-            )}
-
             {/* Main Content Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
@@ -299,7 +223,7 @@ export default function BranchDashboard() {
                         </h2>
 
                         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
-                            <div className="p-2 sm:p-0">
+                            <div className="p-0">
                                 {activitiesLoading ? (
                                     <div className="flex items-center justify-center py-12">
                                         <div className="w-6 h-6 border-2 border-t-transparent border-gray-300 rounded-full animate-spin"></div>
@@ -312,57 +236,28 @@ export default function BranchDashboard() {
                                         <p className="text-gray-500 text-sm">No recent activity found.</p>
                                     </div>
                                 ) : (
-                                    <div className="space-y-3 sm:space-y-0 sm:divide-y sm:divide-gray-100">
-                                        {activities.map((activity) => {
+                                    <div className="divide-y divide-gray-100">
+                                        {activities.map((activity, idx) => {
                                             const { icon: ActivityIcon, bgColor, iconColor } = getActivityIcon(activity.type)
                                             return (
-                                                <div key={activity.id}>
-                                                    <div className="sm:hidden p-3 rounded-xl border border-gray-100 bg-gradient-to-r from-white to-gray-50 shadow-sm flex items-start gap-3">
-                                                        <div className={`mt-0.5 p-2 rounded-full flex-shrink-0 ${bgColor}`}>
-                                                            <ActivityIcon className={`w-4 h-4 ${iconColor}`} />
-                                                        </div>
-                                                        <div className="flex-1 min-w-0">
-                                                            <div className="flex items-start justify-between gap-2">
-                                                                <p className="text-sm font-semibold text-gray-900 break-words leading-5">
-                                                                    {activity.data.name}
-                                                                </p>
-                                                                <span className="text-[11px] text-gray-500 whitespace-nowrap bg-white border border-gray-200 rounded-full px-2 py-0.5">
-                                                                    {formatTimeAgo(activity.timestamp)}
-                                                                </span>
-                                                            </div>
-                                                            <p className="text-xs text-gray-600 mt-1 break-words">{activity.data.action}</p>
-                                                            <div className="mt-2 flex items-center gap-2 flex-wrap">
-                                                                <span className="inline-flex items-center rounded-full bg-indigo-50 text-indigo-700 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide">
-                                                                    {activity.type.replace("_", " ")}
-                                                                </span>
-                                                                {activity.type === 'order' && activity.data.product_name && (
-                                                                    <span className="text-[11px] text-gray-600 bg-gray-100 px-2 py-0.5 rounded border border-gray-200">
-                                                                        {activity.data.product_name} - #{activity.data.order_id?.slice(-6)}
-                                                                    </span>
-                                                                )}
-                                                            </div>
-                                                        </div>
+                                                <div key={activity.id} className="p-4 hover:bg-gray-50 transition-colors flex items-start gap-4">
+                                                    <div className={`mt-1 p-2 rounded-full flex-shrink-0 ${bgColor}`}>
+                                                        <ActivityIcon className={`w-4 h-4 ${iconColor}`} />
                                                     </div>
-
-                                                    <div className="hidden sm:flex p-4 hover:bg-gray-50 transition-colors items-start gap-4">
-                                                        <div className={`mt-1 p-2 rounded-full flex-shrink-0 ${bgColor}`}>
-                                                            <ActivityIcon className={`w-4 h-4 ${iconColor}`} />
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="flex justify-between items-start">
+                                                            <p className="text-sm font-medium text-gray-900 truncate">
+                                                                {activity.data.name} <span className="font-normal text-gray-500">{activity.data.action}</span>
+                                                            </p>
+                                                            <span className="text-xs text-gray-400 whitespace-nowrap ml-2">
+                                                                {formatTimeAgo(activity.timestamp)}
+                                                            </span>
                                                         </div>
-                                                        <div className="flex-1 min-w-0">
-                                                            <div className="flex justify-between items-start">
-                                                                <p className="text-sm font-medium text-gray-900 truncate">
-                                                                    {activity.data.name} <span className="font-normal text-gray-500">{activity.data.action}</span>
-                                                                </p>
-                                                                <span className="text-xs text-gray-400 whitespace-nowrap ml-2">
-                                                                    {formatTimeAgo(activity.timestamp)}
-                                                                </span>
-                                                            </div>
-                                                            {activity.type === 'order' && activity.data.product_name && (
-                                                                <p className="text-xs text-gray-500 mt-0.5 truncate bg-gray-50 px-2 py-1 rounded w-fit border border-gray-100">
-                                                                    {activity.data.product_name} • <span className="font-medium">#{activity.data.order_id?.slice(-6)}</span>
-                                                                </p>
-                                                            )}
-                                                        </div>
+                                                        {activity.type === 'order' && activity.data.product_name && (
+                                                            <p className="text-xs text-gray-500 mt-0.5 truncate bg-gray-50 px-2 py-1 rounded w-fit border border-gray-100">
+                                                                {activity.data.product_name} • <span className="font-medium">#{activity.data.order_id?.slice(-6)}</span>
+                                                            </p>
+                                                        )}
                                                     </div>
                                                 </div>
                                             )
@@ -379,12 +274,43 @@ export default function BranchDashboard() {
 
                     {/* Referral Card - Professional & Clean */}
                     {user?.refer_code && (
-                        <ReferralCard
-                            referCode={user.refer_code}
-                            copied={copied}
-                            onCopy={copyReferralCode}
-                            className="hidden lg:block"
-                        />
+                        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                            <div className="p-6">
+                                <div className="flex items-center gap-3 mb-4">
+                                    <div className="p-2 bg-blue-50 rounded-lg">
+                                        <Share2 className="w-5 h-5 text-blue-600" />
+                                    </div>
+                                    <div>
+                                        <h3 className="font-bold text-gray-900">Your Referral Code</h3>
+                                        <p className="text-xs text-gray-500">Share to earn direct commissions</p>
+                                    </div>
+                                </div>
+
+                                <div className="bg-gray-50 border border-gray-200 rounded-lg p-1 flex items-center gap-2 mb-4">
+                                    <div className="flex-1 px-3 py-2 font-mono text-lg font-bold text-gray-800 tracking-wider text-center">
+                                        {user.refer_code}
+                                    </div>
+                                    <button
+                                        onClick={copyReferralCode}
+                                        className="p-2 bg-white border border-gray-200 rounded-md hover:bg-gray-50 transition-all text-gray-600 hover:text-gray-900 shadow-sm"
+                                        title="Copy Code"
+                                    >
+                                        {copied ? <Check className="w-5 h-5 text-green-600" /> : <Copy className="w-5 h-5" />}
+                                    </button>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-3 text-center">
+                                    <div className="p-3 rounded-lg bg-emerald-50 border border-emerald-100">
+                                        <p className="text-emerald-700 text-lg font-bold">85%</p>
+                                        <p className="text-emerald-600/80 text-[10px] uppercase font-semibold tracking-wide">Direct Sales</p>
+                                    </div>
+                                    <div className="p-3 rounded-lg bg-blue-50 border border-blue-100">
+                                        <p className="text-blue-700 text-lg font-bold">15%</p>
+                                        <p className="text-blue-600/80 text-[10px] uppercase font-semibold tracking-wide">Override</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     )}
 
                     {/* Quick Attributes */}

@@ -45,6 +45,7 @@ export async function GET(request: Request) {
         const userResult = await pool.query(userQuery, [referCode]);
 
         if (userResult.rows.length === 0) {
+            await pool.end();
             return NextResponse.json(
                 { success: false, error: 'Branch admin not found' },
                 { status: 404 }
@@ -79,6 +80,7 @@ export async function GET(request: Request) {
         // Calculate available balance (same logic as affiliate wallet)
         const availableBalance = totalEarned - totalDeducted;
 
+        await pool.end();
 
         // Format response
         const walletData = {

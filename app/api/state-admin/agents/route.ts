@@ -3,23 +3,6 @@ import { Pool } from "pg";
 
 export const dynamic = "force-dynamic"
 
-interface Agent {
-    id: string;
-    first_name: string;
-    last_name: string;
-    email: string;
-    phone: string;
-    refer_code: string;
-    branch: string;
-    city: string;
-    is_agent: boolean;
-    is_approved: boolean;
-    designation: string;
-    created_at: string;
-    branch_name: string;
-    store_city: string;
-}
-
 export async function GET(request: Request) {
     console.log("=== Fetching State Agents ===");
 
@@ -54,12 +37,13 @@ export async function GET(request: Request) {
             [state]
         );
 
+        await pool.end();
 
         console.log(`Found ${result.rows.length} agents in ${state}`);
 
         // Group agents by branch
-        const branchMap: { [key: string]: Agent[] } = {};
-        result.rows.forEach((agent: Agent) => {
+        const branchMap: { [key: string]: any[] } = {};
+        result.rows.forEach(agent => {
             const branchName = agent.branch || agent.branch_name || 'Unassigned';
             if (!branchMap[branchName]) {
                 branchMap[branchName] = [];
@@ -81,14 +65,13 @@ export async function GET(request: Request) {
             branchCount: branches.length
         });
 
-    } catch (error: unknown) {
-        const err = error as Error;
-        console.error("Failed to fetch state agents:", err);
+    } catch (error) {
+        console.error("Failed to fetch state agents:", error);
         return NextResponse.json(
             {
                 success: false,
                 error: "Failed to fetch agents",
-                message: err.message
+                message: error instanceof Error ? error.message : "Unknown error"
             },
             { status: 500 }
         );

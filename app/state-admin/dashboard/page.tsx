@@ -6,13 +6,13 @@ import useSWR from "swr"
 import Link from "next/link"
 import {
     Users, DollarSign, ShoppingBag, Building2,
-    Briefcase, ChevronRight, BarChart3, Clock, ArrowUpRight, TrendingUp, Share2, Copy, Check,
+    Briefcase, ChevronRight, UserPlus, BarChart3, Clock, ArrowUpRight, TrendingUp, Share2, Copy, Check, Sparkles, Wallet,
     MoreHorizontal, Wifi, WifiOff
 } from "lucide-react"
 import { useSSE } from "@/hooks/useSSE"
 import { Toast } from "@/components/Toast"
 
-interface Activity {
+type Activity = {
     id: string
     type: string
     message: string
@@ -23,66 +23,23 @@ interface Activity {
 
 const fetcher = (url: string) => axios.get(url).then(res => res.data)
 
-interface User {
-    id: string
-    name: string
-    email: string
-    refer_code: string
-    state: string
-    role: string
-}
-
-interface StatCardProps {
-    label: string
-    value: string | number
-    icon: React.ElementType
-    color: 'orange' | 'purple' | 'green' | 'yellow'
-    sublabel?: string
-    isCurrency?: boolean
-}
-
-interface QuickAttrItemProps {
-    icon: React.ElementType
-    label: string
-    value: string
-    color: 'orange' | 'yellow'
-    href: string
-}
-
 export default function StateAdminDashboard() {
-    const [user, setUser] = useState<User | null>(null)
+    const [user, setUser] = useState<any>(null)
     const [copied, setCopied] = useState(false)
 
     // Toast state
     const [showToast, setShowToast] = useState(false)
     const [toastData, setToastData] = useState<{ message: string; amount?: number }>({ message: "" })
 
-    const refreshUserProfile = async () => {
-        try {
-            const token = localStorage.getItem("affiliate_token")
-            if (!token) return
-            const response = await axios.get("/api/state-admin/me", { headers: { Authorization: `Bearer ${token}` } })
-            if (response.data.success) {
-                const updatedUser = response.data.user
-                setUser(updatedUser)
-                localStorage.setItem("affiliate_user", JSON.stringify(updatedUser))
-            }
-        } catch (error) {
-            console.error("Failed to refresh user profile:", error)
-        }
-    }
-
     useEffect(() => {
         const userData = localStorage.getItem("affiliate_user")
         if (userData) {
             const parsed = JSON.parse(userData)
+            setUser(parsed)
 
-            setTimeout(() => {
-                setUser(parsed)
-                if (!parsed.refer_code) {
-                    refreshUserProfile()
-                }
-            }, 0)
+            if (!parsed.refer_code) {
+                refreshUserProfile()
+            }
         }
     }, [])
 
@@ -112,7 +69,7 @@ export default function StateAdminDashboard() {
     const loading = statsLoading || activitiesLoading
 
     // Live updates
-    const handleUpdate = useCallback((data: { type: string; message?: string; amount?: number }) => {
+    const handleUpdate = useCallback((data: any) => {
         if (data.type === 'commission_update' || data.type === 'new_agent' || data.type === 'stats_update') {
             setToastData({
                 message: data.message || "New activity received!",
@@ -128,6 +85,23 @@ export default function StateAdminDashboard() {
         affiliateCode: user?.refer_code || '',
         onMessage: handleUpdate
     });
+
+    const refreshUserProfile = async () => {
+        try {
+            const token = localStorage.getItem("affiliate_token")
+            if (!token) return
+            const response = await axios.get("/api/state-admin/me", { headers: { Authorization: `Bearer ${token}` } })
+            if (response.data.success) {
+                const updatedUser = response.data.user
+                setUser(updatedUser)
+                localStorage.setItem("affiliate_user", JSON.stringify(updatedUser))
+            }
+        } catch (error) {
+            console.error("Failed to refresh user profile:", error)
+        }
+    }
+
+
 
     const copyReferralCode = async () => {
         if (user?.refer_code) {
@@ -310,7 +284,7 @@ export default function StateAdminDashboard() {
     )
 }
 
-function StatCard({ label, value, icon: Icon, color, sublabel, isCurrency }: StatCardProps) {
+function StatCard({ label, value, icon: Icon, color, sublabel, isCurrency }: any) {
     const styles = {
         orange: { bg: "bg-orange-50", text: "text-orange-600", iconBg: "bg-white" },
         purple: { bg: "bg-purple-50", text: "text-purple-600", iconBg: "bg-white" },
@@ -318,7 +292,8 @@ function StatCard({ label, value, icon: Icon, color, sublabel, isCurrency }: Sta
         yellow: { bg: "bg-amber-50", text: "text-amber-600", iconBg: "bg-white" },
     }
 
-    const currentStyle = styles[color as keyof typeof styles];
+    // @ts-ignore
+    const currentStyle = styles[color] || styles.orange
 
     return (
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 hover:shadow-md transition-shadow relative overflow-hidden group">
@@ -383,12 +358,13 @@ function ActivityItem({ activity }: { activity: Activity }) {
 }
 
 
-function QuickAttrItem({ icon: Icon, label, value, color, href }: QuickAttrItemProps) {
+function QuickAttrItem({ icon: Icon, label, value, color, href }: any) {
     const styles = {
         orange: { bg: "bg-orange-50", text: "text-orange-600" },
         yellow: { bg: "bg-amber-50", text: "text-amber-600" },
     }
-    const s = styles[color as keyof typeof styles];
+    // @ts-ignore
+    const s = styles[color] || styles.orange
 
     return (
         <Link href={href} className="flex items-center gap-4 group cursor-pointer hover:bg-slate-50 p-2 rounded-xl transition-colors -mx-2">

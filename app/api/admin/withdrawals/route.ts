@@ -40,27 +40,25 @@ export async function GET(request: Request) {
       FROM withdrawal_request
     `;
 
-        const values: (string | number)[] = [];
-        let valueIndex = 1;
+        const values: any[] = [];
 
         if (status) {
-            query += ` WHERE status = $${valueIndex}`;
+            query += ` WHERE status = $1`;
             values.push(status);
-            valueIndex++;
         }
 
         query += ` ORDER BY requested_at DESC`;
 
         const result = await pool.query(query, values);
+        await pool.end();
 
         return NextResponse.json({
             success: true,
             withdrawals: result.rows
         });
 
-    } catch (error: unknown) {
-        const err = error as Error;
-        console.error('Error fetching withdrawal requests:', err);
+    } catch (error) {
+        console.error('Error fetching withdrawal requests:', error);
         return NextResponse.json(
             {
                 success: false,
@@ -98,6 +96,7 @@ export async function POST(request: Request) {
             const withdrawalResult = await pool.query(getWithdrawal, [withdrawalId]);
 
             if (withdrawalResult.rows.length === 0) {
+                await pool.end();
                 return NextResponse.json(
                     { success: false, error: 'Withdrawal request not found or already processed' },
                     { status: 404 }
@@ -118,6 +117,7 @@ export async function POST(request: Request) {
             ]);
 
             if (deductResult.rowCount === 0) {
+                await pool.end();
                 return NextResponse.json(
                     { success: false, error: 'Insufficient wallet balance' },
                     { status: 400 }
@@ -148,15 +148,15 @@ export async function POST(request: Request) {
             await pool.query(updateQuery, [adminNotes || 'Rejected', withdrawalId]);
         }
 
+        await pool.end();
 
         return NextResponse.json({
             success: true,
             message: `Withdrawal request ${action.toLowerCase()}ed successfully`
         });
 
-    } catch (error: unknown) {
-        const err = error as Error;
-        console.error('Error processing withdrawal:', err);
+    } catch (error) {
+        console.error('Error processing withdrawal:', error);
         return NextResponse.json(
             {
                 success: false,

@@ -43,10 +43,9 @@ export default function GSTSettingsPage() {
             } else {
                 alert('Failed to save: ' + (data.error || 'Unknown error'))
             }
-        } catch (error: unknown) {
-            const err = error as Error & { response?: { data?: { error?: string } } };
-            console.error('Save error:', err)
-            alert('An error occurred: ' + (err.response?.data?.error || err.message))
+        } catch (error: any) {
+            console.error('Save error:', error)
+            alert('An error occurred: ' + (error.response?.data?.error || error.message))
         } finally {
             setSaving(false)
         }

@@ -3,15 +3,8 @@
 import { useEffect, useState } from "react"
 import { Search, Package, IndianRupee, Percent, Box, Share2 } from "lucide-react"
 import axios from "axios"
-import Image from "next/image"
-import { STORE_URL } from "@/lib/config"
+import { BACKEND_URL, STORE_URL } from "@/lib/config"
 import { useTheme } from "@/contexts/ThemeContext"
-
-interface User {
-    refer_code?: string
-    name?: string
-    email?: string
-}
 
 interface Product {
     id: string
@@ -38,7 +31,7 @@ export default function StateAdminProductsPage() {
     const [selectedCategory, setSelectedCategory] = useState<string>("all")
     const [searchQuery, setSearchQuery] = useState("")
     const [error, setError] = useState<string | null>(null)
-    const [user, setUser] = useState<User | null>(null)
+    const [user, setUser] = useState<any>(null)
 
     const [commissionRate, setCommissionRate] = useState<number>(0)
 
@@ -65,11 +58,10 @@ export default function StateAdminProductsPage() {
                 // Logic: Affiliate Base + Branch Bonus + Area Bonus + State Bonus
                 // This maximizes the incentive for state admins to sell directly.
 
-                const rates = response.data.rates as { role_type: string; commission_percentage: string }[];
-                const affiliateRateObj = rates.find((r) => r.role_type === "affiliate")
-                const branchDirectRateObj = rates.find((r) => r.role_type === "branch_direct")
-                const asmRateObj = rates.find((r) => r.role_type === "area")
-                const stateRateObj = rates.find((r) => r.role_type === "state")
+                const affiliateRateObj = response.data.rates.find((r: any) => r.role_type === "affiliate")
+                const branchDirectRateObj = response.data.rates.find((r: any) => r.role_type === "branch_direct")
+                const asmRateObj = response.data.rates.find((r: any) => r.role_type === "area")
+                const stateRateObj = response.data.rates.find((r: any) => r.role_type === "state")
 
                 const baseRate = parseFloat(affiliateRateObj?.commission_percentage || '70')
                 const branchBonus = parseFloat(branchDirectRateObj?.commission_percentage || '15')
@@ -98,10 +90,9 @@ export default function StateAdminProductsPage() {
             const data = response.data
             setProducts(data.products || data.allProducts || [])
             setCategories(data.categories || [])
-        } catch (err: unknown) {
-            const errorObj = err as { response?: { data?: { message?: string } }; message?: string };
+        } catch (err: any) {
             console.error("Error fetching products:", err)
-            setError(errorObj.response?.data?.message || errorObj.message || "Failed to load products")
+            setError(err.response?.data?.message || err.message || "Failed to load products")
         } finally {
             setLoading(false)
         }
@@ -207,7 +198,7 @@ export default function StateAdminProductsPage() {
     )
 }
 
-function ProductCard({ product, user, theme, commissionRate }: { product: Product; user: User | null; theme: { primary: string; background: string; sidebar: string }; commissionRate: number }) {
+function ProductCard({ product, user, theme, commissionRate }: { product: Product; user: any; theme: any; commissionRate: number }) {
     const [copied, setCopied] = useState(false)
 
     // Calculate approx commission ammount
@@ -216,10 +207,6 @@ function ProductCard({ product, user, theme, commissionRate }: { product: Produc
         : product.commissionAmount
 
     const handleShare = () => {
-        if (!STORE_URL) {
-            console.error("STORE_URL is not configured")
-            return
-        }
         const referralCode = user?.refer_code || ''
         const slug = product.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
         const shareLink = `${STORE_URL}/productDetail/${slug}?id=${product.id}&sourceTag=${encodeURIComponent(product.category)}&ref=${referralCode}`
@@ -248,15 +235,7 @@ function ProductCard({ product, user, theme, commissionRate }: { product: Produc
 
             <div className="h-48 bg-white flex items-center justify-center p-4">
                 {product.thumbnail ? (
-                    <div className="relative w-full h-full">
-                        <Image
-                            src={product.thumbnail}
-                            alt={product.title}
-                            fill
-                            className="object-contain"
-                            unoptimized
-                        />
-                    </div>
+                    <img src={product.thumbnail} alt={product.title} className="w-full h-full object-contain" />
                 ) : (
                     <Box className="text-gray-300" size={64} />
                 )}

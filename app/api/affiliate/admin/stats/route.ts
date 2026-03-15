@@ -47,6 +47,7 @@ export async function GET() {
         const totalOrdersResult = await pool.query(totalOrdersQuery);
         const totalOrders = parseInt(totalOrdersResult.rows[0]?.count) || 0;
 
+        await pool.end();
 
         const stats = {
             totalAgents,
@@ -63,14 +64,13 @@ export async function GET() {
             stats
         });
 
-    } catch (error: unknown) {
-        const err = error as Error;
-        console.error("Failed to fetch dashboard stats:", err);
+    } catch (error) {
+        console.error("Failed to fetch dashboard stats:", error);
         return NextResponse.json(
             {
                 success: false,
                 error: "Failed to fetch dashboard stats",
-                message: err.message
+                message: error instanceof Error ? error.message : "Unknown error"
             },
             { status: 500 }
         );

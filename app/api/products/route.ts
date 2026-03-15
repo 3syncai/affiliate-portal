@@ -40,14 +40,13 @@ export async function GET(req: NextRequest) {
         const data = await response.json();
         return NextResponse.json(data);
 
-    } catch (error: unknown) {
-        const err = error as Error;
-        console.error("Product proxy error:", err);
+    } catch (error: any) {
+        console.error("Product proxy error:", error);
         return NextResponse.json(
             {
                 success: false,
                 message: "Internal Proxy Error",
-                error: err.message
+                error: error.message
             },
             { status: 500 }
         );
