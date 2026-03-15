@@ -171,8 +171,8 @@ export async function GET() {
                     commissionRate: parseFloat(admin.commission_rate || '0'),
                     lifetimeEarnings,
                     paidAmount,
-                    currentEarnings: lifetimeEarnings - paidAmount,
-                    totalEarnings: lifetimeEarnings - paidAmount
+                    currentEarnings: Math.round((lifetimeEarnings - paidAmount) * 100) / 100 + 0,
+                    totalEarnings: Math.round((lifetimeEarnings - paidAmount) * 100) / 100 + 0
                 };
             }),
             ...asmResult.rows.map(admin => {
@@ -191,8 +191,8 @@ export async function GET() {
                     commissionRate: parseFloat(admin.commission_rate || '0'),
                     lifetimeEarnings,
                     paidAmount,
-                    currentEarnings: lifetimeEarnings - paidAmount,
-                    totalEarnings: lifetimeEarnings - paidAmount
+                    currentEarnings: Math.round((lifetimeEarnings - paidAmount) * 100) / 100 + 0,
+                    totalEarnings: Math.round((lifetimeEarnings - paidAmount) * 100) / 100 + 0
                 };
             }),
             ...stateResult.rows.map(admin => {
@@ -213,8 +213,8 @@ export async function GET() {
                     commissionRate: parseFloat(admin.commission_rate || '0'),
                     lifetimeEarnings,
                     paidAmount,
-                    currentEarnings: lifetimeEarnings - paidAmount,
-                    totalEarnings: lifetimeEarnings - paidAmount
+                    currentEarnings: Math.round((lifetimeEarnings - paidAmount) * 100) / 100 + 0,
+                    totalEarnings: Math.round((lifetimeEarnings - paidAmount) * 100) / 100 + 0
                 };
             })
         ];
