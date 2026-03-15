@@ -53,27 +53,12 @@ export default function StateAdminProductsPage() {
     const fetchCommissionRates = async () => {
         try {
             const response = await axios.get("/api/admin/commission-rates")
-            if (response.data.success && response.data.rates) {
-                // State Admin gets FULL STACK on direct sales?
-                // Logic: Affiliate Base + Branch Bonus + Area Bonus + State Bonus
-                // This maximizes the incentive for state admins to sell directly.
-
-                const affiliateRateObj = response.data.rates.find((r: any) => r.role_type === "affiliate")
-                const branchDirectRateObj = response.data.rates.find((r: any) => r.role_type === "branch_direct")
-                const asmRateObj = response.data.rates.find((r: any) => r.role_type === "area")
-                const stateRateObj = response.data.rates.find((r: any) => r.role_type === "state")
-
-                const baseRate = parseFloat(affiliateRateObj?.commission_percentage || '70')
-                const branchBonus = parseFloat(branchDirectRateObj?.commission_percentage || '15')
-                const asmBonus = parseFloat(asmRateObj?.commission_percentage || '10')
-                const stateBonus = parseFloat(stateRateObj?.commission_percentage || '5')
-
-                const totalRate = baseRate + branchBonus + asmBonus + stateBonus
-                setCommissionRate(totalRate >= 100 ? 100 : totalRate) // Cap at 100% just in case
+            if (response.data.success && response.data.summary?.state) {
+                setCommissionRate(Number(response.data.summary.state.directRate) || 0)
             }
         } catch (err) {
             console.error("Error fetching commission rates:", err)
-            setCommissionRate(100) // Default fallback for State Admin Direct
+            setCommissionRate(0)
         }
     }
 

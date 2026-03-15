@@ -57,7 +57,9 @@ export default function BranchDashboard() {
         totalAgents: 0,
         pendingApproval: 0,
         totalCommission: 0,
-        totalOrders: 0
+        totalOrders: 0,
+        directRate: 0,
+        overrideRate: 0
     }
 
     const activities: Activity[] = activityData?.success ? activityData.activities || [] : []
@@ -301,11 +303,11 @@ export default function BranchDashboard() {
 
                                 <div className="grid grid-cols-2 gap-3 text-center">
                                     <div className="p-3 rounded-lg bg-emerald-50 border border-emerald-100">
-                                        <p className="text-emerald-700 text-lg font-bold">85%</p>
+                                        <p className="text-emerald-700 text-lg font-bold">{stats.directRate}%</p>
                                         <p className="text-emerald-600/80 text-[10px] uppercase font-semibold tracking-wide">Direct Sales</p>
                                     </div>
                                     <div className="p-3 rounded-lg bg-blue-50 border border-blue-100">
-                                        <p className="text-blue-700 text-lg font-bold">15%</p>
+                                        <p className="text-blue-700 text-lg font-bold">{stats.overrideRate}%</p>
                                         <p className="text-blue-600/80 text-[10px] uppercase font-semibold tracking-wide">Override</p>
                                     </div>
                                 </div>

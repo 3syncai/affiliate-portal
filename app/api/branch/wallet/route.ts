@@ -54,13 +54,14 @@ export async function GET(request: Request) {
 
         const user = userResult.rows[0];
 
-        // Fetch total commission earned from DIRECT referrals (commission_source = 'branch_admin')
-        // Uses affiliate_commission column which stores the actual amount (85% for branch admins)
+        // Fetch credited commission earned from direct referrals
         const commissionQuery = `
             SELECT 
-                COALESCE(SUM(COALESCE(affiliate_commission, commission_amount * 0.85)), 0) as total_earned
+                COALESCE(SUM(affiliate_commission), 0) as total_earned
             FROM affiliate_commission_log
-            WHERE affiliate_code = $1 AND commission_source = 'branch_admin'
+            WHERE affiliate_code = $1
+              AND commission_source = 'branch_admin'
+              AND status = 'CREDITED'
         `;
         const commissionResult = await pool.query(commissionQuery, [referCode]);
         const totalEarned = parseFloat(commissionResult.rows[0]?.total_earned) || 0;

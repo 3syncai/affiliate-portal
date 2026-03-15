@@ -60,7 +60,8 @@ export async function GET() {
                          FROM affiliate_commission_log acl
                          JOIN affiliate_user au ON acl.affiliate_code = au.refer_code
                          JOIN stores s ON LOWER(au.branch) = LOWER(s.branch_name)
-                         WHERE LOWER(s.city) = LOWER(asm.city) AND LOWER(s.state) = LOWER(asm.state)), 
+                         WHERE LOWER(s.city) = LOWER(asm.city) AND LOWER(s.state) = LOWER(asm.state)
+                         AND acl.status = 'CREDITED'), 
                         0
                     ) * (SELECT commission_percentage FROM commission_rates WHERE role_type = 'area') / 100
                 ) + 
@@ -109,21 +110,24 @@ export async function GET() {
                      FROM affiliate_commission_log acl
                      JOIN affiliate_user au ON acl.affiliate_code = au.refer_code
                      JOIN stores s ON LOWER(au.branch) = LOWER(s.branch_name)
-                     WHERE LOWER(s.state) = LOWER(sa.state)), 
+                     WHERE LOWER(s.state) = LOWER(sa.state)
+                     AND acl.status = 'CREDITED'), 
                     0
                 ) +
                 COALESCE(
                     (SELECT SUM(acl.commission_amount) 
                      FROM affiliate_commission_log acl
                      JOIN branch_admin ba ON acl.affiliate_code = ba.refer_code
-                     WHERE LOWER(ba.state) = LOWER(sa.state) AND acl.commission_source = 'branch_admin' AND acl.affiliate_rate > 20),
+                     WHERE LOWER(ba.state) = LOWER(sa.state) AND acl.commission_source = 'branch_admin'
+                     AND acl.status = 'CREDITED'),
                     0
                 ) +
                 COALESCE(
                     (SELECT SUM(acl.commission_amount) 
                      FROM affiliate_commission_log acl
                      JOIN area_sales_manager asm ON acl.affiliate_code = asm.refer_code
-                     WHERE LOWER(asm.state) = LOWER(sa.state) AND acl.commission_source = 'asm_direct' AND acl.affiliate_rate > 20),
+                     WHERE LOWER(asm.state) = LOWER(sa.state) AND acl.commission_source = 'asm_direct'
+                     AND acl.status = 'CREDITED'),
                     0
                 ) as total_commission_base,
                 
@@ -132,6 +136,7 @@ export async function GET() {
                     (SELECT SUM(affiliate_commission)
                      FROM affiliate_commission_log
                      WHERE affiliate_code = sa.refer_code
+                     AND commission_source = 'state_admin_direct'
                      AND status = 'CREDITED'),
                     0
                 ) as direct_earnings,
@@ -227,11 +232,11 @@ export async function GET() {
             count: allAdmins.length
         });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Failed to fetch payable admins:", error);
         return NextResponse.json({
             success: false,
-            error: error.message
+            error: error instanceof Error ? error.message : "Unknown error"
         }, { status: 500 });
     }
 }

@@ -1,12 +1,23 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
+import { useState, useCallback } from "react"
 import axios from "axios"
 import useSWR from 'swr'
-import { DollarSign, TrendingUp, ShoppingBag, Calendar, AlertCircle, Wallet, ArrowDownCircle, ArrowUpCircle, Users, Package, Info, Wifi, WifiOff } from "lucide-react"
-import { useTheme } from "@/contexts/ThemeContext"
+import { DollarSign, ShoppingBag, AlertCircle, Wallet, ArrowUpCircle, Users, Package, Info, Wifi, WifiOff } from "lucide-react"
 import { useSSE } from "@/hooks/useSSE"
 import { Toast } from "@/components/Toast"
+
+type DashboardUser = {
+    id?: string
+    branch?: string
+    refer_code?: string
+}
+
+type LiveUpdate = {
+    type?: string
+    amount?: number
+    message?: string
+}
 
 type Order = {
     id: string
@@ -18,24 +29,34 @@ type Order = {
     last_name: string
     refer_code: string
     type: string
+    status?: string
 }
 
 const fetcher = (url: string) => axios.get(url).then(res => res.data)
 
+const getStoredUser = (): DashboardUser | null => {
+    if (typeof window === "undefined") {
+        return null
+    }
+
+    const storedUser = window.localStorage.getItem("affiliate_user")
+    if (!storedUser) {
+        return null
+    }
+
+    try {
+        return JSON.parse(storedUser) as DashboardUser
+    } catch {
+        return null
+    }
+}
+
 export default function EarningsPage() {
-    const { theme } = useTheme()
-    const [user, setUser] = useState<any>(null)
+    const [user] = useState<DashboardUser | null>(() => getStoredUser())
 
     // Toast state
     const [showToast, setShowToast] = useState(false)
     const [toastData, setToastData] = useState<{ message: string; amount?: number }>({ message: "" })
-
-    useEffect(() => {
-        const userData = localStorage.getItem("affiliate_user")
-        if (userData) {
-            setUser(JSON.parse(userData))
-        }
-    }, [])
 
     const { data, mutate, isLoading } = useSWR(
         user?.branch ? `/api/branch/earnings?branch=${encodeURIComponent(user.branch)}${user.id ? `&adminId=${user.id}` : ''}` : null,
@@ -44,21 +65,28 @@ export default function EarningsPage() {
 
     const stats = data?.success ? data.stats : {
         totalEarnings: 0,
+        lifetimeEarnings: 0,
+        creditedLifetimeEarnings: 0,
+        pendingEarnings: 0,
         overrideEarnings: 0,
         directEarnings: 0,
+        pendingOverrideEarnings: 0,
+        pendingDirectEarnings: 0,
         totalOrders: 0,
         overrideOrders: 0,
         directOrders: 0,
         paidAmount: 0,
         currentEarnings: 0,
-        commissionRate: 0
+        commissionRate: 0,
+        overrideRate: 0,
+        directRate: 0
     }
 
     const recentOrders: Order[] = data?.success ? data.recentOrders : []
     const loading = isLoading
 
     // Live updates
-    const handleUpdate = useCallback((data: any) => {
+    const handleUpdate = useCallback((data: LiveUpdate) => {
         if (data.type === 'stats_update' || data.type === 'payment_received') {
             setToastData({
                 message: data.message || "Earnings updated!",
@@ -122,7 +150,7 @@ export default function EarningsPage() {
                         <DollarSign className="w-16 h-16 text-emerald-600" />
                     </div>
                     <p className="text-sm font-medium text-gray-500">Total Lifetime Earnings</p>
-                    <h2 className="text-3xl font-bold text-gray-900 mt-2 tracking-tight">{formatCurrency(stats.totalEarnings)}</h2>
+                    <h2 className="text-3xl font-bold text-gray-900 mt-2 tracking-tight">{formatCurrency(stats.lifetimeEarnings || stats.totalEarnings)}</h2>
 
                     <div className="mt-4 pt-4 border-t border-gray-100 space-y-2">
                         <div className="flex justify-between text-xs">
@@ -132,6 +160,10 @@ export default function EarningsPage() {
                         <div className="flex justify-between text-xs">
                             <span className="text-gray-500 flex items-center gap-1"><Package className="w-3 h-3" /> From Direct Referrals</span>
                             <span className="font-medium text-gray-900">{formatCurrency(stats.directEarnings)}</span>
+                        </div>
+                        <div className="flex justify-between text-xs">
+                            <span className="text-amber-700 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> Pending Until Delivery</span>
+                            <span className="font-medium text-amber-700">{formatCurrency(stats.pendingEarnings)}</span>
                         </div>
                     </div>
                 </div>
@@ -160,6 +192,12 @@ export default function EarningsPage() {
                                 Paid Out: {formatCurrency(stats.paidAmount)}
                             </span>
                         </div>
+
+                        {stats.pendingEarnings > 0 && (
+                            <p className="text-xs text-amber-300 mt-3">
+                                Pending until delivery: {formatCurrency(stats.pendingEarnings)}
+                            </p>
+                        )}
                     </div>
                     <div className="absolute bottom-0 right-0 p-6 opacity-10">
                         <Wallet className="w-12 h-12 text-white" />
@@ -198,8 +236,8 @@ export default function EarningsPage() {
                     <h4 className="text-sm font-medium text-blue-900">Earning Structure</h4>
                     <p className="text-sm text-blue-700/80 leading-relaxed">
                         You earn in two ways:
-                        <span className="font-semibold"> 85% commission</span> on your direct referrals, plus
-                        <span className="font-semibold"> {stats.commissionRate}% override</span> on all sales made by partners in your branch.
+                        <span className="font-semibold"> {stats.directRate}% commission</span> on your direct referrals, plus
+                        <span className="font-semibold"> {stats.overrideRate}% override</span> on all sales made by partners in your branch.
                     </p>
                 </div>
             </div>
@@ -245,7 +283,15 @@ export default function EarningsPage() {
                                         </td>
                                         <td className="px-6 py-4 text-sm text-gray-600">
                                             <div className="font-medium text-gray-900">{order.product_name}</div>
-                                            <div className="text-xs text-gray-500">#{order.order_id}</div>
+                                            <div className="flex items-center gap-2 mt-1">
+                                                <div className="text-xs text-gray-500">#{order.order_id}</div>
+                                                <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase ${order.status === 'CREDITED'
+                                                    ? 'bg-emerald-100 text-emerald-700'
+                                                    : 'bg-amber-100 text-amber-700'
+                                                    }`}>
+                                                    {order.status === 'CREDITED' ? 'Credited' : 'Pending'}
+                                                </span>
+                                            </div>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             {order.first_name} {order.last_name}

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Pool } from "pg";
+import { fetchCommissionRates } from "@/lib/commission-rates";
 
 export const dynamic = "force-dynamic";
 
@@ -18,6 +19,7 @@ export async function GET(req: NextRequest) {
             connectionString: process.env.DATABASE_URL || process.env.NEXT_PUBLIC_DATABASE_URL,
             ssl: { rejectUnauthorized: false }
         });
+        const commissionRates = await fetchCommissionRates(pool);
 
         // Get branches from stores table in this state
         const branchesQuery = `
@@ -42,6 +44,8 @@ export async function GET(req: NextRequest) {
         // Get total orders and commission in this state (using stores table)
         let totalOrders = 0;
         let totalCommission = 0;
+        let pendingCommission = 0;
+        let creditedCommission = 0;
         try {
             const ordersQuery = `
                 SELECT 
@@ -57,12 +61,10 @@ export async function GET(req: NextRequest) {
             const ordersResult = await pool.query(ordersQuery, [state]);
             totalOrders = parseInt(ordersResult.rows[0]?.total_orders || '0');
             totalCommission = parseFloat(ordersResult.rows[0]?.total_commission || '0');
-            var pendingCommission = parseFloat(ordersResult.rows[0]?.pending_commission || '0');
-            var creditedCommission = parseFloat(ordersResult.rows[0]?.credited_commission || '0');
+            pendingCommission = parseFloat(ordersResult.rows[0]?.pending_commission || '0');
+            creditedCommission = parseFloat(ordersResult.rows[0]?.credited_commission || '0');
         } catch (err) {
             console.error("Failed to get orders:", err);
-            var pendingCommission = 0;
-            var creditedCommission = 0;
         }
 
         await pool.end();
@@ -74,7 +76,9 @@ export async function GET(req: NextRequest) {
             totalCommission,
             totalOrders,
             pending_commission: pendingCommission,
-            credited_commission: creditedCommission
+            credited_commission: creditedCommission,
+            directRate: commissionRates.summary.state.directRate,
+            overrideRate: commissionRates.summary.state.overrideRate
         };
 
         console.log("State Admin Stats:", stats);
@@ -84,11 +88,11 @@ export async function GET(req: NextRequest) {
             stats
         });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Failed to fetch state admin stats:", error);
         return NextResponse.json({
             success: false,
-            error: error.message
+            error: error instanceof Error ? error.message : "Unknown error"
         }, { status: 500 });
     }
 }

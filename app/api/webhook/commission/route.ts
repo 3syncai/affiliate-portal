@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import pool from "@/lib/db";
 import { sendNotification } from "@/lib/sse";
+import { normalizeCommissionStatus } from "@/lib/commission-status";
 
 export const dynamic = "force-dynamic";
 
@@ -71,8 +72,6 @@ export async function POST(request: NextRequest) {
         // STEP 1: Lookup commission percentage from product_commissions table
         // Priority: product_id > category_id > collection_id > product_type_id
         let commissionPercentage = 0;
-        let commissionSource = 'none';
-
         const commissionQuery = `
             SELECT commission_rate as commission_percentage, 
                    CASE 
@@ -105,13 +104,11 @@ export async function POST(request: NextRequest) {
 
         if (commissionResult.rows.length > 0) {
             commissionPercentage = parseFloat(commissionResult.rows[0].commission_percentage);
-            commissionSource = commissionResult.rows[0].source;
-            console.log(`[Commission Lookup] Found ${commissionPercentage}% commission via ${commissionSource}`);
+            console.log(`[Commission Lookup] Found ${commissionPercentage}% commission via ${commissionResult.rows[0].source}`);
         } else {
             console.log('[Commission Lookup] No commission found for this product. Using default fallback (0%).');
             // FALLBACK: Don't fail, just log with 0% commission so the order is tracked
             commissionPercentage = 0;
-            commissionSource = 'uncategorized_fallback';
 
             // Optional: You could fetch a global default from a settings table here if it existed
         }
@@ -119,6 +116,10 @@ export async function POST(request: NextRequest) {
         // STEP 2: Calculate commission amount based on price and percentage
         const commissionAmount = payload.order_amount * (commissionPercentage / 100);
         console.log(`[Commission Calculation] ${payload.order_amount} * ${commissionPercentage}% = ${commissionAmount}`);
+
+        const commissionStatus = normalizeCommissionStatus(payload.status);
+        const shouldCreditCommission = commissionStatus === "CREDITED";
+        console.log(`[Commission Status] Incoming status "${payload.status || "PENDING"}" normalized to ${commissionStatus}`);
 
         // STEP 3: Check Branch Admin
         const branchAdminResult = await pool.query(`
@@ -166,15 +167,15 @@ export async function POST(request: NextRequest) {
                 await pool.query(`
                     INSERT INTO affiliate_commission_log (
                         order_id, affiliate_code, affiliate_user_id, product_name, quantity, item_price, order_amount,
-                        commission_rate, commission_amount, affiliate_rate, affiliate_commission,
-                        commission_source, status, customer_id, customer_name, customer_email, 
-                        product_id, category_id, collection_id, created_at
-                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, NOW())
-                `, [
+                    commission_rate, commission_amount, affiliate_rate, affiliate_commission,
+                    commission_source, status, customer_id, customer_name, customer_email, 
+                    product_id, category_id, collection_id, created_at
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, NOW())
+            `, [
                     payload.order_id, payload.affiliate_code, branchAdmin.id, payload.product_name || 'Product',
                     payload.quantity || 1, payload.item_price || 0, payload.order_amount || 0,
                     commissionPercentage, commissionAmount, affiliateRate, affiliateCommission,
-                    'branch_admin', 'PENDING',
+                    'branch_admin', commissionStatus,
                     payload.customer_id || null, payload.customer_name || null, payload.customer_email || null,
                     payload.product_id, payload.category_id || null, payload.collection_id || null
                 ]);
@@ -183,7 +184,9 @@ export async function POST(request: NextRequest) {
                 // NOTIFY Branch Admin
                 sendNotification(payload.affiliate_code, {
                     type: 'stats_update',
-                    message: `New Commission: ₹${affiliateCommission.toFixed(2)}`,
+                    message: commissionStatus === "CREDITED"
+                        ? `Commission Credited: ₹${affiliateCommission.toFixed(2)}`
+                        : `Commission Pending: ₹${affiliateCommission.toFixed(2)}`,
                     amount: affiliateCommission
                 });
 
@@ -193,7 +196,7 @@ export async function POST(request: NextRequest) {
 
                 // UPDATE STATUS if changing from PENDING to CREDITED
                 const currentStatus = existingCheck.rows[0]?.status; // Need to select status in check query
-                if (currentStatus !== 'CREDITED' && (payload.status === 'CREDITED' || payload.status === 'COMPLETED')) {
+                if (currentStatus !== 'CREDITED' && shouldCreditCommission) {
                     await pool.query(`
                         UPDATE affiliate_commission_log 
                         SET status = 'CREDITED', credited_at = NOW()
@@ -235,7 +238,7 @@ export async function POST(request: NextRequest) {
 
                     // Check duplicate for Area Manager
                     const areaCheck = await pool.query(`
-                        SELECT id FROM affiliate_commission_log 
+                        SELECT id, status FROM affiliate_commission_log 
                         WHERE order_id = $1 AND product_name = $2 AND customer_email = $3 AND commission_source = 'area_manager'
                     `, [payload.order_id, payload.product_name, areaManager.email]);
 
@@ -253,13 +256,22 @@ export async function POST(request: NextRequest) {
                             payload.product_name || 'Product',
                             payload.quantity || 1, payload.item_price || 0, payload.order_amount || 0,
                             commissionPercentage, commissionAmount, areaRate, areaCommission,
-                            'area_manager', payload.status || 'PENDING',
+                            'area_manager', commissionStatus,
                             payload.customer_id || null, // Added customer_id
                             `${areaManager.first_name} ${areaManager.last_name}`, areaManager.email,
                             payload.product_id, payload.category_id || null, payload.collection_id || null
                         ]);
                         console.log(`[Hierarchy] Logged Level 2 (Area Manager) Commission: ₹${areaCommission} for ${areaManager.first_name}`);
                         // Note: Area Manager Wallet credit logic would go here if they have a wallet system
+                    } else {
+                        const currentStatus = areaCheck.rows[0]?.status;
+                        if (currentStatus !== 'CREDITED' && shouldCreditCommission) {
+                            await pool.query(`
+                                UPDATE affiliate_commission_log
+                                SET status = 'CREDITED', credited_at = NOW()
+                                WHERE id = $1
+                            `, [areaCheck.rows[0].id]);
+                        }
                     }
                 }
             }
@@ -280,7 +292,7 @@ export async function POST(request: NextRequest) {
 
                     // Check duplicate for State Admin
                     const stateCheck = await pool.query(`
-                        SELECT id FROM affiliate_commission_log 
+                        SELECT id, status FROM affiliate_commission_log 
                         WHERE order_id = $1 AND product_name = $2 AND customer_email = $3 AND commission_source = 'state_admin'
                     `, [payload.order_id, payload.product_name, stateAdmin.email]);
 
@@ -298,12 +310,21 @@ export async function POST(request: NextRequest) {
                             payload.product_name || 'Product',
                             payload.quantity || 1, payload.item_price || 0, payload.order_amount || 0,
                             commissionPercentage, commissionAmount, stateRate, stateCommission,
-                            'state_admin', payload.status || 'PENDING',
+                            'state_admin', commissionStatus,
                             payload.customer_id || null, // Added customer_id
                             `${stateAdmin.first_name} ${stateAdmin.last_name}`, stateAdmin.email,
                             payload.product_id, payload.category_id || null, payload.collection_id || null
                         ]);
                         console.log(`[Hierarchy] Logged Level 3 (State Admin) Commission: ₹${stateCommission} for ${stateAdmin.first_name}`);
+                    } else {
+                        const currentStatus = stateCheck.rows[0]?.status;
+                        if (currentStatus !== 'CREDITED' && shouldCreditCommission) {
+                            await pool.query(`
+                                UPDATE affiliate_commission_log
+                                SET status = 'CREDITED', credited_at = NOW()
+                                WHERE id = $1
+                            `, [stateCheck.rows[0].id]);
+                        }
                     }
                 }
             }
@@ -340,18 +361,14 @@ export async function POST(request: NextRequest) {
                     payload.order_id, payload.affiliate_code, payload.product_name || 'Product',
                     payload.quantity || 1, payload.item_price || 0, payload.order_amount || 0,
                     commissionPercentage, commissionAmount, totalRate, asmCommission,
-                    'asm_direct', 'PENDING',
+                    'asm_direct', commissionStatus,
                     payload.customer_id || null, payload.customer_name || null, payload.customer_email || null,
                     payload.product_id, payload.category_id || null, payload.collection_id || null
                 ]);
-                if (payload.status === 'CREDITED' || payload.status === 'COMPLETED') {
-                    // ASM Wallet Credit Logic (if applicable)
-                }
-
             } else {
                 // UPDATE STATUS for ASM
                 const currentStatus = existingCheck.rows[0]?.status;
-                if (currentStatus !== 'CREDITED' && (payload.status === 'CREDITED' || payload.status === 'COMPLETED')) {
+                if (currentStatus !== 'CREDITED' && shouldCreditCommission) {
                     await pool.query(`
                         UPDATE affiliate_commission_log 
                         SET status = 'CREDITED', credited_at = NOW()
@@ -377,7 +394,7 @@ export async function POST(request: NextRequest) {
 
                     // Check duplicate for State Admin
                     const stateCheck = await pool.query(`
-                        SELECT id FROM affiliate_commission_log 
+                        SELECT id, status FROM affiliate_commission_log 
                         WHERE order_id = $1 AND product_name = $2 AND customer_email = $3 AND commission_source = 'state_admin'
                     `, [payload.order_id, payload.product_name, stateAdmin.email]);
 
@@ -395,12 +412,21 @@ export async function POST(request: NextRequest) {
                             payload.product_name || 'Product',
                             payload.quantity || 1, payload.item_price || 0, payload.order_amount || 0,
                             commissionPercentage, commissionAmount, stateRate, stateCommission,
-                            'state_admin', payload.status || 'PENDING',
+                            'state_admin', commissionStatus,
                             payload.customer_id || null,
                             `${stateAdmin.first_name} ${stateAdmin.last_name}`, stateAdmin.email,
                             payload.product_id, payload.category_id || null, payload.collection_id || null
                         ]);
                         console.log(`[State Admin] Logged Commission: ₹${stateCommission} for ${stateAdmin.first_name} (ASM referral)`);
+                    } else {
+                        const currentStatus = stateCheck.rows[0]?.status;
+                        if (currentStatus !== 'CREDITED' && shouldCreditCommission) {
+                            await pool.query(`
+                                UPDATE affiliate_commission_log
+                                SET status = 'CREDITED', credited_at = NOW()
+                                WHERE id = $1
+                            `, [stateCheck.rows[0].id]);
+                        }
                     }
                 }
             }
@@ -434,14 +460,14 @@ export async function POST(request: NextRequest) {
 
                 // Deduplication check
                 const existingCheck = await pool.query(`
-                    SELECT id FROM affiliate_commission_log 
+                    SELECT id, status FROM affiliate_commission_log 
                     WHERE order_id = $1 AND product_name = $2 AND affiliate_code = $3
                 `, [payload.order_id, payload.product_name, payload.affiliate_code]);
 
                 // UPDATE STATUS for State Admin Direct
                 if (existingCheck.rows.length > 0) {
                     const currentStatus = existingCheck.rows[0]?.status;
-                    if (currentStatus !== 'CREDITED' && (payload.status === 'CREDITED' || payload.status === 'COMPLETED')) {
+                    if (currentStatus !== 'CREDITED' && shouldCreditCommission) {
                         await pool.query(`
                             UPDATE affiliate_commission_log 
                             SET status = 'CREDITED', credited_at = NOW()
@@ -466,7 +492,7 @@ export async function POST(request: NextRequest) {
                         payload.order_id, payload.affiliate_code, payload.product_name || 'Product',
                         payload.quantity || 1, payload.item_price || 0, payload.order_amount || 0,
                         commissionPercentage, commissionAmount, totalRate, stateCommission,
-                        'state_admin_direct', 'PENDING',
+                        'state_admin_direct', commissionStatus,
                         payload.customer_id || null, payload.customer_name || null, payload.customer_email || null,
                         payload.product_id, payload.category_id || null, payload.collection_id || null
                     ]);
@@ -511,7 +537,7 @@ export async function POST(request: NextRequest) {
                         payload.order_id, payload.affiliate_code, payload.product_name || 'Product',
                         payload.quantity || 1, payload.item_price || 0, payload.order_amount || 0,
                         commissionPercentage, commissionAmount, affiliateRate, affiliateCommission,
-                        'affiliate', 'PENDING',
+                        'affiliate', commissionStatus,
                         payload.customer_id || null, payload.customer_name || null, payload.customer_email || null,
                         payload.product_id, payload.category_id || null, payload.collection_id || null
                     ]);
@@ -524,7 +550,7 @@ export async function POST(request: NextRequest) {
                 } else {
                     // UPDATE STATUS
                     const currentStatus = existingCheck.rows[0]?.status;
-                    if (currentStatus !== 'CREDITED' && (payload.status === 'CREDITED' || payload.status === 'COMPLETED')) {
+                    if (currentStatus !== 'CREDITED' && shouldCreditCommission) {
                         await pool.query(`
                             UPDATE affiliate_commission_log 
                             SET status = 'CREDITED', credited_at = NOW()
@@ -545,7 +571,7 @@ export async function POST(request: NextRequest) {
                 // --- B) Pay Branch Admin Override (15%) ---
                 if (affiliateUser && affiliateUser.branch) {
                     const branchAdminRes = await pool.query(`
-                        SELECT id, first_name, last_name, email, city, state FROM branch_admin
+                        SELECT id, refer_code, first_name, last_name, email, city, state FROM branch_admin
                         WHERE branch = $1
                     `, [affiliateUser.branch]);
 
@@ -556,7 +582,7 @@ export async function POST(request: NextRequest) {
                         const brCommission = commissionAmount * (brRate / 100);
 
                         const brCheck = await pool.query(`
-                            SELECT id FROM affiliate_commission_log 
+                            SELECT id, status FROM affiliate_commission_log 
                             WHERE order_id = $1 AND product_name = $2 AND customer_email = $3 AND commission_source = 'branch_admin'
                         `, [payload.order_id, payload.product_name, branchAdmin.email]);
 
@@ -572,7 +598,7 @@ export async function POST(request: NextRequest) {
                                 payload.order_id, 'BRANCH', payload.product_name || 'Product',
                                 payload.quantity || 1, payload.item_price || 0, payload.order_amount || 0,
                                 commissionPercentage, commissionAmount, brRate, brCommission,
-                                'branch_admin', 'PENDING',
+                                'branch_admin', commissionStatus,
                                 payload.customer_id || null,
                                 `${branchAdmin.first_name} ${branchAdmin.last_name}`, branchAdmin.email,
                                 branchAdmin.id, // Set affiliate_user_id
@@ -583,7 +609,9 @@ export async function POST(request: NextRequest) {
                             // NOTIFY Branch Admin (Override)
                             sendNotification(branchAdmin.refer_code, {
                                 type: 'stats_update',
-                                message: `New Override Commission: ₹${brCommission.toFixed(2)}`,
+                                message: commissionStatus === "CREDITED"
+                                    ? `Override Commission Credited: ₹${brCommission.toFixed(2)}`
+                                    : `Override Commission Pending: ₹${brCommission.toFixed(2)}`,
                                 amount: brCommission
                             });
 
@@ -592,7 +620,7 @@ export async function POST(request: NextRequest) {
                             // ... existing update logic
                             // UPDATE STATUS for Branch Admin
                             const currentStatus = brCheck.rows[0]?.status;
-                            if (currentStatus !== 'CREDITED' && (payload.status === 'CREDITED' || payload.status === 'COMPLETED')) {
+                            if (currentStatus !== 'CREDITED' && shouldCreditCommission) {
                                 await pool.query(`
                                     UPDATE affiliate_commission_log 
                                     SET status = 'CREDITED', credited_at = NOW()
@@ -654,7 +682,7 @@ export async function POST(request: NextRequest) {
                                 payload.order_id, 'AREA', payload.product_name || 'Product',
                                 payload.quantity || 1, payload.item_price || 0, payload.order_amount || 0,
                                 commissionPercentage, commissionAmount, areaRate, areaCommission,
-                                'area_manager', 'PENDING',
+                                'area_manager', commissionStatus,
                                 payload.customer_id || null,
                                 `${asm.first_name} ${asm.last_name}`, asm.email,
                                 asm.id, // Set affiliate_user_id
@@ -666,7 +694,7 @@ export async function POST(request: NextRequest) {
                         } else {
                             // ... update logic ...
                             const currentStatus = areaCheck.rows[0]?.status;
-                            if (currentStatus !== 'CREDITED' && (payload.status === 'CREDITED' || payload.status === 'COMPLETED')) {
+                            if (currentStatus !== 'CREDITED' && shouldCreditCommission) {
                                 await pool.query(`
                                     UPDATE affiliate_commission_log 
                                     SET status = 'CREDITED', credited_at = NOW()
@@ -716,7 +744,7 @@ export async function POST(request: NextRequest) {
                                 payload.order_id, 'STATE', payload.product_name || 'Product',
                                 payload.quantity || 1, payload.item_price || 0, payload.order_amount || 0,
                                 commissionPercentage, commissionAmount, stateRate, stateCommission,
-                                'state_admin', 'PENDING',
+                                'state_admin', commissionStatus,
                                 payload.customer_id || null,
                                 `${stateAdmin.first_name} ${stateAdmin.last_name}`, stateAdmin.email,
                                 stateAdmin.id, // Set affiliate_user_id
@@ -728,7 +756,7 @@ export async function POST(request: NextRequest) {
                         } else {
                             // ... update logic ...
                             const currentStatus = stateCheck.rows[0]?.status;
-                            if (currentStatus !== 'CREDITED' && (payload.status === 'CREDITED' || payload.status === 'COMPLETED')) {
+                            if (currentStatus !== 'CREDITED' && shouldCreditCommission) {
                                 await pool.query(`
                                     UPDATE affiliate_commission_log 
                                     SET status = 'CREDITED', credited_at = NOW()
@@ -757,11 +785,11 @@ export async function POST(request: NextRequest) {
             message: "Commission processed successfully"
         });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Commission recording failed:", error);
         return NextResponse.json({
             success: false,
-            error: error.message
+            error: error instanceof Error ? error.message : "Unknown error"
         }, { status: 500 });
     }
 }

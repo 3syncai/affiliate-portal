@@ -53,19 +53,12 @@ export default function BranchProductsPage() {
     const fetchCommissionRates = async () => {
         try {
             const response = await axios.get("/api/admin/commission-rates")
-            if (response.data.success && response.data.rates) {
-                const affiliateRateObj = response.data.rates.find((r: any) => r.role_type === "affiliate")
-                const branchDirectRateObj = response.data.rates.find((r: any) => r.role_type === "branch")
-
-                const baseRate = parseFloat(affiliateRateObj?.commission_percentage || '70')
-                const bonusRate = parseFloat(branchDirectRateObj?.commission_percentage || '15')
-
-                setCommissionRate(baseRate + bonusRate)
+            if (response.data.success && response.data.summary?.branch) {
+                setCommissionRate(Number(response.data.summary.branch.directRate) || 0)
             }
         } catch (err) {
             console.error("Error fetching commission rates:", err)
-            // Default fallback
-            setCommissionRate(85)
+            setCommissionRate(0)
         }
     }
 
@@ -114,7 +107,7 @@ export default function BranchProductsPage() {
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
                     <h1 className="text-3xl font-bold text-gray-900">Product Catalog</h1>
-                    <p className="text-gray-600 mt-1">Browse products and see affiliate commission rates</p>
+                    <p className="text-gray-600 mt-1">Browse products and earn {commissionRate}% commission on direct sales</p>
                 </div>
                 <div className="px-4 py-2 rounded-full text-sm font-medium" style={{ backgroundColor: theme.primaryLight, color: theme.primary }}>
                     {filteredProducts.length} Products Available
@@ -195,11 +188,7 @@ export default function BranchProductsPage() {
 function ProductCard({ product, user, theme, commissionRate }: { product: Product; user: any; theme: any; commissionRate: number }) {
     const [copied, setCopied] = useState(false)
 
-    // Calculate actual commission based on the rate (e.g. 85%)
-    // If commissionRate is not yet loaded (0), show loading or fallback
-    const actualCommission = commissionRate > 0
-        ? product.commissionAmount * (commissionRate / 100)
-        : product.commissionAmount * 0.85 // Fallback to 85% estimate while loading
+    const actualCommission = product.commissionAmount * (commissionRate / 100)
 
     const handleShare = () => {
         const referralCode = user?.refer_code || ''

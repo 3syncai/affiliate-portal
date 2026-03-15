@@ -1,11 +1,23 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
+import { useState, useCallback } from "react"
 import axios from "axios"
 import useSWR from "swr"
-import { DollarSign, User, Users, ShoppingBag, Info, Wallet, CheckCircle2, AlertCircle, Wifi, WifiOff, Clock } from "lucide-react"
+import { DollarSign, User, Users, ShoppingBag, Info, Wallet, CheckCircle2, AlertCircle, Wifi, WifiOff } from "lucide-react"
 import { useSSE } from "@/hooks/useSSE"
 import { Toast } from "@/components/Toast"
+
+type DashboardUser = {
+    id?: string
+    state?: string
+    refer_code?: string
+}
+
+type LiveUpdate = {
+    type?: string
+    amount?: number
+    message?: string
+}
 
 type Order = {
     id: string
@@ -20,23 +32,34 @@ type Order = {
     branch: string
     commission_amount?: number
     type?: string // 'Direct' or 'Override'
+    status?: string
 }
 
 const fetcher = (url: string) => axios.get(url).then(res => res.data)
 
+const getStoredUser = (): DashboardUser | null => {
+    if (typeof window === "undefined") {
+        return null
+    }
+
+    const storedUser = window.localStorage.getItem("affiliate_user")
+    if (!storedUser) {
+        return null
+    }
+
+    try {
+        return JSON.parse(storedUser) as DashboardUser
+    } catch {
+        return null
+    }
+}
+
 export default function StateAdminEarningsPage() {
-    const [userData, setUserData] = useState<any>(null)
+    const [userData] = useState<DashboardUser | null>(() => getStoredUser())
 
     // Toast state
     const [showToast, setShowToast] = useState(false)
     const [toastData, setToastData] = useState<{ message: string; amount?: number }>({ message: "" })
-
-    useEffect(() => {
-        const storedUser = localStorage.getItem("affiliate_user")
-        if (storedUser) {
-            setUserData(JSON.parse(storedUser))
-        }
-    }, [])
 
     const { data: earningsData, mutate, isLoading } = useSWR(
         userData?.state ? `/api/state-admin/earnings?state=${encodeURIComponent(userData.state)}${userData.id ? `&adminId=${userData.id}` : ''}` : null,
@@ -48,19 +71,25 @@ export default function StateAdminEarningsPage() {
         commissionRate: 0,
         totalEarnings: 0,
         lifetimeEarnings: 0,
+        creditedLifetimeEarnings: 0,
+        pendingEarnings: 0,
         paidAmount: 0,
         currentEarnings: 0,
         earningsFromOverrides: 0,
         earningsFromDirect: 0,
+        pendingFromOverrides: 0,
+        pendingFromDirect: 0,
         ordersFromOverrides: 0,
-        ordersFromDirect: 0
+        ordersFromDirect: 0,
+        overrideRate: 0,
+        directRate: 0
     }
 
     const recentOrders: Order[] = earningsData?.success ? earningsData.recentOrders : []
     const loading = isLoading
 
     // Live updates
-    const handleUpdate = useCallback((data: any) => {
+    const handleUpdate = useCallback((data: LiveUpdate) => {
         if (data.type === 'commission_update' || data.type === 'payment_received') {
             setToastData({
                 message: data.message || "New activity received!",
@@ -143,6 +172,13 @@ export default function StateAdminEarningsPage() {
                             </div>
                             <span className="font-semibold text-gray-900">{formatCurrency(stats.earningsFromDirect)}</span>
                         </div>
+                        <div className="flex justify-between items-center text-sm">
+                            <div className="flex items-center text-amber-600">
+                                <AlertCircle className="w-4 h-4 mr-2" />
+                                Pending Until Delivery
+                            </div>
+                            <span className="font-semibold text-amber-700">{formatCurrency(stats.pendingEarnings)}</span>
+                        </div>
                     </div>
                 </div>
 
@@ -163,7 +199,7 @@ export default function StateAdminEarningsPage() {
                                 </div>
                             </div>
                         </div>
-                        <h2 className="text-4xl font-bold text-white mt-2">{formatCurrency(stats.currentEarnings || stats.totalEarnings)}</h2>
+                        <h2 className="text-4xl font-bold text-white mt-2">{formatCurrency(stats.currentEarnings)}</h2>
 
                         <div className="flex items-center mt-8 gap-4">
                             <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-3 py-1 rounded-md text-xs font-semibold flex items-center">
@@ -174,6 +210,12 @@ export default function StateAdminEarningsPage() {
                                 Paid Out: <span className="text-gray-300 ml-1">{formatCurrency(stats.paidAmount)}</span>
                             </span>
                         </div>
+
+                        {stats.pendingEarnings > 0 && (
+                            <p className="text-xs text-amber-300 mt-3">
+                                Pending until delivery: {formatCurrency(stats.pendingEarnings)}
+                            </p>
+                        )}
                     </div>
                 </div>
 
@@ -214,7 +256,7 @@ export default function StateAdminEarningsPage() {
                 <div>
                     <h4 className="text-sm font-semibold text-blue-900">Earning Structure</h4>
                     <p className="text-sm text-blue-700 mt-0.5">
-                        You earn in two ways: <span className="font-semibold">~100% commission</span> on your direct referrals, plus <span className="font-semibold"> {stats.commissionRate}% override</span> on total sales volume from ASMs and Branches in your state {userData?.state ? `(${userData.state})` : ''}.
+                        You earn in two ways: <span className="font-semibold">{stats.directRate}% commission</span> on your direct referrals, plus <span className="font-semibold"> {stats.overrideRate}% override</span> on total sales volume from ASMs and Branches in your state {userData?.state ? `(${userData.state})` : ''}.
                     </p>
                 </div>
             </div>
@@ -251,6 +293,10 @@ export default function StateAdminEarningsPage() {
                                     const typeColor = isDirect
                                         ? 'bg-emerald-100 text-emerald-700'
                                         : 'bg-blue-50 text-blue-700'
+                                    const statusLabel = order.status === 'CREDITED' ? 'Credited' : 'Pending'
+                                    const statusColor = order.status === 'CREDITED'
+                                        ? 'bg-emerald-100 text-emerald-700'
+                                        : 'bg-amber-100 text-amber-700'
 
                                     return (
                                         <tr key={order.id} className="hover:bg-gray-50/30 transition-colors">
@@ -264,7 +310,12 @@ export default function StateAdminEarningsPage() {
                                             </td>
                                             <td className="px-6 py-4">
                                                 <div className="text-sm font-medium text-gray-900 line-clamp-1">{order.product_name}</div>
-                                                <div className="text-xs text-gray-400 mt-0.5">#{order.order_id}</div>
+                                                <div className="flex items-center gap-2 mt-1">
+                                                    <div className="text-xs text-gray-400">#{order.order_id}</div>
+                                                    <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${statusColor}`}>
+                                                        {statusLabel}
+                                                    </span>
+                                                </div>
                                             </td>
                                             <td className="px-6 py-4">
                                                 <div className="text-sm text-gray-900">{order.first_name} {order.last_name || ''}</div>

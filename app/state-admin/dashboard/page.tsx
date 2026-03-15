@@ -62,7 +62,9 @@ export default function StateAdminDashboard() {
         totalOrders: 0,
         totalCommission: 0,
         pending_commission: 0,
-        credited_commission: 0
+        credited_commission: 0,
+        directRate: 0,
+        overrideRate: 0
     }
 
     const activities: Activity[] = activitiesData?.success ? activitiesData.activities : []
@@ -247,11 +249,11 @@ export default function StateAdminDashboard() {
 
                         <div className="grid grid-cols-2 gap-3">
                             <div className="bg-emerald-50 rounded-xl p-3 text-center border border-emerald-100">
-                                <div className="text-lg font-bold text-emerald-600">~100%</div>
+                                <div className="text-lg font-bold text-emerald-600">{stats.directRate}%</div>
                                 <div className="text-[10px] font-bold text-emerald-800/60 uppercase tracking-wider">Direct Sales</div>
                             </div>
                             <div className="bg-blue-50 rounded-xl p-3 text-center border border-blue-100">
-                                <div className="text-lg font-bold text-blue-600">5-10%</div>
+                                <div className="text-lg font-bold text-blue-600">{stats.overrideRate}%</div>
                                 <div className="text-[10px] font-bold text-blue-800/60 uppercase tracking-wider">Override</div>
                             </div>
                         </div>
