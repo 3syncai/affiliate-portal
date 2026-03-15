@@ -14,6 +14,12 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ success: false, error: "Branch parameter is required" }, { status: 400 });
         }
 
+        // Get affiliate rate
+        const rateRes = await pool.query(`SELECT commission_percentage FROM commission_rates WHERE role_type = 'affiliate'`);
+        const affiliateRateRaw = parseFloat(rateRes.rows[0]?.commission_percentage || '0');
+        const affiliateRateDecimal = affiliateRateRaw / 100;
+
+
         // Count total approved agents in this branch
         const totalAgentsResult = await pool.query(
             `SELECT COUNT(*) as count FROM affiliate_user 
@@ -32,7 +38,7 @@ export async function GET(req: NextRequest) {
         let totalCommission = 0;
         try {
             const commissionResult = await pool.query(
-                `SELECT COALESCE(SUM(COALESCE(acl.affiliate_amount, acl.commission_amount * 0.70)), 0) as total 
+                `SELECT COALESCE(SUM(COALESCE(acl.affiliate_amount, acl.commission_amount * ${affiliateRateDecimal})), 0) as total 
                  FROM affiliate_commission_log acl
                  INNER JOIN affiliate_user au ON acl.affiliate_code = au.refer_code
                  WHERE au.branch ILIKE $1 AND acl.status = 'CREDITED'`,

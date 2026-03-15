@@ -18,6 +18,12 @@ export async function GET(req: NextRequest) {
         const status = searchParams.get("status") || "ALL";
         const offset = (page - 1) * limit;
 
+        // Get affiliate rate
+        const rateRes = await pool.query(`SELECT commission_percentage FROM commission_rates WHERE role_type = 'affiliate'`);
+        const affiliateRateRaw = parseFloat(rateRes.rows[0]?.commission_percentage || '0');
+        const affiliateRateDecimal = affiliateRateRaw / 100;
+
+
         let query = `
       SELECT 
         acl.id,
@@ -27,7 +33,7 @@ export async function GET(req: NextRequest) {
         acl.quantity,
         acl.order_amount,
         acl.commission_amount,
-        COALESCE(acl.affiliate_commission, acl.commission_amount * 0.70) as affiliate_commission,
+        COALESCE(acl.affiliate_commission, acl.commission_amount * ${affiliateRateDecimal}) as affiliate_commission,
         acl.branch_admin_bonus,
         acl.status,
         acl.commission_source,

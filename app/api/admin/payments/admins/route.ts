@@ -168,7 +168,7 @@ export async function GET() {
                     location: admin.branch,
                     city: admin.city,
                     state: admin.state,
-                    commissionRate: parseFloat(admin.commission_rate || '15'),
+                    commissionRate: parseFloat(admin.commission_rate || '0'),
                     lifetimeEarnings,
                     paidAmount,
                     currentEarnings: lifetimeEarnings - paidAmount,
@@ -188,7 +188,7 @@ export async function GET() {
                     city: admin.city,
                     state: admin.state,
                     totalCommissionBase: 0,
-                    commissionRate: parseFloat(admin.commission_rate || '3'),
+                    commissionRate: parseFloat(admin.commission_rate || '0'),
                     lifetimeEarnings,
                     paidAmount,
                     currentEarnings: lifetimeEarnings - paidAmount,
@@ -196,7 +196,7 @@ export async function GET() {
                 };
             }),
             ...stateResult.rows.map(admin => {
-                const overrideEarnings = parseFloat(admin.total_commission_base || '0') * (parseFloat(admin.commission_rate || '2') / 100);
+                const overrideEarnings = parseFloat(admin.total_commission_base || '0') * (parseFloat(admin.commission_rate || '0') / 100);
                 const directEarnings = parseFloat(admin.direct_earnings || '0');
                 const lifetimeEarnings = overrideEarnings + directEarnings;
                 const paidAmount = parseFloat(admin.paid_amount || '0');
@@ -210,7 +210,7 @@ export async function GET() {
                     city: null,
                     state: admin.state,
                     totalCommissionBase: parseFloat(admin.total_commission_base || '0'),
-                    commissionRate: parseFloat(admin.commission_rate || '2'),
+                    commissionRate: parseFloat(admin.commission_rate || '0'),
                     lifetimeEarnings,
                     paidAmount,
                     currentEarnings: lifetimeEarnings - paidAmount,
