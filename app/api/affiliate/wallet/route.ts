@@ -65,11 +65,14 @@ export async function GET(request: Request) {
         const commissionResult = await pool.query(commissionQuery, [referCode]);
         const totalEarned = parseFloat(commissionResult.rows[0]?.total_earned) || 0;
 
-        // Fetch total withdrawn (APPROVED + PAID withdrawals - money already deducted)
+        // Fetch total withdrawn
+        // - paid_out: actual money sent (PAID status) → shown as "Withdrawn" on UI
+        // - total_deducted: only PAID withdrawals reduce the available balance
+        //   APPROVED means admin approved but hasn't sent money yet, so don't deduct yet
         const withdrawnQuery = `
       SELECT 
         COALESCE(SUM(CASE WHEN status = 'PAID' THEN net_payable ELSE 0 END), 0) as paid_out,
-        COALESCE(SUM(CASE WHEN status IN ('APPROVED', 'PAID') THEN withdrawal_amount ELSE 0 END), 0) as total_deducted
+        COALESCE(SUM(CASE WHEN status = 'PAID' THEN withdrawal_amount ELSE 0 END), 0) as total_deducted
       FROM withdrawal_request
       WHERE affiliate_code = $1
     `;

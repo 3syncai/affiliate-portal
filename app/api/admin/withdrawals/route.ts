@@ -87,9 +87,9 @@ export async function POST(request: Request) {
         });
 
         if (action === 'APPROVE') {
-            // Get withdrawal details
+            // Verify the request exists and is still PENDING
             const getWithdrawal = `
-        SELECT withdrawal_amount, affiliate_id
+        SELECT id, withdrawal_amount, affiliate_code
         FROM withdrawal_request
         WHERE id = $1 AND status = 'PENDING'
       `;
@@ -103,28 +103,13 @@ export async function POST(request: Request) {
                 );
             }
 
-            const withdrawal = withdrawalResult.rows[0];
+            // NOTE: No balance deduction needed here.
+            // The available balance is calculated dynamically in the wallet API:
+            //   availableBalance = totalEarned - SUM(PAID withdrawal_amounts)
+            // We only deduct when status moves to 'PAID' (money actually sent).
+            // APPROVED just means the admin has reviewed and approved — payment is pending.
 
-            // Deduct from wallet (withdrawal_amount includes GST deduction)
-            const deductQuery = `
-        UPDATE customer_wallet
-        SET coins_balance = coins_balance - $1
-        WHERE customer_id = $2 AND coins_balance >= $1
-      `;
-            const deductResult = await pool.query(deductQuery, [
-                withdrawal.withdrawal_amount,
-                withdrawal.affiliate_id
-            ]);
-
-            if (deductResult.rowCount === 0) {
-                await pool.end();
-                return NextResponse.json(
-                    { success: false, error: 'Insufficient wallet balance' },
-                    { status: 400 }
-                );
-            }
-
-            // Update withdrawal status to APPROVED (admin will manually pay)
+            // Update withdrawal status to APPROVED
             const updateQuery = `
         UPDATE withdrawal_request
         SET 
