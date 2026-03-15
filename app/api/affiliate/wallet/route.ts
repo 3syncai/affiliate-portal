@@ -48,11 +48,17 @@ export async function GET(request: Request) {
 
         const user = userResult.rows[0];
 
+        // Get affiliate rate
+        const rateRes = await pool.query(`SELECT commission_percentage FROM commission_rates WHERE role_type = 'affiliate'`);
+        const affiliateRateRaw = parseFloat(rateRes.rows[0]?.commission_percentage || '0');
+        const affiliateRateDecimal = affiliateRateRaw / 100;
+
+
         // Fetch total commission earned (use affiliate_amount - the 70% affiliate gets)
         // ONLY include CREDITED commissions in the wallet balance
         const commissionQuery = `
       SELECT 
-        COALESCE(SUM(COALESCE(affiliate_amount, commission_amount * 0.70)), 0) as total_earned
+        COALESCE(SUM(COALESCE(affiliate_amount, commission_amount * ${affiliateRateDecimal})), 0) as total_earned
       FROM affiliate_commission_log
       WHERE affiliate_code = $1 AND status = 'CREDITED'
     `;

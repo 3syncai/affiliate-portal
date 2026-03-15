@@ -32,6 +32,12 @@ export async function GET(request: NextRequest) {
 
         const affiliateUser = userResult.rows[0];
 
+        // Get affiliate rate
+        const rateRes = await pool.query(`SELECT commission_percentage FROM commission_rates WHERE role_type = 'affiliate'`);
+        const affiliateRateRaw = parseFloat(rateRes.rows[0]?.commission_percentage || '0');
+        const affiliateRateDecimal = affiliateRateRaw / 100;
+
+
         // 1. Get referral stats from affiliate_referrals table
         const referralsQuery = `
             SELECT 
@@ -70,9 +76,9 @@ export async function GET(request: NextRequest) {
         // 2. Get commission stats (use STORED affiliate_commission to preserve historical rates)
         const commissionQuery = `
             SELECT 
-                COALESCE(SUM(CASE WHEN status = 'CREDITED' THEN COALESCE(affiliate_commission, commission_amount * 0.70) ELSE 0 END), 0) as total_earned,
-                COALESCE(SUM(CASE WHEN status = 'PENDING' THEN COALESCE(affiliate_commission, commission_amount * 0.70) ELSE 0 END), 0) as pending,
-                COALESCE(SUM(CASE WHEN status = 'CREDITED' THEN COALESCE(affiliate_commission, commission_amount * 0.70) ELSE 0 END), 0) as credited
+                COALESCE(SUM(CASE WHEN status = 'CREDITED' THEN COALESCE(affiliate_commission, commission_amount * ${affiliateRateDecimal}) ELSE 0 END), 0) as total_earned,
+                COALESCE(SUM(CASE WHEN status = 'PENDING' THEN COALESCE(affiliate_commission, commission_amount * ${affiliateRateDecimal}) ELSE 0 END), 0) as pending,
+                COALESCE(SUM(CASE WHEN status = 'CREDITED' THEN COALESCE(affiliate_commission, commission_amount * ${affiliateRateDecimal}) ELSE 0 END), 0) as credited
             FROM affiliate_commission_log
             WHERE affiliate_code = $1
         `;
@@ -87,7 +93,7 @@ export async function GET(request: NextRequest) {
         // 3. Get wallet balance (use stored affiliate_commission)
         const walletQuery = `
             SELECT 
-                COALESCE(SUM(COALESCE(affiliate_commission, commission_amount * 0.70)), 0) as total_earned
+                COALESCE(SUM(COALESCE(affiliate_commission, commission_amount * ${affiliateRateDecimal})), 0) as total_earned
             FROM affiliate_commission_log
             WHERE affiliate_code = $1 AND status = 'CREDITED'
         `;
@@ -116,7 +122,7 @@ export async function GET(request: NextRequest) {
                 COALESCE(ar.customer_name, 'Customer ' || SUBSTRING(ar.customer_id FROM 5 FOR 8)) as customer_name,
                 ar.referred_at,
                 COUNT(DISTINCT acl.order_id) as order_count,
-                COALESCE(SUM(COALESCE(acl.affiliate_commission, acl.commission_amount * 0.70)), 0) as total_earned
+                COALESCE(SUM(COALESCE(acl.affiliate_commission, acl.commission_amount * ${affiliateRateDecimal})), 0) as total_earned
             FROM affiliate_referrals ar
             LEFT JOIN affiliate_commission_log acl ON acl.customer_id = ar.customer_id AND acl.affiliate_code = ar.affiliate_code
             WHERE ar.affiliate_code = $1
@@ -145,7 +151,7 @@ export async function GET(request: NextRequest) {
                 order_amount,
                 commission_rate,
                 commission_amount,
-                COALESCE(affiliate_commission, commission_amount * 0.70) as affiliate_commission,
+                COALESCE(affiliate_commission, commission_amount * ${affiliateRateDecimal}) as affiliate_commission,
                 commission_source,
                 status,
                 created_at

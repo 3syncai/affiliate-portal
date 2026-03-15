@@ -150,9 +150,9 @@ export async function POST(request: NextRequest) {
                 SELECT commission_percentage FROM commission_rates WHERE role_type = 'branch'
             `);
 
-            const baseRate = parseFloat(affiliateRateResult.rows[0]?.commission_percentage || '70');
-            const bonusRate = parseFloat(branchDirectRateResult.rows[0]?.commission_percentage || '15');
-            const affiliateRate = baseRate + bonusRate; // 85%
+            const baseRate = parseFloat(affiliateRateResult.rows[0]?.commission_percentage || '0');
+            const bonusRate = parseFloat(branchDirectRateResult.rows[0]?.commission_percentage || '0');
+            const affiliateRate = baseRate + bonusRate; // e.g. 70 + 15 = 85%
             const affiliateCommission = commissionAmount * (affiliateRate / 100);
 
             // DEDUPLICATION CHECK: Check if commission already logged (e.g. by Storefront)
@@ -229,7 +229,7 @@ export async function POST(request: NextRequest) {
                 if (areaManagerRes.rows.length > 0) {
                     const areaManager = areaManagerRes.rows[0];
                     const areaRateRes = await pool.query(`SELECT commission_percentage FROM commission_rates WHERE role_type = 'area'`);
-                    const areaRate = parseFloat(areaRateRes.rows[0]?.commission_percentage || '10'); // 10%
+                    const areaRate = parseFloat(areaRateRes.rows[0]?.commission_percentage || '0'); 
 
                     const areaCommission = commissionAmount * (areaRate / 100);
 
@@ -274,7 +274,7 @@ export async function POST(request: NextRequest) {
                 if (stateAdminRes.rows.length > 0) {
                     const stateAdmin = stateAdminRes.rows[0];
                     const stateRateRes = await pool.query(`SELECT commission_percentage FROM commission_rates WHERE role_type = 'state'`);
-                    const stateRate = parseFloat(stateRateRes.rows[0]?.commission_percentage || '5'); // 5%
+                    const stateRate = parseFloat(stateRateRes.rows[0]?.commission_percentage || '0'); 
 
                     const stateCommission = commissionAmount * (stateRate / 100);
 
@@ -316,10 +316,10 @@ export async function POST(request: NextRequest) {
             const branchRateResult = await pool.query(`SELECT commission_percentage FROM commission_rates WHERE role_type = 'branch'`);
             const asmRateResult = await pool.query(`SELECT commission_percentage FROM commission_rates WHERE role_type = 'area'`);
 
-            const baseRate = parseFloat(affiliateRateResult.rows[0]?.commission_percentage || '70');
-            const branchBonus = parseFloat(branchRateResult.rows[0]?.commission_percentage || '15');
-            const asmBonus = parseFloat(asmRateResult.rows[0]?.commission_percentage || '10');
-            const totalRate = baseRate + branchBonus + asmBonus; // 95%
+            const baseRate = parseFloat(affiliateRateResult.rows[0]?.commission_percentage || '0');
+            const branchBonus = parseFloat(branchRateResult.rows[0]?.commission_percentage || '0');
+            const asmBonus = parseFloat(asmRateResult.rows[0]?.commission_percentage || '0');
+            const totalRate = baseRate + branchBonus + asmBonus; // e.g. 70 + 15 + 10 = 95%
             const asmCommission = commissionAmount * (totalRate / 100);
 
             // Deduplication check
@@ -371,7 +371,7 @@ export async function POST(request: NextRequest) {
                 if (stateAdminRes.rows.length > 0) {
                     const stateAdmin = stateAdminRes.rows[0];
                     const stateRateRes = await pool.query(`SELECT commission_percentage FROM commission_rates WHERE role_type = 'state'`);
-                    const stateRate = parseFloat(stateRateRes.rows[0]?.commission_percentage || '5');
+                    const stateRate = parseFloat(stateRateRes.rows[0]?.commission_percentage || '0');
 
                     const stateCommission = commissionAmount * (stateRate / 100);
 
@@ -424,12 +424,12 @@ export async function POST(request: NextRequest) {
                 const asmRateResult = await pool.query(`SELECT commission_percentage FROM commission_rates WHERE role_type = 'area'`);
                 const stateRateResult = await pool.query(`SELECT commission_percentage FROM commission_rates WHERE role_type = 'state'`);
 
-                const baseRate = parseFloat(affiliateRateResult.rows[0]?.commission_percentage || '70');
-                const branchBonus = parseFloat(branchRateResult.rows[0]?.commission_percentage || '15');
-                const asmBonus = parseFloat(asmRateResult.rows[0]?.commission_percentage || '10');
-                const stateBonus = parseFloat(stateRateResult.rows[0]?.commission_percentage || '5');
+                const baseRate = parseFloat(affiliateRateResult.rows[0]?.commission_percentage || '0');
+                const branchBonus = parseFloat(branchRateResult.rows[0]?.commission_percentage || '0');
+                const asmBonus = parseFloat(asmRateResult.rows[0]?.commission_percentage || '0');
+                const stateBonus = parseFloat(stateRateResult.rows[0]?.commission_percentage || '0');
 
-                const totalRate = baseRate + branchBonus + asmBonus + stateBonus; // ~100%
+                const totalRate = baseRate + branchBonus + asmBonus + stateBonus; 
                 const stateCommission = commissionAmount * (totalRate / 100);
 
                 // Deduplication check
@@ -490,7 +490,7 @@ export async function POST(request: NextRequest) {
 
                 // --- A) Pay Affiliate (70%) ---
                 const rateResult = await pool.query(`SELECT commission_percentage FROM commission_rates WHERE role_type = 'affiliate'`);
-                const affiliateRate = parseFloat(rateResult.rows[0]?.commission_percentage || '70');
+                const affiliateRate = parseFloat(rateResult.rows[0]?.commission_percentage || '0');
                 const affiliateCommission = commissionAmount * (affiliateRate / 100);
 
                 // Deduplication check
@@ -552,7 +552,7 @@ export async function POST(request: NextRequest) {
                     if (branchAdminRes.rows.length > 0) {
                         const branchAdmin = branchAdminRes.rows[0];
                         const brRateRes = await pool.query(`SELECT commission_percentage FROM commission_rates WHERE role_type = 'branch'`);
-                        const brRate = parseFloat(brRateRes.rows[0]?.commission_percentage || '15');
+                        const brRate = parseFloat(brRateRes.rows[0]?.commission_percentage || '0');
                         const brCommission = commissionAmount * (brRate / 100);
 
                         const brCheck = await pool.query(`
@@ -634,7 +634,7 @@ export async function POST(request: NextRequest) {
                     if (asmRes.rows.length > 0) {
                         const asm = asmRes.rows[0];
                         const areaRateRes = await pool.query(`SELECT commission_percentage FROM commission_rates WHERE role_type = 'area'`);
-                        const areaRate = parseFloat(areaRateRes.rows[0]?.commission_percentage || '10');
+                        const areaRate = parseFloat(areaRateRes.rows[0]?.commission_percentage || '0');
                         const areaCommission = commissionAmount * (areaRate / 100);
 
                         const areaCheck = await pool.query(`
@@ -696,7 +696,7 @@ export async function POST(request: NextRequest) {
                     if (stateAdminRes.rows.length > 0) {
                         const stateAdmin = stateAdminRes.rows[0];
                         const stateRateRes = await pool.query(`SELECT commission_percentage FROM commission_rates WHERE role_type = 'state'`);
-                        const stateRate = parseFloat(stateRateRes.rows[0]?.commission_percentage || '5');
+                        const stateRate = parseFloat(stateRateRes.rows[0]?.commission_percentage || '0');
                         const stateCommission = commissionAmount * (stateRate / 100);
 
                         const stateCheck = await pool.query(`
