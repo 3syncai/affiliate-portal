@@ -67,6 +67,8 @@ export default function ASMDashboard() {
         lifetimeEarnings: earningsData?.success ? earningsData.stats?.lifetimeEarnings || 0 : 0,
         currentEarnings: earningsData?.success ? earningsData.stats?.currentEarnings || 0 : 0,
         commissionRate: earningsData?.success ? earningsData.stats?.commissionRate || 0 : 0,
+        directRate: earningsData?.success ? earningsData.stats?.directRate || 0 : 0,
+        overrideRate: earningsData?.success ? earningsData.stats?.overrideRate || 0 : 0,
         branchAdmins: branchData?.success ? branchData.branchAdmins || [] : [] as BranchAdmin[],
         recentActivity: earningsData?.success ? earningsData.recentOrders || [] : [] as Order[]
     }
@@ -266,11 +268,11 @@ export default function ASMDashboard() {
 
                         <div className="grid grid-cols-2 gap-3">
                             <div className="bg-emerald-50 rounded-lg p-3 border border-emerald-100 text-center">
-                                <p className="text-xl font-bold text-emerald-600">95%</p>
+                                <p className="text-xl font-bold text-emerald-600">{stats.directRate}%</p>
                                 <p className="text-[10px] font-bold text-emerald-800/60 uppercase tracking-wide">Direct Sales</p>
                             </div>
                             <div className="bg-blue-50 rounded-lg p-3 border border-blue-100 text-center">
-                                <p className="text-xl font-bold text-blue-600">{stats.commissionRate}%</p>
+                                <p className="text-xl font-bold text-blue-600">{stats.overrideRate}%</p>
                                 <p className="text-[10px] font-bold text-blue-800/60 uppercase tracking-wide">Override</p>
                             </div>
                         </div>

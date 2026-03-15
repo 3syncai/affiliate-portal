@@ -53,20 +53,12 @@ export default function ASMProductsPage() {
     const fetchCommissionRates = async () => {
         try {
             const response = await axios.get("/api/admin/commission-rates")
-            if (response.data.success && response.data.rates) {
-                const affiliateRateObj = response.data.rates.find((r: any) => r.role_type === "affiliate")
-                const branchDirectRateObj = response.data.rates.find((r: any) => r.role_type === "branch_direct")
-                const asmRateObj = response.data.rates.find((r: any) => r.role_type === "area")
-
-                const baseRate = parseFloat(affiliateRateObj?.commission_percentage || '70')
-                const branchBonus = parseFloat(branchDirectRateObj?.commission_percentage || '15')
-                const asmBonus = parseFloat(asmRateObj?.commission_percentage || '10')
-
-                setCommissionRate(baseRate + branchBonus + asmBonus) // 95%
+            if (response.data.success && response.data.summary?.asm) {
+                setCommissionRate(Number(response.data.summary.asm.directRate) || 0)
             }
         } catch (err) {
             console.error("Error fetching commission rates:", err)
-            setCommissionRate(95) // Default fallback
+            setCommissionRate(0)
         }
     }
 
@@ -114,7 +106,7 @@ export default function ASMProductsPage() {
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
                     <h1 className="text-3xl font-bold text-gray-900">Product Catalog</h1>
-                    <p className="text-gray-600 mt-1">Browse products and earn 95% commission on direct sales</p>
+                    <p className="text-gray-600 mt-1">Browse products and earn {commissionRate}% commission on direct sales</p>
                 </div>
                 <div className="px-4 py-2 rounded-full text-sm font-medium bg-blue-50 text-blue-700 border border-blue-200">
                     {filteredProducts.length} Products Available
@@ -193,9 +185,7 @@ export default function ASMProductsPage() {
 function ProductCard({ product, user, theme, commissionRate }: { product: Product; user: any; theme: any; commissionRate: number }) {
     const [copied, setCopied] = useState(false)
 
-    const actualCommission = commissionRate > 0
-        ? product.commissionAmount * (commissionRate / 100)
-        : product.commissionAmount * 0.95 // Fallback to 95%
+    const actualCommission = product.commissionAmount * (commissionRate / 100)
 
     const handleShare = () => {
         const referralCode = user?.refer_code || ''

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Pool } from 'pg'
+import { fetchCommissionRates } from '@/lib/commission-rates'
 
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
@@ -8,22 +9,13 @@ const pool = new Pool({
 // GET - Get all commission rates
 export async function GET() {
     try {
-        const result = await pool.query(
-            `SELECT id, role_type, commission_percentage, description, updated_at
-       FROM commission_rates 
-       ORDER BY 
-         CASE role_type
-           WHEN 'affiliate' THEN 1
-           WHEN 'branch_direct' THEN 2
-           WHEN 'branch' THEN 3
-           WHEN 'area' THEN 4
-           WHEN 'state' THEN 5
-         END`
-        )
+        const commissionRates = await fetchCommissionRates(pool)
 
         return NextResponse.json({
             success: true,
-            rates: result.rows,
+            rates: commissionRates.rates,
+            summary: commissionRates.summary,
+            ratesByRole: commissionRates.ratesByRole,
         })
     } catch (error) {
         console.error('Error fetching commission rates:', error)

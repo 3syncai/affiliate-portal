@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Pool } from "pg";
+import pool from "@/lib/db";
+import { normalizeCommissionStatus, isCommissionCreditedStatus } from "@/lib/commission-status";
 
 export const dynamic = "force-dynamic";
 
@@ -7,6 +8,8 @@ export async function POST(req: NextRequest) {
     try {
         const payload = await req.json();
         const { order_id, status } = payload;
+        const normalizedStatus = normalizeCommissionStatus(status);
+        const shouldCreditCommission = isCommissionCreditedStatus(status);
 
         if (!order_id || !status) {
             return NextResponse.json(
@@ -15,39 +18,37 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        console.log(`[Commission Update] Received update for Order #${order_id} -> ${status}`);
-
-        const pool = new Pool({
-            connectionString: process.env.DATABASE_URL || process.env.NEXT_PUBLIC_DATABASE_URL,
-            ssl: { rejectUnauthorized: false }
-        });
+        console.log(`[Commission Update] Received update for Order #${order_id} -> ${status} (${normalizedStatus})`);
 
         const result = await pool.query(
             `UPDATE affiliate_commission_log 
-             SET status = $1 
+             SET status = $1,
+                 credited_at = CASE
+                     WHEN $1 = 'CREDITED' AND credited_at IS NULL THEN NOW()
+                     ELSE credited_at
+                 END
              WHERE order_id = $2
+               AND status IS DISTINCT FROM $1
              RETURNING id, affiliate_code, affiliate_commission`,
-            [status, order_id]
+            [normalizedStatus, order_id]
         );
-
-        await pool.end();
 
         if (result.rowCount === 0) {
             console.log(`[Commission Update] No commissions found for Order #${order_id}`);
             return NextResponse.json({
                 success: true,
-                message: "No commissions found for this order",
+                message: "No commission records needed an update",
                 updated_count: 0
             });
         }
 
-        console.log(`[Commission Update] Updated ${result.rowCount} commission records to ${status}`);
+        console.log(`[Commission Update] Updated ${result.rowCount} commission records to ${normalizedStatus}`);
 
         // Log updated records and Credit Wallet
         for (const row of result.rows) {
             console.log(` - Updated Commission #${row.id}: ₹${row.affiliate_commission} for ${row.affiliate_code}`);
 
-            if (status === 'CREDITED' || status === 'COMPLETED') {
+            if (shouldCreditCommission) {
                 try {
                     await pool.query(`
                         INSERT INTO customer_wallet (customer_id, coins_balance)
@@ -67,10 +68,11 @@ export async function POST(req: NextRequest) {
             success: true,
             message: "Commission status updated successfully",
             updated_count: result.rowCount,
+            status: normalizedStatus,
             updated_records: result.rows
         });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Commission status update failed:", error);
         return NextResponse.json(
             {

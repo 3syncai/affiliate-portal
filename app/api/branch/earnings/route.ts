@@ -1,125 +1,160 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Pool } from "pg";
+import { fetchCommissionRates } from "@/lib/commission-rates";
 
-export const dynamic = "force-dynamic"
+export const dynamic = "force-dynamic";
+
+const toAmount = (value: string | number | null | undefined) => {
+    return Number.parseFloat(String(value ?? 0)) || 0;
+};
+
+const toCount = (value: string | number | null | undefined) => {
+    return Number.parseInt(String(value ?? 0), 10) || 0;
+};
 
 export async function GET(req: NextRequest) {
+    const { searchParams } = new URL(req.url);
+    const adminId = searchParams.get("adminId");
+
+    if (!adminId) {
+        return NextResponse.json({ success: false, error: "Admin ID is required" }, { status: 400 });
+    }
+
+    const pool = new Pool({
+        connectionString: process.env.DATABASE_URL || process.env.NEXT_PUBLIC_DATABASE_URL,
+        ssl: { rejectUnauthorized: false }
+    });
+
     try {
-        const { searchParams } = new URL(req.url);
-        const branch = searchParams.get('branch');
-        const adminId = searchParams.get('adminId');
-
-        if (!adminId) {
-            return NextResponse.json({ success: false, error: "Admin ID is required" }, { status: 400 });
-        }
-
-        const pool = new Pool({
-            connectionString: process.env.DATABASE_URL || process.env.NEXT_PUBLIC_DATABASE_URL,
-            ssl: { rejectUnauthorized: false }
-        });
-
-        // 1. Get Commission Rate and Refer Code
+        const commissionRates = await fetchCommissionRates(pool);
         const adminDetailsRef = await pool.query(`
-            SELECT ba.refer_code, cr.commission_percentage 
-            FROM branch_admin ba 
-            LEFT JOIN commission_rates cr ON cr.role_type = 'branch' 
+            SELECT ba.refer_code, cr.commission_percentage
+            FROM branch_admin ba
+            LEFT JOIN commission_rates cr ON cr.role_type = 'branch'
             WHERE ba.id = $1
         `, [adminId]);
 
-        let commissionRate = 15.0;
-        let referCode = '';
+        let commissionRate = commissionRates.summary.branch.overrideRate;
+        const directRate = commissionRates.summary.branch.directRate;
+        let referCode = "";
 
         if (adminDetailsRef.rows.length > 0) {
-            commissionRate = parseFloat(adminDetailsRef.rows[0].commission_percentage || '15.0');
-            referCode = adminDetailsRef.rows[0].refer_code;
+            commissionRate = toAmount(adminDetailsRef.rows[0].commission_percentage ?? commissionRate);
+            referCode = adminDetailsRef.rows[0].refer_code || "";
         }
 
-        // 2. Statistics Query
-        // We aggregate logs assigned to this admin (by ID or refer code)
-        const statsQuery = `
+        const overrideStatsResult = await pool.query(`
             SELECT
-                -- Override Commissions: Source 'branch_admin' AND Rate <= 50%
-                COALESCE(SUM(CASE WHEN commission_source = 'branch_admin' AND affiliate_rate <= 50 THEN affiliate_commission ELSE 0 END), 0) as override_earnings,
-                COUNT(CASE WHEN commission_source = 'branch_admin' AND affiliate_rate <= 50 THEN 1 END) as override_orders,
-                
-                -- Direct Commissions: Source != 'branch_admin' OR (Source = 'branch_admin' AND Rate > 50%)
-                COALESCE(SUM(CASE WHEN commission_source != 'branch_admin' OR (commission_source = 'branch_admin' AND affiliate_rate > 50) THEN affiliate_commission ELSE 0 END), 0) as direct_earnings,
-                COUNT(CASE WHEN commission_source != 'branch_admin' OR (commission_source = 'branch_admin' AND affiliate_rate > 50) THEN 1 END) as direct_orders
+                COALESCE(SUM(CASE WHEN status = 'CREDITED' THEN affiliate_commission ELSE 0 END), 0) as credited_override_earnings,
+                COUNT(CASE WHEN status = 'CREDITED' THEN 1 END) as credited_override_orders,
+                COALESCE(SUM(CASE WHEN status = 'PENDING' THEN affiliate_commission ELSE 0 END), 0) as pending_override_earnings,
+                COUNT(CASE WHEN status = 'PENDING' THEN 1 END) as pending_override_orders
             FROM affiliate_commission_log
-            WHERE (affiliate_user_id = $1 OR affiliate_code = $2) AND status = 'CREDITED'
-        `;
-        const statsRes = await pool.query(statsQuery, [adminId, referCode]);
-        const statsData = statsRes.rows[0];
+            WHERE commission_source = 'branch_admin'
+              AND affiliate_user_id = $1
+              AND COALESCE(affiliate_code, '') <> $2
+        `, [adminId, referCode]);
 
-        const overrideEarnings = parseFloat(statsData.override_earnings);
-        const directEarnings = parseFloat(statsData.direct_earnings);
-        const overrideOrders = parseInt(statsData.override_orders);
-        const directOrders = parseInt(statsData.direct_orders);
+        const directStatsResult = await pool.query(`
+            SELECT
+                COALESCE(SUM(CASE WHEN status = 'CREDITED' THEN affiliate_commission ELSE 0 END), 0) as credited_direct_earnings,
+                COUNT(CASE WHEN status = 'CREDITED' THEN 1 END) as credited_direct_orders,
+                COALESCE(SUM(CASE WHEN status = 'PENDING' THEN affiliate_commission ELSE 0 END), 0) as pending_direct_earnings,
+                COUNT(CASE WHEN status = 'PENDING' THEN 1 END) as pending_direct_orders
+            FROM affiliate_commission_log
+            WHERE commission_source = 'branch_admin'
+              AND affiliate_code = $1
+        `, [referCode]);
 
-        const totalEarnings = overrideEarnings + directEarnings;
-        const totalOrders = overrideOrders + directOrders;
+        const overrideStats = overrideStatsResult.rows[0] || {};
+        const directStats = directStatsResult.rows[0] || {};
+        const creditedOverrideEarnings = toAmount(overrideStats.credited_override_earnings);
+        const creditedDirectEarnings = toAmount(directStats.credited_direct_earnings);
+        const pendingOverrideEarnings = toAmount(overrideStats.pending_override_earnings);
+        const pendingDirectEarnings = toAmount(directStats.pending_direct_earnings);
 
-        // 3. Paid Amount
-        const paidQuery = `
+        const creditedOverrideOrders = toCount(overrideStats.credited_override_orders);
+        const creditedDirectOrders = toCount(directStats.credited_direct_orders);
+        const pendingOverrideOrders = toCount(overrideStats.pending_override_orders);
+        const pendingDirectOrders = toCount(directStats.pending_direct_orders);
+
+        const creditedLifetimeEarnings = creditedOverrideEarnings + creditedDirectEarnings;
+        const pendingEarnings = pendingOverrideEarnings + pendingDirectEarnings;
+        const totalEarnings = creditedLifetimeEarnings + pendingEarnings;
+
+        const totalOrders =
+            creditedOverrideOrders +
+            creditedDirectOrders +
+            pendingOverrideOrders +
+            pendingDirectOrders;
+
+        const overrideOrders = creditedOverrideOrders + pendingOverrideOrders;
+        const directOrders = creditedDirectOrders + pendingDirectOrders;
+
+        const paidResult = await pool.query(`
             SELECT COALESCE(SUM(CASE WHEN gross_amount > 0 THEN gross_amount ELSE (amount + COALESCE(tds_amount, 0)) END), 0) as total_paid
             FROM admin_payments
             WHERE recipient_id = $1 AND recipient_type = 'branch' AND status = 'completed'
-        `;
-        const paidResult = await pool.query(paidQuery, [adminId]);
-        const paidAmount = parseFloat(paidResult.rows[0].total_paid || '0');
+        `, [adminId]);
+        const paidAmount = toAmount(paidResult.rows[0]?.total_paid);
 
-        const availableBalance = totalEarnings - paidAmount;
+        const availableBalance = creditedLifetimeEarnings - paidAmount;
 
-        // 4. Recent Orders
-        const recentOrdersQuery = `
-            SELECT 
+        const recentOrdersResult = await pool.query(`
+            SELECT
                 id,
                 order_id,
                 order_amount,
                 commission_source,
-                affiliate_commission as commission_amount, -- The amount YOU earned
+                affiliate_commission as commission_amount,
                 created_at,
                 product_name,
-                customer_name as first_name, -- Using customer name directly
+                status,
+                customer_name as first_name,
                 '' as last_name,
                 affiliate_code as refer_code,
                 affiliate_rate,
-                CASE 
-                    WHEN commission_source = 'branch_admin' AND affiliate_rate > 50 THEN 'Direct Sale'
+                CASE
+                    WHEN commission_source = 'branch_admin' AND affiliate_code = $2 THEN 'Direct Sale'
                     WHEN commission_source = 'branch_admin' THEN 'Affiliate Override'
                     ELSE 'Direct Sale'
                 END as type
             FROM affiliate_commission_log
-            WHERE affiliate_user_id = $1
+            WHERE affiliate_user_id = $1 OR affiliate_code = $2
             ORDER BY created_at DESC
             LIMIT 20
-        `;
-        const recentOrdersResult = await pool.query(recentOrdersQuery, [adminId]);
-
-        await pool.end();
+        `, [adminId, referCode]);
 
         return NextResponse.json({
             success: true,
             stats: {
                 totalEarnings,
-                overrideEarnings, // Affiliate Agent Commissions
-                directEarnings,   // Direct Referral Commissions
-
+                lifetimeEarnings: totalEarnings,
+                creditedLifetimeEarnings,
+                pendingEarnings,
+                overrideEarnings: creditedOverrideEarnings + pendingOverrideEarnings,
+                directEarnings: creditedDirectEarnings + pendingDirectEarnings,
+                pendingOverrideEarnings,
+                pendingDirectEarnings,
                 totalOrders,
-                overrideOrders,   // Affiliate Orders
-                directOrders,     // Direct Orders
-
+                overrideOrders,
+                directOrders,
                 paidAmount,
                 availableBalance,
-                currentEarnings: availableBalance, // Alias
-
-                commissionRate, // Override Rate
+                currentEarnings: availableBalance,
+                commissionRate,
+                overrideRate: commissionRate,
+                directRate,
             },
             recentOrders: recentOrdersResult.rows
         });
-
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Failed to fetch branch earnings:", error);
-        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+        return NextResponse.json({
+            success: false,
+            error: error instanceof Error ? error.message : "Unknown error"
+        }, { status: 500 });
+    } finally {
+        await pool.end();
     }
 }

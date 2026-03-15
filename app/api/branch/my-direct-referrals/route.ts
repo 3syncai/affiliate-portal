@@ -76,8 +76,8 @@ export async function GET(request: Request) {
                 acl.status,
                 acl.created_at
             FROM affiliate_commission_log acl
-            WHERE (acl.affiliate_code = $1 OR acl.branch_admin_code = $1)
-            AND acl.affiliate_rate > 50
+            WHERE acl.commission_source = 'branch_admin'
+              AND acl.affiliate_code = $1
             ORDER BY acl.created_at DESC
         `;
         const ordersResult = await pool.query(ordersQuery, [referCode]);
