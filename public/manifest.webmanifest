@@ -1,0 +1,22 @@
+{
+    "name": "OWEG - Home Appliances & Electronics",
+    "short_name": "OWEG",
+    "description": "Shop home appliances, kitchen utensils, and electronics at OWEG.",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#7AC943",
+    "orientation": "portrait",
+    "icons": [
+        {
+            "src": "/oweg_O.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "/oweg_O.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}
