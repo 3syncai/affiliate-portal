@@ -110,7 +110,7 @@ export async function GET(request: NextRequest) {
         const totalDeducted = parseFloat(withdrawnResult.rows[0]?.total_deducted || '0');
 
         const wallet = {
-            balance: totalEarned - totalDeducted,
+            balance: Math.round((totalEarned - totalDeducted) * 100) / 100 + 0,
             locked: 0 // Can be calculated based on pending withdrawals if needed
         };
 

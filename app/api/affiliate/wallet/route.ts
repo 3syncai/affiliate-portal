@@ -79,7 +79,7 @@ export async function GET(request: Request) {
 
         // Calculate available balance dynamically (never gets out of sync!)
         // Available = Total Earned (70% of commissions) - Total Deducted (approved/paid withdrawals)
-        const availableBalance = totalEarned - totalDeducted;
+        const availableBalance = Math.round((totalEarned - totalDeducted) * 100) / 100 + 0;
 
         // Format response
         const walletData = {
