@@ -45,7 +45,9 @@ export default function OrderLayoutPage() {
   }, [])
 
   const { data, isLoading } = useSWR(
-    user?.id ? `/api/state-admin/orders?adminId=${user.id}` : null,
+    user?.id && user?.city && user?.state
+      ? `/api/asm/orders?adminId=${user.id}&city=${encodeURIComponent(user.city)}&state=${encodeURIComponent(user.state)}`
+      : null,
     fetcher
   )
 
@@ -85,7 +87,7 @@ export default function OrderLayoutPage() {
     const headers = [
       "Order ID", "Date", "Sale By Name", "Sale By Code",
       "Product", "Quantity", "Item Price", "Order Amount",
-      "Agent Earned", "Branch Earned", "ASM Earned", "My Earned", "Status"
+      "Agent Earned", "Branch Earned", "ASM Earned", "Status"
     ]
     const rows = filteredOrders.map(o => [
       o.order_id,
@@ -99,7 +101,6 @@ export default function OrderLayoutPage() {
       o.affiliate_earned,
       o.branch_earned,
       o.asm_earned,
-      o.my_earned,
       o.status
     ])
 
@@ -162,8 +163,11 @@ export default function OrderLayoutPage() {
 
   // Calculate statistics
   const totalOrders = filteredOrders.length
-  const totalOrderAmount = filteredOrders.reduce((sum, o) => sum + o.order_amount, 0)
-  const totalCommission = filteredOrders.reduce((sum, o) => sum + o.my_earned, 0)
+  const totalOrderAmount = filteredOrders.reduce((sum, o) => sum + (Number(o.order_amount) || 0), 0)
+  const totalCommission = filteredOrders.reduce(
+    (sum, o) => sum + (Number(o.asm_earned) || Number(o.my_earned) || 0),
+    0
+  )
 
   if (loading) {
     return (
@@ -179,7 +183,7 @@ export default function OrderLayoutPage() {
       <div className="flex justify-between items-start">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-gray-900">Order Layout</h1>
-          <p className="text-sm text-gray-500 mt-1">View agent, branch and ASM commission breakdown per order</p>
+          <p className="text-sm text-gray-500 mt-1">View and manage branch, partner and downline orders</p>
         </div>
         <button
           onClick={exportToCSV}
@@ -380,8 +384,7 @@ export default function OrderLayoutPage() {
                     <th className="px-3 py-2.5 text-right text-[10px] font-bold text-gray-500 uppercase tracking-wider">Amount</th>
                     <th className="px-3 py-2.5 text-right text-[10px] font-bold text-gray-500 uppercase tracking-wider">Agent</th>
                     <th className="px-3 py-2.5 text-right text-[10px] font-bold text-gray-500 uppercase tracking-wider">Branch</th>
-                    <th className="px-3 py-2.5 text-right text-[10px] font-bold text-gray-500 uppercase tracking-wider">ASM</th>
-                    <th className="px-3 py-2.5 text-right text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Mine</th>
+                    <th className="px-3 py-2.5 text-right text-[10px] font-bold text-emerald-600 uppercase tracking-wider">ASM</th>
                     <th className="px-3 py-2.5 text-center text-[10px] font-bold text-gray-500 uppercase tracking-wider">Status</th>
                     <th className="px-3 py-2.5 text-right text-[10px] font-bold text-gray-500 uppercase tracking-wider">Action</th>
                   </tr>
@@ -420,11 +423,14 @@ export default function OrderLayoutPage() {
                       <td className="px-3 py-3 whitespace-nowrap text-xs text-right text-gray-600 font-semibold tabular-nums">
                         {order.branch_earned > 0 ? formatCurrency(order.branch_earned) : "-"}
                       </td>
-                      <td className="px-3 py-3 whitespace-nowrap text-xs text-right text-gray-600 font-semibold tabular-nums">
-                        {order.asm_earned > 0 ? formatCurrency(order.asm_earned) : "-"}
-                      </td>
                       <td className="px-3 py-3 whitespace-nowrap text-xs text-right">
-                        <div className="font-bold text-emerald-600 tabular-nums">{formatCurrency(order.my_earned)}</div>
+                        <div className="font-bold text-emerald-600 tabular-nums">
+                          {order.asm_earned > 0
+                            ? formatCurrency(order.asm_earned)
+                            : order.my_earned > 0
+                              ? formatCurrency(order.my_earned)
+                              : "-"}
+                        </div>
                       </td>
                       <td className="px-3 py-3 whitespace-nowrap text-center">
                         <span className={`px-2 py-0.5 inline-flex text-[10px] leading-4 font-bold rounded-md border ${getStatusBadge(order.status)}`}>
@@ -458,8 +464,7 @@ export default function OrderLayoutPage() {
                     <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Order Amount</th>
                     <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Agent Earned</th>
                     <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Branch Earned</th>
-                    <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">ASM Earned</th>
-                    <th className="px-4 py-3 text-right text-xs font-bold text-blue-600 uppercase tracking-wider">My Earned</th>
+                    <th className="px-4 py-3 text-right text-xs font-bold text-blue-600 uppercase tracking-wider">ASM Earned</th>
                     <th className="px-4 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
                     <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Actions</th>
                   </tr>
@@ -486,11 +491,14 @@ export default function OrderLayoutPage() {
                       <td className="px-4 py-4 whitespace-nowrap text-sm text-right font-bold text-gray-600 tabular-nums">
                         {order.branch_earned > 0 ? formatCurrency(order.branch_earned) : "-"}
                       </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-right font-bold text-gray-600 tabular-nums">
-                        {order.asm_earned > 0 ? formatCurrency(order.asm_earned) : "-"}
-                      </td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm text-right">
-                        <div className="font-bold text-emerald-600 tabular-nums">{formatCurrency(order.my_earned)}</div>
+                        <div className="font-bold text-emerald-600 tabular-nums">
+                          {order.asm_earned > 0
+                            ? formatCurrency(order.asm_earned)
+                            : order.my_earned > 0
+                              ? formatCurrency(order.my_earned)
+                              : "-"}
+                        </div>
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap text-center">
                         <span className={`px-2.5 py-1 inline-flex text-xs leading-5 font-bold rounded-md border ${getStatusBadge(order.status)}`}>
@@ -606,11 +614,7 @@ export default function OrderLayoutPage() {
               {/* Commission Information */}
               <div>
                 <h3 className="text-xs font-bold text-gray-500 mb-3 uppercase tracking-wide">Commission Details</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-xl">
-                    <p className="text-xs text-emerald-700 font-bold uppercase mb-2">My Earning</p>
-                    <p className="text-xl md:text-2xl font-bold text-emerald-600 tabular-nums">{formatCurrency(selectedOrder.my_earned)}</p>
-                  </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="bg-gray-50 border border-gray-200 p-4 rounded-xl">
                     <p className="text-xs text-gray-600 font-bold uppercase mb-2">Agent Earning</p>
                     <p className="text-xl md:text-2xl font-bold text-gray-700 tabular-nums">{selectedOrder.affiliate_earned > 0 ? formatCurrency(selectedOrder.affiliate_earned) : "-"}</p>
@@ -619,9 +623,15 @@ export default function OrderLayoutPage() {
                     <p className="text-xs text-gray-600 font-bold uppercase mb-2">Branch Earning</p>
                     <p className="text-xl md:text-2xl font-bold text-gray-700 tabular-nums">{selectedOrder.branch_earned > 0 ? formatCurrency(selectedOrder.branch_earned) : "-"}</p>
                   </div>
-                  <div className="bg-gray-50 border border-gray-200 p-4 rounded-xl">
-                    <p className="text-xs text-gray-600 font-bold uppercase mb-2">ASM Earning</p>
-                    <p className="text-xl md:text-2xl font-bold text-gray-700 tabular-nums">{selectedOrder.asm_earned > 0 ? formatCurrency(selectedOrder.asm_earned) : "-"}</p>
+                  <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-xl">
+                    <p className="text-xs text-emerald-700 font-bold uppercase mb-2">ASM Earning</p>
+                    <p className="text-xl md:text-2xl font-bold text-emerald-600 tabular-nums">
+                      {selectedOrder.asm_earned > 0
+                        ? formatCurrency(selectedOrder.asm_earned)
+                        : selectedOrder.my_earned > 0
+                          ? formatCurrency(selectedOrder.my_earned)
+                          : "-"}
+                    </p>
                   </div>
                 </div>
               </div>
