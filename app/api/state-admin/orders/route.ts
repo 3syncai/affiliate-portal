@@ -19,8 +19,14 @@ export async function GET(req: NextRequest) {
             ssl: { rejectUnauthorized: false }
         });
 
-        // State Admins can see their own overrides, downline ASMs, downline Branch Admins, and bottom Affiliates
-        const validSources = ['state_admin', 'area_manager', 'branch_admin', 'affiliate'];
+        const adminResult = await pool.query(
+            `SELECT refer_code FROM state_admin WHERE id = $1`,
+            [adminId]
+        );
+        const stateReferCode = adminResult.rows[0]?.refer_code || "";
+
+        // State Admins can see their own overrides, direct sales, and full downline.
+        const validSources = ['state_admin', 'state_admin_direct', 'area_manager', 'asm_direct', 'branch_admin', 'affiliate'];
 
         // Query to get downline affiliate orders for this specific state admin
         // 1. We find all order_ids where this admin earned a commission
@@ -30,6 +36,7 @@ export async function GET(req: NextRequest) {
                 SELECT DISTINCT order_id 
                 FROM affiliate_commission_log 
                 WHERE affiliate_user_id = $1
+                   OR (commission_source = 'state_admin_direct' AND affiliate_code = $3)
             )
             SELECT 
                 acl.id,
@@ -49,15 +56,27 @@ export async function GET(req: NextRequest) {
                 u.first_name as affiliate_first_name,
                 u.last_name as affiliate_last_name,
                 u.email as affiliate_email,
+                ba.first_name as branch_first_name,
+                ba.last_name as branch_last_name,
+                ba.email as branch_email,
+                asm.first_name as asm_first_name,
+                asm.last_name as asm_last_name,
+                asm.email as asm_email,
+                sa.first_name as state_first_name,
+                sa.last_name as state_last_name,
+                sa.email as state_email,
                 acl.customer_id
             FROM affiliate_commission_log acl
             LEFT JOIN affiliate_user u ON acl.affiliate_code = u.refer_code
+            LEFT JOIN branch_admin ba ON acl.affiliate_code = ba.refer_code
+            LEFT JOIN area_sales_manager asm ON acl.affiliate_code = asm.refer_code
+            LEFT JOIN state_admin sa ON acl.affiliate_code = sa.refer_code
             JOIN AdminOrders ao ON acl.order_id = ao.order_id
             WHERE acl.commission_source = ANY($2::text[])
             ORDER BY acl.created_at ASC
         `;
 
-        const result = await pool.query(query, [adminId, validSources]);
+        const result = await pool.query(query, [adminId, validSources, stateReferCode]);
 
         const orderMap = new Map<string, any>();
 
@@ -80,6 +99,8 @@ export async function GET(req: NextRequest) {
                     source_rank: 999,
 
                     affiliate_earned: 0,
+                    branch_earned: 0,
+                    asm_earned: 0,
                     my_earned: 0,
                 });
             }
@@ -91,24 +112,42 @@ export async function GET(req: NextRequest) {
                 grouped.affiliate_earned = amount;
             }
 
-            if (row.affiliate_user_id === adminId) {
+            if (row.commission_source === 'branch_admin') {
+                grouped.branch_earned = amount;
+            }
+
+            if (row.commission_source === 'area_manager' || row.commission_source === 'asm_direct') {
+                grouped.asm_earned += amount;
+            }
+
+            if (
+                row.affiliate_user_id === adminId ||
+                (row.commission_source === 'state_admin_direct' && row.affiliate_code === stateReferCode)
+            ) {
                 grouped.my_earned += amount;
             }
 
-            // Find the bottom-most referrer (1=affiliate, 2=branch_admin, 3=area_manager, 4=state_admin)
+            // Find the bottom-most referrer (1=affiliate, 2=branch_admin, 3=ASM, 4=state_admin)
             let rank = 999;
             if (row.commission_source === 'affiliate') rank = 1;
             else if (row.commission_source === 'branch_admin') rank = 2;
-            else if (row.commission_source === 'area_manager') rank = 3;
-            else if (row.commission_source === 'state_admin') rank = 4;
+            else if (row.commission_source === 'area_manager' || row.commission_source === 'asm_direct') rank = 3;
+            else if (row.commission_source === 'state_admin' || row.commission_source === 'state_admin_direct') rank = 4;
 
             if (rank < grouped.source_rank) {
                 grouped.source_rank = rank;
                 grouped.generator_code = row.affiliate_code;
-                grouped.generator_name = row.affiliate_first_name && row.affiliate_last_name
-                    ? `${row.affiliate_first_name} ${row.affiliate_last_name}`
-                    : row.affiliate_code;
-                grouped.generator_email = row.affiliate_email;
+                grouped.generator_name =
+                    row.affiliate_first_name && row.affiliate_last_name
+                        ? `${row.affiliate_first_name} ${row.affiliate_last_name}`
+                        : row.branch_first_name && row.branch_last_name
+                            ? `${row.branch_first_name} ${row.branch_last_name}`
+                            : row.asm_first_name && row.asm_last_name
+                                ? `${row.asm_first_name} ${row.asm_last_name}`
+                                : row.state_first_name && row.state_last_name
+                                    ? `${row.state_first_name} ${row.state_last_name}`
+                                    : row.affiliate_code;
+                grouped.generator_email = row.affiliate_email || row.branch_email || row.asm_email || row.state_email || null;
             }
         }
 

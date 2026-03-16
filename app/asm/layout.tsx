@@ -20,7 +20,8 @@ import {
     Palette,
     TrendingUp,
     Bell,
-    Package
+    Package,
+    ShoppingBag
 } from "lucide-react"
 
 const navigationItems = [
@@ -31,6 +32,7 @@ const navigationItems = [
     { name: "My Earnings", href: "/asm/earnings", icon: TrendingUp },
     { name: "Create Area Sales Manager", href: "/asm/create-branch", icon: UserPlus },
     { name: "Partners in City", href: "/asm/agents", icon: Users },
+    { name: "Order Layout", href: "/asm/order-layout", icon: ShoppingBag },
 ]
 
 

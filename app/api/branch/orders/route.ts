@@ -3,8 +3,29 @@ import { Pool } from "pg";
 
 export const dynamic = "force-dynamic";
 
+type GroupedOrder = {
+    id: string;
+    order_id: string;
+    product_name: string;
+    quantity: number;
+    item_price: number;
+    order_amount: number;
+    status: string;
+    created_at: string;
+    customer_id: string;
+    generator_code: string | null;
+    generator_name: string | null;
+    generator_email: string | null;
+    source_rank: number;
+    affiliate_earned: number;
+    branch_earned: number;
+    asm_earned: number;
+    my_earned: number;
+};
+
 export async function GET(req: NextRequest) {
     console.log("=== Fetching Branch Affiliate Orders ===");
+    let pool: Pool | null = null;
 
     try {
         const { searchParams } = new URL(req.url);
@@ -15,7 +36,7 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ success: false, error: "Admin ID is required" }, { status: 400 });
         }
 
-        const pool = new Pool({
+        pool = new Pool({
             connectionString: process.env.DATABASE_URL || process.env.NEXT_PUBLIC_DATABASE_URL,
             ssl: { rejectUnauthorized: false }
         });
@@ -25,10 +46,12 @@ export async function GET(req: NextRequest) {
         // Handle both area_manager (Branch Admin) and branch_admin (ASM)
         if (role === 'area_manager') {
             // Branch Admins (Area Managers) can see their own overrides, downline ASMs, and bottom Affiliates
-            validSources = ['area_manager', 'branch_admin', 'affiliate'];
+            validSources = ['area_manager', 'asm_direct', 'branch_admin', 'affiliate'];
         } else if (role === 'branch_admin' || !role) {
             // ASMs can only see their own overrides and bottom Affiliates
             validSources = ['branch_admin', 'affiliate'];
+        } else {
+            validSources = ['affiliate', 'branch_admin', 'area_manager', 'asm_direct'];
         }
 
         // Query to get downline affiliate orders for this specific admin
@@ -68,7 +91,7 @@ export async function GET(req: NextRequest) {
 
         const result = await pool.query(query, [adminId, validSources]);
 
-        const orderMap = new Map<string, any>();
+        const orderMap = new Map<string, GroupedOrder>();
 
         for (const row of result.rows) {
             if (!orderMap.has(row.order_id)) {
@@ -89,15 +112,24 @@ export async function GET(req: NextRequest) {
                     source_rank: 999,
 
                     affiliate_earned: 0,
+                    branch_earned: 0,
+                    asm_earned: 0,
                     my_earned: 0,
                 });
             }
 
             const grouped = orderMap.get(row.order_id);
-            const amount = parseFloat(row.affiliate_commission) || 0;
+            if (!grouped) {
+                continue;
+            }
+            const amount = parseFloat(row.affiliate_commission ?? row.commission_amount) || 0;
 
             if (row.commission_source === 'affiliate') {
-                grouped.affiliate_earned = amount;
+                grouped.affiliate_earned += amount;
+            } else if (row.commission_source === 'branch_admin') {
+                grouped.branch_earned += amount;
+            } else if (row.commission_source === 'area_manager' || row.commission_source === 'asm_direct') {
+                grouped.asm_earned += amount;
             }
 
             if (row.affiliate_user_id === adminId) {
@@ -108,7 +140,7 @@ export async function GET(req: NextRequest) {
             let rank = 999;
             if (row.commission_source === 'affiliate') rank = 1;
             else if (row.commission_source === 'branch_admin') rank = 2;
-            else if (row.commission_source === 'area_manager') rank = 3;
+            else if (row.commission_source === 'area_manager' || row.commission_source === 'asm_direct') rank = 3;
 
             if (rank < grouped.source_rank) {
                 grouped.source_rank = rank;
@@ -124,23 +156,26 @@ export async function GET(req: NextRequest) {
             new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
         );
 
-        await pool.end();
-
         return NextResponse.json({
             success: true,
             orders,
             count: orders.length
         });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
+        const err = error as { message?: string };
         console.error("Failed to fetch branch orders:", error);
         return NextResponse.json(
             {
                 success: false,
                 error: "Failed to fetch orders",
-                message: error.message || "Unknown error"
+                message: err.message || "Unknown error"
             },
             { status: 500 }
         );
+    } finally {
+        if (pool) {
+            await pool.end();
+        }
     }
 }
