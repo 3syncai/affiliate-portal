@@ -30,6 +30,12 @@ export async function POST(request: NextRequest) {
 
         console.log('[Webhook] Received payload:', JSON.stringify(payload, null, 2));
 
+        // Normalize key identifiers early so lookups and dedupe stay stable.
+        payload.order_id = String(payload.order_id || "").trim();
+        payload.affiliate_code = String(payload.affiliate_code || "").trim();
+        payload.product_id = String(payload.product_id || "").trim();
+        payload.product_name = payload.product_name ? String(payload.product_name).trim() : payload.product_name;
+
         // Validate required fields
         if (!payload.order_id || !payload.affiliate_code || !payload.product_id) {
             return NextResponse.json({
@@ -125,7 +131,7 @@ export async function POST(request: NextRequest) {
         const branchAdminResult = await pool.query(`
             SELECT id, refer_code, first_name, last_name, email, branch, city, state
             FROM branch_admin
-            WHERE refer_code = $1
+            WHERE LOWER(TRIM(refer_code)) = LOWER(TRIM($1))
         `, [payload.affiliate_code]);
 
         const branchAdmin = branchAdminResult.rows.length > 0 ? branchAdminResult.rows[0] : null;
@@ -134,7 +140,7 @@ export async function POST(request: NextRequest) {
         const asmResult = await pool.query(`
             SELECT id, refer_code, first_name, last_name, email, city, state
             FROM area_sales_manager
-            WHERE refer_code = $1
+            WHERE LOWER(TRIM(refer_code)) = LOWER(TRIM($1))
         `, [payload.affiliate_code]);
 
         const asm = asmResult.rows.length > 0 ? asmResult.rows[0] : null;
@@ -436,7 +442,7 @@ export async function POST(request: NextRequest) {
             const stateAdminResult = await pool.query(`
                 SELECT id, refer_code, first_name, last_name, email, state
                 FROM state_admin
-                WHERE refer_code = $1
+                WHERE LOWER(TRIM(refer_code)) = LOWER(TRIM($1))
             `, [payload.affiliate_code]);
 
             const stateAdmin = stateAdminResult.rows.length > 0 ? stateAdminResult.rows[0] : null;
@@ -457,12 +463,16 @@ export async function POST(request: NextRequest) {
 
                 const totalRate = baseRate + branchBonus + asmBonus + stateBonus; 
                 const stateCommission = commissionAmount * (totalRate / 100);
+                const canonicalStateReferCode = stateAdmin.refer_code;
 
                 // Deduplication check
                 const existingCheck = await pool.query(`
                     SELECT id, status FROM affiliate_commission_log 
-                    WHERE order_id = $1 AND product_name = $2 AND affiliate_code = $3
-                `, [payload.order_id, payload.product_name, payload.affiliate_code]);
+                    WHERE order_id = $1
+                      AND product_name = $2
+                      AND commission_source = 'state_admin_direct'
+                      AND LOWER(affiliate_code) = LOWER($3)
+                `, [payload.order_id, payload.product_name, canonicalStateReferCode]);
 
                 // UPDATE STATUS for State Admin Direct
                 if (existingCheck.rows.length > 0) {
@@ -489,7 +499,7 @@ export async function POST(request: NextRequest) {
                             product_id, category_id, collection_id, created_at
                         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, NOW())
                     `, [
-                        payload.order_id, payload.affiliate_code, payload.product_name || 'Product',
+                        payload.order_id, canonicalStateReferCode, payload.product_name || 'Product',
                         payload.quantity || 1, payload.item_price || 0, payload.order_amount || 0,
                         commissionPercentage, commissionAmount, totalRate, stateCommission,
                         'state_admin_direct', commissionStatus,

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
 import axios from "axios"
 import useSWR from "swr"
 import { DollarSign, User, Users, ShoppingBag, Info, Wallet, CheckCircle2, AlertCircle, Wifi, WifiOff } from "lucide-react"
@@ -55,7 +55,13 @@ const getStoredUser = (): DashboardUser | null => {
 }
 
 export default function StateAdminEarningsPage() {
-    const [userData] = useState<DashboardUser | null>(() => getStoredUser())
+    const [userData, setUserData] = useState<DashboardUser | null>(null)
+    const [isMounted, setIsMounted] = useState(false)
+
+    useEffect(() => {
+        setIsMounted(true)
+        setUserData(getStoredUser())
+    }, [])
 
     // Toast state
     const [showToast, setShowToast] = useState(false)
@@ -111,7 +117,7 @@ export default function StateAdminEarningsPage() {
         return `₹${(amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
     }
 
-    if (loading) return <div className="p-8 flex justify-center"><div className="w-8 h-8 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin"></div></div>
+    if (!isMounted || loading) return <div className="p-8 flex justify-center"><div className="w-8 h-8 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin"></div></div>
 
     // Calculations for progress bar
     const totalOrders = stats.totalOrders || 1

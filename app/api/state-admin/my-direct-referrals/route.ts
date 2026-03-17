@@ -28,7 +28,7 @@ export async function GET(request: Request) {
 
         // Verify state admin exists
         const adminCheck = await pool.query(
-            'SELECT id, first_name, last_name FROM state_admin WHERE refer_code = $1',
+            'SELECT id, first_name, last_name, refer_code FROM state_admin WHERE LOWER(refer_code) = LOWER($1)',
             [referCode]
         );
 
@@ -54,7 +54,8 @@ export async function GET(request: Request) {
             WHERE metadata->>'referral_code' = $1
             ORDER BY created_at DESC
         `;
-        const customersResult = await pool.query(customersQuery, [referCode]);
+        const canonicalReferCode = adminCheck.rows[0].refer_code;
+        const customersResult = await pool.query(customersQuery, [canonicalReferCode]);
 
         // 2. Get all orders/commissions for these customers
         // Filtering by affiliate_code ensures we only get orders directly attributed to this admin
@@ -74,10 +75,11 @@ export async function GET(request: Request) {
                 acl.status,
                 acl.created_at
             FROM affiliate_commission_log acl
-            WHERE acl.affiliate_code = $1
+            WHERE LOWER(acl.affiliate_code) = LOWER($1)
+              AND acl.commission_source IN ('state_admin_direct', 'state_admin')
             ORDER BY acl.created_at DESC
         `;
-        const ordersResult = await pool.query(ordersQuery, [referCode]);
+        const ordersResult = await pool.query(ordersQuery, [canonicalReferCode]);
 
         // 3. Combine the data
         const customerMap = new Map();
