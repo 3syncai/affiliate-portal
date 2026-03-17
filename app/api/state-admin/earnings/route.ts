@@ -12,6 +12,141 @@ const toCount = (value: string | number | null | undefined) => {
     return Number.parseInt(String(value ?? 0), 10) || 0;
 };
 
+async function syncDeliveredCommissions(pool: Pool, logPrefix: string) {
+    try {
+        const orderTableRes = await pool.query(
+            `
+            SELECT table_name
+            FROM information_schema.tables
+            WHERE table_schema = 'public'
+              AND table_name IN ('order', 'orders')
+            LIMIT 1
+        `
+        );
+
+        if (orderTableRes.rows.length === 0) {
+            console.warn(`${logPrefix} Status sync skipped: order table not found`);
+            return;
+        }
+
+        const orderTable = orderTableRes.rows[0].table_name;
+        const orderColsRes = await pool.query(
+            `
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_schema = 'public'
+              AND table_name = $1
+        `,
+            [orderTable]
+        );
+        const orderCols = new Set(orderColsRes.rows.map((row: { column_name: string }) => row.column_name));
+
+        const conditions: string[] = [];
+        if (orderCols.has("fulfillment_status")) {
+            conditions.push("LOWER(COALESCE(o.fulfillment_status::text, '')) IN ('delivered','fulfilled','shipped')");
+        }
+        if (orderCols.has("payment_status")) {
+            conditions.push("LOWER(COALESCE(o.payment_status::text, '')) IN ('captured','partially_captured')");
+        }
+        if (orderCols.has("status")) {
+            conditions.push("LOWER(COALESCE(o.status::text, '')) IN ('completed')");
+        }
+        if (orderCols.has("metadata")) {
+            conditions.push("COALESCE(o.metadata->>'shiprocket_status', '') ILIKE 'delivered'");
+            conditions.push("COALESCE(o.metadata->>'shiprocket_status', '') ILIKE 'fulfilled'");
+            conditions.push("o.metadata->>'shiprocket_delivered_at' IS NOT NULL");
+        }
+
+        const extraAnd: string[] = [];
+        if (orderCols.has("canceled_at")) {
+            extraAnd.push("o.canceled_at IS NULL");
+        }
+
+        let joinClause = "";
+        const fulfillmentTableRes = await pool.query(
+            `
+            SELECT table_name
+            FROM information_schema.tables
+            WHERE table_schema = 'public'
+              AND table_name = 'fulfillment'
+            LIMIT 1
+        `
+        );
+
+        if (fulfillmentTableRes.rows.length > 0) {
+            const fulfillmentColsRes = await pool.query(
+                `
+                SELECT column_name
+                FROM information_schema.columns
+                WHERE table_schema = 'public'
+                  AND table_name = 'fulfillment'
+            `
+            );
+            const fulfillmentCols = new Set(
+                fulfillmentColsRes.rows.map((row: { column_name: string }) => row.column_name)
+            );
+
+            if (fulfillmentCols.has("order_id")) {
+                joinClause = "LEFT JOIN fulfillment f ON f.order_id = o.id";
+            } else {
+                const orderFulfillmentTableRes = await pool.query(
+                    `
+                    SELECT table_name
+                    FROM information_schema.tables
+                    WHERE table_schema = 'public'
+                      AND table_name = 'order_fulfillment'
+                    LIMIT 1
+                `
+                );
+
+                if (orderFulfillmentTableRes.rows.length > 0) {
+                    joinClause = `
+                    LEFT JOIN order_fulfillment ofl ON ofl.order_id = o.id
+                    LEFT JOIN fulfillment f ON f.id = ofl.fulfillment_id
+                `;
+                }
+            }
+
+            if (joinClause) {
+                if (fulfillmentCols.has("delivered_at")) {
+                    conditions.push("f.delivered_at IS NOT NULL");
+                }
+                if (fulfillmentCols.has("shipped_at")) {
+                    conditions.push("f.shipped_at IS NOT NULL");
+                }
+                if (fulfillmentCols.has("status")) {
+                    conditions.push("LOWER(COALESCE(f.status::text, '')) IN ('delivered','fulfilled','shipped')");
+                }
+                if (fulfillmentCols.has("canceled_at")) {
+                    extraAnd.push("f.canceled_at IS NULL");
+                }
+            }
+        }
+
+        if (conditions.length === 0) {
+            console.warn(`${logPrefix} Status sync skipped: no usable status columns found`);
+            return;
+        }
+
+        const whereClause = conditions.join(" OR ");
+        const extraClause = extraAnd.length > 0 ? `AND ${extraAnd.join(" AND ")}` : "";
+
+        await pool.query(`
+            UPDATE affiliate_commission_log acl
+            SET status = 'CREDITED',
+                credited_at = COALESCE(acl.credited_at, NOW())
+            FROM "${orderTable}" o
+            ${joinClause}
+            WHERE o.id = acl.order_id
+              AND acl.status IS DISTINCT FROM 'CREDITED'
+              AND (${whereClause})
+              ${extraClause}
+        `);
+    } catch (syncError) {
+        console.warn(`${logPrefix} Status sync skipped:`, syncError);
+    }
+}
+
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const state = searchParams.get("state");
@@ -27,6 +162,8 @@ export async function GET(req: NextRequest) {
     });
 
     try {
+        await syncDeliveredCommissions(pool, "[State Admin Earnings]");
+
         const commissionRates = await fetchCommissionRates(pool);
         const adminCheck = await pool.query(`
             SELECT refer_code
