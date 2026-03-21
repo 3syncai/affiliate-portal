@@ -301,8 +301,8 @@ export default function StateAdminDashboard() {
                     <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
                         <div className="flex items-center justify-between mb-4">
                             <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Active Offers</h3>
-                            <Link href="/state-admin/products" className="text-xs font-medium text-emerald-700 hover:text-emerald-800">
-                                View Products
+                            <Link href="/state-admin/offers" className="text-xs font-medium text-emerald-700 hover:text-emerald-800">
+                                View Offers
                             </Link>
                         </div>
 

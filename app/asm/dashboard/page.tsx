@@ -344,7 +344,7 @@ export default function ASMDashboard() {
                     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                         <div className="flex items-center justify-between mb-4">
                             <h3 className="font-bold text-gray-900 text-sm uppercase tracking-wider">Active Offers</h3>
-                            <Link href="/asm/products" className="text-xs font-medium text-blue-600 hover:text-blue-700">View Products</Link>
+                            <Link href="/asm/offers" className="text-xs font-medium text-blue-600 hover:text-blue-700">View Offers</Link>
                         </div>
 
                         <div className="space-y-3">

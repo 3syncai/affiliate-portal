@@ -339,7 +339,7 @@ export default function DashboardPage() {
           <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-200">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-semibold text-gray-900">Active Additional Commission</h3>
-              <a href="/products" className="text-xs font-medium text-emerald-700 hover:text-emerald-800">View Products</a>
+              <a href="/offers" className="text-xs font-medium text-emerald-700 hover:text-emerald-800">View Offers</a>
             </div>
 
             {!additionalData?.campaigns?.length ? (
