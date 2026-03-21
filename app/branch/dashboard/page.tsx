@@ -394,7 +394,7 @@ export default function BranchDashboard() {
                     <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
                         <div className="px-5 py-4 border-b border-gray-50 bg-gray-50/50 flex items-center justify-between">
                             <h3 className="font-bold text-gray-900 text-sm uppercase tracking-wider">Active Offers</h3>
-                            <a href="/branch/products" className="text-xs font-medium text-emerald-700 hover:text-emerald-800">View Products</a>
+                            <a href="/branch/offers" className="text-xs font-medium text-emerald-700 hover:text-emerald-800">View Offers</a>
                         </div>
                         <div className="p-4 space-y-3">
                             {additionalLoading ? (
