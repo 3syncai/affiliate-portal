@@ -152,13 +152,22 @@ export async function fetchActiveAdditionalCommissionsForRole(role: AdditionalVi
   const normalizedRole = normalizeVisibilityRole(role);
   const rows = await pool.query(
     `
-      SELECT id, product_id, product_name, additional_rate, target_role, starts_at, ends_at
-      FROM additional_commissions
-      WHERE is_active = true
-        AND starts_at <= NOW()
-        AND (ends_at IS NULL OR ends_at >= NOW())
-        AND (target_role = $1 OR target_role = 'all')
-      ORDER BY additional_rate DESC, created_at DESC
+      SELECT
+        ac.id,
+        ac.product_id,
+        ac.product_name,
+        ac.additional_rate,
+        ac.target_role,
+        ac.starts_at,
+        ac.ends_at,
+        p.thumbnail as product_thumbnail
+      FROM additional_commissions ac
+      LEFT JOIN product p ON p.id = ac.product_id
+      WHERE ac.is_active = true
+        AND ac.starts_at <= NOW()
+        AND (ac.ends_at IS NULL OR ac.ends_at >= NOW())
+        AND (ac.target_role = $1 OR ac.target_role = 'all')
+      ORDER BY ac.additional_rate DESC, ac.created_at DESC
     `,
     [normalizedRole]
   );

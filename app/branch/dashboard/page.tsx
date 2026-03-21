@@ -28,6 +28,7 @@ type AdditionalCampaign = {
     id: number
     product_id: string
     product_name: string | null
+    product_thumbnail?: string | null
     additional_rate: number
     target_role: string
     starts_at: string
@@ -403,9 +404,17 @@ export default function BranchDashboard() {
                             ) : (
                                 (additionalData.campaigns as AdditionalCampaign[]).slice(0, 4).map((campaign) => (
                                     <div key={campaign.id} className="rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2">
-                                        <div className="flex items-center justify-between gap-2">
-                                            <p className="text-sm font-semibold text-gray-900 truncate">{campaign.product_name || campaign.product_id}</p>
-                                            <span className="text-sm font-bold text-emerald-700">+{Number(campaign.additional_rate || 0).toFixed(2)}%</span>
+                                        <div className="flex items-center justify-between gap-3">
+                                            <div className="flex items-center gap-2 min-w-0">
+                                                {campaign.product_thumbnail ? (
+                                                    // eslint-disable-next-line @next/next/no-img-element
+                                                    <img src={campaign.product_thumbnail} alt={campaign.product_name || campaign.product_id} className="w-10 h-10 rounded object-cover border border-emerald-200 shrink-0" />
+                                                ) : (
+                                                    <div className="w-10 h-10 rounded bg-emerald-100 border border-emerald-200 shrink-0" />
+                                                )}
+                                                <p className="text-sm font-semibold text-gray-900 truncate">{campaign.product_name || campaign.product_id}</p>
+                                            </div>
+                                            <span className="text-sm font-bold text-emerald-700 shrink-0">+{Number(campaign.additional_rate || 0).toFixed(2)}%</span>
                                         </div>
                                         <p className="text-[11px] text-gray-500 mt-1">
                                             Ends {campaign.ends_at ? new Date(campaign.ends_at).toLocaleString("en-IN") : "Not set"}
