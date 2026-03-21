@@ -437,10 +437,15 @@ export default function DashboardPage() {
           <div className="grid gap-6 md:grid-cols-2">
             {/* Recent Referrals */}
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
-              <h3 className="text-base font-semibold mb-4 text-gray-900 flex items-center gap-2">
-                <Users className="w-4 h-4 text-blue-600" />
-                Recent Referrals
-              </h3>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-base font-semibold text-gray-900 flex items-center gap-2">
+                  <Users className="w-4 h-4 text-blue-600" />
+                  Recent Referrals
+                </h3>
+                <a href="/dashboard/referrals" className="text-xs font-medium text-emerald-700 hover:text-emerald-800">
+                  View all
+                </a>
+              </div>
               {stats?.recent_referrals && stats.recent_referrals.length > 0 ? (
                 <div className="space-y-3">
                   {stats.recent_referrals.slice(0, 5).map((ref) => (
@@ -467,10 +472,15 @@ export default function DashboardPage() {
 
             {/* Recent Commission */}
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
-              <h3 className="text-base font-semibold mb-4 text-gray-900 flex items-center gap-2">
-                <DollarSign className="w-4 h-4 text-green-600" />
-                Recent Commission
-              </h3>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-base font-semibold text-gray-900 flex items-center gap-2">
+                  <DollarSign className="w-4 h-4 text-green-600" />
+                  Recent Commission
+                </h3>
+                <a href="/dashboard/orders" className="text-xs font-medium text-emerald-700 hover:text-emerald-800">
+                  View all
+                </a>
+              </div>
               {stats?.recent_commissions && stats.recent_commissions.length > 0 ? (
                 <div className="space-y-3">
                   {stats.recent_commissions.slice(0, 5).map((comm) => (
