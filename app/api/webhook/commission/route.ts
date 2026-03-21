@@ -232,7 +232,7 @@ export async function POST(request: NextRequest) {
             // --- B) Process Area Manager Commission (Level 2) ---
             if (branchAdmin.city && branchAdmin.state) {
                 const areaManagerRes = await pool.query(`
-                    SELECT id, first_name, last_name, email FROM area_sales_manager
+                    SELECT id, refer_code, first_name, last_name, email FROM area_sales_manager
                     WHERE city = $1 AND state = $2
                 `, [branchAdmin.city, branchAdmin.state]);
 
@@ -255,22 +255,37 @@ export async function POST(request: NextRequest) {
                                 order_id, affiliate_code, product_name, quantity, item_price, order_amount,
                                 commission_rate, commission_amount, affiliate_rate, affiliate_commission,
                                 commission_source, status, customer_id, customer_name, customer_email, 
-                                product_id, category_id, collection_id, created_at
-                            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, NOW())
+                                affiliate_user_id, product_id, category_id, collection_id, created_at
+                            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, NOW())
                         `, [
                             payload.order_id,
-                            'AREA', // Placeholder code for Area Manager log
+                            areaManager.refer_code || 'AREA',
                             payload.product_name || 'Product',
                             payload.quantity || 1, payload.item_price || 0, payload.order_amount || 0,
                             commissionPercentage, commissionAmount, areaRate, areaCommission,
                             'area_manager', commissionStatus,
                             payload.customer_id || null, // Added customer_id
                             `${areaManager.first_name} ${areaManager.last_name}`, areaManager.email,
+                            areaManager.id,
                             payload.product_id, payload.category_id || null, payload.collection_id || null
                         ]);
                         console.log(`[Hierarchy] Logged Level 2 (Area Manager) Commission: ₹${areaCommission} for ${areaManager.first_name}`);
                         // Note: Area Manager Wallet credit logic would go here if they have a wallet system
                     } else {
+                        // Ensure existing rows are linked to the right ASM identity
+                        await pool.query(`
+                            UPDATE affiliate_commission_log
+                            SET affiliate_user_id = COALESCE(affiliate_user_id, $2),
+                                affiliate_code = CASE
+                                    WHEN affiliate_code IS NULL
+                                      OR TRIM(affiliate_code) = ''
+                                      OR UPPER(TRIM(affiliate_code)) = 'AREA'
+                                    THEN $3
+                                    ELSE affiliate_code
+                                END
+                            WHERE id = $1
+                        `, [areaCheck.rows[0].id, areaManager.id, areaManager.refer_code || 'AREA']);
+
                         const currentStatus = areaCheck.rows[0]?.status;
                         if (currentStatus !== 'CREDITED' && shouldCreditCommission) {
                             await pool.query(`
@@ -286,7 +301,7 @@ export async function POST(request: NextRequest) {
             // --- C) Process State Admin Commission (Level 3) ---
             if (branchAdmin.state) {
                 const stateAdminRes = await pool.query(`
-                    SELECT id, first_name, last_name, email FROM state_admin
+                    SELECT id, refer_code, first_name, last_name, email FROM state_admin
                     WHERE state = $1
                 `, [branchAdmin.state]);
 
@@ -309,21 +324,36 @@ export async function POST(request: NextRequest) {
                                 order_id, affiliate_code, product_name, quantity, item_price, order_amount,
                                 commission_rate, commission_amount, affiliate_rate, affiliate_commission,
                                 commission_source, status, customer_id, customer_name, customer_email, 
-                                product_id, category_id, collection_id, created_at
-                            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, NOW())
+                                affiliate_user_id, product_id, category_id, collection_id, created_at
+                            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, NOW())
                         `, [
                             payload.order_id,
-                            'STATE', // Placeholder code
+                            stateAdmin.refer_code || 'STATE',
                             payload.product_name || 'Product',
                             payload.quantity || 1, payload.item_price || 0, payload.order_amount || 0,
                             commissionPercentage, commissionAmount, stateRate, stateCommission,
                             'state_admin', commissionStatus,
                             payload.customer_id || null, // Added customer_id
                             `${stateAdmin.first_name} ${stateAdmin.last_name}`, stateAdmin.email,
+                            stateAdmin.id,
                             payload.product_id, payload.category_id || null, payload.collection_id || null
                         ]);
                         console.log(`[Hierarchy] Logged Level 3 (State Admin) Commission: ₹${stateCommission} for ${stateAdmin.first_name}`);
                     } else {
+                        // Ensure existing rows are linked to the right State Admin identity
+                        await pool.query(`
+                            UPDATE affiliate_commission_log
+                            SET affiliate_user_id = COALESCE(affiliate_user_id, $2),
+                                affiliate_code = CASE
+                                    WHEN affiliate_code IS NULL
+                                      OR TRIM(affiliate_code) = ''
+                                      OR UPPER(TRIM(affiliate_code)) = 'STATE'
+                                    THEN $3
+                                    ELSE affiliate_code
+                                END
+                            WHERE id = $1
+                        `, [stateCheck.rows[0].id, stateAdmin.id, stateAdmin.refer_code || 'STATE']);
+
                         const currentStatus = stateCheck.rows[0]?.status;
                         if (currentStatus !== 'CREDITED' && shouldCreditCommission) {
                             await pool.query(`
