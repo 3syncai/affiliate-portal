@@ -32,6 +32,7 @@ export default function StateAdminProductsPage() {
     const [searchQuery, setSearchQuery] = useState("")
     const [error, setError] = useState<string | null>(null)
     const [user, setUser] = useState<any>(null)
+    const [additionalByProduct, setAdditionalByProduct] = useState<Record<string, number>>({})
 
     const [commissionRate, setCommissionRate] = useState<number>(0)
 
@@ -44,6 +45,7 @@ export default function StateAdminProductsPage() {
         if (token) {
             fetchProducts(token)
             fetchCommissionRates()
+            fetchAdditionalCommissions("state")
         } else {
             setLoading(false)
             setError("Not authenticated")
@@ -80,6 +82,24 @@ export default function StateAdminProductsPage() {
             setError(err.response?.data?.message || err.message || "Failed to load products")
         } finally {
             setLoading(false)
+        }
+    }
+
+    const fetchAdditionalCommissions = async (role: string) => {
+        try {
+            const response = await axios.get(`/api/additional-commissions/active?role=${encodeURIComponent(role)}`)
+            const productRates: Record<string, number> = {}
+            for (const row of response.data?.campaigns || []) {
+                const productId = String(row.product_id || "")
+                const rate = Number(row.additional_rate || 0)
+                if (!productId) continue
+                if (!productRates[productId] || rate > productRates[productId]) {
+                    productRates[productId] = rate
+                }
+            }
+            setAdditionalByProduct(productRates)
+        } catch (err) {
+            console.error("Error fetching additional commissions:", err)
         }
     }
 
@@ -175,7 +195,14 @@ export default function StateAdminProductsPage() {
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {filteredProducts.map((product) => (
-                        <ProductCard key={product.id} product={product} user={user} theme={theme} commissionRate={commissionRate} />
+                        <ProductCard
+                            key={product.id}
+                            product={product}
+                            user={user}
+                            theme={theme}
+                            commissionRate={commissionRate}
+                            additionalCommissionRate={additionalByProduct[product.id] || 0}
+                        />
                     ))}
                 </div>
             )}
@@ -183,13 +210,14 @@ export default function StateAdminProductsPage() {
     )
 }
 
-function ProductCard({ product, user, theme, commissionRate }: { product: Product; user: any; theme: any; commissionRate: number }) {
+function ProductCard({ product, user, theme, commissionRate, additionalCommissionRate }: { product: Product; user: any; theme: any; commissionRate: number; additionalCommissionRate: number }) {
     const [copied, setCopied] = useState(false)
 
     // Calculate approx commission ammount
     const actualCommission = commissionRate > 0
         ? product.commissionAmount * (commissionRate / 100)
         : product.commissionAmount
+    const additionalCommissionAmount = product.price * (additionalCommissionRate / 100)
 
     const handleShare = () => {
         const referralCode = user?.refer_code || ''
@@ -292,6 +320,14 @@ function ProductCard({ product, user, theme, commissionRate }: { product: Produc
                                 minimumFractionDigits: 2,
                                 maximumFractionDigits: 2
                             })}</span>
+                        </div>
+                    </div>
+                )}
+                {additionalCommissionRate > 0 && (
+                    <div className="mt-2 rounded-lg px-3 py-2 space-y-1 bg-emerald-50 border border-emerald-200">
+                        <div className="text-xs font-medium text-emerald-700">Additional Commission</div>
+                        <div className="text-sm font-semibold text-emerald-700">
+                            +{additionalCommissionRate}% (₹{additionalCommissionAmount.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
                         </div>
                     </div>
                 )}

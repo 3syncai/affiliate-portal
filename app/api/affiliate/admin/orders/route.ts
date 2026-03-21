@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { Pool } from "pg";
+import { ensureAdditionalCommissionSchema } from "@/lib/additional-commission";
 
 export const dynamic = "force-dynamic";
 
@@ -7,6 +8,8 @@ export async function GET() {
     console.log("=== Fetching Affiliate Orders ===");
 
     try {
+        await ensureAdditionalCommissionSchema();
+
         const pool = new Pool({
             connectionString: process.env.DATABASE_URL || process.env.NEXT_PUBLIC_DATABASE_URL
         });
@@ -24,6 +27,10 @@ export async function GET() {
         acl.order_amount,
         acl.commission_rate,
         acl.commission_amount,
+        acl.affiliate_rate,
+        acl.affiliate_commission,
+        COALESCE(acl.additional_commission_rate, 0) as additional_commission_rate,
+        COALESCE(acl.additional_commission_amount, 0) as additional_commission_amount,
         acl.commission_source,
         acl.status,
         acl.created_at,
@@ -53,6 +60,12 @@ export async function GET() {
             order_amount: parseFloat(row.order_amount) || 0,
             commission_rate: parseFloat(row.commission_rate) || 0,
             commission_amount: parseFloat(row.commission_amount) || 0,
+            affiliate_rate: parseFloat(row.affiliate_rate) || 0,
+            affiliate_commission: parseFloat(row.affiliate_commission) || 0,
+            additional_commission_rate: parseFloat(row.additional_commission_rate) || 0,
+            additional_commission_amount: parseFloat(row.additional_commission_amount) || 0,
+            total_commission_amount:
+                (parseFloat(row.affiliate_commission) || ((parseFloat(row.commission_amount) || 0) * ((parseFloat(row.affiliate_rate) || 0) / 100))),
             commission_source: row.commission_source,
             status: row.status,
             created_at: row.created_at,

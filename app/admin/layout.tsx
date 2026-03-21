@@ -33,6 +33,7 @@ const navigationItems = [
   { name: "Payments", href: "/admin/payments", icon: Banknote },
   { name: "Set Commission", href: "/admin/set-commission", icon: Percent },
   { name: "Product Commission", href: "/admin/product-commission", icon: Percent },
+  { name: "Additional Commission", href: "/admin/additional-commission", icon: Percent },
   { name: "Total Agent", href: "/admin/total-agent", icon: Users },
   { name: "TDS Settings", href: "/admin/tds-settings", icon: Settings },
   { name: "Commission Ledger", href: "/admin/ledger", icon: Banknote },

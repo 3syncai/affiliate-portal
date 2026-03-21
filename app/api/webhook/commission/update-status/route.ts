@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import pool from "@/lib/db";
 import { normalizeCommissionStatus, isCommissionCreditedStatus } from "@/lib/commission-status";
+import { applyAdditionalCommissionForOrder } from "@/lib/additional-commission";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +20,12 @@ export async function POST(req: NextRequest) {
         }
 
         console.log(`[Commission Update] Received update for Order #${order_id} -> ${status} (${normalizedStatus})`);
+
+        try {
+            await applyAdditionalCommissionForOrder(order_id);
+        } catch (additionalError) {
+            console.error(`[Additional Commission] Failed before status update for Order #${order_id}:`, additionalError);
+        }
 
         const result = await pool.query(
             `UPDATE affiliate_commission_log 

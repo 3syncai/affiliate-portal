@@ -21,7 +21,8 @@ import {
     TrendingUp,
     Bell,
     Package,
-    ShoppingBag
+    ShoppingBag,
+    BadgePercent
 } from "lucide-react"
 
 const navigationItems = [
@@ -30,6 +31,7 @@ const navigationItems = [
     { name: "My Referrals", href: "/asm/my-referrals", icon: Users },
     { name: "Area Sales Manager", href: "/asm/branch-admins", icon: Building },
     { name: "My Earnings", href: "/asm/earnings", icon: TrendingUp },
+    { name: "Offers", href: "/asm/offers", icon: BadgePercent },
     { name: "Create Area Sales Manager", href: "/asm/create-branch", icon: UserPlus },
     { name: "Partners in City", href: "/asm/agents", icon: Users },
     { name: "Order Layout", href: "/asm/order-layout", icon: ShoppingBag },

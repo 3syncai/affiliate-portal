@@ -52,7 +52,7 @@ export async function GET(req: NextRequest) {
             FROM affiliate_commission_log
             WHERE commission_source = 'branch_admin'
               AND affiliate_user_id = $1
-              AND COALESCE(affiliate_code, '') <> $2
+              AND LOWER(TRIM(COALESCE(affiliate_code, ''))) <> LOWER(TRIM($2))
         `, [adminId, referCode]);
 
         const directStatsResult = await pool.query(`
@@ -63,7 +63,7 @@ export async function GET(req: NextRequest) {
                 COUNT(CASE WHEN status = 'PENDING' THEN 1 END) as pending_direct_orders
             FROM affiliate_commission_log
             WHERE commission_source = 'branch_admin'
-              AND affiliate_code = $1
+              AND LOWER(TRIM(COALESCE(affiliate_code, ''))) = LOWER(TRIM($1))
         `, [referCode]);
 
         const overrideStats = overrideStatsResult.rows[0] || {};
@@ -115,7 +115,9 @@ export async function GET(req: NextRequest) {
                 affiliate_code as refer_code,
                 affiliate_rate,
                 CASE
-                    WHEN commission_source = 'branch_admin' AND affiliate_code = $2 THEN 'Direct Sale'
+                    WHEN commission_source = 'branch_admin'
+                      AND LOWER(TRIM(COALESCE(affiliate_code, ''))) = LOWER(TRIM($2))
+                    THEN 'Direct Sale'
                     WHEN commission_source = 'branch_admin' THEN 'Affiliate Override'
                     ELSE 'Direct Sale'
                 END as type

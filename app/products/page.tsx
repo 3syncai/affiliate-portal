@@ -35,6 +35,7 @@ export default function ProductsPage() {
     const [searchQuery, setSearchQuery] = useState("")
     const [error, setError] = useState<string | null>(null)
     const [affiliateRate, setAffiliateRate] = useState<number>(100) // Default 100% if not set
+    const [additionalByProduct, setAdditionalByProduct] = useState<Record<string, number>>({})
 
     useEffect(() => {
         // Check if user is logged in
@@ -64,6 +65,7 @@ export default function ProductsPage() {
             setUser(parsedUser)
             fetchProducts(token)
             fetchAffiliateRate()
+            fetchAdditionalCommissions("partner")
         } catch (e) {
             console.error("Error parsing user data:", e)
             router.push("/login")
@@ -105,6 +107,24 @@ export default function ProductsPage() {
             setError(err.response?.data?.message || err.message || "Failed to load products")
         } finally {
             setLoading(false)
+        }
+    }
+
+    const fetchAdditionalCommissions = async (role: string) => {
+        try {
+            const response = await axios.get(`/api/additional-commissions/active?role=${encodeURIComponent(role)}`)
+            const productRates: Record<string, number> = {}
+            for (const row of response.data?.campaigns || []) {
+                const productId = String(row.product_id || "")
+                const rate = Number(row.additional_rate || 0)
+                if (!productId) continue
+                if (!productRates[productId] || rate > productRates[productId]) {
+                    productRates[productId] = rate
+                }
+            }
+            setAdditionalByProduct(productRates)
+        } catch (err) {
+            console.error("Error fetching additional commissions:", err)
         }
     }
 
@@ -217,7 +237,13 @@ export default function ProductsPage() {
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                         {filteredProducts.map((product) => (
-                            <ProductCard key={product.id} product={product} user={user} affiliateRate={affiliateRate} />
+                            <ProductCard
+                                key={product.id}
+                                product={product}
+                                user={user}
+                                affiliateRate={affiliateRate}
+                                additionalCommissionRate={additionalByProduct[product.id] || 0}
+                            />
                         ))}
                     </div>
                 )}
@@ -226,13 +252,24 @@ export default function ProductsPage() {
     )
 }
 
-function ProductCard({ product, user, affiliateRate }: { product: Product; user: any; affiliateRate: number }) {
+function ProductCard({
+    product,
+    user,
+    affiliateRate,
+    additionalCommissionRate,
+}: {
+    product: Product
+    user: any
+    affiliateRate: number
+    additionalCommissionRate: number
+}) {
     const [copied, setCopied] = useState(false)
     const [showTooltip, setShowTooltip] = useState(false)
 
     // Calculate actual commission after platform fee deduction
     const actualCommission = product.commissionAmount * (affiliateRate / 100)
     const platformFee = product.commissionAmount - actualCommission
+    const additionalCommissionAmount = product.price * (additionalCommissionRate / 100)
 
     const handleShare = () => {
         const referralCode = user?.refer_code || ''
@@ -380,6 +417,19 @@ function ProductCard({ product, user, affiliateRate }: { product: Product; user:
                                     )}
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                )}
+                {additionalCommissionRate > 0 && (
+                    <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3">
+                        <div className="text-xs uppercase tracking-wide font-semibold text-emerald-700">Additional Commission</div>
+                        <div className="text-sm font-semibold text-emerald-700 mt-1">
+                            +{additionalCommissionRate}% (₹
+                            {additionalCommissionAmount.toLocaleString("en-IN", {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2
+                            })}
+                            )
                         </div>
                     </div>
                 )}

@@ -24,6 +24,16 @@ type Activity = {
     }
 }
 
+type AdditionalCampaign = {
+    id: number
+    product_id: string
+    product_name: string | null
+    additional_rate: number
+    target_role: string
+    starts_at: string
+    ends_at: string | null
+}
+
 const fetcher = (url: string) => axios.get(url).then(res => res.data)
 
 export default function BranchDashboard() {
@@ -50,6 +60,11 @@ export default function BranchDashboard() {
 
     const { data: activityData, mutate: mutateActivities, isLoading: activitiesLoading } = useSWR(
         user?.branch ? `/api/branch/activity?branch=${encodeURIComponent(user.branch)}` : null,
+        fetcher
+    )
+
+    const { data: additionalData, isLoading: additionalLoading } = useSWR(
+        "/api/additional-commissions/active?role=asm",
         fetcher
     )
 
@@ -371,6 +386,33 @@ export default function BranchDashboard() {
                                     </a>
                                 )
                             })}
+                        </div>
+                    </div>
+
+                    {/* Active Offers */}
+                    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                        <div className="px-5 py-4 border-b border-gray-50 bg-gray-50/50 flex items-center justify-between">
+                            <h3 className="font-bold text-gray-900 text-sm uppercase tracking-wider">Active Offers</h3>
+                            <a href="/branch/products" className="text-xs font-medium text-emerald-700 hover:text-emerald-800">View Products</a>
+                        </div>
+                        <div className="p-4 space-y-3">
+                            {additionalLoading ? (
+                                <p className="text-xs text-gray-500">Loading offers...</p>
+                            ) : !additionalData?.campaigns?.length ? (
+                                <p className="text-xs text-gray-500">No active additional commission offers for Branch.</p>
+                            ) : (
+                                (additionalData.campaigns as AdditionalCampaign[]).slice(0, 4).map((campaign) => (
+                                    <div key={campaign.id} className="rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2">
+                                        <div className="flex items-center justify-between gap-2">
+                                            <p className="text-sm font-semibold text-gray-900 truncate">{campaign.product_name || campaign.product_id}</p>
+                                            <span className="text-sm font-bold text-emerald-700">+{Number(campaign.additional_rate || 0).toFixed(2)}%</span>
+                                        </div>
+                                        <p className="text-[11px] text-gray-500 mt-1">
+                                            Ends {campaign.ends_at ? new Date(campaign.ends_at).toLocaleString("en-IN") : "Not set"}
+                                        </p>
+                                    </div>
+                                ))
+                            )}
                         </div>
                     </div>
                 </div>

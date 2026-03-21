@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { Search, Package, IndianRupee, Percent, Box, Share2 } from "lucide-react"
 import axios from "axios"
-import { BACKEND_URL, STORE_URL } from "@/lib/config"
+import { STORE_URL } from "@/lib/config"
 import { useTheme } from "@/contexts/ThemeContext"
 
 interface Product {
@@ -32,8 +32,8 @@ export default function BranchProductsPage() {
     const [searchQuery, setSearchQuery] = useState("")
     const [error, setError] = useState<string | null>(null)
     const [user, setUser] = useState<any>(null)
-
     const [commissionRate, setCommissionRate] = useState<number>(0)
+    const [additionalByProduct, setAdditionalByProduct] = useState<Record<string, number>>({})
 
     useEffect(() => {
         const userData = localStorage.getItem("affiliate_user")
@@ -44,6 +44,7 @@ export default function BranchProductsPage() {
         if (token) {
             fetchProducts(token)
             fetchCommissionRates()
+            fetchAdditionalCommissions("branch")
         } else {
             setLoading(false)
             setError("Not authenticated")
@@ -59,6 +60,24 @@ export default function BranchProductsPage() {
         } catch (err) {
             console.error("Error fetching commission rates:", err)
             setCommissionRate(0)
+        }
+    }
+
+    const fetchAdditionalCommissions = async (role: string) => {
+        try {
+            const response = await axios.get(`/api/additional-commissions/active?role=${encodeURIComponent(role)}`)
+            const productRates: Record<string, number> = {}
+            for (const row of response.data?.campaigns || []) {
+                const productId = String(row.product_id || "")
+                const rate = Number(row.additional_rate || 0)
+                if (!productId) continue
+                if (!productRates[productId] || rate > productRates[productId]) {
+                    productRates[productId] = rate
+                }
+            }
+            setAdditionalByProduct(productRates)
+        } catch (err) {
+            console.error("Error fetching additional commissions:", err)
         }
     }
 
@@ -82,7 +101,6 @@ export default function BranchProductsPage() {
         }
     }
 
-    // Filter products by search and category
     const filteredProducts = products.filter(product => {
         const matchesSearch = product.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
             product.description?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -103,7 +121,6 @@ export default function BranchProductsPage() {
 
     return (
         <div className="space-y-6">
-            {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
                     <h1 className="text-3xl font-bold text-gray-900">Product Catalog</h1>
@@ -114,9 +131,7 @@ export default function BranchProductsPage() {
                 </div>
             </div>
 
-            {/* Search and Filters */}
             <div className="flex flex-col lg:flex-row gap-4">
-                {/* Search Bar */}
                 <div className="flex-1 relative">
                     <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
                     <input
@@ -128,7 +143,6 @@ export default function BranchProductsPage() {
                     />
                 </div>
 
-                {/* Category Filters */}
                 <div className="flex flex-wrap gap-2">
                     <button
                         onClick={() => setSelectedCategory("all")}
@@ -156,14 +170,12 @@ export default function BranchProductsPage() {
                 </div>
             </div>
 
-            {/* Error State */}
             {error && (
                 <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
                     {error}
                 </div>
             )}
 
-            {/* Products Grid */}
             {filteredProducts.length === 0 ? (
                 <div className="text-center py-16 bg-white rounded-lg shadow-sm border border-gray-200">
                     <Package className="mx-auto text-gray-400 mb-4" size={48} />
@@ -177,7 +189,14 @@ export default function BranchProductsPage() {
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {filteredProducts.map((product) => (
-                        <ProductCard key={product.id} product={product} user={user} theme={theme} commissionRate={commissionRate} />
+                        <ProductCard
+                            key={product.id}
+                            product={product}
+                            user={user}
+                            theme={theme}
+                            commissionRate={commissionRate}
+                            additionalCommissionRate={additionalByProduct[product.id] || 0}
+                        />
                     ))}
                 </div>
             )}
@@ -185,10 +204,11 @@ export default function BranchProductsPage() {
     )
 }
 
-function ProductCard({ product, user, theme, commissionRate }: { product: Product; user: any; theme: any; commissionRate: number }) {
+function ProductCard({ product, user, theme, commissionRate, additionalCommissionRate }: { product: Product; user: any; theme: any; commissionRate: number; additionalCommissionRate: number }) {
     const [copied, setCopied] = useState(false)
 
     const actualCommission = product.commissionAmount * (commissionRate / 100)
+    const additionalCommissionAmount = product.price * (additionalCommissionRate / 100)
 
     const handleShare = () => {
         const referralCode = user?.refer_code || ''
@@ -203,7 +223,6 @@ function ProductCard({ product, user, theme, commissionRate }: { product: Produc
 
     return (
         <div className="bg-white rounded-xl border border-gray-100 overflow-hidden hover:shadow-lg transition-shadow relative">
-            {/* Share Button */}
             <button
                 onClick={handleShare}
                 className="absolute top-3 right-3 z-10 bg-white/90 backdrop-blur-sm hover:bg-emerald-50 text-gray-700 hover:text-emerald-600 p-2 rounded-full shadow-md transition-all"
@@ -211,14 +230,12 @@ function ProductCard({ product, user, theme, commissionRate }: { product: Produc
                 <Share2 size={18} />
             </button>
 
-            {/* Copied notification */}
             {copied && (
                 <div className="absolute top-3 left-3 z-10 bg-emerald-500 text-white text-xs px-3 py-1.5 rounded-full shadow-lg animate-pulse">
                     Link copied!
                 </div>
             )}
 
-            {/* Image */}
             <div className="h-48 bg-white flex items-center justify-center p-4">
                 {product.thumbnail ? (
                     <img
@@ -231,9 +248,7 @@ function ProductCard({ product, user, theme, commissionRate }: { product: Produc
                 )}
             </div>
 
-            {/* Content */}
             <div className="p-5">
-                {/* Title and Stock Badge */}
                 <div className="flex items-start justify-between gap-2 mb-2">
                     <h3 className="font-semibold text-gray-900 text-lg leading-tight line-clamp-2">
                         {product.title}
@@ -246,12 +261,10 @@ function ProductCard({ product, user, theme, commissionRate }: { product: Produc
                     </span>
                 </div>
 
-                {/* Description */}
                 <p className="text-gray-600 text-sm mb-4 line-clamp-2">
                     {product.description || "No description available"}
                 </p>
 
-                {/* Rating and Category */}
                 <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-1">
                         <span className="text-yellow-500">★</span>
@@ -262,7 +275,6 @@ function ProductCard({ product, user, theme, commissionRate }: { product: Produc
                     </span>
                 </div>
 
-                {/* Price and Commission */}
                 <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-1">
                         <IndianRupee size={16} className="text-gray-700" />
@@ -278,7 +290,6 @@ function ProductCard({ product, user, theme, commissionRate }: { product: Produc
                     )}
                 </div>
 
-                {/* Inventory */}
                 {product.inventoryQuantity > 0 && (
                     <div className="flex items-center gap-1 text-gray-500 text-sm mb-3">
                         <Box size={14} />
@@ -286,7 +297,6 @@ function ProductCard({ product, user, theme, commissionRate }: { product: Produc
                     </div>
                 )}
 
-                {/* Affiliate Commission */}
                 {product.commissionRate && (
                     <div className="rounded-lg px-3 py-2 space-y-1" style={{ backgroundColor: theme.primaryLight, border: `1px solid ${theme.primary}20` }}>
                         <div className="flex justify-between items-center">
@@ -304,6 +314,15 @@ function ProductCard({ product, user, theme, commissionRate }: { product: Produc
                                 minimumFractionDigits: 2,
                                 maximumFractionDigits: 2
                             })}</span>
+                        </div>
+                    </div>
+                )}
+
+                {additionalCommissionRate > 0 && (
+                    <div className="mt-2 rounded-lg px-3 py-2 space-y-1 bg-emerald-50 border border-emerald-200">
+                        <div className="text-xs font-medium text-emerald-700">Additional Commission</div>
+                        <div className="text-sm font-semibold text-emerald-700">
+                            +{additionalCommissionRate}% (₹{additionalCommissionAmount.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
                         </div>
                     </div>
                 )}
