@@ -237,6 +237,14 @@ export default function DashboardPage() {
                 </svg>
                 Products
               </a>
+              <a
+                href="/offers"
+                className="ml-2 inline-flex items-center gap-1.5 px-3 py-1 bg-white border border-gray-200 text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 rounded-md text-sm font-medium transition-colors">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
+                </svg>
+                Offers
+              </a>
             </div>
             <div className="flex items-center gap-4">
               <span className="text-sm text-gray-600">

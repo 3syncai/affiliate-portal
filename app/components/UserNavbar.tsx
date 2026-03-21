@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useRouter, usePathname } from "next/navigation"
-import { LayoutDashboard, LogOut, Package } from "lucide-react"
+import { LayoutDashboard, LogOut, Package, BadgePercent } from "lucide-react"
 
 interface UserNavbarProps {
     userName?: string
@@ -52,6 +52,16 @@ export default function UserNavbar({ userName }: UserNavbarProps) {
                             >
                                 <Package size={18} />
                                 <span>Products</span>
+                            </Link>
+                            <Link
+                                href="/offers"
+                                className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-all ${isActive("/offers")
+                                    ? "bg-green-50 text-green-700"
+                                    : "text-gray-600 hover:bg-green-50 hover:text-green-700"
+                                    }`}
+                            >
+                                <BadgePercent size={18} />
+                                <span>Offers</span>
                             </Link>
                         </div>
                     </div>
