@@ -25,7 +25,7 @@ export function visibilityFromCommissionSource(source: CommissionSource): Exclud
 
   if (normalized === "affiliate") return "partner";
   if (normalized === "branch_admin") return "branch";
-  if (normalized === "area_manager" || normalized === "asm_direct") return "branch";
+  if (normalized === "area_manager" || normalized === "asm_direct") return "asm";
   if (normalized === "state_admin" || normalized === "state_admin_direct") return "state";
 
   return "partner";
@@ -66,6 +66,7 @@ type CommissionLogRow = {
   product_id: string | null;
   order_amount: string | number | null;
   commission_source: string | null;
+  affiliate_code: string | null;
   commission_amount: string | number | null;
   affiliate_rate: string | number | null;
 };
@@ -73,6 +74,23 @@ type CommissionLogRow = {
 function toNumber(value: string | number | null | undefined) {
   const parsed = Number(value ?? 0);
   return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function isDirectSellerRow(row: CommissionLogRow) {
+  const source = String(row.commission_source || "").trim().toLowerCase();
+  const affiliateCode = String(row.affiliate_code || "").trim().toUpperCase();
+
+  if (source === "affiliate" || source === "asm_direct" || source === "state_admin_direct") {
+    return true;
+  }
+
+  if (source === "branch_admin") {
+    // Direct branch sales use the branch refer code.
+    // Override entries use placeholders like BRANCH/AREA/STATE and should not receive additional bonus.
+    return affiliateCode !== "BRANCH" && affiliateCode !== "AREA" && affiliateCode !== "STATE";
+  }
+
+  return false;
 }
 
 async function getBestCampaign(productId: string, role: Exclude<AdditionalVisibilityRole, "all">) {
@@ -106,7 +124,7 @@ export async function applyAdditionalCommissionForOrder(orderId: string) {
 
   const rowsResult = await pool.query<CommissionLogRow>(
     `
-      SELECT id, product_id, order_amount, commission_source, commission_amount, affiliate_rate
+      SELECT id, product_id, order_amount, commission_source, affiliate_code, commission_amount, affiliate_rate
       FROM affiliate_commission_log
       WHERE order_id = $1
     `,
@@ -117,6 +135,7 @@ export async function applyAdditionalCommissionForOrder(orderId: string) {
 
   for (const row of rowsResult.rows) {
     if (!row.product_id) continue;
+    if (!isDirectSellerRow(row)) continue;
 
     const visibilityRole = visibilityFromCommissionSource(row.commission_source || "affiliate");
     const campaign = await getBestCampaign(row.product_id, visibilityRole);
