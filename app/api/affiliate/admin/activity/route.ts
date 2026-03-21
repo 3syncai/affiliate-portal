@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { Pool } from "pg";
+import { ensureAdditionalCommissionSchema } from "@/lib/additional-commission";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +15,8 @@ export async function GET() {
     console.log("=== Fetching Recent Activity ===");
 
     try {
+        await ensureAdditionalCommissionSchema();
+
         const pool = new Pool({
             connectionString: process.env.DATABASE_URL || process.env.NEXT_PUBLIC_DATABASE_URL
         });
@@ -44,6 +47,9 @@ export async function GET() {
                 acl.affiliate_code,
                 acl.product_name,
                 acl.commission_amount,
+                acl.affiliate_rate,
+                acl.affiliate_commission,
+                COALESCE(acl.additional_commission_amount, 0) as additional_commission_amount,
                 acl.status,
                 acl.created_at,
                 u.first_name as affiliate_first_name,
@@ -91,6 +97,10 @@ export async function GET() {
                         : row.affiliate_code,
                     product_name: row.product_name,
                     commission_amount: parseFloat(row.commission_amount) || 0,
+                    normal_commission_amount:
+                        Number(((parseFloat(row.commission_amount) || 0) * ((parseFloat(row.affiliate_rate) || 0) / 100)).toFixed(2)),
+                    additional_commission_amount: parseFloat(row.additional_commission_amount) || 0,
+                    total_commission_amount: parseFloat(row.affiliate_commission) || 0,
                     status: row.status
                 }
             });

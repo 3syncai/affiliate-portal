@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import pool from "@/lib/db";
 import { sendNotification } from "@/lib/sse";
 import { normalizeCommissionStatus } from "@/lib/commission-status";
+import { applyAdditionalCommissionForOrder } from "@/lib/additional-commission";
 
 export const dynamic = "force-dynamic";
 
@@ -786,6 +787,12 @@ export async function POST(request: NextRequest) {
                     }
                 }
             }
+        }
+
+        try {
+            await applyAdditionalCommissionForOrder(payload.order_id);
+        } catch (additionalError) {
+            console.error("[Additional Commission] Failed to apply additional commission:", additionalError);
         }
 
         return NextResponse.json({

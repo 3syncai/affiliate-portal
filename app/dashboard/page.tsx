@@ -46,6 +46,16 @@ interface AffiliateStats {
   }>
 }
 
+type AdditionalCampaign = {
+  id: number
+  product_id: string
+  product_name: string | null
+  additional_rate: number
+  target_role: string
+  starts_at: string
+  ends_at: string | null
+}
+
 export default function DashboardPage() {
   const router = useRouter()
   const [user, setUser] = useState<any>(null)
@@ -132,6 +142,15 @@ export default function DashboardPage() {
     fetcher,
     {
       refreshInterval: 5000,
+      revalidateOnFocus: true
+    }
+  )
+
+  const { data: additionalData } = useSWR(
+    "/api/additional-commissions/active?role=partner",
+    fetcher,
+    {
+      refreshInterval: 10000,
       revalidateOnFocus: true
     }
   )
@@ -309,6 +328,31 @@ export default function DashboardPage() {
             </a>
           </div>
 
+          <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-200">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-gray-900">Active Additional Commission</h3>
+              <a href="/products" className="text-xs font-medium text-emerald-700 hover:text-emerald-800">View Products</a>
+            </div>
+
+            {!additionalData?.campaigns?.length ? (
+              <p className="text-sm text-gray-500">No additional commission campaign is active for you right now.</p>
+            ) : (
+              <div className="space-y-2">
+                {(additionalData.campaigns as AdditionalCampaign[]).slice(0, 3).map((campaign) => (
+                  <div key={campaign.id} className="flex items-center justify-between bg-emerald-50 border border-emerald-100 rounded-lg px-3 py-2">
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">{campaign.product_name || campaign.product_id}</p>
+                      <p className="text-xs text-gray-500">
+                        Ends {campaign.ends_at ? new Date(campaign.ends_at).toLocaleString("en-IN") : "Not set"}
+                      </p>
+                    </div>
+                    <span className="text-sm font-bold text-emerald-700">+{Number(campaign.additional_rate || 0).toFixed(2)}%</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           {/* Cards Grid */}
           <div className="grid gap-6 md:grid-cols-3">
             {/* Your Agent Code Card */}
@@ -426,6 +470,7 @@ export default function DashboardPage() {
                       <div>
                         <p className="text-sm font-medium text-gray-900">{comm.product_name}</p>
                         <p className="text-xs text-gray-500">₹{comm.order_amount} @ {comm.commission_rate}%</p>
+                        <p className="text-[11px] text-gray-400">{comm.order_id}</p>
                       </div>
                       <div className="text-right">
                         <p className="text-sm font-bold text-emerald-600">+₹{comm.commission_amount.toFixed(2)}</p>

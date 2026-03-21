@@ -48,17 +48,44 @@ export async function GET(request: Request) {
 
         const user = userResult.rows[0];
 
+        // Keep commission status synced with delivered orders to avoid stale pending balances.
+        try {
+            await pool.query(
+                `
+                UPDATE affiliate_commission_log acl
+                SET status = 'CREDITED',
+                    credited_at = COALESCE(credited_at, NOW())
+                FROM "order" o
+                LEFT JOIN order_fulfillment ofl ON ofl.order_id = o.id
+                LEFT JOIN fulfillment f ON f.id = ofl.fulfillment_id
+                WHERE o.id = acl.order_id
+                  AND acl.affiliate_code = $1
+                  AND acl.status IS DISTINCT FROM 'CREDITED'
+                  AND (
+                    LOWER(COALESCE(o.status::text, '')) IN ('completed')
+                    OR f.delivered_at IS NOT NULL
+                    OR f.shipped_at IS NOT NULL
+                  )
+                  AND o.canceled_at IS NULL
+                  AND (f.id IS NULL OR f.canceled_at IS NULL)
+                `,
+                [referCode]
+            );
+        } catch (syncError) {
+            console.error('Wallet delivery sync failed:', syncError);
+        }
+
         // Get affiliate rate
         const rateRes = await pool.query(`SELECT commission_percentage FROM commission_rates WHERE role_type = 'affiliate'`);
         const affiliateRateRaw = parseFloat(rateRes.rows[0]?.commission_percentage || '0');
         const affiliateRateDecimal = affiliateRateRaw / 100;
 
 
-        // Fetch total commission earned (use affiliate_amount - the 70% affiliate gets)
-        // ONLY include CREDITED commissions in the wallet balance
+        // Fetch total commission earned from latest payout field.
+        // Prefer affiliate_commission (supports historical + additional commission), fallback to legacy columns.
         const commissionQuery = `
       SELECT 
-        COALESCE(SUM(COALESCE(affiliate_amount, commission_amount * ${affiliateRateDecimal})), 0) as total_earned
+        COALESCE(SUM(COALESCE(affiliate_commission, affiliate_amount, commission_amount * ${affiliateRateDecimal})), 0) as total_earned
       FROM affiliate_commission_log
       WHERE affiliate_code = $1 AND status = 'CREDITED'
     `;

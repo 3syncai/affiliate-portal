@@ -141,11 +141,16 @@ export default function AdminDashboardPage() {
           </div>
         )
       case 'order':
+        const totalCommission = activity.data.total_commission_amount ?? activity.data.commission_amount ?? 0
+        const additionalCommission = activity.data.additional_commission_amount ?? 0
         return (
           <div>
             <span className="font-semibold text-gray-900">{activity.data.affiliate_name}</span>
             <span className="text-gray-600"> earned </span>
-            <span className="font-semibold text-green-600">{formatCurrency(activity.data.commission_amount)}</span>
+            <span className="font-semibold text-green-600">{formatCurrency(totalCommission)}</span>
+            {additionalCommission > 0 && (
+              <span className="text-emerald-600"> ({formatCurrency(additionalCommission)} additional)</span>
+            )}
             <span className="text-gray-600"> commission</span>
           </div>
         )

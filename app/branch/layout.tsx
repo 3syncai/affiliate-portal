@@ -23,7 +23,8 @@ import {
     Palette,
     TrendingUp,
     Bell,
-    Link2
+    Link2,
+    BadgePercent
 } from "lucide-react"
 
 const navigationItems = [
@@ -33,6 +34,7 @@ const navigationItems = [
     { name: "Partners in ASM", href: "/branch/agents", icon: Users },
     { name: "My Referrals", href: "/branch/my-referrals", icon: Link2 },
     { name: "My Earnings", href: "/branch/earnings", icon: TrendingUp },
+    { name: "Offers", href: "/branch/offers", icon: BadgePercent },
     { name: "Pending Payout", href: "/branch/pending-payout", icon: Clock },
     { name: "Order Layout", href: "/branch/order-layout", icon: ShoppingBag },
 ]

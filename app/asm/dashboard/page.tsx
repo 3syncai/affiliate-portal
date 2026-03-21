@@ -28,6 +28,16 @@ type Order = {
     first_name: string
 }
 
+type AdditionalCampaign = {
+    id: number
+    product_id: string
+    product_name: string | null
+    additional_rate: number
+    target_role: string
+    starts_at: string
+    ends_at: string | null
+}
+
 const fetcher = (url: string) => axios.get(url).then(res => res.data)
 
 export default function ASMDashboard() {
@@ -58,6 +68,11 @@ export default function ASMDashboard() {
 
     const { data: agentsData, mutate: mutateAgents, isLoading: agentsLoading } = useSWR(
         user?.city && user?.state ? `/api/asm/agents?city=${encodeURIComponent(user.city)}&state=${encodeURIComponent(user.state)}` : null,
+        fetcher
+    )
+
+    const { data: additionalData, isLoading: additionalLoading } = useSWR(
+        "/api/additional-commissions/active?role=branch",
         fetcher
     )
 
@@ -321,6 +336,34 @@ export default function ASMDashboard() {
                                 </div>
                                 <ArrowUpRight className="w-4 h-4 text-gray-300 group-hover:text-gray-500" />
                             </Link>
+                        </div>
+                    </div>
+
+                    {/* Active Offers */}
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="font-bold text-gray-900 text-sm uppercase tracking-wider">Active Offers</h3>
+                            <Link href="/asm/products" className="text-xs font-medium text-blue-600 hover:text-blue-700">View Products</Link>
+                        </div>
+
+                        <div className="space-y-3">
+                            {additionalLoading ? (
+                                <p className="text-xs text-gray-500">Loading offers...</p>
+                            ) : !additionalData?.campaigns?.length ? (
+                                <p className="text-xs text-gray-500">No active additional commission offers for Branch.</p>
+                            ) : (
+                                (additionalData.campaigns as AdditionalCampaign[]).slice(0, 4).map((campaign) => (
+                                    <div key={campaign.id} className="rounded-lg border border-blue-100 bg-blue-50 px-3 py-2">
+                                        <div className="flex items-center justify-between gap-2">
+                                            <p className="text-sm font-semibold text-gray-900 truncate">{campaign.product_name || campaign.product_id}</p>
+                                            <span className="text-sm font-bold text-blue-700">+{Number(campaign.additional_rate || 0).toFixed(2)}%</span>
+                                        </div>
+                                        <p className="text-[11px] text-gray-500 mt-1">
+                                            Ends {campaign.ends_at ? new Date(campaign.ends_at).toLocaleString("en-IN") : "Not set"}
+                                        </p>
+                                    </div>
+                                ))
+                            )}
                         </div>
                     </div>
                 </div>

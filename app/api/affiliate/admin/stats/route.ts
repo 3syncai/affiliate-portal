@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { Pool } from "pg";
+import { ensureAdditionalCommissionSchema } from "@/lib/additional-commission";
 
 export const dynamic = "force-dynamic";
 
@@ -7,6 +8,8 @@ export async function GET() {
     console.log("=== Fetching Dashboard Stats ===");
 
     try {
+        await ensureAdditionalCommissionSchema();
+
         const pool = new Pool({
             connectionString: process.env.DATABASE_URL || process.env.NEXT_PUBLIC_DATABASE_URL
         });
@@ -24,7 +27,7 @@ export async function GET() {
 
         // Get total commission
         const totalCommissionQuery = `
-      SELECT COALESCE(SUM(commission_amount), 0) as total 
+      SELECT COALESCE(SUM(COALESCE(affiliate_commission, commission_amount)), 0) as total 
       FROM affiliate_commission_log
     `;
         const totalCommissionResult = await pool.query(totalCommissionQuery);

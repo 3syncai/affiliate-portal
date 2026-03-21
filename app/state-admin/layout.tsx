@@ -19,7 +19,8 @@ import {
     Bell,
     Package,
     Share2,
-    ShoppingCart
+    ShoppingCart,
+    BadgePercent
 } from "lucide-react"
 
 const navigationItems = [
@@ -47,6 +48,11 @@ const navigationItems = [
         title: "Products",
         href: "/state-admin/products",
         icon: Package,
+    },
+    {
+        title: "Offers",
+        href: "/state-admin/offers",
+        icon: BadgePercent,
     },
     {
         title: "Order Layout",
