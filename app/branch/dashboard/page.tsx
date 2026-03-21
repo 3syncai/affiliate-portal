@@ -399,7 +399,7 @@ export default function BranchDashboard() {
                             {additionalLoading ? (
                                 <p className="text-xs text-gray-500">Loading offers...</p>
                             ) : !additionalData?.campaigns?.length ? (
-                                <p className="text-xs text-gray-500">No active additional commission offers for Branch.</p>
+                                <p className="text-xs text-gray-500">No active additional commission offers for ASM.</p>
                             ) : (
                                 (additionalData.campaigns as AdditionalCampaign[]).slice(0, 4).map((campaign) => (
                                     <div key={campaign.id} className="rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2">

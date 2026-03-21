@@ -16,7 +16,7 @@ type AdditionalCampaign = {
 const fetcher = (url: string) => axios.get(url).then((res) => res.data)
 
 export default function BranchOffersPage() {
-  const { data, isLoading } = useSWR("/api/additional-commissions/active?role=branch", fetcher)
+  const { data, isLoading } = useSWR("/api/additional-commissions/active?role=asm", fetcher)
   const campaigns: AdditionalCampaign[] = data?.campaigns || []
 
   return (
@@ -24,7 +24,7 @@ export default function BranchOffersPage() {
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Offers</h1>
         <p className="text-gray-600 mt-1">
-          Additional commission offers visible to Branch or All.
+          Additional commission offers visible to ASM or All.
         </p>
       </div>
 

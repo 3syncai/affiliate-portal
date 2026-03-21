@@ -46,7 +46,7 @@ export default function ASMOffersPage() {
                     <p className="font-semibold text-gray-900">{campaign.product_name || campaign.product_id}</p>
                     <p className="text-xs text-gray-500 mt-1">
                       Start: {new Date(campaign.starts_at).toLocaleString("en-IN")}
-                    </p>
+                    </p> 
                     <p className="text-xs text-gray-500">
                       End: {campaign.ends_at ? new Date(campaign.ends_at).toLocaleString("en-IN") : "Not set"}
                     </p>

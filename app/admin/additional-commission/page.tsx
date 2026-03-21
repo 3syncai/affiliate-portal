@@ -1,12 +1,13 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import axios from "axios"
-import { Plus, Trash2, PauseCircle, PlayCircle } from "lucide-react"
+import { Plus, Trash2, PauseCircle, PlayCircle, ChevronsUpDown, Check, Search } from "lucide-react"
 
 type Product = {
   id: string
   title: string
+  thumbnail: string | null
 }
 
 type Campaign = {
@@ -34,6 +35,9 @@ export default function AdditionalCommissionPage() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [productDropdownOpen, setProductDropdownOpen] = useState(false)
+  const [productSearch, setProductSearch] = useState("")
+  const productDropdownRef = useRef<HTMLDivElement | null>(null)
   const [form, setForm] = useState({
     productId: "",
     additionalRate: "",
@@ -43,15 +47,38 @@ export default function AdditionalCommissionPage() {
   })
 
   const productMap = useMemo(() => {
-    const map = new Map<string, string>()
+    const map = new Map<string, Product>()
     for (const product of products) {
-      map.set(product.id, product.title)
+      map.set(product.id, product)
     }
     return map
   }, [products])
 
+  const selectedProduct = useMemo(
+    () => products.find((p) => p.id === form.productId) || null,
+    [products, form.productId]
+  )
+
+  const filteredProducts = useMemo(() => {
+    const q = productSearch.trim().toLowerCase()
+    if (!q) return products
+    return products.filter((p) => p.title.toLowerCase().includes(q))
+  }, [products, productSearch])
+
   useEffect(() => {
     void loadData()
+  }, [])
+
+  useEffect(() => {
+    const onClickOutside = (event: MouseEvent) => {
+      if (!productDropdownRef.current) return
+      if (!productDropdownRef.current.contains(event.target as Node)) {
+        setProductDropdownOpen(false)
+      }
+    }
+
+    document.addEventListener("mousedown", onClickOutside)
+    return () => document.removeEventListener("mousedown", onClickOutside)
   }, [])
 
   const loadData = async () => {
@@ -62,7 +89,11 @@ export default function AdditionalCommissionPage() {
         axios.get("/api/admin/additional-commissions"),
       ])
 
-      const productRows = (productsRes.data?.products || []).map((p: any) => ({ id: p.id, title: p.title }))
+      const productRows = (productsRes.data?.products || []).map((p: any) => ({
+        id: p.id,
+        title: p.title,
+        thumbnail: p.thumbnail || null,
+      }))
       setProducts(productRows)
       setCampaigns(campaignsRes.data?.campaigns || [])
     } catch (error) {
@@ -103,7 +134,7 @@ export default function AdditionalCommissionPage() {
 
       await axios.post("/api/admin/additional-commissions", {
         productId: form.productId,
-        productName: productMap.get(form.productId) || null,
+        productName: productMap.get(form.productId)?.title || null,
         additionalRate: Number(form.additionalRate),
         startsAt: new Date(form.startsAt).toISOString(),
         endsAt: form.endsAt ? new Date(form.endsAt).toISOString() : null,
@@ -178,18 +209,81 @@ export default function AdditionalCommissionPage() {
       <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
         <h2 className="text-lg font-semibold text-gray-900">Create Campaign</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-          <select
-            value={form.productId}
-            onChange={(e) => setForm((prev) => ({ ...prev, productId: e.target.value }))}
-            className="px-4 py-2 border border-gray-300 rounded-lg"
-          >
-            <option value="">Select Product</option>
-            {products.map((product) => (
-              <option key={product.id} value={product.id}>
-                {product.title}
-              </option>
-            ))}
-          </select>
+          <div className="relative lg:col-span-1" ref={productDropdownRef}>
+            <button
+              type="button"
+              onClick={() => setProductDropdownOpen((prev) => !prev)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-left flex items-center justify-between gap-2"
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                {selectedProduct?.thumbnail ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={selectedProduct.thumbnail}
+                    alt={selectedProduct.title}
+                    className="w-8 h-8 rounded object-cover border border-gray-200 shrink-0"
+                  />
+                ) : (
+                  <div className="w-8 h-8 rounded bg-gray-100 border border-gray-200 shrink-0" />
+                )}
+                <span className={`truncate ${selectedProduct ? "text-gray-900" : "text-gray-500"}`}>
+                  {selectedProduct ? selectedProduct.title : "Select Product"}
+                </span>
+              </div>
+              <ChevronsUpDown className="w-4 h-4 text-gray-500 shrink-0" />
+            </button>
+
+            {productDropdownOpen && (
+              <div className="absolute z-20 mt-2 w-full rounded-lg border border-gray-200 bg-white shadow-xl">
+                <div className="p-2 border-b border-gray-100">
+                  <div className="relative">
+                    <Search className="w-4 h-4 text-gray-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                    <input
+                      value={productSearch}
+                      onChange={(e) => setProductSearch(e.target.value)}
+                      placeholder="Search product..."
+                      className="w-full pl-8 pr-2 py-2 text-sm border border-gray-200 rounded-md"
+                    />
+                  </div>
+                </div>
+                <div className="max-h-72 overflow-auto p-1">
+                  {filteredProducts.length === 0 ? (
+                    <div className="px-3 py-2 text-sm text-gray-500">No products found</div>
+                  ) : (
+                    filteredProducts.map((product) => {
+                      const selected = form.productId === product.id
+                      return (
+                        <button
+                          key={product.id}
+                          type="button"
+                          onClick={() => {
+                            setForm((prev) => ({ ...prev, productId: product.id }))
+                            setProductDropdownOpen(false)
+                            setProductSearch("")
+                          }}
+                          className={`w-full px-2 py-2 rounded-md text-left flex items-center gap-2 hover:bg-gray-50 ${selected ? "bg-indigo-50" : ""
+                            }`}
+                        >
+                          {product.thumbnail ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={product.thumbnail}
+                              alt={product.title}
+                              className="w-8 h-8 rounded object-cover border border-gray-200 shrink-0"
+                            />
+                          ) : (
+                            <div className="w-8 h-8 rounded bg-gray-100 border border-gray-200 shrink-0" />
+                          )}
+                          <span className="text-sm text-gray-900 truncate flex-1">{product.title}</span>
+                          {selected && <Check className="w-4 h-4 text-indigo-600 shrink-0" />}
+                        </button>
+                      )
+                    })
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
 
           <input
             type="number"
@@ -262,7 +356,21 @@ export default function AdditionalCommissionPage() {
                 {campaigns.map((campaign) => (
                   <tr key={campaign.id}>
                     <td className="px-6 py-4 text-sm text-gray-900">
-                      {campaign.product_name || productMap.get(campaign.product_id) || campaign.product_id}
+                      <div className="flex items-center gap-3">
+                        {productMap.get(campaign.product_id)?.thumbnail ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={productMap.get(campaign.product_id)?.thumbnail || ""}
+                            alt={campaign.product_name || productMap.get(campaign.product_id)?.title || "Product"}
+                            className="w-9 h-9 rounded object-cover border border-gray-200"
+                          />
+                        ) : (
+                          <div className="w-9 h-9 rounded bg-gray-100 border border-gray-200" />
+                        )}
+                        <span>
+                          {campaign.product_name || productMap.get(campaign.product_id)?.title || campaign.product_id}
+                        </span>
+                      </div>
                     </td>
                     <td className="px-6 py-4 text-sm font-semibold text-emerald-700">{campaign.additional_rate}%</td>
                     <td className="px-6 py-4 text-sm text-gray-700 capitalize">{campaign.target_role}</td>
