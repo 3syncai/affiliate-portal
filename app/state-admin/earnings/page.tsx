@@ -262,7 +262,7 @@ export default function StateAdminEarningsPage() {
                 <div>
                     <h4 className="text-sm font-semibold text-blue-900">Earning Structure</h4>
                     <p className="text-sm text-blue-700 mt-0.5">
-                        You earn in two ways: <span className="font-semibold">{stats.directRate}% commission</span> on your direct referrals, plus <span className="font-semibold"> {stats.overrideRate}% override</span> on total sales volume from ASMs and Branches in your state {userData?.state ? `(${userData.state})` : ''}.
+                        You earn in two ways: <span className="font-semibold">{stats.directRate}% commission</span> on your direct referrals, plus <span className="font-semibold"> {stats.overrideRate}% Team Sales Commission</span> on total sales volume from ASMs and Branches in your state {userData?.state ? `(${userData.state})` : ''}.
                     </p>
                 </div>
             </div>
@@ -295,7 +295,7 @@ export default function StateAdminEarningsPage() {
                             ) : (
                                 recentOrders.map((order) => {
                                     const isDirect = order.type === 'Direct'
-                                    const typeLabel = order.type || (isDirect ? 'Direct Sale' : 'Override')
+                                    const typeLabel = order.type || (isDirect ? 'Direct Sale' : 'Team Sales Commission')
                                     const typeColor = isDirect
                                         ? 'bg-emerald-100 text-emerald-700'
                                         : 'bg-blue-50 text-blue-700'

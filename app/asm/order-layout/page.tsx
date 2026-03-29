@@ -462,9 +462,9 @@ export default function OrderLayoutPage() {
                     <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Product</th>
                     <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Qty</th>
                     <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Order Amount</th>
-                    <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Agent Earned</th>
-                    <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Branch Earned</th>
-                    <th className="px-4 py-3 text-right text-xs font-bold text-blue-600 uppercase tracking-wider">ASM Earned</th>
+                    <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Sales Executive Earned</th>
+                    <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">ASM Earned</th>
+                    <th className="px-4 py-3 text-right text-xs font-bold text-blue-600 uppercase tracking-wider">Branch Earned</th>
                     <th className="px-4 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
                     <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Actions</th>
                   </tr>

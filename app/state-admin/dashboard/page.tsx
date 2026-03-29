@@ -270,7 +270,7 @@ export default function StateAdminDashboard() {
                             </div>
                             <div className="bg-blue-50 rounded-xl p-3 text-center border border-blue-100">
                                 <div className="text-lg font-bold text-blue-600">{stats.overrideRate}%</div>
-                                <div className="text-[10px] font-bold text-blue-800/60 uppercase tracking-wider">Override</div>
+                                <div className="text-[10px] font-bold text-blue-800/60 uppercase tracking-wider">Team Sales Commission</div>
                             </div>
                         </div>
                     </div>
@@ -280,13 +280,6 @@ export default function StateAdminDashboard() {
                         <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4">Quick Attributes</h3>
 
                         <div className="space-y-4">
-                            <QuickAttrItem
-                                icon={Clock}
-                                label="Pending Approvals"
-                                value="0 waiting"
-                                color="yellow"
-                                href="#"
-                            />
                             <QuickAttrItem
                                 icon={Users}
                                 label="View Agents"

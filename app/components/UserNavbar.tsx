@@ -28,7 +28,7 @@ export default function UserNavbar({ userName }: UserNavbarProps) {
                     {/* Left side - Logo and navigation */}
                     <div className="flex items-center space-x-8">
                         <Link href="/dashboard" className="flex items-center space-x-2">
-                            <span className="text-xl font-bold text-gray-900">Partner Portal</span>
+                            <span className="text-xl font-bold text-gray-900">Sales Executive</span>
                         </Link>
 
                         {/* Navigation Links */}

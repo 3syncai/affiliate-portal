@@ -282,7 +282,7 @@ export default function ASMEarningsPage() {
                             ) : (
                                 recentOrders.map((order) => {
                                     const isDirect = order.commission_source === 'asm_direct' || order.branch === 'ASM Direct'
-                                    const typeLabel = isDirect ? 'Direct Sale' : 'Asm Override'
+                                    const typeLabel = isDirect ? 'Direct Sale' : 'Team Sales Commission'
                                     const typeColor = isDirect
                                         ? 'bg-emerald-100 text-emerald-700'
                                         : 'bg-gray-100 text-gray-700'
