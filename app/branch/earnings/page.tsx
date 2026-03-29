@@ -32,6 +32,10 @@ type Order = {
     status?: string
 }
 
+const getOrderTypeLabel = (type: string) => {
+    return type === "Affiliate Override" ? "Sales Executive Sale" : type
+}
+
 const fetcher = (url: string) => axios.get(url).then(res => res.data)
 
 const getStoredUser = (): DashboardUser | null => {
@@ -133,7 +137,7 @@ export default function EarningsPage() {
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight text-gray-900">Branch Earnings</h1>
+                    <h1 className="text-2xl font-bold tracking-tight text-gray-900">Area Sales Manager Earnings</h1>
                     <p className="text-sm text-gray-500 mt-1">Detailed breakdown of your income sources</p>
                 </div>
                 <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium ${isConnected ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
@@ -278,7 +282,7 @@ export default function EarningsPage() {
                                                 ? 'bg-emerald-100 text-emerald-800'
                                                 : 'bg-blue-100 text-blue-800'
                                                 }`}>
-                                                {order.type}
+                                                {getOrderTypeLabel(order.type)}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-sm text-gray-600">

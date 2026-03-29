@@ -386,7 +386,7 @@ export default function OrderLayoutPage() {
                     <th className="px-3 py-2.5 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Product</th>
                     <th className="px-3 py-2.5 text-right text-[10px] font-bold text-gray-500 uppercase tracking-wider">Qty</th>
                     <th className="px-3 py-2.5 text-right text-[10px] font-bold text-gray-500 uppercase tracking-wider">Amount</th>
-                    <th className="px-3 py-2.5 text-right text-[10px] font-bold text-gray-500 uppercase tracking-wider">Affiliate</th>
+                    <th className="px-3 py-2.5 text-right text-[10px] font-bold text-gray-500 uppercase tracking-wider">Sales Executive</th>
                     <th className="px-3 py-2.5 text-right text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Mine</th>
                     <th className="px-3 py-2.5 text-center text-[10px] font-bold text-gray-500 uppercase tracking-wider">Status</th>
                     <th className="px-3 py-2.5 text-right text-[10px] font-bold text-gray-500 uppercase tracking-wider">Action</th>
@@ -456,7 +456,7 @@ export default function OrderLayoutPage() {
                     <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Product</th>
                     <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Qty</th>
                     <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Order Amount</th>
-                    <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Affiliate Earned</th>
+                    <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Sales Executive</th>
                     <th className="px-4 py-3 text-right text-xs font-bold text-blue-600 uppercase tracking-wider">My Earned</th>
                     <th className="px-4 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
                     <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Actions</th>
@@ -605,7 +605,7 @@ export default function OrderLayoutPage() {
                   </div>
                   {selectedOrder.affiliate_earned > 0 && (
                     <div className="bg-gray-50 border border-gray-200 p-4 rounded-xl">
-                      <p className="text-xs text-gray-600 font-bold uppercase mb-2">Affiliate Earning</p>
+                      <p className="text-xs text-gray-600 font-bold uppercase mb-2">Sales Executive</p>
                       <p className="text-xl md:text-2xl font-bold text-gray-700 tabular-nums">{formatCurrency(selectedOrder.affiliate_earned)}</p>
                     </div>
                   )}

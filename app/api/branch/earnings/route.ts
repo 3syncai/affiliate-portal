@@ -118,7 +118,7 @@ export async function GET(req: NextRequest) {
                     WHEN commission_source = 'branch_admin'
                       AND LOWER(TRIM(COALESCE(affiliate_code, ''))) = LOWER(TRIM($2))
                     THEN 'Direct Sale'
-                    WHEN commission_source = 'branch_admin' THEN 'Affiliate Override'
+                    WHEN commission_source = 'branch_admin' THEN 'Sales Executive Sale'
                     ELSE 'Direct Sale'
                 END as type
             FROM affiliate_commission_log

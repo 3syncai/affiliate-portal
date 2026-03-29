@@ -34,11 +34,11 @@ const navigationItems = [
         href: "/state-admin/area-managers",
         icon: Users,
     },
-    {
-        title: "ASM Management",
-        href: "/state-admin/asm-management",
-        icon: User,
-    },
+    // {
+    //     title: "ASM Management",
+    //     href: "/state-admin/asm-management",
+    //     icon: User,
+    // },
     {
         title: "Agents",
         href: "/state-admin/agents",

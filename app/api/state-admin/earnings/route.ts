@@ -291,7 +291,7 @@ export async function GET(req: NextRequest) {
                     u.refer_code,
                     s.city,
                     s.branch_name as branch,
-                    'Override' as type
+                    'Team Sales Commission' as type
                 FROM affiliate_commission_log acl
                 JOIN affiliate_user u ON acl.affiliate_code = u.refer_code
                 JOIN stores s ON u.branch ILIKE s.branch_name
@@ -313,7 +313,7 @@ export async function GET(req: NextRequest) {
                     ba.refer_code,
                     ba.city,
                     ba.branch,
-                    'Override' as type
+                    'Team Sales Commission' as type
                 FROM affiliate_commission_log acl
                 JOIN branch_admin ba ON acl.affiliate_code = ba.refer_code
                 WHERE ba.state ILIKE $1
@@ -334,7 +334,7 @@ export async function GET(req: NextRequest) {
                     asm.refer_code,
                     asm.city,
                     'ASM Direct' as branch,
-                    'Override' as type
+                    'Team Sales Commission' as type
                 FROM affiliate_commission_log acl
                 JOIN area_sales_manager asm ON acl.affiliate_code = asm.refer_code
                 WHERE asm.state ILIKE $1

@@ -289,7 +289,7 @@ export default function ASMDashboard() {
                             </div>
                             <div className="bg-blue-50 rounded-lg p-3 border border-blue-100 text-center">
                                 <p className="text-xl font-bold text-blue-600">{stats.overrideRate}%</p>
-                                <p className="text-[10px] font-bold text-blue-800/60 uppercase tracking-wide">Override</p>
+                                <p className="text-[10px] font-bold text-blue-800/60 uppercase tracking-wide">Team Sales Commission</p>
                             </div>
                         </div>
                     </div>
@@ -305,7 +305,7 @@ export default function ASMDashboard() {
                                         <Building2 className="w-4 h-4" />
                                     </div>
                                     <div>
-                                        <p className="text-sm font-semibold text-gray-900">Create Branch</p>
+                                        <p className="text-sm font-semibold text-gray-900">Create Area Sales Manager</p>
                                         <p className="text-xs text-gray-500">Add new branch to area</p>
                                     </div>
                                 </div>
@@ -351,7 +351,7 @@ export default function ASMDashboard() {
                             {additionalLoading ? (
                                 <p className="text-xs text-gray-500">Loading offers...</p>
                             ) : !additionalData?.campaigns?.length ? (
-                                <p className="text-xs text-gray-500">No active additional commission offers for Branch.</p>
+                                <p className="text-xs text-gray-500">No active additional commission offers for Branch Admin.</p>
                             ) : (
                                 (additionalData.campaigns as AdditionalCampaign[]).slice(0, 4).map((campaign) => (
                                     <div key={campaign.id} className="rounded-lg border border-blue-100 bg-blue-50 px-3 py-2">
