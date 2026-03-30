@@ -23,8 +23,8 @@ type Campaign = {
 }
 
 const roleOptions = [
-  { value: "partner", label: "Partner" },
-  { value: "asm", label: "ASM" },
+  { value: "partner", label: "Sales Executive" },
+  { value: "asm", label: "Area Sales Manager" },
   { value: "branch", label: "Branch Admin" },
   { value: "state", label: "State Admin" },
   { value: "all", label: "All" },
@@ -202,7 +202,7 @@ export default function AdditionalCommissionPage() {
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Additional Commission</h1>
         <p className="text-gray-600 mt-1">
-          Configure extra commission campaigns by product, time window, and visibility (partner/asm/branch/state/all).
+          Configure extra commission campaigns by product, time window, and visibility (sales executive/area sales manager/branch/state/all).
         </p>
       </div>
 

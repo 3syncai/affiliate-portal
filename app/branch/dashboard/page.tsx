@@ -324,7 +324,7 @@ export default function BranchDashboard() {
                                     </div>
                                     <div className="p-3 rounded-lg bg-blue-50 border border-blue-100">
                                         <p className="text-blue-700 text-lg font-bold">{stats.overrideRate}%</p>
-                                        <p className="text-blue-600/80 text-[10px] uppercase font-semibold tracking-wide">Override</p>
+                                        <p className="text-blue-600/80 text-[10px] uppercase font-semibold tracking-wide">Team Sales Commission</p>
                                     </div>
                                 </div>
                             </div>

@@ -13,7 +13,7 @@ interface CommissionRate {
 }
 
 const roleLabels: Record<string, string> = {
-    affiliate: "Affiliate Users",
+    affiliate: "Sales Executive",
     branch_direct: "Branch Admin Direct Referrals",
     branch: "Branch Admin (Team Commission)",
     area: "Area Sales Manager",
