@@ -64,13 +64,13 @@ export default function CommissionLedgerPage() {
         let colorClass = "bg-gray-100 text-gray-800";
 
         if (item.is_agent) {
-            role = "Partner";
+            role = "Sales Executive";
             colorClass = "bg-purple-100 text-purple-800";
         } else if (item.commission_source === 'state_admin' || item.commission_source === 'state_admin_direct') {
             role = "State Admin";
             colorClass = "bg-blue-100 text-blue-800";
         } else if (item.commission_source === 'area_manager') {
-            role = "ASM";
+            role = "Area Sales Manager";
             colorClass = "bg-indigo-100 text-indigo-800";
         } else if (item.commission_source === 'branch_admin' || (item.commission_source && item.commission_source.includes('branch'))) {
             role = "Branch Admin";
@@ -98,9 +98,9 @@ export default function CommissionLedgerPage() {
                 const data = response.data.data;
                 const csvHeader = ["Date,Order ID,Product,Qty,Order Amount,Commission,Status,Source,Agent Name,Refer Code,Role"];
                 const csvRows = data.map((item: LedgerItem) => {
-                    const role = item.is_agent ? 'Partner' :
+                    const role = item.is_agent ? 'Sales Executive' :
                         item.commission_source === 'state_admin' ? 'State Admin' :
-                            item.commission_source === 'area_manager' ? 'ASM' :
+                            item.commission_source === 'area_manager' ? 'Area Sales Manager' :
                                 item.commission_source?.includes('branch') ? 'Branch Admin' : 'User';
 
                     return [

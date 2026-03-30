@@ -63,11 +63,11 @@ export async function POST(req: NextRequest) {
         }
 
         // Generate unique referral code: BRANCH + first 3 chars of name + 5 random digits
-        // Example: BRANCHVIS12345
+        // Example: OWEGASM12345    
         const generateReferCode = () => {
             const namePart = first_name.substring(0, 3).toUpperCase();
             const randomDigits = Math.floor(10000 + Math.random() * 90000);
-            return `BRANCH${namePart}${randomDigits}`;
+            return `OWEGASM${namePart}${randomDigits}`;
         }
 
         let generatedReferCode = generateReferCode();

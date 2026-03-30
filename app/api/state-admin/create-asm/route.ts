@@ -68,9 +68,8 @@ export async function POST(req: NextRequest) {
         // Generate unique referral code: ASM + first 3 chars of name + 5 random digits
         // Example: ASMJOH12345
         const generateReferCode = () => {
-            const namePart = first_name.substring(0, 3).toUpperCase();
-            const randomDigits = Math.floor(10000 + Math.random() * 90000);
-            return `ASM${namePart}${randomDigits}`;
+            const randomDigits = Math.floor(1000 + Math.random() * 9000);
+            return `OWEGBR${randomDigits}`;
         }
 
         let generatedReferCode = generateReferCode();

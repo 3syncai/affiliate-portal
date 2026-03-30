@@ -164,13 +164,13 @@ export default function AdminDashboardPage() {
       case "state":
         return "State Admin"
       case "area":
-        return "Branch Manager"
+        return "Branch Admin"
       case "branch":
         return "Area sales Manager"
       case "branch_direct":
         return "Area sales Manager Direct Bonus"
       case "affiliate":
-        return "Partner Base"
+        return "Sales Executive"
       default:
         return roleType
     }
@@ -235,7 +235,7 @@ export default function AdminDashboardPage() {
             >
               <div className="flex items-center justify-between">
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-600 mb-1">Affiliate Requests</p>
+                  <p className="text-sm font-medium text-gray-600 mb-1">Sales Executive Requests</p>
                   <p className="text-3xl font-bold text-gray-900">{stats.pendingRequests}</p>
                   <div className="mt-2 flex items-center text-xs text-gray-500">
                     <span>Review pending</span>

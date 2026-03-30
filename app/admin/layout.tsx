@@ -108,7 +108,7 @@ export default function AdminLayout({
         >
           <div className="flex items-center justify-between p-4" style={{ borderBottomColor: 'rgba(255,255,255,0.2)', borderBottomWidth: '1px' }}>
             <h1 className="text-xl font-bold text-white whitespace-nowrap">
-              Partner's admin
+              National Head
             </h1>
             <button
               onClick={() => setSidebarOpen(false)}
