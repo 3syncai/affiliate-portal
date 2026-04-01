@@ -174,7 +174,7 @@ function LoginContent() {
               Sign in to your account
             </h2>
             <p className="text-gray-600">
-              Enter your credentials to access your affiliate dashboard
+              Enter your credentials to access your Partner dashboard
             </p>
           </div>
 
