@@ -117,6 +117,17 @@ export default function CommissionSettingsPage() {
         }
     }
 
+    const getRoleDescription = (rate: CommissionRate) => {
+        switch (rate.role_type) {
+            case "branch":
+                return "Commission rate for Area sales Manager"
+            case "area":
+                return "Commission rate for branch admin"
+            default:
+                return rate.description
+        }
+    }
+
     if (loading) {
         return (
             <div className="flex items-center justify-center h-64">
@@ -159,7 +170,7 @@ export default function CommissionSettingsPage() {
                                         <h3 className="text-lg font-semibold text-gray-900">
                                             {getRoleLabel(rate.role_type)}
                                         </h3>
-                                        <p className="text-sm text-gray-500 mt-1">{rate.description}</p>
+                                        <p className="text-sm text-gray-500 mt-1">{getRoleDescription(rate)}</p>
                                     </div>
                                 </div>
 
