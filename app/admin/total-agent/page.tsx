@@ -17,6 +17,7 @@ type UserData = {
   designation?: string
   is_agent?: boolean
   is_approved?: boolean
+  is_active?: boolean
   created_at?: string
   approved_at?: string
   [key: string]: any
@@ -37,12 +38,27 @@ export default function AllUsersPage() {
   const [loading, setLoading] = useState(true)
   const [selectedUser, setSelectedUser] = useState<UserData | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
+  const [togglingId, setTogglingId] = useState<string | null>(null)
+  const [confirmToggle, setConfirmToggle] = useState<{ user: UserData; nextActive: boolean } | null>(null)
   const [stats, setStats] = useState({
     affiliates: 0,
     state_admins: 0,
     area_managers: 0,
     branch_admins: 0
   })
+
+  // Map each tab to the toggle endpoint and request body shape it expects.
+  // NOTE: the tab IDs and the human labels are deliberately mismatched in this
+  // codebase — `area_managers` is fetched from the `area_sales_manager` table
+  // (displayed as "Branch Admins"), while `branch_admins` is fetched from the
+  // `branch_admin` table (displayed as "Area Sales Managers"). The endpoints
+  // below follow the underlying TABLE the tab loads from.
+  const TOGGLE_ENDPOINTS: Record<TabType, { url: string; idKey: string }> = {
+    affiliates: { url: "/api/admin/affiliates/toggle-status", idKey: "userId" },
+    state_admins: { url: "/api/admin/state-admins/toggle-status", idKey: "adminId" },
+    area_managers: { url: "/api/state-admin/area-managers/toggle-status", idKey: "managerId" },
+    branch_admins: { url: "/api/asm/branch-admins/toggle-status", idKey: "adminId" },
+  }
 
   useEffect(() => {
     loadAllStats()
@@ -122,6 +138,38 @@ export default function AllUsersPage() {
   const getName = (user: UserData) => {
     if (user.name) return user.name
     return `${user.first_name || ""} ${user.last_name || ""}`.trim() || "Unknown"
+  }
+
+  // Treat missing `is_active` as active so legacy rows don't appear blocked.
+  const isUserActive = (user: UserData) => user.is_active !== false
+
+  const handleToggleStatus = async (user: UserData, nextActive: boolean) => {
+    const endpoint = TOGGLE_ENDPOINTS[activeTab]
+    if (!endpoint) return
+
+    setTogglingId(user.id)
+    // Optimistic update so the slider feels instant.
+    setUsers(prev => prev.map(u => (u.id === user.id ? { ...u, is_active: nextActive } : u)))
+    if (selectedUser?.id === user.id) {
+      setSelectedUser({ ...selectedUser, is_active: nextActive })
+    }
+
+    try {
+      await axios.post(endpoint.url, {
+        [endpoint.idKey]: user.id,
+        isActive: nextActive,
+      })
+    } catch (error) {
+      console.error("Failed to toggle status:", error)
+      // Revert on failure.
+      setUsers(prev => prev.map(u => (u.id === user.id ? { ...u, is_active: !nextActive } : u)))
+      if (selectedUser?.id === user.id) {
+        setSelectedUser({ ...selectedUser, is_active: !nextActive })
+      }
+      alert("Failed to update user status. Please try again.")
+    } finally {
+      setTogglingId(null)
+    }
   }
 
   const filteredUsers = users.filter(user => {
@@ -247,6 +295,9 @@ export default function AllUsersPage() {
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                     Created
                   </th>
+                  <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Status
+                  </th>
                   <th className="px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
                     Actions
                   </th>
@@ -281,6 +332,29 @@ export default function AllUsersPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {formatDate(user.created_at || user.approved_at)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          type="button"
+                          role="switch"
+                          aria-checked={isUserActive(user)}
+                          aria-label={isUserActive(user) ? "Deactivate user" : "Activate user"}
+                          disabled={togglingId === user.id}
+                          onClick={() => setConfirmToggle({ user, nextActive: !isUserActive(user) })}
+                          className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 ${isUserActive(user) ? "bg-emerald-500 focus:ring-emerald-500" : "bg-gray-300 focus:ring-gray-400"
+                            } ${togglingId === user.id ? "opacity-60 cursor-wait" : ""}`}
+                        >
+                          <span
+                            aria-hidden="true"
+                            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${isUserActive(user) ? "translate-x-5" : "translate-x-0"
+                              }`}
+                          />
+                        </button>
+                        <span className={`text-xs font-medium ${isUserActive(user) ? "text-emerald-600" : "text-gray-500"}`}>
+                          {isUserActive(user) ? "Active" : "Blocked"}
+                        </span>
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right">
                       <button
@@ -419,6 +493,34 @@ export default function AllUsersPage() {
                   </div>
                 </div>
               )}
+
+              {/* Account status (activate / deactivate) */}
+              <div className="mt-6 pt-6 border-t border-gray-200">
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div>
+                    <p className="text-xs text-gray-500">Login Access</p>
+                    <p className={`text-sm font-semibold ${isUserActive(selectedUser) ? "text-emerald-600" : "text-red-600"}`}>
+                      {isUserActive(selectedUser) ? "Active — user can sign in" : "Blocked — user cannot sign in"}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={isUserActive(selectedUser)}
+                    aria-label={isUserActive(selectedUser) ? "Deactivate user" : "Activate user"}
+                    disabled={togglingId === selectedUser.id}
+                    onClick={() => setConfirmToggle({ user: selectedUser, nextActive: !isUserActive(selectedUser) })}
+                    className={`relative inline-flex h-7 w-12 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 ${isUserActive(selectedUser) ? "bg-emerald-500 focus:ring-emerald-500" : "bg-gray-300 focus:ring-gray-400"
+                      } ${togglingId === selectedUser.id ? "opacity-60 cursor-wait" : ""}`}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${isUserActive(selectedUser) ? "translate-x-5" : "translate-x-0"
+                        }`}
+                    />
+                  </button>
+                </div>
+              </div>
             </div>
 
             {/* Modal Footer */}
@@ -428,6 +530,47 @@ export default function AllUsersPage() {
                 className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
               >
                 Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm activate / deactivate */}
+      {confirmToggle && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div className={`p-5 ${confirmToggle.nextActive ? "bg-emerald-50" : "bg-red-50"}`}>
+              <h3 className={`text-lg font-bold ${confirmToggle.nextActive ? "text-emerald-700" : "text-red-700"}`}>
+                {confirmToggle.nextActive ? "Activate user?" : "Deactivate user?"}
+              </h3>
+              <p className="text-sm text-gray-600 mt-1">
+                {confirmToggle.nextActive
+                  ? `${getName(confirmToggle.user)} will be able to sign in again.`
+                  : `${getName(confirmToggle.user)} will be blocked from signing in until you re-activate the account.`}
+              </p>
+            </div>
+            <div className="p-5 flex justify-end gap-2">
+              <button
+                onClick={() => setConfirmToggle(null)}
+                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+                disabled={togglingId === confirmToggle.user.id}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  const target = confirmToggle
+                  setConfirmToggle(null)
+                  await handleToggleStatus(target.user, target.nextActive)
+                }}
+                className={`px-4 py-2 rounded-lg text-white font-medium transition-colors ${confirmToggle.nextActive
+                    ? "bg-emerald-600 hover:bg-emerald-700"
+                    : "bg-red-600 hover:bg-red-700"
+                  }`}
+                disabled={togglingId === confirmToggle.user.id}
+              >
+                {confirmToggle.nextActive ? "Yes, activate" : "Yes, deactivate"}
               </button>
             </div>
           </div>
