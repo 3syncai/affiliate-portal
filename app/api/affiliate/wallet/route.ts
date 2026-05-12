@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import pool from '@/lib/db';
+import { syncAffiliateCommissionStatuses } from '@/lib/affiliate-commission-sync';
 
 export const dynamic = 'force-dynamic';
 
@@ -48,32 +49,7 @@ export async function GET(request: Request) {
 
         const user = userResult.rows[0];
 
-        // Keep commission status synced with delivered orders to avoid stale pending balances.
-        try {
-            await pool.query(
-                `
-                UPDATE affiliate_commission_log acl
-                SET status = 'CREDITED',
-                    credited_at = COALESCE(credited_at, NOW())
-                FROM "order" o
-                LEFT JOIN order_fulfillment ofl ON ofl.order_id = o.id
-                LEFT JOIN fulfillment f ON f.id = ofl.fulfillment_id
-                WHERE o.id = acl.order_id
-                  AND acl.affiliate_code = $1
-                  AND acl.status IS DISTINCT FROM 'CREDITED'
-                  AND (
-                    LOWER(COALESCE(o.status::text, '')) IN ('completed')
-                    OR f.delivered_at IS NOT NULL
-                    OR f.shipped_at IS NOT NULL
-                  )
-                  AND o.canceled_at IS NULL
-                  AND (f.id IS NULL OR f.canceled_at IS NULL)
-                `,
-                [referCode]
-            );
-        } catch (syncError) {
-            console.error('Wallet delivery sync failed:', syncError);
-        }
+        await syncAffiliateCommissionStatuses(pool, { affiliateCode: referCode, logPrefix: '[Affiliate Wallet]' });
 
         // Get affiliate rate
         const rateRes = await pool.query(`SELECT commission_percentage FROM commission_rates WHERE role_type = 'affiliate'`);

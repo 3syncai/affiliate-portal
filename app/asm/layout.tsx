@@ -3,7 +3,10 @@
 import { useEffect, useState } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import Link from "next/link"
+import axios from "axios"
+import useSWR from "swr"
 import NotificationDropdown from "@/components/NotificationDropdown"
+import ConfirmModal from "@/app/components/ConfirmModal"
 import { useTheme } from "@/contexts/ThemeContext"
 import {
     LayoutDashboard,
@@ -28,13 +31,13 @@ import {
 const navigationItems = [
     { name: "Dashboard", href: "/asm/dashboard", icon: LayoutDashboard },
     { name: "Products", href: "/asm/products", icon: Package },
-    { name: "My Referrals", href: "/asm/my-referrals", icon: Users },
-    { name: "Area Sales Manager", href: "/asm/branch-admins", icon: Building },
-    { name: "My Earnings", href: "/asm/earnings", icon: TrendingUp },
     { name: "Offers", href: "/asm/offers", icon: BadgePercent },
     { name: "Create Area Sales Manager", href: "/asm/create-branch", icon: UserPlus },
-    { name: "Partners in City", href: "/asm/agents", icon: Users },
+    { name: "Partners in ASM", href: "/asm/agents", icon: Users },
+    { name: "My Earnings", href: "/asm/earnings", icon: TrendingUp },
+    { name: "My Referrals", href: "/asm/my-referrals", icon: Users },
     { name: "Order Layout", href: "/asm/order-layout", icon: ShoppingBag },
+    { name: "Notifications", href: "/asm/notifications", icon: Bell },
 ]
 
 
@@ -51,6 +54,7 @@ export default function ASMLayout({
     const [sidebarOpen, setSidebarOpen] = useState(true)
     const [showUserMenu, setShowUserMenu] = useState(false)
     const [unreadCount, setUnreadCount] = useState(0)
+    const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
 
     useEffect(() => {
         const token = localStorage.getItem("affiliate_token")
@@ -70,18 +74,6 @@ export default function ASMLayout({
         try {
             const parsed = JSON.parse(userData)
             setUser(parsed)
-
-            // Fetch notifications
-            if (parsed.id) {
-                fetch(`/api/notifications?recipientId=${parsed.id}&recipientRole=asm`)
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.success) {
-                            setUnreadCount(data.unreadCount || 0)
-                        }
-                    })
-                    .catch(err => console.error("Failed to fetch notifications:", err))
-            }
         } catch (e) {
             console.error("Error parsing user data:", e)
             router.push("/login")
@@ -90,7 +82,117 @@ export default function ASMLayout({
         }
     }, [router])
 
-    const handleLogout = () => {
+    // ────────────────────────────────────────────────────────────────────
+    // Live sidebar badges (poll every 5s via SWR)
+    // ────────────────────────────────────────────────────────────────────
+    const fetcher = (url: string) => axios.get(url).then(r => r.data)
+    const swrOpts = { refreshInterval: 5000, revalidateOnFocus: true, keepPreviousData: true }
+
+    const { data: notifData } = useSWR(
+        user?.id ? `/api/notifications?recipientId=${user.id}&recipientRole=asm` : null,
+        fetcher,
+        swrOpts
+    )
+    const { data: earningsData } = useSWR(
+        user?.city && user?.state
+            ? `/api/asm/earnings?city=${encodeURIComponent(user.city)}&state=${encodeURIComponent(user.state)}${user.id ? `&adminId=${user.id}` : ""}`
+            : null,
+        fetcher,
+        swrOpts
+    )
+    const { data: referralsData } = useSWR(
+        user?.id ? `/api/asm/my-referrals?adminId=${user.id}` : null,
+        fetcher,
+        swrOpts
+    )
+    const { data: offersData } = useSWR(
+        "/api/additional-commissions/active?role=asm",
+        fetcher,
+        swrOpts
+    )
+
+    // Keep `unreadCount` in sync with notifications data so any other UI
+    // that reads it stays correct.
+    useEffect(() => {
+        if (typeof notifData?.unreadCount === "number") setUnreadCount(notifData.unreadCount)
+    }, [notifData])
+
+    const myEarningsCount: number = earningsData?.success ? (earningsData.stats?.totalOrders || 0) : 0
+    const myReferralsCount: number = referralsData?.success ? (referralsData.stats?.total_customers || 0) : 0
+    const offersCount: number = (offersData?.campaigns?.length ?? offersData?.activeCommissions?.length ?? 0) as number
+    const notifCount: number = typeof notifData?.unreadCount === "number" ? notifData.unreadCount : 0
+
+    const currentCountFor = (name: string): number => {
+        switch (name) {
+            case "My Earnings": return myEarningsCount
+            case "My Referrals": return myReferralsCount
+            case "Offers": return offersCount
+            case "Notifications": return notifCount
+            default: return 0
+        }
+    }
+
+    // ────────────────────────────────────────────────────────────────────
+    // "Seen" tracking - badge shows the delta since the user last visited
+    // the page, so visiting clears it. Persisted in localStorage per-user
+    // so it survives reloads.
+    // ────────────────────────────────────────────────────────────────────
+    const seenStorageKey = user?.id ? `asm_badge_seen_${user.id}` : null
+    const [lastSeen, setLastSeen] = useState<Record<string, number>>({})
+
+    useEffect(() => {
+        if (!seenStorageKey) return
+        try {
+            const raw = localStorage.getItem(seenStorageKey)
+            if (raw) setLastSeen(JSON.parse(raw))
+        } catch (e) {
+            console.error("Failed to read badge seen state:", e)
+        }
+    }, [seenStorageKey])
+
+    useEffect(() => {
+        if (!seenStorageKey) return
+        let changed = false
+        const next: Record<string, number> = { ...lastSeen }
+
+        for (const item of navigationItems) {
+            const cur = currentCountFor(item.name)
+            const seen = next[item.name] ?? 0
+            const onThisPage = pathname.startsWith(item.href)
+            if (onThisPage && seen !== cur) {
+                next[item.name] = cur
+                changed = true
+            } else if (seen > cur) {
+                next[item.name] = cur
+                changed = true
+            }
+        }
+
+        if (changed) {
+            setLastSeen(next)
+            try {
+                localStorage.setItem(seenStorageKey, JSON.stringify(next))
+            } catch (e) {
+                console.error("Failed to persist badge seen state:", e)
+            }
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [
+        pathname,
+        seenStorageKey,
+        myEarningsCount,
+        myReferralsCount,
+        offersCount,
+        notifCount,
+    ])
+
+    const badgeFor = (name: string): number => {
+        const cur = currentCountFor(name)
+        const seen = lastSeen[name] ?? 0
+        return Math.max(0, cur - seen)
+    }
+
+    const performLogout = () => {
         localStorage.removeItem("affiliate_token")
         localStorage.removeItem("affiliate_user")
         localStorage.removeItem("affiliate_role")
@@ -138,6 +240,7 @@ export default function ASMLayout({
                     {navigationItems.map((item) => {
                         const Icon = item.icon
                         const isActive = pathname.startsWith(item.href)
+                        const badgeCount = badgeFor(item.name)
                         return (
                             <Link
                                 key={item.name}
@@ -151,7 +254,15 @@ export default function ASMLayout({
                                     <div className="absolute left-0 top-0 bottom-0 w-1 bg-indigo-400 rounded-r-full"></div>
                                 )}
                                 <Icon className="w-5 h-5 mr-3" />
-                                <span className="relative z-10">{item.name}</span>
+                                <span className="relative z-10 flex-1">{item.name}</span>
+                                {badgeCount > 0 && (
+                                    <span
+                                        className="ml-2 inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 text-[10px] font-bold rounded-full bg-red-500 text-white shadow-md ring-2 ring-white/10 animate-in fade-in zoom-in duration-200"
+                                        aria-label={`${badgeCount} new`}
+                                    >
+                                        {badgeCount > 99 ? "99+" : badgeCount}
+                                    </span>
+                                )}
                             </Link>
                         )
                     })}
@@ -207,7 +318,7 @@ export default function ASMLayout({
                             <button
                                 onClick={() => {
                                     setShowUserMenu(false)
-                                    handleLogout()
+                                    setShowLogoutConfirm(true)
                                 }}
                                 className="w-full flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
                             >
@@ -252,6 +363,19 @@ export default function ASMLayout({
                     {children}
                 </main>
             </div>
+
+            <ConfirmModal
+                open={showLogoutConfirm}
+                title="Do you want to logout?"
+                message="You will be returned to the login screen."
+                confirmLabel="Yes, logout"
+                cancelLabel="No"
+                onConfirm={() => {
+                    setShowLogoutConfirm(false)
+                    performLogout()
+                }}
+                onCancel={() => setShowLogoutConfirm(false)}
+            />
         </div>
     )
 }

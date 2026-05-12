@@ -298,7 +298,7 @@ export default function WalletPage() {
             const response = await axios.post('/api/affiliate/withdrawal/request', requestBody)
             const data = response.data
             if (data.success) {
-                alert('✅ Withdrawal request submitted successfully!\n\n💰 Payment will be credited to your registered bank account/UPI within 5-7 business days after admin approval.')
+                alert('✅ Withdrawal request submitted successfully!\n\n💰 Payment will be credited to your registered bank account/UPI within 30 days after admin approval.')
                 setShowWithdrawModal(false)
                 setWithdrawAmount("")
                 // Refresh wallet data
@@ -353,20 +353,20 @@ export default function WalletPage() {
                 />
             )}
 
-            <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-8">
+            <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 px-4 py-6 sm:px-6 lg:px-8">
                 <div className="max-w-7xl mx-auto space-y-8">
                     {/* Header Section */}
                     <div className="flex items-center justify-between flex-wrap gap-4">
                         <div>
-                            <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-900 via-indigo-900 to-purple-900 bg-clip-text text-transparent mb-1">
+                            <h1 className="text-3xl sm:text-4xl font-extrabold bg-gradient-to-r from-slate-900 via-cyan-900 to-emerald-900 bg-clip-text text-transparent mb-1 tracking-tight">
                                 Wallet & Earnings
                             </h1>
-                            <p className="text-gray-600 text-sm">Manage your payouts and payment methods</p>
+                            <p className="text-gray-600 text-sm sm:text-base">Manage your payouts and payment methods</p>
                         </div>
                         {walletData.paymentMethod && walletData.balance.current >= 20 && (
                             <button
                                 onClick={() => setShowWithdrawModal(true)}
-                                className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white px-5 py-2 rounded-xl font-semibold shadow-lg shadow-emerald-200 transition-all duration-300 hover:scale-105 flex items-center gap-2 text-sm"
+                                className="bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 hover:from-emerald-700 hover:via-teal-700 hover:to-cyan-700 text-white px-5 py-2.5 rounded-xl font-semibold shadow-lg shadow-emerald-200 transition-all duration-300 hover:scale-[1.02] flex items-center gap-2 text-sm"
                             >
                                 <ArrowUpRight className="w-4 h-4" />
                                 Withdraw Funds
@@ -374,13 +374,13 @@ export default function WalletPage() {
                         )}
                     </div>
 
-                    {/* Stats Cards */}
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    {/* Hero + Quick Stats */}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
                         {/* Available Balance Card - HERO */}
-                        <div className="lg:col-span-2 bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600 rounded-2xl p-6 text-white shadow-xl relative overflow-hidden group hover:shadow-emerald-300 transition-shadow duration-300">
+                        <div className="lg:col-span-2 bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600 rounded-3xl p-6 sm:p-8 text-white shadow-2xl relative overflow-hidden group hover:shadow-emerald-300/70 transition-shadow duration-300 border border-white/20">
                             {/* Coin Background Decoration */}
                             <div className="absolute inset-0 opacity-40">
-                                <div className="absolute right-8 top-1/2 -translate-y-1/2 w-72 h-72">
+                                <div className="absolute right-2 sm:right-8 top-1/2 -translate-y-1/2 w-56 h-56 sm:w-72 sm:h-72">
                                     <img
                                         src="/uploads/coin/coin.png"
                                         alt="Coin decoration"
@@ -390,12 +390,12 @@ export default function WalletPage() {
                             </div>
 
                             <div className="relative z-10">
-                                <p className="text-emerald-100 font-medium mb-1">Available Balance</p>
-                                <h2 className="text-5xl font-bold mb-6 tracking-tight">
+                                <p className="text-emerald-100/90 font-medium mb-1 text-sm uppercase tracking-wider">Available Balance</p>
+                                <h2 className="text-4xl sm:text-5xl font-extrabold mb-5 tracking-tight">
                                     {formatCurrency(walletData.balance.current)}
                                 </h2>
-                                <p className="text-sm text-emerald-100 mb-6 max-w-sm">
-                                    Your earnings are calculated net of TDS. Withdrawals are processed within 5-7 business days.
+                                <p className="text-sm sm:text-base text-emerald-100/95 mb-6 max-w-md leading-relaxed">
+                                    Your earnings are calculated net of TDS. Withdrawals are processed within 30 days.
                                 </p>
 
                                 <div className="grid grid-cols-2 gap-3 pt-4 border-t border-white/30">
@@ -418,53 +418,49 @@ export default function WalletPage() {
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </div>
-            </div>
 
-            {/* Quick Stats Card */}
-            <div className="bg-white rounded-2xl p-4 shadow-xl border border-gray-100 hover:shadow-2xl transition-shadow duration-300">
-                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">Quick Stats</h3>
-                <div className="space-y-3">
-                    <div className="flex items-center justify-between p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl hover:from-blue-100 hover:to-indigo-100 transition-all cursor-pointer">
-                        <div className="flex items-center gap-2">
-                            <div className="bg-gradient-to-br from-blue-500 to-indigo-600 p-2 rounded-lg shadow-lg">
-                                <TrendingUp className="w-3.5 h-3.5 text-white" />
-                            </div>
-                            <div>
-                                <span className="text-xs font-medium text-gray-500 block">Earnings</span>
-                                <span className="text-sm font-bold text-gray-900">{formatCurrency(walletData.balance.totalEarned)}</span>
+                        {/* Quick Stats Card */}
+                        <div className="bg-white/90 backdrop-blur-md rounded-3xl p-5 shadow-xl border border-gray-100 hover:shadow-2xl transition-shadow duration-300">
+                            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-[0.18em] mb-4">Quick Stats</h3>
+                            <div className="space-y-3">
+                                <div className="flex items-center justify-between p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl hover:from-blue-100 hover:to-indigo-100 transition-all cursor-pointer">
+                                    <div className="flex items-center gap-2">
+                                        <div className="bg-gradient-to-br from-blue-500 to-indigo-600 p-2 rounded-lg shadow-lg">
+                                            <TrendingUp className="w-3.5 h-3.5 text-white" />
+                                        </div>
+                                        <div>
+                                            <span className="text-xs font-medium text-gray-500 block">Earnings</span>
+                                            <span className="text-sm font-bold text-gray-900">{formatCurrency(walletData.balance.totalEarned)}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="flex items-center justify-between p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl hover:from-purple-100 hover:to-pink-100 transition-all cursor-pointer">
+                                    <div className="flex items-center gap-2">
+                                        <div className="bg-gradient-to-br from-purple-500 to-pink-600 p-2 rounded-lg shadow-lg">
+                                            <History className="w-3.5 h-3.5 text-white" />
+                                        </div>
+                                        <div>
+                                            <span className="text-xs font-medium text-gray-500 block">Paid Out</span>
+                                            <span className="text-sm font-bold text-gray-900">{formatCurrency(walletData.balance.withdrawn)}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="flex items-center justify-between p-3 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl hover:from-emerald-100 hover:to-teal-100 transition-all cursor-pointer">
+                                    <div className="flex items-center gap-2">
+                                        <div className="bg-gradient-to-br from-emerald-500 to-teal-600 p-2 rounded-lg shadow-lg">
+                                            <Wallet className="w-3.5 h-3.5 text-white" />
+                                        </div>
+                                        <div>
+                                            <span className="text-xs font-medium text-gray-500 block">Available</span>
+                                            <span className="text-sm font-bold text-emerald-600">{formatCurrency(walletData.balance.current)}</span>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    <div className="flex items-center justify-between p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl hover:from-purple-100 hover:to-pink-100 transition-all cursor-pointer">
-                        <div className="flex items-center gap-2">
-                            <div className="bg-gradient-to-br from-purple-500 to-pink-600 p-2 rounded-lg shadow-lg">
-                                <History className="w-3.5 h-3.5 text-white" />
-                            </div>
-                            <div>
-                                <span className="text-xs font-medium text-gray-500 block">Paid Out</span>
-                                <span className="text-sm font-bold text-gray-900">{formatCurrency(walletData.balance.withdrawn)}</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="flex items-center justify-between p-3 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl hover:from-emerald-100 hover:to-teal-100 transition-all cursor-pointer">
-                        <div className="flex items-center gap-2">
-                            <div className="bg-gradient-to-br from-emerald-500 to-teal-600 p-2 rounded-lg shadow-lg">
-                                <Wallet className="w-3.5 h-3.5 text-white" />
-                            </div>
-                            <div>
-                                <span className="text-xs font-medium text-gray-500 block">Available</span>
-                                <span className="text-sm font-bold text-emerald-600">{formatCurrency(walletData.balance.current)}</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-
-            {/* Payment Method Card */}
-            <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden hover:shadow-2xl transition-shadow duration-300">
+                    {/* Payment Method Card */}
+                    <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden hover:shadow-2xl transition-shadow duration-300">
                 <div className="bg-gradient-to-r from-indigo-50 via-purple-50 to-pink-50 p-4 border-b border-gray-100">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
@@ -539,10 +535,10 @@ export default function WalletPage() {
                         </div>
                     )}
                 </div>
-            </div>
+                    </div>
 
-            {/* Withdrawal History */}
-            <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden hover:shadow-2xl transition-shadow duration-300">
+                    {/* Withdrawal History */}
+                    <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden hover:shadow-2xl transition-shadow duration-300">
                 <div className="bg-gradient-to-r from-gray-50 to-white p-4 border-b border-gray-100">
                     <div className="flex items-center gap-3">
                         <div className="bg-gradient-to-br from-gray-700 to-gray-900 p-2.5 rounded-xl shadow-lg">
@@ -632,6 +628,8 @@ export default function WalletPage() {
                         </div>
                     )
                 }
+                    </div>
+                </div>
             </div>
 
             {showSetupModal && (
@@ -743,7 +741,7 @@ export default function WalletPage() {
                                         Withdrawal Amount
                                     </label>
                                     <div className="relative">
-                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-lg">â‚¹</span>
+                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-lg">₹</span>
                                         <input
                                             type="number"
                                             min="20"
@@ -756,7 +754,7 @@ export default function WalletPage() {
                                         />
                                     </div>
                                     <div className="flex justify-between text-xs text-gray-500 mt-2">
-                                        <span>Min: â‚¹20</span>
+                                        <span>Min: ₹20</span>
                                         <button
                                             onClick={() => setWithdrawAmount(walletData.balance.current.toString())}
                                             className="text-emerald-600 hover:text-emerald-700 font-medium"
@@ -816,6 +814,7 @@ export default function WalletPage() {
                                     disabled={!withdrawAmount || parseFloat(withdrawAmount) < 20 || parseFloat(withdrawAmount) > walletData.balance.current || submittingWithdrawal}
                                     className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
+                                    {submittingWithdrawal ? "Submitting..." : "Confirm Withdrawal"}
                                 </button>
                             </div>
                         </div>

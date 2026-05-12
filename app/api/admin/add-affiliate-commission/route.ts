@@ -14,7 +14,7 @@ export async function POST() {
         // Add affiliate role to commission_rates if it doesn't exist
         await pool.query(`
             INSERT INTO commission_rates (role_type, commission_percentage, description) 
-            VALUES ('affiliate', 70.00, 'Commission percentage that affiliate agents receive from their product commission')
+            VALUES ('affiliate', 70.00, 'Commission percentage that Oweg Partners receive from their product commission')
             ON CONFLICT (role_type) DO NOTHING
         `);
 

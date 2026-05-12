@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Pool } from "pg";
+// Side-effect import: ensures the pg `timestamp without time zone` type parser
+// is registered (parses bare timestamps as UTC) before this route runs any
+// queries. See lib/db.ts for the rationale.
+import "@/lib/db";
 
 export const dynamic = "force-dynamic";
 

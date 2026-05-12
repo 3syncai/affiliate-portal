@@ -6,6 +6,7 @@ import useSWR from 'swr'
 import { DollarSign, ShoppingBag, AlertCircle, Wallet, ArrowUpCircle, Users, Package, Info, Wifi, WifiOff } from "lucide-react"
 import { useSSE } from "@/hooks/useSSE"
 import { Toast } from "@/components/Toast"
+import CommissionStatusBadge from "@/app/components/CommissionStatusBadge"
 
 type DashboardUser = {
     id?: string
@@ -30,6 +31,9 @@ type Order = {
     refer_code: string
     type: string
     status?: string
+    unlock_at?: string | null
+    credited_at?: string | null
+    has_return?: boolean
 }
 
 const getOrderTypeLabel = (type: string) => {
@@ -64,7 +68,8 @@ export default function EarningsPage() {
 
     const { data, mutate, isLoading } = useSWR(
         user?.branch ? `/api/branch/earnings?branch=${encodeURIComponent(user.branch)}${user.id ? `&adminId=${user.id}` : ''}` : null,
-        fetcher
+        fetcher,
+        { refreshInterval: 5000, revalidateOnFocus: true, keepPreviousData: true }
     )
 
     const stats = data?.success ? data.stats : {
@@ -289,19 +294,18 @@ export default function EarningsPage() {
                                             <div className="font-medium text-gray-900">{order.product_name}</div>
                                             <div className="flex items-center gap-2 mt-1">
                                                 <div className="text-xs text-gray-500">#{order.order_id}</div>
-                                                <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase ${order.status === 'CREDITED'
-                                                    ? 'bg-emerald-100 text-emerald-700'
-                                                    : 'bg-amber-100 text-amber-700'
-                                                    }`}>
-                                                    {order.status === 'CREDITED' ? 'Credited' : 'Pending'}
-                                                </span>
+                                                <CommissionStatusBadge
+                                                    status={order.status || ''}
+                                                    unlockAt={order.unlock_at}
+                                                    hasReturn={order.has_return}
+                                                />
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             {order.first_name} {order.last_name}
                                             {order.refer_code && <span className="block text-xs text-gray-400">{order.refer_code}</span>}
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-bold text-gray-900">
+                                        <td className={`px-6 py-4 whitespace-nowrap text-sm text-right font-bold ${order.has_return || order.status === 'CANCELLED' ? 'text-gray-400 line-through' : 'text-gray-900'}`}>
                                             {formatCurrency(order.commission_amount)}
                                         </td>
                                     </tr>

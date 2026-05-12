@@ -7,6 +7,8 @@ import axios from 'axios'
 import useSWR from 'swr'
 import { Copy, Download, UserCircle2, Users, Wallet, TrendingUp, DollarSign } from 'lucide-react'
 import { STORE_URL } from "@/lib/config"
+import ConfirmModal from "@/app/components/ConfirmModal"
+import CommissionStatusBadge from "@/app/components/CommissionStatusBadge"
 
 interface AffiliateStats {
   referrals: {
@@ -42,6 +44,9 @@ interface AffiliateStats {
     commission_amount: number
     commission_source: string
     status: string
+    unlock_at: string | null
+    credited_at: string | null
+    has_return: boolean
     created_at: string
   }>
 }
@@ -63,7 +68,71 @@ export default function DashboardPage() {
   const [qrDataUrl, setQrDataUrl] = useState('')
   const [copied, setCopied] = useState(false)
   const [affiliateRate, setAffiliateRate] = useState<number>(100) // Default 100% if not set
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
   const canvasRef = useRef<HTMLCanvasElement>(null)
+
+  const loadImage = (src: string) =>
+    new Promise<HTMLImageElement>((resolve, reject) => {
+      const img = new Image()
+      img.onload = () => resolve(img)
+      img.onerror = () => reject(new Error(`Failed to load image: ${src}`))
+      img.src = src
+    })
+
+  const generateBrandedQr = async (referCode: string, name: string, role: string) => {
+    const signupUrl = `${STORE_URL}/signup?ref=${referCode}`
+    const qrSize = 300
+    const qrPadding = 20
+    const canvasWidth = qrSize + qrPadding * 2
+    const canvasHeight = qrSize + qrPadding * 2 + 68
+
+    const canvas = document.createElement("canvas")
+    canvas.width = canvasWidth
+    canvas.height = canvasHeight
+    const ctx = canvas.getContext("2d")
+    if (!ctx) return
+
+    ctx.fillStyle = "#FFFFFF"
+    ctx.fillRect(0, 0, canvasWidth, canvasHeight)
+
+    const qrCanvas = document.createElement("canvas")
+    await QRCode.toCanvas(qrCanvas, signupUrl, {
+      width: qrSize,
+      margin: 2,
+      errorCorrectionLevel: "H",
+      color: { dark: "#000000", light: "#FFFFFF" },
+    })
+
+    const qrX = qrPadding
+    const qrY = qrPadding
+    ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize)
+
+    try {
+      const logo = await loadImage("/oweg_O.png")
+      const logoSize = 56
+      const logoX = qrX + (qrSize - logoSize) / 2
+      const logoY = qrY + (qrSize - logoSize) / 2
+
+      // White circular backdrop so the logo stays scannable against the QR
+      ctx.beginPath()
+      ctx.arc(logoX + logoSize / 2, logoY + logoSize / 2, logoSize / 2 + 8, 0, Math.PI * 2)
+      ctx.fillStyle = "#FFFFFF"
+      ctx.fill()
+      ctx.drawImage(logo, logoX, logoY, logoSize, logoSize)
+    } catch (error) {
+      console.error("Logo overlay failed:", error)
+    }
+
+    ctx.textAlign = "center"
+    ctx.fillStyle = "#111827"
+    ctx.font = "600 16px Arial"
+    ctx.fillText(name || "Sales Executive", canvasWidth / 2, qrY + qrSize + 30)
+    ctx.fillStyle = "#4B5563"
+    ctx.font = "500 14px Arial"
+    ctx.fillText(role || "Sales Executive", canvasWidth / 2, qrY + qrSize + 52)
+
+    setQrDataUrl(canvas.toDataURL("image/png"))
+  }
 
   useEffect(() => {
     // Check if user is logged in
@@ -99,17 +168,13 @@ export default function DashboardPage() {
 
       setUser(parsedUser)
 
-      // Generate QR code when user data is loaded
+      // Generate branded QR code (logo + name/role) when user data is loaded
       if (parsedUser.refer_code) {
-        const signupUrl = `${STORE_URL}/signup?ref=${parsedUser.refer_code}`
-        QRCode.toDataURL(signupUrl, {
-          width: 300,
-          margin: 2,
-          color: {
-            dark: '#000000',
-            light: '#FFFFFF'
-          }
-        }).then(setQrDataUrl).catch(console.error)
+        const fullName =
+          parsedUser.first_name && parsedUser.last_name
+            ? `${parsedUser.first_name} ${parsedUser.last_name}`
+            : parsedUser.email || "Sales Executive"
+        generateBrandedQr(parsedUser.refer_code, fullName, "Sales Executive").catch(console.error)
 
         fetchAffiliateRate()
       }
@@ -171,7 +236,7 @@ export default function DashboardPage() {
     }
   }
 
-  const handleLogout = () => {
+  const performLogout = () => {
     localStorage.removeItem("affiliate_token")
     localStorage.removeItem("affiliate_user")
     localStorage.removeItem("affiliate_role")
@@ -245,6 +310,14 @@ export default function DashboardPage() {
                 </svg>
                 Offers
               </a>
+              <a
+                href="/dashboard/profile"
+                className="ml-2 inline-flex items-center gap-1.5 px-3 py-1 bg-white border border-gray-200 text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 rounded-md text-sm font-medium transition-colors">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.121 17.804A10.938 10.938 0 0112 15c2.662 0 5.102.977 6.879 2.592M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                Profile
+              </a>
             </div>
             <div className="flex items-center gap-4">
               <span className="text-sm text-gray-600">
@@ -252,7 +325,7 @@ export default function DashboardPage() {
                 Live Updates | Welcome, <strong className="text-gray-900">{user?.first_name && user?.last_name ? `${user.first_name} ${user.last_name}` : user?.email}</strong>
               </span>
               <button
-                onClick={handleLogout}
+                onClick={() => setShowLogoutConfirm(true)}
                 className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-700 hover:text-gray-900 transition-colors">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -491,12 +564,16 @@ export default function DashboardPage() {
                         <p className="text-[11px] text-gray-400">{comm.order_id}</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm font-bold text-emerald-600">+₹{comm.commission_amount.toFixed(2)}</p>
-                        <span className={`text-xs px-1.5 py-0.5 rounded ${comm.status === 'CREDITED' ? 'bg-green-100 text-green-700' :
-                          comm.status === 'PENDING' ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-700'
-                          }`}>
-                          {comm.status}
-                        </span>
+                        <p className={`text-sm font-bold ${comm.has_return ? "text-gray-400 line-through" : "text-emerald-600"}`}>
+                          +₹{(comm.has_return ? 0 : comm.commission_amount).toFixed(2)}
+                        </p>
+                        <div className="mt-1">
+                          <CommissionStatusBadge
+                            status={comm.status}
+                            unlockAt={comm.unlock_at}
+                            hasReturn={comm.has_return}
+                          />
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -525,18 +602,31 @@ export default function DashboardPage() {
               </div>
               {user?.phone && (
                 <div>
-                  <p className="text-xs text-gray-500 mb-1">Phone</p>
+                  <p className="text-xsl text-gray-500 mb-1">Phone</p>
                   <p className="text-sm font-medium text-gray-900">{user.phone}</p>
                 </div>
               )}
-              <div>
+              {/* <div>
                 <p className="text-xs text-gray-500 mb-1">Status</p>
                 <p className="text-sm font-medium text-gray-900">{user?.is_agent ? "Partner" : "User"}</p>
-              </div>
+              </div> */}
             </div>
           </div>
         </div>
       </main>
+
+      <ConfirmModal
+        open={showLogoutConfirm}
+        title="Do you want to logout?"
+        message="You will be returned to the login screen."
+        confirmLabel="Yes, logout"
+        cancelLabel="No"
+        onConfirm={() => {
+          setShowLogoutConfirm(false)
+          performLogout()
+        }}
+        onCancel={() => setShowLogoutConfirm(false)}
+      />
     </div>
   )
 }

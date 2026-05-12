@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Pool } from "pg";
+import { syncAffiliateCommissionStatuses } from "@/lib/affiliate-commission-sync";
 
 export const dynamic = "force-dynamic";
 
@@ -154,6 +155,7 @@ export async function GET(req: NextRequest) {
             ssl: { rejectUnauthorized: false }
         });
 
+        await syncAffiliateCommissionStatuses(pool, { logPrefix: "[State Admin Orders]" });
         await syncDeliveredCommissions(pool, "[State Admin Orders]");
 
         const adminResult = await pool.query(

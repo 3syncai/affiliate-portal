@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Pool } from "pg";
 import { fetchCommissionRates } from "@/lib/commission-rates";
+import { syncAffiliateCommissionStatuses } from "@/lib/affiliate-commission-sync";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +20,7 @@ export async function GET(req: NextRequest) {
             connectionString: process.env.DATABASE_URL || process.env.NEXT_PUBLIC_DATABASE_URL,
             ssl: { rejectUnauthorized: false }
         });
+        await syncAffiliateCommissionStatuses(pool, { logPrefix: "[State Admin Dashboard Stats]" });
         const commissionRates = await fetchCommissionRates(pool);
 
         // Get branches from stores table in this state

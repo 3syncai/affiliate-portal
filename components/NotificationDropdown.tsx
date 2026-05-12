@@ -1,8 +1,11 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
+import { useRouter } from "next/navigation"
 import axios from "axios"
+import useSWR from "swr"
 import { Bell, X, CheckCircle, AlertCircle, DollarSign, Info } from "lucide-react"
+import { formatRelativeIST } from "@/lib/datetime"
 
 type Notification = {
     id: string
@@ -13,46 +16,63 @@ type Notification = {
     sender_role?: string
 }
 
+type NotificationsResponse = {
+    success: boolean
+    notifications: Notification[]
+    unreadCount: number
+}
+
 type NotificationDropdownProps = {
     userId: string
     userRole: string
 }
 
+const fetcher = (url: string) =>
+    axios.get(url).then(res => res.data as NotificationsResponse)
+
 export default function NotificationDropdown({ userId, userRole }: NotificationDropdownProps) {
+    const router = useRouter()
     const [isOpen, setIsOpen] = useState(false)
-    const [notifications, setNotifications] = useState<Notification[]>([])
-    const [unreadCount, setUnreadCount] = useState(0)
-    const [loading, setLoading] = useState(false)
 
-    useEffect(() => {
-        if (userId) {
-            fetchNotifications()
-        }
-    }, [userId])
+    const swrKey = userId
+        ? `/api/notifications?recipientId=${userId}&recipientRole=${userRole}`
+        : null
 
-    const fetchNotifications = async () => {
+    const { data, mutate } = useSWR<NotificationsResponse>(swrKey, fetcher, {
+        refreshInterval: 5000,
+        revalidateOnFocus: true,
+        keepPreviousData: true,
+    })
+
+    const notifications: Notification[] = data?.success ? data.notifications : []
+    const unreadCount = data?.unreadCount ?? notifications.filter(n => !n.is_read).length
+
+    const markAsRead = async (notificationId: string) => {
+        await mutate(
+            (current) => current
+                ? {
+                    ...current,
+                    notifications: current.notifications.map(n =>
+                        n.id === notificationId ? { ...n, is_read: true } : n
+                    ),
+                    unreadCount: Math.max(0, (current.unreadCount || 0) - 1),
+                }
+                : current,
+            { revalidate: false }
+        )
         try {
-            const response = await axios.get(`/api/notifications?recipientId=${userId}&recipientRole=${userRole}`)
-            if (response.data.success) {
-                setNotifications(response.data.notifications)
-                setUnreadCount(response.data.unreadCount || 0)
-            }
+            await axios.patch("/api/notifications", { notificationId })
+            mutate()
         } catch (error) {
-            console.error("Failed to fetch notifications:", error)
+            console.error("Failed to mark notification as read:", error)
+            mutate()
         }
     }
 
-    const markAsRead = async (notificationId: string) => {
-        try {
-            await axios.patch("/api/notifications", { notificationId })
-            // Update local state
-            setNotifications(prev =>
-                prev.map(n => n.id === notificationId ? { ...n, is_read: true } : n)
-            )
-            setUnreadCount(prev => Math.max(0, prev - 1))
-        } catch (error) {
-            console.error("Failed to mark notification as read:", error)
-        }
+    const getNotificationsPath = () => {
+        if (userRole === "branch") return "/branch/notifications"
+        if (userRole === "asm") return "/asm/notifications"
+        return "/notifications"
     }
 
     const getIcon = (type: string) => {
@@ -68,22 +88,17 @@ export default function NotificationDropdown({ userId, userRole }: NotificationD
         }
     }
 
-    const formatTime = (dateString: string) => {
-        const date = new Date(dateString)
-        const now = new Date()
-        const diff = Math.floor((now.getTime() - date.getTime()) / 1000)
-
-        if (diff < 60) return 'just now'
-        if (diff < 3600) return `${Math.floor(diff / 60)}m ago`
-        if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`
-        return date.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })
-    }
+    const formatTime = (dateString: string) => formatRelativeIST(dateString)
 
     return (
         <div className="relative">
             {/* Bell Button */}
             <button
-                onClick={() => setIsOpen(!isOpen)}
+                onClick={() => {
+                    setIsOpen(!isOpen)
+                    // Force a fresh pull when opening, in addition to the 5s poll
+                    if (!isOpen) mutate()
+                }}
                 className="relative p-2 text-gray-400 hover:text-gray-500 rounded-full hover:bg-gray-100 transition-colors"
             >
                 <Bell className="w-5 h-5" />
@@ -134,10 +149,12 @@ export default function NotificationDropdown({ userId, userRole }: NotificationD
                                     {notifications.map((notification) => (
                                         <button
                                             key={notification.id}
-                                            onClick={() => {
+                                            onClick={async () => {
                                                 if (!notification.is_read) {
-                                                    markAsRead(notification.id)
+                                                    await markAsRead(notification.id)
                                                 }
+                                                setIsOpen(false)
+                                                router.push(`${getNotificationsPath()}?open=${notification.id}`)
                                             }}
                                             className={`w-full text-left p-4 hover:bg-gray-50 transition-colors ${!notification.is_read ? 'bg-blue-50' : ''
                                                 }`}
@@ -169,18 +186,28 @@ export default function NotificationDropdown({ userId, userRole }: NotificationD
                         {/* Footer - Mark all as read */}
                         {unreadCount > 0 && (
                             <div className="p-3 border-t border-gray-200">
-                                <button
-                                    onClick={async () => {
-                                        // Mark all as read
-                                        const unreadNotifications = notifications.filter(n => !n.is_read)
-                                        for (const notif of unreadNotifications) {
-                                            await markAsRead(notif.id)
-                                        }
-                                    }}
-                                    className="w-full text-sm font-medium text-indigo-600 hover:text-indigo-700 py-2 hover:bg-indigo-50 rounded-lg transition-colors"
-                                >
-                                    Mark all as read
-                                </button>
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={async () => {
+                                            const unreadNotifications = notifications.filter(n => !n.is_read)
+                                            for (const notif of unreadNotifications) {
+                                                await markAsRead(notif.id)
+                                            }
+                                        }}
+                                        className="flex-1 text-sm font-medium text-indigo-600 hover:text-indigo-700 py-2 hover:bg-indigo-50 rounded-lg transition-colors"
+                                    >
+                                        Mark all as read
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setIsOpen(false)
+                                            router.push(getNotificationsPath())
+                                        }}
+                                        className="flex-1 text-sm font-medium text-gray-700 hover:text-gray-900 py-2 hover:bg-gray-100 rounded-lg transition-colors"
+                                    >
+                                        View all
+                                    </button>
+                                </div>
                             </div>
                         )}
                     </div>

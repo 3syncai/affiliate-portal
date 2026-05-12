@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Pool } from "pg";
+import { syncAffiliateCommissionStatuses } from "@/lib/affiliate-commission-sync";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +21,8 @@ export async function GET(req: NextRequest) {
             connectionString: process.env.DATABASE_URL || process.env.NEXT_PUBLIC_DATABASE_URL,
             ssl: { rejectUnauthorized: false }
         });
+
+        await syncAffiliateCommissionStatuses(pool, { logPrefix: "[State Admin Dashboard Activities]" });
 
         const activities: any[] = [];
 
@@ -107,7 +110,8 @@ export async function GET(req: NextRequest) {
             SELECT 
                 acl.id, 
                 acl.order_amount, 
-                acl.commission_amount, 
+                COALESCE(acl.affiliate_commission, acl.commission_amount, 0) as commission_amount,
+                acl.status,
                 acl.created_at, 
                 COALESCE(u.first_name, ba.first_name) as first_name, 
                 COALESCE(u.last_name, ba.last_name) as last_name, 
@@ -128,7 +132,9 @@ export async function GET(req: NextRequest) {
                 activities.push({
                     id: `commission-${row.id}`,
                     type: 'commission',
-                    message: `${row.first_name} ${row.last_name} earned ₹${parseFloat(row.commission_amount).toFixed(2)} commission`,
+                    message: row.status === 'CANCELLED'
+                        ? `${row.first_name} ${row.last_name} order cancelled (₹0.00 commission)`
+                        : `${row.first_name} ${row.last_name} earned ₹${parseFloat(row.commission_amount).toFixed(2)} commission`,
                     branch_name: row.branch || 'Unknown Branch',
                     created_at: row.created_at
                 });

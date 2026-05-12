@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react'
 
-export type ThemeName = 'blue' | 'emerald' | 'violet' | 'rose' | 'amber' | 'slate'
+export type ThemeName = 'blue' | 'emerald' | 'violet' | 'rose' | 'amber' | 'slate' | 'dark'
 
 type Theme = {
     name: ThemeName
@@ -89,6 +89,18 @@ export const themes: Theme[] = [
         accent: '#64748b',
         background: '#f8fafc',
         cardBg: '#ffffff'
+    },
+    {
+        name: 'dark',
+        label: 'Dark Mode',
+        primary: '#6366f1',
+        primaryHover: '#4f46e5',
+        primaryLight: '#312e81',
+        sidebar: '#0b0f1a',
+        sidebarText: '#e5e7eb',
+        accent: '#a78bfa',
+        background: '#0f172a',
+        cardBg: '#1e293b'
     }
 ]
 
@@ -211,6 +223,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         document.documentElement.style.setProperty('--theme-accent', theme.accent)
         document.documentElement.style.setProperty('--theme-background', theme.background)
         document.documentElement.style.setProperty('--theme-card-bg', theme.cardBg)
+
+        // Expose the active theme name on <html> so CSS can scope rules with
+        // `[data-theme="dark"]` (used for dark-mode surface/text overrides).
+        document.documentElement.setAttribute('data-theme', themeName)
 
         // Save to user-specific localStorage key
         const userData = localStorage.getItem('affiliate_user')

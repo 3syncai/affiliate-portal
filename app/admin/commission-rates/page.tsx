@@ -21,7 +21,7 @@ const roleLabels: Record<string, string> = {
 }
 
 const roleDescriptions: Record<string, string> = {
-    affiliate: "Commission percentage that affiliate agents receive from their product commissions",
+    affiliate: "Commission percentage that Oweg Partners receive from their product commissions",
     branch_direct: "Additional bonus for branch admins on their direct referrals (added to affiliate base rate)",
     branch: "Commission percentage branch admins earn from their team's affiliate sales",
     area: "Commission percentage area managers earn from affiliate sales in their area",

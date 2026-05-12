@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Pool } from "pg";
+import { syncAffiliateCommissionStatuses } from "@/lib/affiliate-commission-sync";
 
 export const dynamic = "force-dynamic";
 
@@ -25,6 +26,8 @@ export async function GET(req: NextRequest) {
             connectionString: process.env.DATABASE_URL || process.env.NEXT_PUBLIC_DATABASE_URL,
             ssl: { rejectUnauthorized: false }
         });
+
+        await syncAffiliateCommissionStatuses(pool, { logPrefix: "[Branch Activity]" });
 
         // Fetch recent affiliate requests from this branch (last 10)
         const affiliateRequestsQuery = `
@@ -53,7 +56,7 @@ export async function GET(req: NextRequest) {
                 acl.order_id,
                 acl.affiliate_code,
                 acl.product_name,
-                acl.commission_amount,
+                COALESCE(acl.affiliate_commission, acl.commission_amount, 0) as commission_amount,
                 acl.status,
                 acl.created_at,
                 u.first_name as affiliate_first_name,
@@ -155,8 +158,10 @@ export async function GET(req: NextRequest) {
                         : row.affiliate_code,
                     order_id: row.order_id,
                     product_name: row.product_name,
-                    commission_amount: parseFloat(row.commission_amount) || 0,
-                    action: `earned ₹${(parseFloat(row.commission_amount) || 0).toFixed(2)} commission`
+                    commission_amount: row.status === 'CANCELLED' ? 0 : (parseFloat(row.commission_amount) || 0),
+                    action: row.status === 'CANCELLED'
+                        ? 'order cancelled, commission ₹0.00'
+                        : `earned ₹${(parseFloat(row.commission_amount) || 0).toFixed(2)} commission`
                 }
             });
         });

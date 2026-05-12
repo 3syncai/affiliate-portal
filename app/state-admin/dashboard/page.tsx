@@ -4,13 +4,15 @@ import { useEffect, useState, useCallback } from "react"
 import axios from "axios"
 import useSWR from "swr"
 import Link from "next/link"
+import QRCode from "qrcode"
 import {
     Users, DollarSign, ShoppingBag, Building2,
     Briefcase, ChevronRight, UserPlus, BarChart3, Clock, ArrowUpRight, TrendingUp, Share2, Copy, Check, Sparkles, Wallet,
-    MoreHorizontal, Wifi, WifiOff
+    MoreHorizontal, Wifi, WifiOff, Download
 } from "lucide-react"
 import { useSSE } from "@/hooks/useSSE"
 import { Toast } from "@/components/Toast"
+import { STORE_URL } from "@/lib/config"
 
 type Activity = {
     id: string
@@ -37,6 +39,7 @@ const fetcher = (url: string) => axios.get(url).then(res => res.data)
 export default function StateAdminDashboard() {
     const [user, setUser] = useState<any>(null)
     const [copied, setCopied] = useState(false)
+    const [qrDataUrl, setQrDataUrl] = useState("")
 
     // Toast state
     const [showToast, setShowToast] = useState(false)
@@ -53,6 +56,70 @@ export default function StateAdminDashboard() {
             }
         }
     }, [])
+
+    const loadImage = (src: string) =>
+        new Promise<HTMLImageElement>((resolve, reject) => {
+            const img = new Image()
+            img.onload = () => resolve(img)
+            img.onerror = () => reject(new Error(`Failed to load image: ${src}`))
+            img.src = src
+        })
+
+    const generateBrandedQr = async (referCode: string, name: string, role: string) => {
+        const signupUrl = `${STORE_URL}/signup?ref=${referCode}`
+        const qrSize = 300
+        const qrPadding = 20
+        const canvasWidth = qrSize + qrPadding * 2
+        const canvasHeight = qrSize + qrPadding * 2 + 68
+        const canvas = document.createElement("canvas")
+        canvas.width = canvasWidth
+        canvas.height = canvasHeight
+        const ctx = canvas.getContext("2d")
+        if (!ctx) return
+
+        ctx.fillStyle = "#FFFFFF"
+        ctx.fillRect(0, 0, canvasWidth, canvasHeight)
+
+        const qrCanvas = document.createElement("canvas")
+        await QRCode.toCanvas(qrCanvas, signupUrl, {
+            width: qrSize,
+            margin: 2,
+            errorCorrectionLevel: "H",
+            color: { dark: "#000000", light: "#FFFFFF" }
+        })
+        const qrX = qrPadding
+        const qrY = qrPadding
+        ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize)
+
+        try {
+            const logo = await loadImage("/uploads/coin/Oweg3d-400.png")
+            const logoSize = 56
+            const logoX = qrX + (qrSize - logoSize) / 2
+            const logoY = qrY + (qrSize - logoSize) / 2
+            ctx.beginPath()
+            ctx.arc(logoX + logoSize / 2, logoY + logoSize / 2, logoSize / 2 + 8, 0, Math.PI * 2)
+            ctx.fillStyle = "#FFFFFF"
+            ctx.fill()
+            ctx.drawImage(logo, logoX, logoY, logoSize, logoSize)
+        } catch (error) {
+            console.error("State-admin logo overlay failed:", error)
+        }
+
+        ctx.textAlign = "center"
+        ctx.fillStyle = "#111827"
+        ctx.font = "600 16px Arial"
+        ctx.fillText(name || "State Admin", canvasWidth / 2, qrY + qrSize + 30)
+        ctx.fillStyle = "#4B5563"
+        ctx.font = "500 14px Arial"
+        ctx.fillText(role || "State Admin", canvasWidth / 2, qrY + qrSize + 52)
+        setQrDataUrl(canvas.toDataURL("image/png"))
+    }
+
+    useEffect(() => {
+        if (!user?.refer_code) return
+        const name = user?.first_name && user?.last_name ? `${user.first_name} ${user.last_name}` : (user?.email || "State Admin")
+        generateBrandedQr(user.refer_code, name, "State Admin").catch(console.error)
+    }, [user])
 
     // SWR Data Fetching
     const { data: statsData, mutate: mutateStats, isLoading: statsLoading } = useSWR(
@@ -127,6 +194,14 @@ export default function StateAdminDashboard() {
             setCopied(true)
             setTimeout(() => setCopied(false), 2000)
         }
+    }
+
+    const downloadQR = () => {
+        if (!qrDataUrl || !user?.refer_code) return
+        const link = document.createElement("a")
+        link.download = `state-admin-qr-${user.refer_code}.png`
+        link.href = qrDataUrl
+        link.click()
     }
 
     const formatCurrency = (amount: number) =>
@@ -274,6 +349,26 @@ export default function StateAdminDashboard() {
                             </div>
                         </div>
                     </div>
+
+                    {qrDataUrl && (
+                        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+                            <div className="flex items-center gap-2 mb-3">
+                                <Users className="w-5 h-5 text-emerald-600" />
+                                <h3 className="font-semibold text-gray-900 text-sm">Customer Registration</h3>
+                            </div>
+                            <p className="text-xs text-gray-500 mb-4">For customer sign-ups</p>
+                            <div className="flex flex-col items-center">
+                                <img src={qrDataUrl} alt="State Admin QR Code" className="w-full max-w-[220px] h-auto rounded-lg" />
+                                <button
+                                    onClick={downloadQR}
+                                    className="mt-4 flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors text-xs font-medium w-full justify-center"
+                                >
+                                    <Download className="w-3.5 h-3.5" />
+                                    Download QR
+                                </button>
+                            </div>
+                        </div>
+                    )}
 
                     {/* Quick Attributes */}
                     <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">

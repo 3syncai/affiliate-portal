@@ -6,6 +6,7 @@ import useSWR from 'swr'
 import { DollarSign, User, Users, ShoppingBag, Wallet, CheckCircle2, AlertCircle, Wifi, WifiOff } from "lucide-react"
 import { useSSE } from "@/hooks/useSSE"
 import { Toast } from "@/components/Toast"
+import CommissionStatusBadge from "@/app/components/CommissionStatusBadge"
 
 type DashboardUser = {
     id?: string
@@ -34,6 +35,9 @@ type Order = {
     commission_source?: string
     commission_amount?: number
     status?: string
+    unlock_at?: string | null
+    credited_at?: string | null
+    has_return?: boolean
 }
 
 const fetcher = (url: string) => axios.get(url).then(res => res.data)
@@ -64,7 +68,8 @@ export default function ASMEarningsPage() {
 
     const { data, mutate, isLoading } = useSWR(
         userData?.city && userData?.state ? `/api/asm/earnings?city=${encodeURIComponent(userData.city)}&state=${encodeURIComponent(userData.state)}${userData.id ? `&adminId=${userData.id}` : ''}` : null,
-        fetcher
+        fetcher,
+        { refreshInterval: 5000, revalidateOnFocus: true, keepPreviousData: true }
     )
 
     const stats = data?.success ? data.stats : {
@@ -286,10 +291,7 @@ export default function ASMEarningsPage() {
                                     const typeColor = isDirect
                                         ? 'bg-emerald-100 text-emerald-700'
                                         : 'bg-gray-100 text-gray-700'
-                                    const statusLabel = order.status === 'CREDITED' ? 'Credited' : 'Pending'
-                                    const statusColor = order.status === 'CREDITED'
-                                        ? 'bg-emerald-100 text-emerald-700'
-                                        : 'bg-amber-100 text-amber-700'
+                                    const cancelledOrReturned = order.has_return || order.status === 'CANCELLED'
 
                                     return (
                                         <tr key={order.id} className="hover:bg-gray-50/30 transition-colors">
@@ -305,9 +307,11 @@ export default function ASMEarningsPage() {
                                                 <div className="text-sm font-medium text-gray-900 line-clamp-1">{order.product_name}</div>
                                                 <div className="flex items-center gap-2 mt-1">
                                                     <div className="text-xs text-gray-400">#{order.order_id}</div>
-                                                    <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${statusColor}`}>
-                                                        {statusLabel}
-                                                    </span>
+                                                    <CommissionStatusBadge
+                                                        status={order.status || ''}
+                                                        unlockAt={order.unlock_at}
+                                                        hasReturn={order.has_return}
+                                                    />
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4">
@@ -315,10 +319,7 @@ export default function ASMEarningsPage() {
                                                 <div className="text-xs text-gray-400 mt-0.5 uppercase">{isDirect ? order.refer_code : order.branch}</div>
                                             </td>
                                             <td className="px-6 py-4 text-right">
-                                                <span className="text-sm font-bold text-gray-900">
-                                                    {/* In real app, this should be the commission amount per order row */}
-                                                    {/* Using order_amount * rate mostly, but should check if api returns commission_amount */}
-                                                    {/* Assuming API helper calculates it or returns it. If not, fallback logic: */}
+                                                <span className={`text-sm font-bold ${cancelledOrReturned ? 'text-gray-400 line-through' : 'text-gray-900'}`}>
                                                     {formatCurrency(Number(order.commission_amount) || 0)}
                                                 </span>
                                             </td>
