@@ -20,10 +20,53 @@ export async function GET(request: Request) {
         });
 
         const result = await pool.query(
-            `SELECT id, first_name, last_name, email, phone, refer_code, is_agent, is_approved, branch, created_at
-             FROM affiliate_user 
-             WHERE branch ILIKE $1 AND is_agent = true
-             ORDER BY created_at DESC`,
+            `SELECT
+                au.id,
+                au.first_name,
+                au.last_name,
+                au.email,
+                au.phone,
+                au.refer_code,
+                au.is_agent,
+                au.is_approved,
+                au.rejected_at,
+                au.entry_sponsor,
+                au.branch,
+                au.city,
+                au.state,
+                au.country,
+                au.payment_method,
+                au.bank_name,
+                au.bank_branch,
+                au.ifsc_code,
+                au.account_name,
+                au.account_number,
+                au.upi_id,
+                au.created_at,
+                au.updated_at,
+                COALESCE((
+                    SELECT COUNT(*)::int
+                    FROM affiliate_commission_log
+                    WHERE affiliate_code = au.refer_code
+                ), 0) AS total_orders,
+                COALESCE((
+                    SELECT SUM(COALESCE(affiliate_amount, affiliate_commission, 0))
+                    FROM affiliate_commission_log
+                    WHERE affiliate_code = au.refer_code AND status = 'CREDITED'
+                ), 0) AS total_commission,
+                COALESCE((
+                    SELECT SUM(COALESCE(affiliate_amount, affiliate_commission, 0))
+                    FROM affiliate_commission_log
+                    WHERE affiliate_code = au.refer_code AND status = 'PENDING'
+                ), 0) AS pending_commission,
+                COALESCE((
+                    SELECT COUNT(*)::int
+                    FROM customer
+                    WHERE metadata->>'referral_code' = au.refer_code
+                ), 0) AS total_referred_customers
+             FROM affiliate_user au
+             WHERE au.branch ILIKE $1 AND au.is_agent = true
+             ORDER BY au.created_at DESC`,
             [`%${branch}%`]
         );
 

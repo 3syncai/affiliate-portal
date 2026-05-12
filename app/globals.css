@@ -4,7 +4,9 @@
   --background: #ffffff;
   --foreground: #171717;
 
-  /* Theme colors - default to blue */
+  /* Theme colors - default to blue. ThemeContext overrides these on the
+     <html> element, plus sets data-theme="<name>" so we can scope rules
+     like `[data-theme="dark"]` for dark-mode surfaces/text. */
   --theme-primary: #3b82f6;
   --theme-primary-hover: #2563eb;
   --theme-primary-light: #dbeafe;
@@ -13,6 +15,14 @@
   --theme-accent: #0ea5e9;
   --theme-background: #f0f5ff;
   --theme-card-bg: #ffffff;
+
+  /* Surface tokens used by the global theme overrides below.
+     Light themes use neutral grays; dark mode flips them in the
+     `[data-theme="dark"]` block at the bottom. */
+  --theme-surface-text: #111827;        /* gray-900 */
+  --theme-surface-text-muted: #6b7280;  /* gray-500 */
+  --theme-surface-border: #e5e7eb;      /* gray-200 */
+  --theme-surface-subtle: #f9fafb;      /* gray-50 */
 }
 
 @theme inline {
@@ -22,73 +32,345 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #ffffff;
-    --foreground: #171717;
-  }
-}
-
 body {
   background: var(--theme-background);
-  color: var(--foreground);
+  color: var(--theme-surface-text);
   font-family: Arial, Helvetica, sans-serif;
 }
 
-/* Theme-aware card backgrounds */
+/* ────────────────────────────────────────────────────────────────────
+   Theme-aware utility overrides
+   ────────────────────────────────────────────────────────────────────
+   Most pages were authored with hardcoded indigo / purple / violet /
+   blue / sky utility classes. Instead of touching every page, we
+   re-route those classes to the live theme variables here. Keeps the
+   palette consistent across roles and makes Dark Mode work without
+   page-level refactors.
+   Only the heavily-used shades are mapped (50/100/200/500/600/700).
+*/
+
+/* Card backgrounds */
 .bg-white {
   background-color: var(--theme-card-bg) !important;
 }
 
-/* Ensure inputs always have dark text and visible placeholders */
+/* ── Solid backgrounds (light tints, badges, hover surfaces) ── */
+.bg-blue-50,
+.bg-indigo-50,
+.bg-violet-50,
+.bg-purple-50,
+.bg-sky-50 {
+  background-color: var(--theme-primary-light) !important;
+}
+
+.bg-blue-100,
+.bg-indigo-100,
+.bg-violet-100,
+.bg-purple-100,
+.bg-sky-100 {
+  background-color: var(--theme-primary-light) !important;
+}
+
+/* ── Solid backgrounds (filled buttons / pills) ── */
+.bg-blue-500,
+.bg-blue-600,
+.bg-blue-700,
+.bg-indigo-500,
+.bg-indigo-600,
+.bg-indigo-700,
+.bg-violet-500,
+.bg-violet-600,
+.bg-violet-700,
+.bg-purple-500,
+.bg-purple-600,
+.bg-purple-700,
+.bg-sky-500,
+.bg-sky-600,
+.bg-sky-700 {
+  background-color: var(--theme-primary) !important;
+}
+
+/* Hover */
+.hover\:bg-blue-700:hover,
+.hover\:bg-indigo-700:hover,
+.hover\:bg-violet-700:hover,
+.hover\:bg-purple-700:hover,
+.hover\:bg-sky-700:hover,
+.hover\:bg-blue-600:hover,
+.hover\:bg-indigo-600:hover,
+.hover\:bg-violet-600:hover,
+.hover\:bg-purple-600:hover,
+.hover\:bg-sky-600:hover {
+  background-color: var(--theme-primary-hover) !important;
+}
+
+/* ── Text colors ── */
+.text-blue-500,
+.text-blue-600,
+.text-blue-700,
+.text-blue-800,
+.text-indigo-500,
+.text-indigo-600,
+.text-indigo-700,
+.text-indigo-800,
+.text-violet-500,
+.text-violet-600,
+.text-violet-700,
+.text-violet-800,
+.text-purple-500,
+.text-purple-600,
+.text-purple-700,
+.text-purple-800,
+.text-sky-500,
+.text-sky-600,
+.text-sky-700,
+.text-sky-800 {
+  color: var(--theme-primary) !important;
+}
+
+.hover\:text-blue-700:hover,
+.hover\:text-blue-800:hover,
+.hover\:text-blue-900:hover,
+.hover\:text-indigo-700:hover,
+.hover\:text-indigo-800:hover,
+.hover\:text-indigo-900:hover,
+.hover\:text-violet-700:hover,
+.hover\:text-purple-700:hover,
+.hover\:text-purple-800:hover,
+.hover\:text-purple-900:hover,
+.hover\:text-sky-700:hover {
+  color: var(--theme-primary-hover) !important;
+}
+
+/* ── Borders ── */
+.border-blue-200,
+.border-blue-300,
+.border-blue-500,
+.border-blue-600,
+.border-indigo-100,
+.border-indigo-200,
+.border-indigo-300,
+.border-indigo-500,
+.border-indigo-600,
+.border-violet-200,
+.border-violet-500,
+.border-purple-200,
+.border-purple-500,
+.border-sky-200,
+.border-sky-500 {
+  border-color: var(--theme-primary) !important;
+}
+
+.focus\:ring-blue-500:focus,
+.focus\:ring-indigo-500:focus,
+.focus\:ring-violet-500:focus,
+.focus\:ring-purple-500:focus,
+.focus\:ring-sky-500:focus {
+  --tw-ring-color: var(--theme-primary) !important;
+}
+
+.focus\:border-blue-500:focus,
+.focus\:border-indigo-500:focus,
+.focus\:border-violet-500:focus,
+.focus\:border-purple-500:focus {
+  border-color: var(--theme-primary) !important;
+}
+
+/* ── Gradients ──
+   Tailwind compiles `from-X to-Y` to CSS variables `--tw-gradient-from`
+   and `--tw-gradient-to`. We override each common variant to a 2-stop
+   sweep using the theme primary + sidebar so all gradient buttons /
+   cards (Refresh Data, Save, +Add Store, Manage Rates, etc.) follow
+   the theme. */
+[class*="from-blue-"],
+[class*="from-indigo-"],
+[class*="from-violet-"],
+[class*="from-purple-"],
+[class*="from-sky-"] {
+  --tw-gradient-from: var(--theme-primary) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, transparent) !important;
+}
+
+[class*="to-blue-"],
+[class*="to-indigo-"],
+[class*="to-violet-"],
+[class*="to-purple-"],
+[class*="to-sky-"] {
+  --tw-gradient-to: var(--theme-primary-hover) !important;
+}
+
+/* Light tonal gradients (e.g. from-indigo-50 to-indigo-100) used for
+   subtle card surfaces — keep them subtle by stopping inside the
+   primary-light range. */
+[class*="from-blue-50"],
+[class*="from-indigo-50"],
+[class*="from-violet-50"],
+[class*="from-purple-50"],
+[class*="from-sky-50"],
+[class*="from-blue-100"],
+[class*="from-indigo-100"],
+[class*="from-violet-100"],
+[class*="from-purple-100"],
+[class*="from-sky-100"] {
+  --tw-gradient-from: var(--theme-primary-light) !important;
+}
+
+[class*="to-blue-50"],
+[class*="to-indigo-50"],
+[class*="to-violet-50"],
+[class*="to-purple-50"],
+[class*="to-sky-50"],
+[class*="to-blue-100"],
+[class*="to-indigo-100"],
+[class*="to-violet-100"],
+[class*="to-purple-100"],
+[class*="to-sky-100"] {
+  --tw-gradient-to: var(--theme-card-bg) !important;
+}
+
+/* ────────────────────────────────────────────────────────────────────
+   Inputs — keep them readable on every theme.
+   For dark mode, we flip them in the dark-mode block below.
+   ────────────────────────────────────────────────────────────────────*/
 input,
 select,
 textarea {
-  color: #1f2937 !important;
-  background-color: #ffffff !important;
+  color: var(--theme-surface-text) !important;
+  background-color: var(--theme-card-bg) !important;
+  border-color: var(--theme-surface-border);
 }
 
 input::placeholder,
 textarea::placeholder {
-  color: #9ca3af !important;
+  color: var(--theme-surface-text-muted) !important;
   opacity: 1;
 }
 
-/* Theme-aware button primary color */
-.bg-blue-600 {
-  background-color: var(--theme-primary) !important;
+/* ────────────────────────────────────────────────────────────────────
+   DARK MODE
+   Activated when ThemeContext sets data-theme="dark" on <html>.
+   We flip surface colors, text, borders, and a few neutrals so the
+   whole app — not just the sidebar — feels dark. Themed accents
+   (primary buttons, gradients) keep working because they already use
+   the theme variables.
+   ────────────────────────────────────────────────────────────────────*/
+[data-theme="dark"] {
+  --theme-surface-text: #f3f4f6;        /* near-white */
+  --theme-surface-text-muted: #94a3b8;  /* slate-400 */
+  --theme-surface-border: #334155;      /* slate-700 */
+  --theme-surface-subtle: #1e293b;      /* slate-800 */
 }
 
-.bg-blue-600:hover,
-.hover\:bg-blue-700:hover {
-  background-color: var(--theme-primary-hover) !important;
+[data-theme="dark"] body {
+  color: var(--theme-surface-text);
 }
 
-/* Theme-aware badge/pill colors */
-.bg-blue-100 {
-  background-color: var(--theme-primary-light) !important;
+/* Surfaces. Includes the high-opacity translucent variants used by
+   page headers (`bg-white/80`, `/90`, `/95`). Low-opacity variants
+   like `bg-white/5`, `/10`, `/20` are intentional translucent
+   overlays *inside* the dark sidebar and must NOT be flipped. */
+[data-theme="dark"] .bg-white,
+[data-theme="dark"] .bg-white\/70,
+[data-theme="dark"] .bg-white\/75,
+[data-theme="dark"] .bg-white\/80,
+[data-theme="dark"] .bg-white\/85,
+[data-theme="dark"] .bg-white\/90,
+[data-theme="dark"] .bg-white\/95,
+[data-theme="dark"] .bg-gray-50,
+[data-theme="dark"] .bg-gray-100,
+[data-theme="dark"] .bg-slate-50,
+[data-theme="dark"] .bg-slate-100,
+[data-theme="dark"] .bg-zinc-50,
+[data-theme="dark"] .bg-neutral-50 {
+  background-color: var(--theme-card-bg) !important;
 }
 
-.text-blue-600,
-.text-blue-700,
-.text-blue-800 {
-  color: var(--theme-primary) !important;
+[data-theme="dark"] .bg-gray-200,
+[data-theme="dark"] .bg-slate-200 {
+  background-color: var(--theme-surface-subtle) !important;
 }
 
-/* Theme-aware border colors */
-.border-blue-600 {
-  border-color: var(--theme-primary) !important;
+/* Text */
+[data-theme="dark"] .text-gray-900,
+[data-theme="dark"] .text-gray-800,
+[data-theme="dark"] .text-gray-700,
+[data-theme="dark"] .text-slate-900,
+[data-theme="dark"] .text-slate-800,
+[data-theme="dark"] .text-slate-700,
+[data-theme="dark"] .text-black {
+  color: var(--theme-surface-text) !important;
 }
 
-.focus\:ring-blue-500:focus {
-  --tw-ring-color: var(--theme-primary) !important;
+[data-theme="dark"] .text-gray-600,
+[data-theme="dark"] .text-gray-500,
+[data-theme="dark"] .text-gray-400,
+[data-theme="dark"] .text-slate-600,
+[data-theme="dark"] .text-slate-500,
+[data-theme="dark"] .text-slate-400 {
+  color: var(--theme-surface-text-muted) !important;
 }
 
-.focus\:border-blue-500:focus {
-  border-color: var(--theme-primary) !important;
+/* Borders + dividers. Page headers commonly use very light tinted
+   borders like `border-indigo-50`, `border-blue-100`, etc. — those
+   read as bright lines on a dark background, so flip them to slate
+   too. (The strong-tint border classes are still routed to the theme
+   primary by the colored-utility overrides above.) */
+[data-theme="dark"] .border,
+[data-theme="dark"] .border-gray-100,
+[data-theme="dark"] .border-gray-200,
+[data-theme="dark"] .border-gray-300,
+[data-theme="dark"] .border-slate-200,
+[data-theme="dark"] .border-slate-300,
+[data-theme="dark"] .border-indigo-50,
+[data-theme="dark"] .border-blue-50,
+[data-theme="dark"] .border-violet-50,
+[data-theme="dark"] .border-purple-50,
+[data-theme="dark"] .border-sky-50,
+[data-theme="dark"] .divide-gray-100 > :not([hidden]) ~ :not([hidden]),
+[data-theme="dark"] .divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
+  border-color: var(--theme-surface-border) !important;
 }
 
-/* Lenis Smooth Scroll */
+/* Hover surfaces stay subtle */
+[data-theme="dark"] .hover\:bg-gray-50:hover,
+[data-theme="dark"] .hover\:bg-gray-100:hover,
+[data-theme="dark"] .hover\:bg-slate-50:hover,
+[data-theme="dark"] .hover\:bg-slate-100:hover {
+  background-color: var(--theme-surface-subtle) !important;
+}
+
+/* Neutralize neutral gradients (e.g. `from-white to-gray-50`,
+   `from-gray-50 to-white`, `from-slate-50 to-white`) so containers
+   flip to dark surface instead of staying light. We replace the
+   gradient image with a flat dark surface. */
+[data-theme="dark"] [class*="from-white"],
+[data-theme="dark"] [class*="from-gray-50"],
+[data-theme="dark"] [class*="from-gray-100"],
+[data-theme="dark"] [class*="from-slate-50"],
+[data-theme="dark"] [class*="from-slate-100"],
+[data-theme="dark"] [class*="from-zinc-50"],
+[data-theme="dark"] [class*="from-neutral-50"] {
+  background-image: none !important;
+  background-color: var(--theme-card-bg) !important;
+}
+
+/* Inputs in dark mode */
+[data-theme="dark"] input,
+[data-theme="dark"] select,
+[data-theme="dark"] textarea {
+  color: var(--theme-surface-text) !important;
+  background-color: var(--theme-surface-subtle) !important;
+  border-color: var(--theme-surface-border) !important;
+}
+
+[data-theme="dark"] input::placeholder,
+[data-theme="dark"] textarea::placeholder {
+  color: var(--theme-surface-text-muted) !important;
+}
+
+/* ────────────────────────────────────────────────────────────────────
+   Lenis Smooth Scroll
+   ────────────────────────────────────────────────────────────────────*/
 html.lenis,
 html.lenis body {
   height: auto;

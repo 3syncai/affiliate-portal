@@ -4,12 +4,14 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Clock, CheckCircle, XCircle, RefreshCw } from "lucide-react"
 import axios from "axios"
+import ConfirmModal from "@/app/components/ConfirmModal"
 
 export default function VerificationPendingPage() {
   const router = useRouter()
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [checking, setChecking] = useState(false)
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
 
   useEffect(() => {
     // Check if user is logged in
@@ -70,7 +72,7 @@ export default function VerificationPendingPage() {
     }
   }
 
-  const handleLogout = () => {
+  const performLogout = () => {
     localStorage.removeItem("affiliate_token")
     localStorage.removeItem("affiliate_user")
     localStorage.removeItem("affiliate_role")
@@ -104,7 +106,7 @@ export default function VerificationPendingPage() {
             )}
             <div className="space-y-3">
               <button
-                onClick={handleLogout}
+                onClick={() => setShowLogoutConfirm(true)}
                 className="w-full bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700"
               >
                 Back to Login
@@ -112,6 +114,19 @@ export default function VerificationPendingPage() {
             </div>
           </div>
         </div>
+
+        <ConfirmModal
+          open={showLogoutConfirm}
+          title="Do you want to logout?"
+          message="You will be returned to the login screen."
+          confirmLabel="Yes, logout"
+          cancelLabel="No"
+          onConfirm={() => {
+            setShowLogoutConfirm(false)
+            performLogout()
+          }}
+          onCancel={() => setShowLogoutConfirm(false)}
+        />
       </div>
     )
   }
@@ -157,7 +172,7 @@ export default function VerificationPendingPage() {
               )}
             </button>
             <button
-              onClick={handleLogout}
+              onClick={() => setShowLogoutConfirm(true)}
               className="w-full bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300"
             >
               Logout
@@ -176,6 +191,19 @@ export default function VerificationPendingPage() {
           )}
         </div>
       </div>
+
+      <ConfirmModal
+        open={showLogoutConfirm}
+        title="Do you want to logout?"
+        message="You will be returned to the login screen."
+        confirmLabel="Yes, logout"
+        cancelLabel="No"
+        onConfirm={() => {
+          setShowLogoutConfirm(false)
+          performLogout()
+        }}
+        onCancel={() => setShowLogoutConfirm(false)}
+      />
     </div>
   )
 }

@@ -1,8 +1,10 @@
 "use client"
 
 import Link from "next/link"
+import { useState } from "react"
 import { useRouter, usePathname } from "next/navigation"
-import { LayoutDashboard, LogOut, Package, BadgePercent } from "lucide-react"
+import { LayoutDashboard, LogOut, Package, BadgePercent, User } from "lucide-react"
+import ConfirmModal from "@/app/components/ConfirmModal"
 
 interface UserNavbarProps {
     userName?: string
@@ -11,8 +13,9 @@ interface UserNavbarProps {
 export default function UserNavbar({ userName }: UserNavbarProps) {
     const router = useRouter()
     const pathname = usePathname()
+    const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
 
-    const handleLogout = () => {
+    const performLogout = () => {
         localStorage.removeItem("affiliate_token")
         localStorage.removeItem("affiliate_user")
         localStorage.removeItem("affiliate_role")
@@ -63,6 +66,16 @@ export default function UserNavbar({ userName }: UserNavbarProps) {
                                 <BadgePercent size={18} />
                                 <span>Offers</span>
                             </Link>
+                            <Link
+                                href="/dashboard/profile"
+                                className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-all ${isActive("/dashboard/profile")
+                                    ? "bg-green-50 text-green-700"
+                                    : "text-gray-600 hover:bg-green-50 hover:text-green-700"
+                                    }`}
+                            >
+                                <User size={18} />
+                                <span>Profile</span>
+                            </Link>
                         </div>
                     </div>
 
@@ -74,7 +87,7 @@ export default function UserNavbar({ userName }: UserNavbarProps) {
                             </span>
                         )}
                         <button
-                            onClick={handleLogout}
+                            onClick={() => setShowLogoutConfirm(true)}
                             className="flex items-center space-x-2 px-4 py-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
                         >
                             <LogOut size={18} />
@@ -83,6 +96,19 @@ export default function UserNavbar({ userName }: UserNavbarProps) {
                     </div>
                 </div>
             </div>
+
+            <ConfirmModal
+                open={showLogoutConfirm}
+                title="Do you want to logout?"
+                message="You will be returned to the login screen."
+                confirmLabel="Yes, logout"
+                cancelLabel="No"
+                onConfirm={() => {
+                    setShowLogoutConfirm(false)
+                    performLogout()
+                }}
+                onCancel={() => setShowLogoutConfirm(false)}
+            />
         </nav>
     )
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Pool } from "pg";
 import { fetchCommissionRates } from "@/lib/commission-rates";
+import { syncAffiliateCommissionStatuses } from "@/lib/affiliate-commission-sync";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +13,11 @@ const toCount = (value: string | number | null | undefined) => {
     return Number.parseInt(String(value ?? 0), 10) || 0;
 };
 
+// Legacy delivered-commission sync. The canonical sync now lives in
+// `syncAffiliateCommissionStatuses` and applies the 5-minute unlock window
+// plus return-voiding. This function used to flip rows straight to CREDITED
+// without any delay, which would skip the timer entirely, so it is no longer
+// invoked from the route below.
 async function syncDeliveredCommissions(pool: Pool, logPrefix: string) {
     try {
         const orderTableRes = await pool.query(
@@ -162,7 +168,7 @@ export async function GET(req: NextRequest) {
     });
 
     try {
-        await syncDeliveredCommissions(pool, "[State Admin Earnings]");
+        await syncAffiliateCommissionStatuses(pool, { logPrefix: "[State Admin Earnings]" });
 
         const commissionRates = await fetchCommissionRates(pool);
         const adminCheck = await pool.query(`
@@ -276,16 +282,36 @@ export async function GET(req: NextRequest) {
         const availableBalance = currentEarnings - paidAmount;
         const totalOrders = creditedOverrideOrders + pendingOverrideOrders + creditedDirectOrders + pendingDirectOrders;
 
+        // Each sub-select carries the same shape: status, unlock_at,
+        // credited_at, has_return + a commission_amount that drops to 0 if
+        // the order is cancelled or the customer has filed a return.
         const recentOrdersResult = await pool.query(`
             (
                 SELECT
                     acl.id,
                     acl.order_id,
                     acl.order_amount,
-                    ROUND((acl.commission_amount * $3::numeric) / 100, 2) as commission_amount,
+                    CASE
+                        WHEN acl.status = 'CANCELLED' THEN 0
+                        WHEN EXISTS (
+                            SELECT 1 FROM return_request rr
+                            WHERE rr.order_id = acl.order_id
+                              AND rr.deleted_at IS NULL
+                              AND LOWER(COALESCE(rr.status, '')) NOT IN ('rejected','cancelled','canceled')
+                        ) THEN 0
+                        ELSE ROUND((acl.commission_amount * $3::numeric) / 100, 2)
+                    END as commission_amount,
                     acl.created_at,
                     acl.product_name,
                     acl.status,
+                    acl.unlock_at,
+                    acl.credited_at,
+                    EXISTS (
+                        SELECT 1 FROM return_request rr
+                        WHERE rr.order_id = acl.order_id
+                          AND rr.deleted_at IS NULL
+                          AND LOWER(COALESCE(rr.status, '')) NOT IN ('rejected','cancelled','canceled')
+                    ) AS has_return,
                     u.first_name,
                     u.last_name,
                     u.refer_code,
@@ -304,10 +330,27 @@ export async function GET(req: NextRequest) {
                     acl.id,
                     acl.order_id,
                     acl.order_amount,
-                    ROUND((acl.commission_amount * $3::numeric) / 100, 2) as commission_amount,
+                    CASE
+                        WHEN acl.status = 'CANCELLED' THEN 0
+                        WHEN EXISTS (
+                            SELECT 1 FROM return_request rr
+                            WHERE rr.order_id = acl.order_id
+                              AND rr.deleted_at IS NULL
+                              AND LOWER(COALESCE(rr.status, '')) NOT IN ('rejected','cancelled','canceled')
+                        ) THEN 0
+                        ELSE ROUND((acl.commission_amount * $3::numeric) / 100, 2)
+                    END as commission_amount,
                     acl.created_at,
                     acl.product_name,
                     acl.status,
+                    acl.unlock_at,
+                    acl.credited_at,
+                    EXISTS (
+                        SELECT 1 FROM return_request rr
+                        WHERE rr.order_id = acl.order_id
+                          AND rr.deleted_at IS NULL
+                          AND LOWER(COALESCE(rr.status, '')) NOT IN ('rejected','cancelled','canceled')
+                    ) AS has_return,
                     ba.first_name,
                     ba.last_name,
                     ba.refer_code,
@@ -325,10 +368,27 @@ export async function GET(req: NextRequest) {
                     acl.id,
                     acl.order_id,
                     acl.order_amount,
-                    ROUND((acl.commission_amount * $3::numeric) / 100, 2) as commission_amount,
+                    CASE
+                        WHEN acl.status = 'CANCELLED' THEN 0
+                        WHEN EXISTS (
+                            SELECT 1 FROM return_request rr
+                            WHERE rr.order_id = acl.order_id
+                              AND rr.deleted_at IS NULL
+                              AND LOWER(COALESCE(rr.status, '')) NOT IN ('rejected','cancelled','canceled')
+                        ) THEN 0
+                        ELSE ROUND((acl.commission_amount * $3::numeric) / 100, 2)
+                    END as commission_amount,
                     acl.created_at,
                     acl.product_name,
                     acl.status,
+                    acl.unlock_at,
+                    acl.credited_at,
+                    EXISTS (
+                        SELECT 1 FROM return_request rr
+                        WHERE rr.order_id = acl.order_id
+                          AND rr.deleted_at IS NULL
+                          AND LOWER(COALESCE(rr.status, '')) NOT IN ('rejected','cancelled','canceled')
+                    ) AS has_return,
                     asm.first_name,
                     asm.last_name,
                     asm.refer_code,
@@ -346,10 +406,27 @@ export async function GET(req: NextRequest) {
                     acl.id,
                     acl.order_id,
                     acl.order_amount,
-                    acl.affiliate_commission as commission_amount,
+                    CASE
+                        WHEN acl.status = 'CANCELLED' THEN 0
+                        WHEN EXISTS (
+                            SELECT 1 FROM return_request rr
+                            WHERE rr.order_id = acl.order_id
+                              AND rr.deleted_at IS NULL
+                              AND LOWER(COALESCE(rr.status, '')) NOT IN ('rejected','cancelled','canceled')
+                        ) THEN 0
+                        ELSE acl.affiliate_commission
+                    END as commission_amount,
                     acl.created_at,
                     acl.product_name,
                     acl.status,
+                    acl.unlock_at,
+                    acl.credited_at,
+                    EXISTS (
+                        SELECT 1 FROM return_request rr
+                        WHERE rr.order_id = acl.order_id
+                          AND rr.deleted_at IS NULL
+                          AND LOWER(COALESCE(rr.status, '')) NOT IN ('rejected','cancelled','canceled')
+                    ) AS has_return,
                     'You' as first_name,
                     '' as last_name,
                     acl.affiliate_code as refer_code,

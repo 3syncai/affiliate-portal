@@ -27,6 +27,13 @@ export async function POST(req: NextRequest) {
             console.error(`[Additional Commission] Failed before status update for Order #${order_id}:`, additionalError);
         }
 
+        // NOTE: The DB-side trigger `enforce_commission_unlock_delay_trigger`
+        // intercepts incoming CREDITED writes and rewrites them to PENDING +
+        // unlock_at = NOW() + 5 minutes. The affiliate-portal sync flips the
+        // row to CREDITED once the timer elapses. So while this UPDATE asks
+        // for status=$1, the actual stored status may end up PENDING for the
+        // first 5 minutes — which is exactly what powers the live countdown
+        // badge in the affiliate dashboard.
         const result = await pool.query(
             `UPDATE affiliate_commission_log 
              SET status = $1,
@@ -35,8 +42,8 @@ export async function POST(req: NextRequest) {
                      ELSE credited_at
                  END
              WHERE order_id = $2
-               AND status IS DISTINCT FROM $1
-             RETURNING id, affiliate_code, affiliate_commission`,
+               AND status IS DISTINCT FROM 'CANCELLED'
+             RETURNING id, affiliate_code, affiliate_commission, status, unlock_at`,
             [normalizedStatus, order_id]
         );
 
@@ -49,11 +56,17 @@ export async function POST(req: NextRequest) {
             });
         }
 
-        console.log(`[Commission Update] Updated ${result.rowCount} commission records to ${normalizedStatus}`);
-
-        // Log updated records and Credit Wallet
+        // Credit the customer_wallet (running balance read by admin views)
+        // immediately, matching the existing pre-trigger behaviour. The
+        // affiliate-facing wallet on the dashboard waits the full 5-minute
+        // unlock window because it's derived from the row status, not from
+        // customer_wallet.
         for (const row of result.rows) {
-            console.log(` - Updated Commission #${row.id}: ₹${row.affiliate_commission} for ${row.affiliate_code}`);
+            console.log(
+                ` - Commission #${row.id}: ₹${row.affiliate_commission} for ${row.affiliate_code} ` +
+                `now status=${row.status}` +
+                (row.unlock_at ? `, unlock_at=${row.unlock_at}` : "")
+            );
 
             if (shouldCreditCommission) {
                 try {

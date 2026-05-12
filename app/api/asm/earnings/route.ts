@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Pool } from "pg";
 import { fetchCommissionRates } from "@/lib/commission-rates";
+import { syncAffiliateCommissionStatuses } from "@/lib/affiliate-commission-sync";
 
 export const dynamic = "force-dynamic";
 
@@ -30,6 +31,8 @@ export async function GET(req: NextRequest) {
     });
 
     try {
+        await syncAffiliateCommissionStatuses(pool, { logPrefix: "[ASM Earnings]" });
+
         const commissionRates = await fetchCommissionRates(pool);
         let commissionRate = commissionRates.summary.asm.overrideRate;
         const directRate = commissionRates.summary.asm.directRate;
@@ -143,10 +146,27 @@ export async function GET(req: NextRequest) {
                 acl.id,
                 acl.order_id,
                 acl.order_amount,
-                ROUND((acl.commission_amount * $3::numeric) / 100, 2) as commission_amount,
+                CASE
+                    WHEN acl.status = 'CANCELLED' THEN 0
+                    WHEN EXISTS (
+                        SELECT 1 FROM return_request rr
+                        WHERE rr.order_id = acl.order_id
+                          AND rr.deleted_at IS NULL
+                          AND LOWER(COALESCE(rr.status, '')) NOT IN ('rejected','cancelled','canceled')
+                    ) THEN 0
+                    ELSE ROUND((acl.commission_amount * $3::numeric) / 100, 2)
+                END as commission_amount,
                 acl.created_at,
                 acl.product_name,
                 acl.status,
+                acl.unlock_at,
+                acl.credited_at,
+                EXISTS (
+                    SELECT 1 FROM return_request rr
+                    WHERE rr.order_id = acl.order_id
+                      AND rr.deleted_at IS NULL
+                      AND LOWER(COALESCE(rr.status, '')) NOT IN ('rejected','cancelled','canceled')
+                ) AS has_return,
                 acl.commission_source,
                 u.first_name,
                 u.last_name,
@@ -169,10 +189,27 @@ export async function GET(req: NextRequest) {
                     acl_asm.id,
                     acl_asm.order_id,
                     acl_asm.order_amount,
-                    acl_asm.affiliate_commission as commission_amount,
+                    CASE
+                        WHEN acl_asm.status = 'CANCELLED' THEN 0
+                        WHEN EXISTS (
+                            SELECT 1 FROM return_request rr
+                            WHERE rr.order_id = acl_asm.order_id
+                              AND rr.deleted_at IS NULL
+                              AND LOWER(COALESCE(rr.status, '')) NOT IN ('rejected','cancelled','canceled')
+                        ) THEN 0
+                        ELSE acl_asm.affiliate_commission
+                    END as commission_amount,
                     acl_asm.created_at,
                     acl_asm.product_name,
                     acl_asm.status,
+                    acl_asm.unlock_at,
+                    acl_asm.credited_at,
+                    EXISTS (
+                        SELECT 1 FROM return_request rr
+                        WHERE rr.order_id = acl_asm.order_id
+                          AND rr.deleted_at IS NULL
+                          AND LOWER(COALESCE(rr.status, '')) NOT IN ('rejected','cancelled','canceled')
+                    ) AS has_return,
                     acl_asm.commission_source,
                     COALESCE(ba.first_name, 'Unknown') as first_name,
                     COALESCE(ba.last_name, 'Branch Admin') as last_name,
@@ -200,10 +237,27 @@ export async function GET(req: NextRequest) {
                     acl.id,
                     acl.order_id,
                     acl.order_amount,
-                    acl.affiliate_commission as commission_amount,
+                    CASE
+                        WHEN acl.status = 'CANCELLED' THEN 0
+                        WHEN EXISTS (
+                            SELECT 1 FROM return_request rr
+                            WHERE rr.order_id = acl.order_id
+                              AND rr.deleted_at IS NULL
+                              AND LOWER(COALESCE(rr.status, '')) NOT IN ('rejected','cancelled','canceled')
+                        ) THEN 0
+                        ELSE acl.affiliate_commission
+                    END as commission_amount,
                     acl.created_at,
                     acl.product_name,
                     acl.status,
+                    acl.unlock_at,
+                    acl.credited_at,
+                    EXISTS (
+                        SELECT 1 FROM return_request rr
+                        WHERE rr.order_id = acl.order_id
+                          AND rr.deleted_at IS NULL
+                          AND LOWER(COALESCE(rr.status, '')) NOT IN ('rejected','cancelled','canceled')
+                    ) AS has_return,
                     acl.commission_source,
                     acl.customer_name as first_name,
                     '' as last_name,

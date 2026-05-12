@@ -54,9 +54,11 @@ export default function AllUsersPage() {
 
   const loadAllStats = async () => {
     try {
-      // Load all counts
+      // Use the same endpoint that the table uses (`/api/affiliate/admin/users`).
+      // The previous `/api/admin/users` route doesn't exist (returns 404),
+      // which silently fell into `.catch` and produced affiliates: 0.
       const [affiliatesRes, stateRes, areaRes, branchRes] = await Promise.all([
-        axios.get("/api/admin/users").catch(() => ({ data: { approved: [] } })),
+        axios.get("/api/affiliate/admin/users").catch(() => ({ data: { approved: [] } })),
         axios.get("/api/admin/state-admins").catch(() => ({ data: { admins: [] } })),
         axios.get("/api/admin/area-managers").catch(() => ({ data: { managers: [] } })),
         axios.get("/api/admin/branch-admins").catch(() => ({ data: { admins: [] } }))

@@ -82,7 +82,7 @@ export default function AreaManagersPage() {
     if (loading) {
         return (
             <div className="flex items-center justify-center h-64">
-                <div className="text-lg text-gray-500">Loading area managers...</div>
+                <div className="text-lg text-gray-500">Loading branch admins...</div>
             </div>
         )
     }
@@ -91,8 +91,8 @@ export default function AreaManagersPage() {
         <div className="space-y-6">
             <div className="flex justify-between items-start">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-900">Area Sales Managers</h1>
-                    <p className="text-gray-600 mt-1">View and manage area sales managers in {user?.state}</p>
+                    <h1 className="text-3xl font-bold text-gray-900">Branch Admins</h1>
+                    <p className="text-gray-600 mt-1">View and manage branch admins in {user?.state}</p>
                 </div>
                 <a
                     href="/state-admin/create-asm"
@@ -120,7 +120,7 @@ export default function AreaManagersPage() {
             {/* Stats */}
             <div className="grid grid-cols-3 gap-4">
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                    <p className="text-sm text-gray-500">Total ASMs</p>
+                    <p className="text-sm text-gray-500">Total Branches</p>
                     <p className="text-2xl font-bold text-gray-900">{areaManagers.length}</p>
                 </div>
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
@@ -137,9 +137,9 @@ export default function AreaManagersPage() {
             {filteredManagers.length === 0 ? (
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
                     <Briefcase className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                    <p className="text-gray-500">No area sales managers found</p>
+                    <p className="text-gray-500">No branch admins found</p>
                     <a href="/state-admin/create-asm" className="text-emerald-600 hover:underline mt-2 inline-block">
-                        Create your first ASM
+                        Create your first branch admin
                     </a>
                 </div>
             ) : (
@@ -219,7 +219,7 @@ export default function AreaManagersPage() {
             {selectedManager && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
                     <div className="bg-white rounded-lg max-w-lg w-full p-6">
-                        <h2 className="text-xl font-bold text-gray-900 mb-4">Area Sales Manager Details</h2>
+                        <h2 className="text-xl font-bold text-gray-900 mb-4">Branch Admin Details</h2>
                         <div className="space-y-3 text-sm">
                             <p><strong>Name:</strong> {selectedManager.first_name} {selectedManager.last_name}</p>
                             <p><strong>Email:</strong> {selectedManager.email}</p>

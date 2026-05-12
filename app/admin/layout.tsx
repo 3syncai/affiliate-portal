@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import Link from "next/link"
 import { SmoothScroll } from "@/components/SmoothScroll"
+import ConfirmModal from "@/app/components/ConfirmModal"
 import { useTheme } from "@/contexts/ThemeContext"
 import {
   LayoutDashboard,
@@ -55,6 +56,7 @@ export default function AdminLayout({
   const [loading, setLoading] = useState(true)
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [showUserMenu, setShowUserMenu] = useState(false)
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
 
   useEffect(() => {
     const token = localStorage.getItem("affiliate_token")
@@ -81,7 +83,7 @@ export default function AdminLayout({
     }
   }, [router])
 
-  const handleLogout = () => {
+  const performLogout = () => {
     localStorage.removeItem("affiliate_token")
     localStorage.removeItem("affiliate_user")
     localStorage.removeItem("affiliate_role")
@@ -189,7 +191,7 @@ export default function AdminLayout({
                 <button
                   onClick={() => {
                     setShowUserMenu(false)
-                    handleLogout()
+                    setShowLogoutConfirm(true)
                   }}
                   className="w-full flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
                 >
@@ -230,6 +232,19 @@ export default function AdminLayout({
           </main>
         </div>
       </div>
+
+      <ConfirmModal
+        open={showLogoutConfirm}
+        title="Do you want to logout?"
+        message="You will be returned to the login screen."
+        confirmLabel="Yes, logout"
+        cancelLabel="No"
+        onConfirm={() => {
+          setShowLogoutConfirm(false)
+          performLogout()
+        }}
+        onCancel={() => setShowLogoutConfirm(false)}
+      />
     </>
   )
 }

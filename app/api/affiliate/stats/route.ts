@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
+import { syncAffiliateCommissionStatuses } from '@/lib/affiliate-commission-sync';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,33 +33,7 @@ export async function GET(request: NextRequest) {
 
         const affiliateUser = userResult.rows[0];
 
-        // Keep commission status in sync with delivered/completed orders even if status webhook is delayed/missed.
-        // This prevents "PENDING" from showing after fulfillment has already happened.
-        try {
-            await pool.query(
-                `
-                UPDATE affiliate_commission_log acl
-                SET status = 'CREDITED',
-                    credited_at = COALESCE(credited_at, NOW())
-                FROM "order" o
-                LEFT JOIN order_fulfillment ofl ON ofl.order_id = o.id
-                LEFT JOIN fulfillment f ON f.id = ofl.fulfillment_id
-                WHERE o.id = acl.order_id
-                  AND acl.affiliate_code = $1
-                  AND acl.status IS DISTINCT FROM 'CREDITED'
-                  AND (
-                    LOWER(COALESCE(o.status::text, '')) IN ('completed')
-                    OR f.delivered_at IS NOT NULL
-                    OR f.shipped_at IS NOT NULL
-                  )
-                  AND o.canceled_at IS NULL
-                  AND (f.id IS NULL OR f.canceled_at IS NULL)
-                `,
-                [affiliateCode]
-            );
-        } catch (syncError) {
-            console.error('Commission delivery sync failed:', syncError);
-        }
+        await syncAffiliateCommissionStatuses(pool, { affiliateCode, logPrefix: '[Affiliate Stats]' });
 
         // Get affiliate rate
         const rateRes = await pool.query(`SELECT commission_percentage FROM commission_rates WHERE role_type = 'affiliate'`);
@@ -173,19 +148,28 @@ export async function GET(request: NextRequest) {
         // 5. Get recent commissions (last 10) - Return affiliate_commission (historical rates)
         const recentCommissionsQuery = `
             SELECT 
-                id,
-                order_id,
-                product_name,
-                order_amount,
-                commission_rate,
-                commission_amount,
-                COALESCE(affiliate_commission, commission_amount * ${affiliateRateDecimal}) as affiliate_commission,
-                commission_source,
-                status,
-                created_at
-            FROM affiliate_commission_log
-            WHERE affiliate_code = $1
-            ORDER BY created_at DESC
+                acl.id,
+                acl.order_id,
+                acl.product_name,
+                acl.order_amount,
+                acl.commission_rate,
+                acl.commission_amount,
+                COALESCE(acl.affiliate_commission, acl.commission_amount * ${affiliateRateDecimal}) as affiliate_commission,
+                acl.commission_source,
+                acl.status,
+                acl.unlock_at,
+                acl.credited_at,
+                acl.created_at,
+                EXISTS (
+                    SELECT 1
+                    FROM return_request rr
+                    WHERE rr.order_id = acl.order_id
+                      AND rr.deleted_at IS NULL
+                      AND LOWER(COALESCE(rr.status, '')) NOT IN ('rejected','cancelled','canceled')
+                ) AS has_return
+            FROM affiliate_commission_log acl
+            WHERE acl.affiliate_code = $1
+            ORDER BY acl.created_at DESC
             LIMIT 10
         `;
         const recentCommissionsResult = await pool.query(recentCommissionsQuery, [affiliateCode]);
@@ -196,9 +180,12 @@ export async function GET(request: NextRequest) {
             product_name: row.product_name,
             order_amount: parseFloat(row.order_amount || '0'),
             commission_rate: parseFloat(row.commission_rate || '0'),
-            commission_amount: parseFloat(row.affiliate_commission || '0'), // Use stored affiliate_commission
+            commission_amount: row.status === 'CANCELLED' ? 0 : parseFloat(row.affiliate_commission || '0'),
             commission_source: row.commission_source,
             status: row.status,
+            unlock_at: row.unlock_at,
+            credited_at: row.credited_at,
+            has_return: !!row.has_return,
             created_at: row.created_at
         }));
 

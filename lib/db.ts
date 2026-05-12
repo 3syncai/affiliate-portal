@@ -1,7 +1,16 @@
-import { Pool } from 'pg';
+import { Pool, types } from 'pg';
 
-// Create a global variable to hold the pool instance
-// This ensures we reuse the same pool across hot reloads in development
+// Force `timestamp without time zone` (OID 1114) to be parsed as UTC.
+// node-postgres' default parser treats the bare timestamp string as the Node
+// process's local time, which on dev machines running in IST shifts every
+// timestamp by 5h30 before it ever reaches the client. Treating bare
+// timestamps as UTC matches how the rest of the app stores them (NOW() at
+// UTC) and keeps `formatIST` correct on the frontend.
+types.setTypeParser(1114, (value: string) => {
+    if (!value) return value as unknown as Date;
+    return new Date(`${value.replace(' ', 'T')}Z`);
+});
+
 declare global {
     var pgPool: Pool | undefined;
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Pool } from "pg";
 import { fetchCommissionRates } from "@/lib/commission-rates";
+import { syncAffiliateCommissionStatuses } from "@/lib/affiliate-commission-sync";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +27,8 @@ export async function GET(req: NextRequest) {
     });
 
     try {
+        await syncAffiliateCommissionStatuses(pool, { logPrefix: "[Branch Earnings]" });
+
         const commissionRates = await fetchCommissionRates(pool);
         const adminDetailsRef = await pool.query(`
             SELECT ba.refer_code, cr.commission_percentage
@@ -102,28 +105,47 @@ export async function GET(req: NextRequest) {
 
         const recentOrdersResult = await pool.query(`
             SELECT
-                id,
-                order_id,
-                order_amount,
-                commission_source,
-                affiliate_commission as commission_amount,
-                created_at,
-                product_name,
-                status,
-                customer_name as first_name,
-                '' as last_name,
-                affiliate_code as refer_code,
-                affiliate_rate,
+                acl.id,
+                acl.order_id,
+                acl.order_amount,
+                acl.commission_source,
                 CASE
-                    WHEN commission_source = 'branch_admin'
-                      AND LOWER(TRIM(COALESCE(affiliate_code, ''))) = LOWER(TRIM($2))
+                    WHEN acl.status = 'CANCELLED' THEN 0
+                    WHEN EXISTS (
+                        SELECT 1 FROM return_request rr
+                        WHERE rr.order_id = acl.order_id
+                          AND rr.deleted_at IS NULL
+                          AND LOWER(COALESCE(rr.status, '')) NOT IN ('rejected','cancelled','canceled')
+                    ) THEN 0
+                    ELSE acl.affiliate_commission
+                END as commission_amount,
+                acl.created_at,
+                acl.product_name,
+                acl.status,
+                acl.unlock_at,
+                acl.credited_at,
+                EXISTS (
+                    SELECT 1 FROM return_request rr
+                    WHERE rr.order_id = acl.order_id
+                      AND rr.deleted_at IS NULL
+                      AND LOWER(COALESCE(rr.status, '')) NOT IN ('rejected','cancelled','canceled')
+                ) AS has_return,
+                COALESCE(au.first_name, acl.customer_name, ba.first_name, 'Customer') as first_name,
+                COALESCE(au.last_name, ba.last_name, '') as last_name,
+                acl.affiliate_code as refer_code,
+                acl.affiliate_rate,
+                CASE
+                    WHEN acl.commission_source = 'branch_admin'
+                      AND LOWER(TRIM(COALESCE(acl.affiliate_code, ''))) = LOWER(TRIM($2))
                     THEN 'Direct Sale'
-                    WHEN commission_source = 'branch_admin' THEN 'Sales Executive Sale'
+                    WHEN acl.commission_source = 'branch_admin' THEN 'Sales Executive Sale'
                     ELSE 'Direct Sale'
                 END as type
-            FROM affiliate_commission_log
-            WHERE affiliate_user_id = $1 OR affiliate_code = $2
-            ORDER BY created_at DESC
+            FROM affiliate_commission_log acl
+            LEFT JOIN affiliate_user au ON LOWER(TRIM(au.refer_code)) = LOWER(TRIM(acl.affiliate_code))
+            LEFT JOIN branch_admin ba ON LOWER(TRIM(ba.refer_code)) = LOWER(TRIM(acl.affiliate_code))
+            WHERE acl.affiliate_user_id = $1 OR acl.affiliate_code = $2
+            ORDER BY acl.created_at DESC
             LIMIT 20
         `, [adminId, referCode]);
 

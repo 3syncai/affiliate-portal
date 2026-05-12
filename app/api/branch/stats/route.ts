@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import pool from "@/lib/db";
 import { fetchCommissionRates } from "@/lib/commission-rates";
+import { syncAffiliateCommissionStatuses } from "@/lib/affiliate-commission-sync";
 
 export const dynamic = "force-dynamic"
 
@@ -14,6 +15,8 @@ export async function GET(req: NextRequest) {
         if (!branch) {
             return NextResponse.json({ success: false, error: "Branch parameter is required" }, { status: 400 });
         }
+
+        await syncAffiliateCommissionStatuses(pool, { logPrefix: "[Branch Stats]" });
 
         const commissionRates = await fetchCommissionRates(pool);
         const affiliateRateDecimal = commissionRates.ratesByRole.affiliate / 100;

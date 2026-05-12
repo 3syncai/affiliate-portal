@@ -3,7 +3,10 @@
 import { useEffect, useState } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import Link from "next/link"
+import axios from "axios"
+import useSWR from "swr"
 import NotificationDropdown from "@/components/NotificationDropdown"
+import ConfirmModal from "@/app/components/ConfirmModal"
 import { useTheme } from "@/contexts/ThemeContext"
 import {
     LayoutDashboard,
@@ -30,13 +33,14 @@ import {
 const navigationItems = [
     { name: "Dashboard", href: "/branch/dashboard", icon: LayoutDashboard },
     { name: "Products", href: "/branch/products", icon: Package },
+    { name: "Offers", href: "/branch/offers", icon: BadgePercent },
     { name: "Partner Request", href: "/branch/affiliate-request", icon: UserCheck },
     { name: "Partners in ASM", href: "/branch/agents", icon: Users },
-    { name: "My Referrals", href: "/branch/my-referrals", icon: Link2 },
     { name: "My Earnings", href: "/branch/earnings", icon: TrendingUp },
-    { name: "Offers", href: "/branch/offers", icon: BadgePercent },
+    { name: "My Referrals", href: "/branch/my-referrals", icon: Link2 },
     { name: "Pending Payout", href: "/branch/pending-payout", icon: Clock },
     { name: "Order Layout", href: "/branch/order-layout", icon: ShoppingBag },
+    { name: "Notifications", href: "/branch/notifications", icon: Bell },
 ]
 
 
@@ -55,6 +59,7 @@ export default function BranchLayout({
     const [sidebarOpen, setSidebarOpen] = useState(true)
     const [showUserMenu, setShowUserMenu] = useState(false)
     const [unreadCount, setUnreadCount] = useState(0)
+    const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
 
     useEffect(() => {
         const token = localStorage.getItem("affiliate_token")
@@ -74,18 +79,6 @@ export default function BranchLayout({
         try {
             const parsed = JSON.parse(userData)
             setUser(parsed)
-
-            // Fetch notifications
-            if (parsed.id) {
-                fetch(`/api/notifications?recipientId=${parsed.id}&recipientRole=branch`)
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.success) {
-                            setUnreadCount(data.unreadCount || 0)
-                        }
-                    })
-                    .catch(err => console.error("Failed to fetch notifications:", err))
-            }
         } catch (e) {
             console.error("Error parsing user data:", e)
             router.push("/login")
@@ -94,7 +87,139 @@ export default function BranchLayout({
         }
     }, [router])
 
-    const handleLogout = () => {
+    // ────────────────────────────────────────────────────────────────────
+    // Live sidebar badges (poll every 5s via SWR)
+    // ────────────────────────────────────────────────────────────────────
+    const fetcher = (url: string) => axios.get(url).then(r => r.data)
+    const swrOpts = { refreshInterval: 5000, revalidateOnFocus: true, keepPreviousData: true }
+
+    const { data: notifData } = useSWR(
+        user?.id ? `/api/notifications?recipientId=${user.id}&recipientRole=branch` : null,
+        fetcher,
+        swrOpts
+    )
+    const { data: statsData } = useSWR(
+        user?.branch ? `/api/branch/stats?branch=${encodeURIComponent(user.branch)}` : null,
+        fetcher,
+        swrOpts
+    )
+    const { data: payoutsData } = useSWR(
+        user?.branch ? `/api/branch/withdrawals?branch=${encodeURIComponent(user.branch)}&status=PENDING` : null,
+        fetcher,
+        swrOpts
+    )
+    const { data: referralsData } = useSWR(
+        user?.refer_code ? `/api/branch/my-direct-referrals?refer_code=${encodeURIComponent(user.refer_code)}` : null,
+        fetcher,
+        swrOpts
+    )
+    const { data: offersData } = useSWR(
+        "/api/additional-commissions/active?role=branch",
+        fetcher,
+        swrOpts
+    )
+    const { data: earningsData } = useSWR(
+        user?.branch
+            ? `/api/branch/earnings?branch=${encodeURIComponent(user.branch)}${user.id ? `&adminId=${user.id}` : ""}`
+            : null,
+        fetcher,
+        swrOpts
+    )
+
+    // Keep the existing `unreadCount` state in sync with SWR data so other
+    // parts of the layout that already read it stay correct.
+    useEffect(() => {
+        if (typeof notifData?.unreadCount === "number") setUnreadCount(notifData.unreadCount)
+    }, [notifData])
+
+    const partnerRequestCount: number = statsData?.success ? (statsData.stats?.pendingApproval || 0) : 0
+    const pendingPayoutCount: number = payoutsData?.success ? (payoutsData.withdrawals?.length || 0) : 0
+    const myReferralsCount: number = referralsData?.success ? (referralsData.stats?.total_customers || 0) : 0
+    const offersCount: number = (offersData?.campaigns?.length ?? offersData?.activeCommissions?.length ?? 0) as number
+    const notifCount: number = typeof notifData?.unreadCount === "number" ? notifData.unreadCount : 0
+    const myEarningsCount: number = earningsData?.success ? (earningsData.stats?.totalOrders || 0) : 0
+
+    const currentCountFor = (name: string): number => {
+        switch (name) {
+            case "Partner Request": return partnerRequestCount
+            case "Pending Payout": return pendingPayoutCount
+            case "My Referrals": return myReferralsCount
+            case "My Earnings": return myEarningsCount
+            case "Offers": return offersCount
+            case "Notifications": return notifCount
+            default: return 0
+        }
+    }
+
+    // ────────────────────────────────────────────────────────────────────
+    // "Seen" tracking - badge only shows the delta since the user last
+    // visited the page, so visiting clears it. Persisted in localStorage
+    // per-user so it survives reloads.
+    // ────────────────────────────────────────────────────────────────────
+    const seenStorageKey = user?.id ? `branch_badge_seen_${user.id}` : null
+    const [lastSeen, setLastSeen] = useState<Record<string, number>>({})
+
+    // Hydrate from localStorage once user.id is known
+    useEffect(() => {
+        if (!seenStorageKey) return
+        try {
+            const raw = localStorage.getItem(seenStorageKey)
+            if (raw) setLastSeen(JSON.parse(raw))
+        } catch (e) {
+            console.error("Failed to read badge seen state:", e)
+        }
+    }, [seenStorageKey])
+
+    // When the user is on a page, mark its count as "seen". Also clamp any
+    // stale seen counts that are now larger than the live count (e.g. after
+    // approving requests) so future increments register as new deltas.
+    useEffect(() => {
+        if (!seenStorageKey) return
+        let changed = false
+        const next: Record<string, number> = { ...lastSeen }
+
+        for (const item of navigationItems) {
+            const cur = currentCountFor(item.name)
+            const seen = next[item.name] ?? 0
+            const onThisPage = pathname.startsWith(item.href)
+            if (onThisPage && seen !== cur) {
+                next[item.name] = cur
+                changed = true
+            } else if (seen > cur) {
+                next[item.name] = cur
+                changed = true
+            }
+        }
+
+        if (changed) {
+            setLastSeen(next)
+            try {
+                localStorage.setItem(seenStorageKey, JSON.stringify(next))
+            } catch (e) {
+                console.error("Failed to persist badge seen state:", e)
+            }
+        }
+        // lastSeen intentionally omitted from deps - including it would cause
+        // a feedback loop because this effect updates lastSeen.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [
+        pathname,
+        seenStorageKey,
+        partnerRequestCount,
+        pendingPayoutCount,
+        myReferralsCount,
+        myEarningsCount,
+        offersCount,
+        notifCount,
+    ])
+
+    const badgeFor = (name: string): number => {
+        const cur = currentCountFor(name)
+        const seen = lastSeen[name] ?? 0
+        return Math.max(0, cur - seen)
+    }
+
+    const performLogout = () => {
         localStorage.removeItem("affiliate_token")
         localStorage.removeItem("affiliate_user")
         localStorage.removeItem("affiliate_role")
@@ -140,6 +265,7 @@ export default function BranchLayout({
                     {navigationItems.map((item) => {
                         const Icon = item.icon
                         const isActive = pathname.startsWith(item.href)
+                        const badgeCount = badgeFor(item.name)
                         return (
                             <Link
                                 key={item.name}
@@ -153,7 +279,15 @@ export default function BranchLayout({
                                     <div className="absolute left-0 top-0 bottom-0 w-1 bg-indigo-400 rounded-r-full"></div>
                                 )}
                                 <Icon className="w-5 h-5 mr-3" />
-                                <span className="relative z-10">{item.name}</span>
+                                <span className="relative z-10 flex-1">{item.name}</span>
+                                {badgeCount > 0 && (
+                                    <span
+                                        className="ml-2 inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 text-[10px] font-bold rounded-full bg-red-500 text-white shadow-md ring-2 ring-white/10 animate-in fade-in zoom-in duration-200"
+                                        aria-label={`${badgeCount} new`}
+                                    >
+                                        {badgeCount > 99 ? "99+" : badgeCount}
+                                    </span>
+                                )}
                             </Link>
                         )
                     })}
@@ -206,7 +340,7 @@ export default function BranchLayout({
                                 <button
                                     onClick={() => {
                                         setShowUserMenu(false)
-                                        handleLogout()
+                                        setShowLogoutConfirm(true)
                                     }}
                                     className="w-full flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
                                 >
@@ -249,6 +383,19 @@ export default function BranchLayout({
                     {children}
                 </main>
             </div>
+
+            <ConfirmModal
+                open={showLogoutConfirm}
+                title="Do you want to logout?"
+                message="You will be returned to the login screen."
+                confirmLabel="Yes, logout"
+                cancelLabel="No"
+                onConfirm={() => {
+                    setShowLogoutConfirm(false)
+                    performLogout()
+                }}
+                onCancel={() => setShowLogoutConfirm(false)}
+            />
         </div>
     )
 }

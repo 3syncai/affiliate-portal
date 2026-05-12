@@ -99,7 +99,7 @@ export default function StateAgentsPage() {
         <div className="space-y-6">
             <div>
                 <h1 className="text-3xl font-bold text-gray-900">Agents by Branch</h1>
-                <p className="text-gray-600 mt-1">View all affiliate agents grouped by their branch in {user?.state}</p>
+                <p className="text-gray-600 mt-1">View all Oweg Partners grouped by their branch in {user?.state}</p>
             </div>
 
             {/* Search */}

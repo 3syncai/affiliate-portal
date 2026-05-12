@@ -3,12 +3,15 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
+import axios from "axios"
+import useSWR from "swr"
+import NotificationDropdown from "@/components/NotificationDropdown"
+import ConfirmModal from "@/app/components/ConfirmModal"
+import { useTheme } from "@/contexts/ThemeContext"
 import {
     LayoutDashboard,
     Users,
     Settings,
-    ChevronLeft,
-    ChevronRight,
     LogOut,
     Menu,
     X,
@@ -16,59 +19,25 @@ import {
     User,
     Palette,
     TrendingUp,
-    Bell,
     Package,
     Share2,
     ShoppingCart,
-    BadgePercent
+    BadgePercent,
+    ShieldCheck,
+    MapPin,
+    Link2,
 } from "lucide-react"
 
 const navigationItems = [
-    {
-        title: "Dashboard",
-        href: "/state-admin/dashboard",
-        icon: LayoutDashboard,
-    },
-    {
-        title: "Area Managers",
-        href: "/state-admin/area-managers",
-        icon: Users,
-    },
-    // {
-    //     title: "ASM Management",
-    //     href: "/state-admin/asm-management",
-    //     icon: User,
-    // },
-    {
-        title: "Agents",
-        href: "/state-admin/agents",
-        icon: Share2,
-    },
-    {
-        title: "Products",
-        href: "/state-admin/products",
-        icon: Package,
-    },
-    {
-        title: "Offers",
-        href: "/state-admin/offers",
-        icon: BadgePercent,
-    },
-    {
-        title: "Order Layout",
-        href: "/state-admin/order-layout",
-        icon: ShoppingCart,
-    },
-    {
-        title: "Earnings",
-        href: "/state-admin/earnings",
-        icon: TrendingUp,
-    },
-    {
-        title: "Profile",
-        href: "/state-admin/profile",
-        icon: Settings,
-    },
+    { name: "Dashboard", href: "/state-admin/dashboard", icon: LayoutDashboard },
+    { name: "Products", href: "/state-admin/products", icon: Package },
+    { name: "Offers", href: "/state-admin/offers", icon: BadgePercent },
+    { name: "Branch Admins", href: "/state-admin/area-managers", icon: Users },
+    { name: "Agents", href: "/state-admin/agents", icon: Share2 },
+    { name: "Earnings", href: "/state-admin/earnings", icon: TrendingUp },
+    { name: "My Referrals", href: "/state-admin/my-referrals", icon: Link2 },
+    { name: "Order Layout", href: "/state-admin/order-layout", icon: ShoppingCart },
+    { name: "Profile", href: "/state-admin/profile", icon: Settings },
 ]
 
 export default function StateAdminLayout({
@@ -76,250 +45,329 @@ export default function StateAdminLayout({
 }: {
     children: React.ReactNode
 }) {
-    const [isSidebarOpen, setIsSidebarOpen] = useState(true)
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-    const [isProfileOpen, setIsProfileOpen] = useState(false)
-    const [user, setUser] = useState<any>(null)
-    const pathname = usePathname()
     const router = useRouter()
+    const pathname = usePathname()
+    const { theme } = useTheme()
+    const [sidebarOpen, setSidebarOpen] = useState(true)
+    const [showUserMenu, setShowUserMenu] = useState(false)
+    const [user, setUser] = useState<any>(null)
+    const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
+    // `mounted` stays false during SSR + first client render so the layout
+    // emits identical markup on both sides. Theme-derived inline styles are
+    // applied only after hydration to avoid a mismatch (which would otherwise
+    // freeze this subtree's attributes — see React docs on hydration errors).
+    const [mounted, setMounted] = useState(false)
 
     useEffect(() => {
+        setMounted(true)
         const userData = localStorage.getItem("affiliate_user")
         if (userData) {
-            setUser(JSON.parse(userData))
+            try {
+                setUser(JSON.parse(userData))
+            } catch (e) {
+                console.error("Error parsing user data:", e)
+            }
         }
     }, [])
 
-    const handleLogout = () => {
+    // ────────────────────────────────────────────────────────────────────
+    // Live sidebar badges (poll every 5s via SWR). The badge for each item
+    // shows the delta between the latest count and the count seen the last
+    // time the user visited that page, so opening the page clears it.
+    // ────────────────────────────────────────────────────────────────────
+    const fetcher = (url: string) => axios.get(url).then(r => r.data)
+    const swrOpts = { refreshInterval: 5000, revalidateOnFocus: true, keepPreviousData: true }
+
+    const { data: earningsData } = useSWR(
+        user?.state
+            ? `/api/state-admin/earnings?state=${encodeURIComponent(user.state)}${user.id ? `&adminId=${user.id}` : ""}`
+            : null,
+        fetcher,
+        swrOpts
+    )
+    const { data: referralsData } = useSWR(
+        user?.refer_code
+            ? `/api/state-admin/my-direct-referrals?refer_code=${encodeURIComponent(user.refer_code)}`
+            : null,
+        fetcher,
+        swrOpts
+    )
+    const { data: offersData } = useSWR(
+        "/api/additional-commissions/active?role=state",
+        fetcher,
+        swrOpts
+    )
+
+    const earningsCount: number = earningsData?.success ? (earningsData.stats?.totalOrders || 0) : 0
+    const myReferralsCount: number = referralsData?.success ? (referralsData.stats?.total_customers || 0) : 0
+    const offersCount: number = (offersData?.campaigns?.length ?? offersData?.activeCommissions?.length ?? 0) as number
+
+    const currentCountFor = (name: string): number => {
+        switch (name) {
+            case "Earnings": return earningsCount
+            case "My Referrals": return myReferralsCount
+            case "Offers": return offersCount
+            default: return 0
+        }
+    }
+
+    const seenStorageKey = user?.id ? `state_admin_badge_seen_${user.id}` : null
+    const [lastSeen, setLastSeen] = useState<Record<string, number>>({})
+
+    useEffect(() => {
+        if (!seenStorageKey) return
+        try {
+            const raw = localStorage.getItem(seenStorageKey)
+            if (raw) setLastSeen(JSON.parse(raw))
+        } catch (e) {
+            console.error("Failed to read badge seen state:", e)
+        }
+    }, [seenStorageKey])
+
+    useEffect(() => {
+        if (!seenStorageKey) return
+        let changed = false
+        const next: Record<string, number> = { ...lastSeen }
+
+        for (const item of navigationItems) {
+            const cur = currentCountFor(item.name)
+            const seen = next[item.name] ?? 0
+            const onThisPage = pathname.startsWith(item.href)
+            if (onThisPage && seen !== cur) {
+                next[item.name] = cur
+                changed = true
+            } else if (seen > cur) {
+                next[item.name] = cur
+                changed = true
+            }
+        }
+
+        if (changed) {
+            setLastSeen(next)
+            try {
+                localStorage.setItem(seenStorageKey, JSON.stringify(next))
+            } catch (e) {
+                console.error("Failed to persist badge seen state:", e)
+            }
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [pathname, seenStorageKey, earningsCount, myReferralsCount, offersCount])
+
+    const badgeFor = (name: string): number => {
+        const cur = currentCountFor(name)
+        const seen = lastSeen[name] ?? 0
+        return Math.max(0, cur - seen)
+    }
+
+    const performLogout = () => {
         localStorage.removeItem("affiliate_user")
         localStorage.removeItem("affiliate_token")
         localStorage.removeItem("affiliate_role")
         router.push("/login")
     }
 
+    const initial =
+        (user?.name || user?.first_name || "S").charAt(0).toUpperCase()
+
     return (
-        <div className="min-h-screen bg-gray-50 flex overflow-hidden">
-            {/* Sidebar for Desktop */}
+        <div
+            className="min-h-screen flex overflow-x-hidden"
+            style={mounted ? { backgroundColor: theme.background } : undefined}
+        >
+            {/* Sidebar */}
             <aside
-                className={`hidden md:flex flex-col bg-white border-r border-gray-200 transition-all duration-300 ${isSidebarOpen ? "w-64" : "w-20"
-                    }`}
+                className={`${sidebarOpen ? "w-72" : "w-0"
+                    } transition-all duration-300 overflow-hidden flex flex-col fixed left-0 top-0 h-screen z-30 shadow-2xl`}
+                style={
+                    mounted
+                        ? {
+                            background: theme.sidebar,
+                            backgroundImage: `linear-gradient(to bottom, ${theme.sidebar}, ${theme.sidebar}dd)`,
+                        }
+                        : undefined
+                }
             >
-                <div className="p-6 border-b border-gray-100 flex items-center justify-between">
-                    <div className={`flex items-center gap-3 ${!isSidebarOpen && "hidden"}`}>
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center shadow-lg shadow-blue-200">
-                            <Users className="text-white w-6 h-6" />
+                {/* Brand */}
+                <div
+                    className="flex items-center justify-between p-6"
+                    style={{ borderBottom: "1px solid rgba(255,255,255,0.1)" }}
+                >
+                    <div className="flex items-center gap-3">
+                        <div className="bg-white/10 p-2 rounded-lg backdrop-blur-sm">
+                            <ShieldCheck className="w-6 h-6 text-indigo-200" />
                         </div>
                         <div>
-                            <span className="font-bold text-gray-900 block leading-tight">State Admin</span>
-                            <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Workspace</span>
+                            <h1 className="text-lg font-bold text-white tracking-wide">
+                                State Admin
+                            </h1>
+                            <p className="text-[10px] text-indigo-300 font-medium tracking-wider uppercase">
+                                Workspace
+                            </p>
                         </div>
                     </div>
-                    {!isSidebarOpen && (
-                        <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center mx-auto">
-                            <Users className="text-white w-6 h-6" />
-                        </div>
-                    )}
+                    <button
+                        onClick={() => setSidebarOpen(false)}
+                        className="lg:hidden text-white/50 hover:text-white transition-colors"
+                    >
+                        <X className="w-5 h-5" />
+                    </button>
                 </div>
 
-                <nav className="flex-1 px-4 py-8 space-y-2 overflow-y-auto custom-scrollbar">
+                {/* Navigation */}
+                <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
                     {navigationItems.map((item) => {
-                        const isActive = pathname === item.href
                         const Icon = item.icon
+                        const isActive = pathname.startsWith(item.href)
+                        const badgeCount = badgeFor(item.name)
                         return (
                             <Link
-                                key={item.href}
+                                key={item.name}
                                 href={item.href}
-                                className={`flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all group relative ${isActive
-                                    ? "bg-blue-600 text-white shadow-lg shadow-blue-200"
-                                    : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
+                                className={`flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 group relative overflow-hidden ${isActive
+                                    ? "text-white bg-white/10 shadow-lg backdrop-blur-sm border border-white/10"
+                                    : "text-indigo-200/70 hover:text-white hover:bg-white/5"
                                     }`}
                             >
-                                <Icon className={`w-5 h-5 flex-shrink-0 ${isActive ? "text-white" : "group-hover:scale-110 transition-transform"}`} />
-                                {isSidebarOpen && <span className="font-semibold text-sm">{item.title}</span>}
-                                {!isSidebarOpen && (
-                                    <div className="absolute left-full ml-4 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">
-                                        {item.title}
-                                    </div>
+                                {isActive && (
+                                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-indigo-400 rounded-r-full"></div>
+                                )}
+                                <Icon className="w-5 h-5 mr-3" />
+                                <span className="relative z-10 flex-1">{item.name}</span>
+                                {badgeCount > 0 && (
+                                    <span
+                                        className="ml-2 inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 text-[10px] font-bold rounded-full bg-red-500 text-white shadow-md ring-2 ring-white/10 animate-in fade-in zoom-in duration-200"
+                                        aria-label={`${badgeCount} new`}
+                                    >
+                                        {badgeCount > 99 ? "99+" : badgeCount}
+                                    </span>
                                 )}
                             </Link>
                         )
                     })}
                 </nav>
 
-                <div className="p-4 border-t border-gray-100">
-                    <button
-                        onClick={handleLogout}
-                        className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-red-600 hover:bg-red-50 transition-all group ${!isSidebarOpen && "justify-center"
-                            }`}
-                    >
-                        <LogOut className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
-                        {isSidebarOpen && <span className="font-semibold text-sm">Logout</span>}
-                    </button>
-                    <button
-                        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                        className="mt-4 w-full flex items-center justify-center p-2 text-gray-400 hover:text-gray-600 transition-colors"
-                    >
-                        {isSidebarOpen ? <ChevronLeft className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
-                    </button>
+                {/* Footer Profile */}
+                <div
+                    className="p-4 relative"
+                    style={{
+                        borderTopColor: "rgba(255,255,255,0.2)",
+                        borderTopWidth: "1px",
+                    }}
+                >
+                    <div className="flex items-center gap-3 px-4 py-2 mb-2">
+                        <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                            {initial}
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-white truncate">
+                                {user?.name || user?.first_name
+                                    ? `${user?.name ?? `${user?.first_name ?? ""} ${user?.last_name ?? ""}`.trim()}`
+                                    : "State Admin"}
+                            </p>
+                            <p className="text-xs text-white/70 truncate">
+                                {user?.state || "Administrator"}
+                            </p>
+                        </div>
+                        <button
+                            onClick={() => setShowUserMenu(!showUserMenu)}
+                            className="ml-2 p-1 hover:bg-white/10 rounded transition-colors text-white/80"
+                            title="More options"
+                        >
+                            <MoreVertical className="w-5 h-5" />
+                        </button>
+                    </div>
+
+                    {showUserMenu && (
+                        <div className="absolute bottom-full left-4 right-4 mb-2 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                            <button
+                                onClick={() => {
+                                    setShowUserMenu(false)
+                                    router.push("/state-admin/profile")
+                                }}
+                                className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                            >
+                                <User className="w-4 h-4 mr-3 text-gray-500" />
+                                <span>Profile</span>
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setShowUserMenu(false)
+                                    router.push("/state-admin/profile#theme")
+                                }}
+                                className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                            >
+                                <Palette className="w-4 h-4 mr-3 text-gray-500" />
+                                <span>Theme</span>
+                            </button>
+                            <div className="border-t border-gray-100 my-1"></div>
+                            <button
+                                onClick={() => {
+                                    setShowUserMenu(false)
+                                    setShowLogoutConfirm(true)
+                                }}
+                                className="w-full flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                            >
+                                <LogOut className="w-4 h-4 mr-3" />
+                                <span>Logout</span>
+                            </button>
+                        </div>
+                    )}
                 </div>
             </aside>
 
-            {/* Mobile Header and Menu */}
-            <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
-                {/* Mobile Header */}
-                <header className="md:hidden bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between z-40">
-                    <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
-                            <Users className="text-white w-5 h-5" />
-                        </div>
-                        <span className="font-bold text-gray-900 text-sm">State Admin</span>
-                    </div>
-                    <button
-                        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                        className="p-2 text-gray-500 hover:bg-gray-50 rounded-lg transition-colors"
-                    >
-                        {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-                    </button>
-                </header>
-
-                {/* Mobile Navigation Drawer */}
-                <div
-                    className={`fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-50 md:hidden transition-opacity duration-300 ${isMobileMenuOpen ? "opacity-100" : "opacity-0 pointer-events-none"
-                        }`}
-                    onClick={() => setIsMobileMenuOpen(false)}
-                >
-                    <div
-                        className={`absolute left-0 top-0 h-full w-4/5 max-w-sm bg-white shadow-2xl transition-transform duration-300 ease-out ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
-                            }`}
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-white sticky top-0">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center">
-                                    <Users className="text-white w-6 h-6" />
-                                </div>
-                                <span className="font-bold text-gray-900">State Admin</span>
-                            </div>
-                            <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 text-gray-400">
-                                <X className="w-6 h-6" />
-                            </button>
-                        </div>
-                        <nav className="p-4 space-y-2 overflow-y-auto max-h-[calc(100vh-100px)]">
-                            {navigationItems.map((item) => (
-                                <Link
-                                    key={item.href}
-                                    href={item.href}
-                                    onClick={() => setIsMobileMenuOpen(false)}
-                                    className={`flex items-center gap-3 px-4 py-4 rounded-xl transition-all ${pathname === item.href
-                                        ? "bg-blue-600 text-white shadow-lg shadow-blue-200"
-                                        : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
-                                        }`}
-                                >
-                                    <item.icon className="w-5 h-5" />
-                                    <span className="font-bold">{item.title}</span>
-                                </Link>
-                            ))}
-                            <button
-                                onClick={handleLogout}
-                                className="w-full flex items-center gap-3 px-4 py-4 rounded-xl text-red-600 hover:bg-red-50 mt-4 font-bold"
-                            >
-                                <LogOut className="w-5 h-5" />
-                                <span>Logout</span>
-                            </button>
-                        </nav>
-                    </div>
-                </div>
-
-                {/* Desktop Top Header Bar */}
-                <header className="hidden md:flex h-16 bg-white border-b border-gray-200 items-center justify-between px-8 z-30">
-                    <div className="flex-1 flex items-center">
-                        <div className="relative w-96">
-                            {/* Potential search or breadcrumbs could go here */}
-                        </div>
-                    </div>
-
+            {/* Main */}
+            <div
+                className={`flex-1 flex flex-col ${sidebarOpen ? "ml-72" : "ml-0"
+                    } transition-all duration-300 overflow-x-hidden min-w-0`}
+            >
+                {/* Top Bar */}
+                <header className="bg-white/80 backdrop-blur-xl border-b border-indigo-50 px-6 lg:px-8 py-5 sticky top-0 z-20 flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                        <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-full transition-all relative">
-                            <Bell className="w-5 h-5" />
-                            <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+                        <button
+                            onClick={() => setSidebarOpen(!sidebarOpen)}
+                            className="text-gray-400 hover:text-indigo-600 transition-colors lg:hidden"
+                            aria-label="Toggle sidebar"
+                        >
+                            <Menu className="w-6 h-6" />
                         </button>
+                    </div>
 
-                        <div className="h-8 w-px bg-gray-200 mx-2"></div>
+                    <div className="flex items-center space-x-4 lg:space-x-6">
+                        {user?.id && (
+                            <NotificationDropdown
+                                userId={user.id}
+                                userRole="state"
+                            />
+                        )}
 
-                        <div className="relative">
-                            <button
-                                onClick={() => setIsProfileOpen(!isProfileOpen)}
-                                className="flex items-center gap-3 p-1 rounded-full hover:bg-gray-50 transition-all border border-transparent hover:border-gray-200"
-                            >
-                                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center border border-blue-200 shadow-sm">
-                                    <span className="text-blue-700 font-bold text-sm">
-                                        {user?.name?.substring(0, 1).toUpperCase() || "S"}
-                                    </span>
-                                </div>
-                                <div className="text-left hidden lg:block">
-                                    <p className="text-sm font-bold text-gray-900 leading-none">{user?.name || "State Admin"}</p>
-                                    <p className="text-[10px] text-gray-500 mt-0.5 font-semibold">{user?.state || "Administrator"}</p>
-                                </div>
-                            </button>
+                        <div className="h-8 w-[1px] bg-gray-200 mx-1 lg:mx-2"></div>
 
-                            {isProfileOpen && (
-                                <>
-                                    <div
-                                        className="fixed inset-0 z-40"
-                                        onClick={() => setIsProfileOpen(false)}
-                                    ></div>
-                                    <div className="absolute right-0 mt-3 w-64 bg-white rounded-2xl shadow-2xl border border-gray-100 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
-                                        <div className="p-4 bg-gray-50/50 border-b border-gray-100">
-                                            <div className="flex items-center gap-3 mb-1">
-                                                <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center">
-                                                    <span className="text-white font-bold">{user?.name?.substring(0, 1).toUpperCase() || "S"}</span>
-                                                </div>
-                                                <div>
-                                                    <p className="text-sm font-bold text-gray-900">{user?.name || "State Admin"}</p>
-                                                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">{user?.email || "admin@example.com"}</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div className="p-2">
-                                            <Link
-                                                href="/state-admin/profile"
-                                                onClick={() => setIsProfileOpen(false)}
-                                                className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all font-semibold"
-                                            >
-                                                <User className="w-4 h-4 text-gray-400" />
-                                                Edit Profile
-                                            </Link>
-                                            <Link
-                                                href="/state-admin/settings"
-                                                onClick={() => setIsProfileOpen(false)}
-                                                className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all font-semibold"
-                                            >
-                                                <Palette className="w-4 h-4 text-gray-400" />
-                                                Appearance
-                                            </Link>
-                                            <div className="my-1 border-t border-gray-100"></div>
-                                            <button
-                                                onClick={handleLogout}
-                                                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-red-600 hover:bg-red-50 transition-all font-semibold"
-                                            >
-                                                <LogOut className="w-4 h-4" />
-                                                Sign Out
-                                            </button>
-                                        </div>
-                                    </div>
-                                </>
-                            )}
-                        </div>
+                        <span className="px-4 py-1.5 rounded-full text-sm font-semibold flex items-center gap-2 bg-indigo-50 text-indigo-700 border border-indigo-100 shadow-sm">
+                            <MapPin className="w-3.5 h-3.5" />
+                            {user?.state || "State Admin"}
+                        </span>
                     </div>
                 </header>
 
-                {/* Main Content Area */}
-                <main className="flex-1 overflow-y-auto bg-gray-50 custom-scrollbar relative z-0">
-                    <div className="p-4 md:p-8 max-w-[1600px] mx-auto min-h-full transition-all duration-300">
-                        {children}
-                    </div>
+                {/* Page Content */}
+                <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-6 lg:p-8">
+                    <div className="max-w-[1600px] mx-auto">{children}</div>
                 </main>
             </div>
+
+            <ConfirmModal
+                open={showLogoutConfirm}
+                title="Do you want to logout?"
+                message="You will be returned to the login screen."
+                confirmLabel="Yes, logout"
+                cancelLabel="No"
+                onConfirm={() => {
+                    setShowLogoutConfirm(false)
+                    performLogout()
+                }}
+                onCancel={() => setShowLogoutConfirm(false)}
+            />
         </div>
     )
 }

@@ -24,6 +24,14 @@ export async function GET(req: NextRequest) {
         const affiliateRateDecimal = affiliateRateRaw / 100;
 
 
+        // NOTE: For non-affiliate sources (state_admin / area_manager /
+        // branch_admin) the `affiliate_code` column on the log is a generic
+        // role tag like 'STATE' / 'AREA' / 'BRANCH', so we cannot match the
+        // admin tables by refer_code. The actual link is `affiliate_user_id`
+        // which holds the admin's UUID. We also wrap each CONCAT with
+        // NULLIF(TRIM(...), '') because PostgreSQL's CONCAT returns a single
+        // space (not NULL) when both name parts are NULL, which would
+        // otherwise short-circuit the COALESCE chain.
         let query = `
       SELECT 
         acl.id,
@@ -38,20 +46,29 @@ export async function GET(req: NextRequest) {
         acl.status,
         acl.commission_source,
         COALESCE(
-          CONCAT(au.first_name, ' ', au.last_name), 
-          CONCAT(sa.first_name, ' ', sa.last_name), 
-          CONCAT(asm.first_name, ' ', asm.last_name), 
-          CONCAT(ba.first_name, ' ', ba.last_name)
+          NULLIF(TRIM(CONCAT(au.first_name, ' ', au.last_name)), ''),
+          NULLIF(TRIM(CONCAT(sa.first_name, ' ', sa.last_name)), ''),
+          NULLIF(TRIM(CONCAT(asm.first_name, ' ', asm.last_name)), ''),
+          NULLIF(TRIM(CONCAT(ba.first_name, ' ', ba.last_name)), '')
         ) as first_name,
         '' as last_name,
         COALESCE(au.email, sa.email, asm.email, ba.email) as email,
-        acl.affiliate_code as refer_code,
+        COALESCE(au.refer_code, sa.refer_code, asm.refer_code, ba.refer_code, acl.affiliate_code) as refer_code,
         au.is_agent
       FROM affiliate_commission_log acl
-      LEFT JOIN affiliate_user au ON acl.affiliate_code = au.refer_code
-      LEFT JOIN state_admin sa ON acl.affiliate_code = sa.refer_code
-      LEFT JOIN area_sales_manager asm ON acl.affiliate_code = asm.refer_code
-      LEFT JOIN branch_admin ba ON acl.affiliate_code = ba.refer_code
+      LEFT JOIN affiliate_user au
+        ON au.refer_code = acl.affiliate_code
+        OR au.id::text = NULLIF(acl.affiliate_user_id, '')
+      LEFT JOIN state_admin sa
+        ON sa.id::text = NULLIF(acl.affiliate_user_id, '')
+        OR sa.refer_code = acl.affiliate_code
+      LEFT JOIN area_sales_manager asm
+        ON asm.id::text = NULLIF(acl.affiliate_user_id, '')
+        OR asm.refer_code = acl.affiliate_code
+      LEFT JOIN branch_admin ba
+        ON ba.id::text = NULLIF(acl.affiliate_user_id, '')
+        OR ba.refer_code = NULLIF(acl.branch_admin_code, '')
+        OR ba.refer_code = acl.affiliate_code
       WHERE 1=1
     `;
 
@@ -62,15 +79,14 @@ export async function GET(req: NextRequest) {
             query += ` AND (
         acl.order_id ILIKE $${paramIndex} OR 
         acl.product_name ILIKE $${paramIndex} OR 
-        au.first_name ILIKE $${paramIndex} OR 
         COALESCE(
-          CONCAT(au.first_name, ' ', au.last_name), 
-          CONCAT(sa.first_name, ' ', sa.last_name), 
-          CONCAT(asm.first_name, ' ', asm.last_name), 
-          CONCAT(ba.first_name, ' ', ba.last_name)
+          NULLIF(TRIM(CONCAT(au.first_name, ' ', au.last_name)), ''),
+          NULLIF(TRIM(CONCAT(sa.first_name, ' ', sa.last_name)), ''),
+          NULLIF(TRIM(CONCAT(asm.first_name, ' ', asm.last_name)), ''),
+          NULLIF(TRIM(CONCAT(ba.first_name, ' ', ba.last_name)), '')
         ) ILIKE $${paramIndex} OR
         COALESCE(au.email, sa.email, asm.email, ba.email) ILIKE $${paramIndex} OR
-        acl.affiliate_code ILIKE $${paramIndex}
+        COALESCE(au.refer_code, sa.refer_code, asm.refer_code, ba.refer_code, acl.affiliate_code) ILIKE $${paramIndex}
       )`;
             params.push(`%${search}%`);
             paramIndex++;

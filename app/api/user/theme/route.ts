@@ -68,8 +68,9 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400 })
         }
 
-        // Validate theme
-        const validThemes = ['blue', 'emerald', 'violet', 'rose', 'amber', 'slate']
+        // Validate theme. Keep this list in sync with `ThemeName` in
+        // `affiliate-portal/contexts/ThemeContext.tsx`.
+        const validThemes = ['blue', 'emerald', 'violet', 'rose', 'amber', 'slate', 'dark']
         if (!validThemes.includes(theme)) {
             return NextResponse.json({ success: false, error: 'Invalid theme' }, { status: 400 })
         }

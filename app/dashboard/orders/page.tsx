@@ -4,7 +4,8 @@ import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import axios from "axios"
 import useSWR from "swr"
-import { DollarSign } from "lucide-react"
+import { DollarSign, Download } from "lucide-react"
+import CommissionStatusBadge from "@/app/components/CommissionStatusBadge"
 
 interface OrderItem {
   id: string
@@ -17,6 +18,9 @@ interface OrderItem {
   commission_amount: number
   commission_source: string
   status: string
+  unlock_at: string | null
+  credited_at: string | null
+  has_return: boolean
   created_at: string
 }
 
@@ -80,6 +84,50 @@ export default function AllOrdersPage() {
     })
   }
 
+  const exportOrdersToExcel = () => {
+    if (!orders.length) return
+
+    const headers = [
+      "Product",
+      "Order ID",
+      "Customer",
+      "Customer Email",
+      "Order Amount (INR)",
+      "Commission Rate (%)",
+      "Commission Amount (INR)",
+      "Status",
+      "Source",
+      "Date"
+    ]
+
+    const rows = orders.map((order) => [
+      order.product_name || "",
+      order.order_id || "",
+      order.customer_name || "Customer",
+      order.customer_email || "",
+      order.order_amount?.toFixed(2) ?? "0.00",
+      String(order.commission_rate ?? 0),
+      order.commission_amount?.toFixed(2) ?? "0.00",
+      order.status || "",
+      (order.commission_source || "affiliate").toUpperCase(),
+      formatDate(order.created_at)
+    ])
+
+    const csvContent = [
+      headers.join(","),
+      ...rows.map((row) => row.map((value) => `"${String(value).replace(/"/g, '""')}"`).join(","))
+    ].join("\n")
+
+    const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement("a")
+    const today = new Date().toISOString().slice(0, 10)
+    link.href = url
+    link.download = `orders-${today}.csv`
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+
   if (loading || isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -104,6 +152,9 @@ export default function AllOrdersPage() {
               <a href="/offers" className="inline-flex items-center gap-1.5 px-3 py-1 bg-white border border-gray-200 text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 rounded-md text-sm font-medium transition-colors">
                 Offers
               </a>
+              <a href="/dashboard/profile" className="inline-flex items-center gap-1.5 px-3 py-1 bg-white border border-gray-200 text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 rounded-md text-sm font-medium transition-colors">
+                Profile
+              </a>
             </div>
             <div className="flex items-center gap-4">
               <span className="text-sm text-gray-600">Welcome, <strong className="text-gray-900">{user?.first_name || user?.email}</strong></span>
@@ -119,7 +170,17 @@ export default function AllOrdersPage() {
               <DollarSign className="w-6 h-6 text-emerald-600" />
               All Orders
             </h2>
-            <span className="text-sm text-gray-500">{data?.total || 0} total</span>
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-gray-500">{data?.total || 0} total</span>
+              <button
+                onClick={exportOrdersToExcel}
+                disabled={!orders.length}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-sm hover:from-emerald-700 hover:to-teal-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              >
+                <Download className="w-4 h-4" />
+                Export Excel
+              </button>
+            </div>
           </div>
 
           {orders.length === 0 ? (
@@ -135,10 +196,16 @@ export default function AllOrdersPage() {
                       <p className="text-xs text-gray-500 mt-1">{order.customer_name || "Customer"} {order.customer_email ? `(${order.customer_email})` : ""}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm font-bold text-emerald-600">+₹{order.commission_amount.toFixed(2)}</p>
-                      <span className={`inline-block mt-1 text-xs px-2 py-0.5 rounded ${order.status === "CREDITED" ? "bg-green-100 text-green-700" : order.status === "PENDING" ? "bg-amber-100 text-amber-700" : "bg-gray-100 text-gray-700"}`}>
-                        {order.status}
-                      </span>
+                      <p className={`text-sm font-bold ${order.has_return ? "text-gray-400 line-through" : "text-emerald-600"}`}>
+                        +₹{(order.has_return ? 0 : order.commission_amount).toFixed(2)}
+                      </p>
+                      <div className="mt-1">
+                        <CommissionStatusBadge
+                          status={order.status}
+                          unlockAt={order.unlock_at}
+                          hasReturn={order.has_return}
+                        />
+                      </div>
                     </div>
                   </div>
                   <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-gray-600">

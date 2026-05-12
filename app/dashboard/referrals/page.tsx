@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import axios from "axios"
 import useSWR from "swr"
-import { Users } from "lucide-react"
+import { Download, Users } from "lucide-react"
 
 interface ReferralItem {
   id: string
@@ -75,6 +75,33 @@ export default function AllReferralsPage() {
     })
   }
 
+  const exportReferralsToExcel = () => {
+    if (!referrals.length) return
+
+    const headers = ["Customer", "Email", "Referred On", "Orders", "Commission (INR)"]
+    const rows = referrals.map((item) => [
+      item.customer_name || "Customer",
+      item.customer_email || "",
+      formatDate(item.referred_at),
+      String(item.total_orders ?? 0),
+      item.total_commission?.toFixed(2) ?? "0.00"
+    ])
+
+    const csvContent = [
+      headers.join(","),
+      ...rows.map((row) => row.map((value) => `"${String(value).replace(/"/g, '""')}"`).join(","))
+    ].join("\n")
+
+    const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement("a")
+    const today = new Date().toISOString().slice(0, 10)
+    link.href = url
+    link.download = `referrals-${today}.csv`
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+
   if (loading || isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -99,6 +126,9 @@ export default function AllReferralsPage() {
               <a href="/offers" className="inline-flex items-center gap-1.5 px-3 py-1 bg-white border border-gray-200 text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 rounded-md text-sm font-medium transition-colors">
                 Offers
               </a>
+              <a href="/dashboard/profile" className="inline-flex items-center gap-1.5 px-3 py-1 bg-white border border-gray-200 text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 rounded-md text-sm font-medium transition-colors">
+                Profile
+              </a>
             </div>
             <div className="flex items-center gap-4">
               <span className="text-sm text-gray-600">Welcome, <strong className="text-gray-900">{user?.first_name || user?.email}</strong></span>
@@ -114,7 +144,17 @@ export default function AllReferralsPage() {
               <Users className="w-6 h-6 text-blue-600" />
               All Referrals
             </h2>
-            <span className="text-sm text-gray-500">{data?.total || 0} total</span>
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-gray-500">{data?.total || 0} total</span>
+              <button
+                onClick={exportReferralsToExcel}
+                disabled={!referrals.length}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-sm hover:from-emerald-700 hover:to-teal-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              >
+                <Download className="w-4 h-4" />
+                Export Excel
+              </button>
+            </div>
           </div>
 
           {referrals.length === 0 ? (
