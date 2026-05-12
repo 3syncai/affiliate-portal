@@ -73,7 +73,9 @@ export async function POST(req: NextRequest) {
         // Fallback for regular affiliates
         const query = `
             SELECT id, first_name, last_name, email, password_hash, phone, refer_code, 
-                   branch, area, state, city, designation, is_approved, created_at
+                   branch, area, state, city, designation, is_approved,
+                   COALESCE(is_active, TRUE) AS is_active,
+                   created_at
             FROM affiliate_user 
             WHERE email = $1
         `;
@@ -123,6 +125,19 @@ export async function POST(req: NextRequest) {
             return NextResponse.json(
                 { success: false, message: "Invalid email or password" },
                 { status: 401 }
+            );
+        }
+
+        // Block deactivated accounts (National Head can disable a user via the
+        // Total Agent page). `is_active` defaults to TRUE for existing rows, so
+        // only explicit deactivations are rejected here.
+        if (user.is_active === false) {
+            return NextResponse.json(
+                {
+                    success: false,
+                    message: "Your account has been deactivated. Please contact admin."
+                },
+                { status: 403 }
             );
         }
 

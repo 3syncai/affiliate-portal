@@ -13,6 +13,12 @@ export async function GET() {
         });
         console.log("Database connected");
 
+        // Defensive: ensure the activation flag column exists so deployments
+        // that haven't run the migration yet keep working.
+        await pool.query(
+            `ALTER TABLE affiliate_user ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE`
+        );
+
         // Fetch all affiliate users - only query columns that definitely exist
         const query = `
             SELECT 
@@ -25,6 +31,7 @@ export async function GET() {
                 entry_sponsor,
                 is_agent,
                 is_approved,
+                is_active,
                 gender,
                 father_name,
                 mother_name,
