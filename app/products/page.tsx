@@ -1,11 +1,13 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Search, Package, IndianRupee, Percent, Box, Share2, Info, Sparkles } from "lucide-react"
 import axios from "axios"
+import useSWR from "swr"
 import UserNavbar from "../components/UserNavbar"
-import { BACKEND_URL, STORE_URL } from "@/lib/config"
+import { STORE_URL } from "@/lib/config"
+import { fetcher } from "@/lib/fetcher"
 
 interface Product {
     id: string
@@ -22,23 +24,25 @@ interface Product {
     commissionSource: string | null
     commissionAmount: number
     hasCommission: boolean
+    status?: string
 }
+
+interface ProductsResponse {
+    products?: Product[]
+    allProducts?: Product[]
+    categories?: string[]
+}
+
+const plainFetcher = (url: string) => axios.get(url).then(res => res.data)
 
 export default function ProductsPage() {
     const router = useRouter()
     const [user, setUser] = useState<any>(null)
-    const [loading, setLoading] = useState(true)
-    const [products, setProducts] = useState<Product[]>([])
-    const [allProducts, setAllProducts] = useState<Product[]>([])
-    const [categories, setCategories] = useState<string[]>([])
+    const [authChecked, setAuthChecked] = useState(false)
     const [selectedCategory, setSelectedCategory] = useState<string>("all")
     const [searchQuery, setSearchQuery] = useState("")
-    const [error, setError] = useState<string | null>(null)
-    const [affiliateRate, setAffiliateRate] = useState<number>(100) // Default 100% if not set
-    const [additionalByProduct, setAdditionalByProduct] = useState<Record<string, number>>({})
 
     useEffect(() => {
-        // Check if user is logged in
         const token = localStorage.getItem("affiliate_token")
         const userData = localStorage.getItem("affiliate_user")
         const role = localStorage.getItem("affiliate_role")
@@ -48,7 +52,6 @@ export default function ProductsPage() {
             return
         }
 
-        // If admin, redirect to admin dashboard
         if (role === "admin") {
             router.push("/admin/dashboard")
             return
@@ -63,73 +66,132 @@ export default function ProductsPage() {
             }
 
             setUser(parsedUser)
-            fetchProducts(token)
-            fetchAffiliateRate()
-            fetchAdditionalCommissions("partner")
+            setAuthChecked(true)
         } catch (e) {
             console.error("Error parsing user data:", e)
             router.push("/login")
         }
     }, [router])
 
-    const fetchAffiliateRate = async () => {
-        try {
-            const response = await axios.get("/api/admin/commission-rates")
-            if (response.data.success && response.data.rates) {
-                const affiliateRateObj = response.data.rates.find(
-                    (r: any) => r.role_type === "affiliate"
-                )
-                if (affiliateRateObj) {
-                    setAffiliateRate(parseFloat(affiliateRateObj.commission_percentage))
-                }
+    // Live products feed.
+    // Polls every 5s and revalidates on focus/reconnect, so admin status flips
+    // (draft <-> published) and commission-list edits are reflected on the
+    // page within a few seconds without a manual refresh.
+    const {
+        data: productsData,
+        error: productsError,
+        isLoading: productsLoading,
+        isValidating: productsValidating,
+    } = useSWR<ProductsResponse>(
+        authChecked ? "/api/products" : null,
+        fetcher,
+        {
+            refreshInterval: 5000,
+            revalidateOnFocus: true,
+            revalidateOnReconnect: true,
+            revalidateOnMount: true,
+            dedupingInterval: 1000,
+            keepPreviousData: true,
+        }
+    )
+
+    // Live affiliate commission rate
+    const { data: ratesData } = useSWR(
+        authChecked ? "/api/admin/commission-rates" : null,
+        plainFetcher,
+        {
+            refreshInterval: 30000,
+            revalidateOnFocus: true,
+        }
+    )
+
+    // Live additional commissions (per product boosts)
+    const { data: additionalData } = useSWR(
+        authChecked ? "/api/additional-commissions/active?role=partner" : null,
+        plainFetcher,
+        {
+            refreshInterval: 15000,
+            revalidateOnFocus: true,
+        }
+    )
+
+    // Real-time inventory feed.
+    // This is a tiny, dedicated endpoint (a single SQL aggregate) so we can
+    // poll it aggressively (every 3s) to reflect stock changes as sales happen
+    // — without re-fetching the entire heavy product catalog.
+    const { data: inventoryData } = useSWR<{
+        success: boolean
+        inventory: Record<string, number>
+        updatedAt: string
+    }>(
+        authChecked ? "/api/products/inventory" : null,
+        plainFetcher,
+        {
+            refreshInterval: 3000,
+            revalidateOnFocus: true,
+            revalidateOnReconnect: true,
+            dedupingInterval: 500,
+            keepPreviousData: true,
+        }
+    )
+
+    const liveInventory = inventoryData?.inventory || {}
+
+    // Merge live inventory into the catalog so each card gets up-to-the-second
+    // stock numbers. We fall back to the catalog's inventoryQuantity if the
+    // live map doesn't contain the product (e.g. first paint before the
+    // inventory poll resolves).
+    const products = useMemo<Product[]>(() => {
+        const list = productsData?.products || []
+        if (!list.length) return list
+        return list.map(p => {
+            const live = liveInventory[p.id]
+            if (live === undefined) return p
+            return {
+                ...p,
+                inventoryQuantity: live,
+                isInStock: live > 0,
             }
-        } catch (err) {
-            console.error("Error fetching affiliate rate:", err)
-            // Keep default 100% if fetch fails
-        }
-    }
+        })
+    }, [productsData, liveInventory])
 
-    const fetchProducts = async (token: string) => {
-        try {
-            const response = await axios.get("/api/products", {
-                headers: {
-                    "Authorization": `Bearer ${token}`,
-                    "Content-Type": "application/json",
-                },
-            })
+    const categories = productsData?.categories || []
 
-            const data = response.data
-            setProducts(data.products || [])
-            setAllProducts(data.allProducts || [])
-            setCategories(data.categories || [])
-        } catch (err: any) {
-            console.error("Error fetching products:", err)
-            setError(err.response?.data?.message || err.message || "Failed to load products")
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    const fetchAdditionalCommissions = async (role: string) => {
-        try {
-            const response = await axios.get(`/api/additional-commissions/active?role=${encodeURIComponent(role)}`)
-            const productRates: Record<string, number> = {}
-            for (const row of response.data?.campaigns || []) {
-                const productId = String(row.product_id || "")
-                const rate = Number(row.additional_rate || 0)
-                if (!productId) continue
-                if (!productRates[productId] || rate > productRates[productId]) {
-                    productRates[productId] = rate
-                }
+    const affiliateRate = useMemo(() => {
+        if (ratesData?.success && Array.isArray(ratesData.rates)) {
+            const affiliateRateObj = ratesData.rates.find((r: any) => r.role_type === "affiliate")
+            if (affiliateRateObj) {
+                const value = parseFloat(affiliateRateObj.commission_percentage)
+                if (!Number.isNaN(value)) return value
             }
-            setAdditionalByProduct(productRates)
-        } catch (err) {
-            console.error("Error fetching additional commissions:", err)
         }
-    }
+        return 100
+    }, [ratesData])
 
-    // Filter products by search and category
+    const additionalByProduct = useMemo(() => {
+        const productRates: Record<string, number> = {}
+        for (const row of additionalData?.campaigns || []) {
+            const productId = String(row.product_id || "")
+            const rate = Number(row.additional_rate || 0)
+            if (!productId) continue
+            if (!productRates[productId] || rate > productRates[productId]) {
+                productRates[productId] = rate
+            }
+        }
+        return productRates
+    }, [additionalData])
+
+    const error = productsError ? (productsError.message || "Failed to load products") : null
+    // Show skeleton cards while the first request is in flight. Subsequent
+    // renders show real data immediately (SWR keepPreviousData) and pulses the
+    // Live indicator during background refreshes.
+    const firstLoadInProgress = !productsData && productsLoading
+    const showSkeleton = !authChecked || firstLoadInProgress
+
+    // Filter products by status (published only), search and category
     const filteredProducts = products.filter(product => {
+        const status = String(product.status ?? "published").toLowerCase()
+        if (status !== "published") return false
         const matchesSearch = product.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
             product.description.toLowerCase().includes(searchQuery.toLowerCase())
         const matchesCategory = selectedCategory === "all" || product.category === selectedCategory
@@ -139,17 +201,6 @@ export default function ProductsPage() {
     const userName = user?.first_name && user?.last_name
         ? `${user.first_name} ${user.last_name} `
         : user?.email
-
-    if (loading) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 via-white to-emerald-50">
-                <div className="flex flex-col items-center space-y-4">
-                    <div className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
-                    <span className="text-gray-600 font-medium">Loading products...</span>
-                </div>
-            </div>
-        )
-    }
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-emerald-50">
@@ -165,10 +216,32 @@ export default function ProductsPage() {
                         <Sparkles className="text-emerald-500 animate-pulse" size={24} />
                         <p className="text-gray-600 text-lg">Browse products and see your commission rates</p>
                     </div>
-                    <div className="relative">
-                        <div className="absolute inset-0 bg-gradient-to-r from-emerald-400 to-teal-400 rounded-full blur opacity-50"></div>
-                        <div className="relative bg-gradient-to-r from-emerald-500 to-teal-500 text-white px-6 py-3 rounded-full text-sm font-semibold shadow-lg">
-                            {filteredProducts.length} Products Available
+                    <div className="flex items-center gap-3">
+                        <div
+                            className="flex items-center gap-2 bg-white border border-emerald-200 text-emerald-700 px-3 py-2 rounded-full text-xs font-semibold shadow-sm"
+                            title="Catalog updates automatically when admin publishes or unpublishes products"
+                        >
+                            <span className="relative flex h-2 w-2">
+                                <span
+                                    className={`absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 ${productsValidating ? "animate-ping" : ""
+                                        }`}
+                                ></span>
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                            </span>
+                            Live
+                        </div>
+                        <div className="relative">
+                            <div className="absolute inset-0 bg-gradient-to-r from-emerald-400 to-teal-400 rounded-full blur opacity-50"></div>
+                            <div className="relative bg-gradient-to-r from-emerald-500 to-teal-500 text-white px-6 py-3 rounded-full text-sm font-semibold shadow-lg">
+                                {showSkeleton ? (
+                                    <span className="inline-flex items-center gap-2">
+                                        <span className="h-4 w-12 bg-white/30 rounded animate-pulse"></span>
+                                        Products
+                                    </span>
+                                ) : (
+                                    `${filteredProducts.length} Products Available`
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -201,18 +274,25 @@ export default function ProductsPage() {
                         >
                             All Categories
                         </button>
-                        {categories.map((category) => (
-                            <button
-                                key={category}
-                                onClick={() => setSelectedCategory(category)}
-                                className={`px-5 py-3 rounded-full text-sm font-semibold transition-all duration-300 transform hover:scale-105 ${selectedCategory === category
-                                    ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-200"
-                                    : "bg-white border-2 border-gray-200 text-gray-700 hover:border-emerald-300 shadow-sm hover:shadow-md"
-                                    }`}
-                            >
-                                {category}
-                            </button>
-                        ))}
+                        {showSkeleton && categories.length === 0
+                            ? Array.from({ length: 5 }).map((_, i) => (
+                                <div
+                                    key={`cat-skel-${i}`}
+                                    className="h-11 w-24 rounded-full bg-white border-2 border-gray-100 shadow-sm animate-pulse"
+                                />
+                            ))
+                            : categories.map((category) => (
+                                <button
+                                    key={category}
+                                    onClick={() => setSelectedCategory(category)}
+                                    className={`px-5 py-3 rounded-full text-sm font-semibold transition-all duration-300 transform hover:scale-105 ${selectedCategory === category
+                                        ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-200"
+                                        : "bg-white border-2 border-gray-200 text-gray-700 hover:border-emerald-300 shadow-sm hover:shadow-md"
+                                        }`}
+                                >
+                                    {category}
+                                </button>
+                            ))}
                     </div>
                 </div>
 
@@ -224,7 +304,13 @@ export default function ProductsPage() {
                 )}
 
                 {/* Products Grid */}
-                {filteredProducts.length === 0 ? (
+                {showSkeleton ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        {Array.from({ length: 9 }).map((_, i) => (
+                            <ProductCardSkeleton key={i} />
+                        ))}
+                    </div>
+                ) : filteredProducts.length === 0 ? (
                     <div className="text-center py-20 bg-white rounded-3xl shadow-sm border border-gray-100">
                         <Package className="mx-auto text-gray-300 mb-4" size={64} />
                         <h3 className="text-xl font-semibold text-gray-900 mb-2">No products found</h3>
@@ -265,6 +351,21 @@ function ProductCard({
 }) {
     const [copied, setCopied] = useState(false)
     const [showTooltip, setShowTooltip] = useState(false)
+    const [stockChanged, setStockChanged] = useState<"up" | "down" | null>(null)
+    const prevStockRef = useRef<number>(product.inventoryQuantity)
+
+    // Briefly highlight the inventory pill whenever the live value changes,
+    // so the user can see stock decrement in real time as orders come in.
+    useEffect(() => {
+        const prev = prevStockRef.current
+        const next = product.inventoryQuantity
+        if (prev !== next) {
+            setStockChanged(next < prev ? "down" : "up")
+            prevStockRef.current = next
+            const t = setTimeout(() => setStockChanged(null), 1200)
+            return () => clearTimeout(t)
+        }
+    }, [product.inventoryQuantity])
 
     // Calculate actual commission after platform fee deduction
     const actualCommission = product.commissionAmount * (affiliateRate / 100)
@@ -312,6 +413,8 @@ function ProductCard({
                     <img
                         src={product.thumbnail}
                         alt={product.title}
+                        loading="lazy"
+                        decoding="async"
                         className="w-full h-full object-contain transform group-hover:scale-105 transition-transform duration-300"
                     />
                 ) : (
@@ -366,13 +469,34 @@ function ProductCard({
                     )}
                 </div>
 
-                {/* Inventory */}
-                {product.inventoryQuantity > 0 && (
-                    <div className="flex items-center gap-2 text-gray-500 text-sm bg-gray-50 px-3 py-2 rounded-lg">
-                        <Box size={16} className="text-gray-400" />
-                        <span className="font-medium">{product.inventoryQuantity} units available</span>
+                {/* Live Inventory */}
+                <div
+                    className={`flex items-center justify-between gap-2 text-sm px-3 py-2 rounded-lg border transition-colors duration-700 ${stockChanged === "down"
+                        ? "bg-red-50 border-red-200 text-red-700"
+                        : stockChanged === "up"
+                            ? "bg-emerald-50 border-emerald-200 text-emerald-700"
+                            : product.inventoryQuantity > 0
+                                ? "bg-gray-50 border-gray-100 text-gray-600"
+                                : "bg-red-50 border-red-200 text-red-600"
+                        }`}
+                    title="Stock updates in real time as sales happen"
+                >
+                    <div className="flex items-center gap-2">
+                        <Box size={16} className="opacity-70" />
+                        <span className="font-medium">
+                            {product.inventoryQuantity > 0
+                                ? `${product.inventoryQuantity} units available`
+                                : "Out of stock"}
+                        </span>
                     </div>
-                )}
+                    <span className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide opacity-80">
+                        <span className="relative flex h-1.5 w-1.5">
+                            <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping"></span>
+                            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+                        </span>
+                        Live
+                    </span>
+                </div>
 
                 {/* Your Commission */}
                 {product.commissionRate && (
@@ -433,6 +557,44 @@ function ProductCard({
                         </div>
                     </div>
                 )}
+            </div>
+        </div>
+    )
+}
+
+function ProductCardSkeleton() {
+    return (
+        <div className="relative bg-white rounded-2xl border-2 border-gray-100 overflow-hidden animate-pulse">
+            {/* Image placeholder */}
+            <div className="relative h-56 bg-gradient-to-br from-gray-100 to-gray-50" />
+
+            {/* Content placeholder */}
+            <div className="p-6 space-y-4">
+                <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 space-y-2">
+                        <div className="h-5 w-3/4 bg-gray-200 rounded" />
+                        <div className="h-5 w-1/2 bg-gray-200 rounded" />
+                    </div>
+                    <div className="h-6 w-16 bg-gray-200 rounded-full" />
+                </div>
+
+                <div className="space-y-2">
+                    <div className="h-3 w-full bg-gray-100 rounded" />
+                    <div className="h-3 w-5/6 bg-gray-100 rounded" />
+                </div>
+
+                <div className="flex items-center justify-between">
+                    <div className="h-4 w-12 bg-gray-100 rounded" />
+                    <div className="h-6 w-20 bg-gray-100 rounded-full" />
+                </div>
+
+                <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                    <div className="h-7 w-24 bg-gray-200 rounded" />
+                    <div className="h-6 w-14 bg-gray-100 rounded-full" />
+                </div>
+
+                <div className="h-10 w-full bg-gray-100 rounded-lg" />
+                <div className="h-12 w-full bg-gradient-to-r from-emerald-100 to-teal-100 rounded-xl" />
             </div>
         </div>
     )
