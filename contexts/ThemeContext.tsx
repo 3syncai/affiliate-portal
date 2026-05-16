@@ -1,8 +1,19 @@
 "use client"
 
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react'
+import { usePathname } from 'next/navigation'
 
 export type ThemeName = 'blue' | 'emerald' | 'violet' | 'rose' | 'amber' | 'slate' | 'dark'
+
+// Auth / public routes that must always render in the default light style,
+// regardless of any cached user theme. Without this, a previously-logged-in
+// user with the dark theme would see /login (and other auth pages) inherit
+// dark surfaces because <html data-theme="dark"> persists in the DOM.
+const PUBLIC_ROUTES = ['/login', '/register', '/verification-pending', '/forgot-password']
+const isPublicRoute = (pathname: string | null) => {
+    if (!pathname) return false
+    return PUBLIC_ROUTES.some(r => pathname === r || pathname.startsWith(r + '/'))
+}
 
 type Theme = {
     name: ThemeName
@@ -153,6 +164,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     const [themeName, setThemeName] = useState<ThemeName>(getInitialTheme)
     const [mounted, setMounted] = useState(false)
     const [isLoading, setIsLoading] = useState(true)
+    const pathname = usePathname()
+    const publicRoute = isPublicRoute(pathname)
 
     // Fetch theme from database on mount
     useEffect(() => {
@@ -213,7 +226,13 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         if (!mounted) return
 
-        const theme = themes.find(t => t.name === themeName) || themes[0]
+        // On public/auth routes (e.g. /login, /register) we force a neutral
+        // light theme so users with a cached dark preference don't see the
+        // auth pages flip to dark. The theme state itself is preserved so
+        // the user's chosen theme is restored once they navigate back to a
+        // private route.
+        const effectiveName: ThemeName = publicRoute ? 'blue' : themeName
+        const theme = themes.find(t => t.name === effectiveName) || themes[0]
 
         document.documentElement.style.setProperty('--theme-primary', theme.primary)
         document.documentElement.style.setProperty('--theme-primary-hover', theme.primaryHover)
@@ -226,17 +245,22 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
         // Expose the active theme name on <html> so CSS can scope rules with
         // `[data-theme="dark"]` (used for dark-mode surface/text overrides).
-        document.documentElement.setAttribute('data-theme', themeName)
+        // On public routes we use the neutral light theme above so the
+        // [data-theme="dark"] CSS rules never fire there.
+        document.documentElement.setAttribute('data-theme', effectiveName)
 
-        // Save to user-specific localStorage key
-        const userData = localStorage.getItem('affiliate_user')
-        const userRole = localStorage.getItem('affiliate_role')
-        if (userData && userRole) {
-            const user = JSON.parse(userData)
-            const userSpecificKey = `app_theme_${user.id}_${userRole}`
-            localStorage.setItem(userSpecificKey, themeName)
+        // Save to user-specific localStorage key — only on private routes
+        // (we don't want auth-page renders to overwrite the user's choice).
+        if (!publicRoute) {
+            const userData = localStorage.getItem('affiliate_user')
+            const userRole = localStorage.getItem('affiliate_role')
+            if (userData && userRole) {
+                const user = JSON.parse(userData)
+                const userSpecificKey = `app_theme_${user.id}_${userRole}`
+                localStorage.setItem(userSpecificKey, themeName)
+            }
         }
-    }, [themeName, mounted])
+    }, [themeName, mounted, publicRoute])
 
     // Save theme to database
     const saveThemeToDatabase = useCallback(async (newTheme: ThemeName) => {
