@@ -5,7 +5,29 @@ import { useRouter } from "next/navigation"
 import QRCode from 'qrcode'
 import axios from 'axios'
 import useSWR from 'swr'
-import { Copy, Download, UserCircle2, Users, Wallet, TrendingUp, DollarSign } from 'lucide-react'
+import {
+  Copy,
+  Download,
+  UserCircle2,
+  Users,
+  Wallet,
+  TrendingUp,
+  DollarSign,
+  ArrowUpRight,
+  LogOut,
+  LayoutDashboard,
+  Package,
+  Gift,
+  User as UserIcon,
+  Sparkles,
+  CheckCircle2,
+  QrCode,
+  Info,
+  Calendar,
+  Mail,
+  Phone,
+  Hash,
+} from 'lucide-react'
 import { STORE_URL } from "@/lib/config"
 import ConfirmModal from "@/app/components/ConfirmModal"
 import CommissionStatusBadge from "@/app/components/CommissionStatusBadge"
@@ -270,348 +292,487 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-lg text-gray-600">Loading...</div>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/30 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="relative">
+            <div className="w-14 h-14 rounded-full border-4 border-emerald-100"></div>
+            <div className="absolute inset-0 w-14 h-14 rounded-full border-4 border-transparent border-t-emerald-500 animate-spin"></div>
+          </div>
+          <p className="text-sm font-medium text-slate-500">Loading your dashboard…</p>
+        </div>
       </div>
     )
   }
+
+  // Personalized greeting based on local time (cosmetic only).
+  const greetingHour = new Date().getHours()
+  const greeting = greetingHour < 12 ? 'Good morning' : greetingHour < 17 ? 'Good afternoon' : 'Good evening'
+  const fullName = user?.first_name && user?.last_name ? `${user.first_name} ${user.last_name}` : user?.email
+  const initials = (user?.first_name?.[0] || '') + (user?.last_name?.[0] || '') || (user?.email?.[0] || 'U')
+  const today = new Date().toLocaleDateString('en-IN', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  })
 
   // Use wallet balance from SWR data or default to 0
   const walletBalance = walletData?.success ? walletData.data.balance.current : 0
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <nav className="bg-white border-b border-gray-200">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/40">
+      {/* ─── Top Navigation ─────────────────────────────────────────── */}
+      <nav className="sticky top-0 z-40 backdrop-blur-xl bg-white/75 border-b border-slate-200/70">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between h-16 gap-4">
+            {/* Brand + Primary Nav */}
+            <div className="flex items-center gap-2 sm:gap-6 min-w-0">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-sm shadow-emerald-200">
+                  <Sparkles className="w-5 h-5 text-white" />
+                </div>
+                <div className="hidden sm:flex flex-col leading-tight">
+                  <span className="text-[11px] font-semibold tracking-wider text-emerald-700 uppercase">Sales Executive</span>
+                  <span className="text-[10px] text-slate-400">Partner Console</span>
+                </div>
+              </div>
 
-              <h1 className="text-xl font-semibold text-gray-900">Sales Executive</h1>
-              <span className="ml-4 inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-700 rounded-md text-sm font-medium">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                </svg>
-                Dashboard
-              </span>
-              <a
-                href="/products"
-                className="ml-2 inline-flex items-center gap-1.5 px-3 py-1 bg-white border border-gray-200 text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 rounded-md text-sm font-medium transition-colors">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                </svg>
-                Products
-              </a>
-              <a
-                href="/offers"
-                className="ml-2 inline-flex items-center gap-1.5 px-3 py-1 bg-white border border-gray-200 text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 rounded-md text-sm font-medium transition-colors">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
-                </svg>
-                Offers
-              </a>
-              <a
-                href="/dashboard/profile"
-                className="ml-2 inline-flex items-center gap-1.5 px-3 py-1 bg-white border border-gray-200 text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 rounded-md text-sm font-medium transition-colors">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.121 17.804A10.938 10.938 0 0112 15c2.662 0 5.102.977 6.879 2.592M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                Profile
-              </a>
+              <div className="hidden md:flex items-center gap-1 bg-slate-100/70 p-1 rounded-xl">
+                <NavTab href="/dashboard" icon={LayoutDashboard} label="Dashboard" active />
+                <NavTab href="/products" icon={Package} label="Products" />
+                <NavTab href="/offers" icon={Gift} label="Offers" />
+                <NavTab href="/dashboard/profile" icon={UserIcon} label="Profile" />
+              </div>
             </div>
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-600">
-                <span className="inline-block w-2 h-2 rounded-full bg-green-500 mr-2 animate-pulse"></span>
-                Live Updates | Welcome, <strong className="text-gray-900">{user?.first_name && user?.last_name ? `${user.first_name} ${user.last_name}` : user?.email}</strong>
-              </span>
+
+            {/* Live + User + Logout */}
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 bg-emerald-50 border border-emerald-100 rounded-full text-xs font-medium text-emerald-700">
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                </span>
+                Live Updates
+              </div>
+
+              <div className="hidden sm:flex items-center gap-2.5 pl-3 pr-1 py-1 bg-white border border-slate-200 rounded-full shadow-sm">
+                <div className="text-right leading-tight">
+                  <p className="text-[11px] text-slate-400">Welcome</p>
+                  <p className="text-xs font-semibold text-slate-900 max-w-[140px] truncate">{fullName}</p>
+                </div>
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white text-xs font-bold uppercase">
+                  {initials}
+                </div>
+              </div>
+
               <button
                 onClick={() => setShowLogoutConfirm(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-700 hover:text-gray-900 transition-colors">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                </svg>
-                Logout
+                className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-slate-600 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+              >
+                <LogOut className="w-4 h-4" />
+                <span className="hidden sm:inline">Logout</span>
               </button>
             </div>
           </div>
         </div>
       </nav>
 
-      {/* Main Content */}
+      {/* ─── Main Content ──────────────────────────────────────────── */}
       <main className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-        <div className="space-y-6">
-          {/* Agent Dashboard Header */}
-          <div>
-            <h2 className="text-3xl font-bold text-gray-900">Sales Executive Dashboard</h2>
-            <p className="text-sm text-gray-500 mt-1">Welcome back, {user?.first_name} {user?.last_name}</p>
-          </div>
+        <div className="space-y-8">
+          {/* ─── Hero / Greeting ───────────────────────────────────── */}
+          <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-700 p-8 sm:p-10 text-white shadow-xl shadow-emerald-200/40">
+            <div className="absolute inset-0 opacity-20" style={{
+              backgroundImage: 'radial-gradient(circle at 30% 50%, rgba(255,255,255,.35) 0, transparent 35%), radial-gradient(circle at 80% 20%, rgba(255,255,255,.25) 0, transparent 40%)'
+            }} />
+            <div className="absolute -top-10 -right-10 w-64 h-64 rounded-full bg-white/10 blur-3xl" />
+            <div className="absolute -bottom-16 -left-10 w-72 h-72 rounded-full bg-cyan-400/20 blur-3xl" />
 
-          {/* Stats Cards Grid */}
-          <div className="grid gap-4 md:grid-cols-4">
-            {/* Total Referrals */}
-            <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-200">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <Users className="w-5 h-5 text-blue-600" />
+            <div className="relative flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+              <div>
+                <div className="flex items-center gap-2 text-emerald-100/90 text-sm mb-3">
+                  <Calendar className="w-4 h-4" />
+                  <span>{today}</span>
                 </div>
-                <div>
-                  <p className="text-xs text-gray-500">Total Referrals</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats?.referrals.total || 0}</p>
-                </div>
+                <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">
+                  {greeting}, {user?.first_name || 'Partner'} 👋
+                </h1>
+                <p className="text-emerald-50/90 mt-2 text-base">
+                  Here's a snapshot of your performance and earnings.
+                </p>
               </div>
-              <p className="text-xs text-gray-400 mt-2">{stats?.referrals.active || 0} active customers</p>
-            </div>
 
-            {/* Total Orders */}
-            <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-200">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                  <TrendingUp className="w-5 h-5 text-purple-600" />
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500">Total Orders</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats?.referrals.total_orders || 0}</p>
-                </div>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <a
+                  href="/products"
+                  className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-white text-emerald-700 hover:bg-emerald-50 rounded-xl font-semibold text-sm shadow-md transition-all hover:scale-[1.02]"
+                >
+                  <Package className="w-4 h-4" />
+                  Browse Products
+                </a>
+                <a
+                  href="/dashboard/wallet"
+                  className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-white/15 backdrop-blur-sm border border-white/30 text-white hover:bg-white/25 rounded-xl font-semibold text-sm transition-all"
+                >
+                  <Wallet className="w-4 h-4" />
+                  Wallet
+                </a>
               </div>
-              <p className="text-xs text-gray-400 mt-2">₹{(stats?.referrals.total_order_value || 0).toLocaleString('en-IN')} value</p>
             </div>
+          </section>
 
-            {/* Total Commission */}
-            <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-200">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                  <DollarSign className="w-5 h-5 text-green-600" />
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500">Total Commission</p>
-                  <p className="text-2xl font-bold text-gray-900">₹{(stats?.commission.total_earned || 0).toFixed(2)}</p>
-                </div>
-              </div>
-              <p className="text-xs text-amber-600 mt-2">₹{(stats?.commission.pending || 0).toFixed(2)} pending</p>
-            </div>
+          {/* ─── Stats Grid ────────────────────────────────────────── */}
+          <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <StatCard
+              label="Total Referrals"
+              value={String(stats?.referrals.total || 0)}
+              meta={`${stats?.referrals.active || 0} active customers`}
+              icon={Users}
+              gradient="from-blue-500 to-indigo-500"
+              accent="text-blue-600"
+              ringClass="ring-blue-100"
+            />
+            <StatCard
+              label="Total Orders"
+              value={String(stats?.referrals.total_orders || 0)}
+              meta={`₹${(stats?.referrals.total_order_value || 0).toLocaleString('en-IN')} order value`}
+              icon={TrendingUp}
+              gradient="from-violet-500 to-purple-500"
+              accent="text-violet-600"
+              ringClass="ring-violet-100"
+            />
+            <StatCard
+              label="Total Commission"
+              value={`₹${(stats?.commission.total_earned || 0).toFixed(2)}`}
+              meta={`₹${(stats?.commission.pending || 0).toFixed(2)} pending`}
+              metaTone="amber"
+              icon={DollarSign}
+              gradient="from-amber-500 to-orange-500"
+              accent="text-amber-600"
+              ringClass="ring-amber-100"
+            />
 
-            {/* Wallet Balance */}
-            <a href="/dashboard/wallet" className="block">
-              <div className="bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
-                    <Wallet className="w-5 h-5 text-white" />
+            {/* Wallet Card — featured */}
+            <a href="/dashboard/wallet" className="group block">
+              <div className="relative h-full overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-700 p-5 shadow-lg shadow-emerald-200/50 hover:shadow-xl hover:shadow-emerald-300/50 transition-all hover:-translate-y-0.5">
+                <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/10 blur-2xl" />
+                <div className="relative">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="w-11 h-11 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center ring-1 ring-white/30">
+                      <Wallet className="w-5 h-5 text-white" />
+                    </div>
+                    <ArrowUpRight className="w-4 h-4 text-white/80 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
                   </div>
-                  <div>
-                    <p className="text-xs text-emerald-100">Wallet Balance</p>
-                    <p className="text-2xl font-bold text-white">₹{walletBalance.toFixed(2)}</p>
-                  </div>
+                  <p className="text-[11px] uppercase tracking-wider text-emerald-100 font-semibold">Wallet Balance</p>
+                  <p className="text-3xl font-bold text-white mt-1 tracking-tight">₹{walletBalance.toFixed(2)}</p>
+                  {(stats?.wallet.locked || 0) > 0 ? (
+                    <p className="text-xs text-emerald-100/90 mt-2 flex items-center gap-1">
+                      <Sparkles className="w-3 h-3" />
+                      ₹{((stats?.wallet.locked || 0) * affiliateRate / 100).toFixed(2)} unlocking soon
+                    </p>
+                  ) : (
+                    <p className="text-xs text-emerald-100/80 mt-2">All funds available</p>
+                  )}
                 </div>
-                {(stats?.wallet.locked || 0) > 0 && (
-                  <p className="text-xs text-emerald-200 mt-2">₹{((stats?.wallet.locked || 0) * affiliateRate / 100).toFixed(2)} unlocking soon</p>
-                )}
               </div>
             </a>
-          </div>
+          </section>
 
-          <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-200">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-gray-900">Active Additional Commission</h3>
-              <a href="/offers" className="text-xs font-medium text-emerald-700 hover:text-emerald-800">View Offers</a>
-            </div>
-
-            {!additionalData?.campaigns?.length ? (
-              <p className="text-sm text-gray-500">No additional commission campaign is active for you right now.</p>
-            ) : (
-              <div className="space-y-2">
-                {(additionalData.campaigns as AdditionalCampaign[]).slice(0, 3).map((campaign) => (
-                  <div key={campaign.id} className="flex items-center justify-between bg-emerald-50 border border-emerald-100 rounded-lg px-3 py-2">
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">{campaign.product_name || campaign.product_id}</p>
-                      <p className="text-xs text-gray-500">
-                        Ends {campaign.ends_at ? new Date(campaign.ends_at).toLocaleString("en-IN") : "Not set"}
-                      </p>
-                    </div>
-                    <span className="text-sm font-bold text-emerald-700">+{Number(campaign.additional_rate || 0).toFixed(2)}%</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Cards Grid */}
-          <div className="grid gap-6 md:grid-cols-3">
-            {/* Your Agent Code Card */}
-            <div className="bg-emerald-50/50 rounded-2xl p-6 shadow-sm border border-emerald-100">
-              <div className="flex items-center gap-2 mb-4">
-                <UserCircle2 className="w-5 h-5 text-emerald-600" />
-                <h3 className="font-semibold text-gray-900 text-sm">Your Partner Code</h3>
-                <span className="ml-auto inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500 text-white">
-                  Active
-                </span>
-              </div>
-              <div className="flex items-center gap-2 p-3 bg-white rounded-lg border border-gray-200 mb-3">
-                <span className="font-mono text-base font-bold text-gray-900 flex-1">{user?.refer_code}</span>
-                <button
-                  onClick={copyReferralCode}
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors text-xs font-medium text-gray-700">
-                  <Copy className="w-3.5 h-3.5" />
-                  {copied ? 'Copied!' : 'Copy'}
-                </button>
-              </div>
-              <p className="text-xs text-gray-600">Share this code with customers to earn commissions</p>
-            </div>
-
-            {/* Customer Registration QR Code */}
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
-              <div className="flex items-center gap-2 mb-3">
-                <Users className="w-5 h-5 text-emerald-600" />
-                <h3 className="font-semibold text-gray-900 text-sm">Customer Registration</h3>
-              </div>
-              <p className="text-xs text-gray-500 mb-4">For customer sign-ups</p>
-              {qrDataUrl && (
-                <div className="flex flex-col items-center">
-                  <img
-                    src={qrDataUrl}
-                    alt="QR Code"
-                    className="w-full max-w-[180px] h-auto rounded-lg"
-                  />
-                  <button
-                    onClick={downloadQR}
-                    className="mt-4 flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors text-xs font-medium w-full justify-center">
-                    <Download className="w-3.5 h-3.5" />
-                    Download QR
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* How it Works */}
-            <div className="bg-blue-50/50 rounded-2xl p-6 shadow-sm border border-blue-100">
-              <div className="flex items-center gap-2 mb-4">
-                <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <h3 className="font-semibold text-gray-900 text-sm">How It Works</h3>
-              </div>
-              <ol className="space-y-2.5 text-xs text-gray-700">
-                <li className="flex gap-2">
-                  <span className="inline-flex items-center justify-center w-5 h-5 bg-emerald-500 text-white rounded-full text-xs font-semibold flex-shrink-0">1</span>
-                  <span>Share your QR code or referral link</span>
-                </li>
-                <li className="flex gap-2">
-                  <span className="inline-flex items-center justify-center w-5 h-5 bg-emerald-500 text-white rounded-full text-xs font-semibold flex-shrink-0">2</span>
-                  <span>Customer signs up with your code</span>
-                </li>
-                <li className="flex gap-2">
-                  <span className="inline-flex items-center justify-center w-5 h-5 bg-emerald-500 text-white rounded-full text-xs font-semibold flex-shrink-0">3</span>
-                  <span>Earn commission when they purchase!</span>
-                </li>
-              </ol>
-            </div>
-          </div>
-
-          {/* Recent Activity Grid */}
-          <div className="grid gap-6 md:grid-cols-2">
-            {/* Recent Referrals */}
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
+          {/* ─── Active Additional Commission Banner ──────────────── */}
+          <section className="relative overflow-hidden rounded-2xl bg-white border border-slate-200 shadow-sm">
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500" />
+            <div className="p-5 sm:p-6">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-base font-semibold text-gray-900 flex items-center gap-2">
-                  <Users className="w-4 h-4 text-blue-600" />
-                  Recent Referrals
-                </h3>
-                <a href="/dashboard/referrals" className="text-xs font-medium text-emerald-700 hover:text-emerald-800">
-                  View all
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
+                    <Sparkles className="w-4 h-4 text-emerald-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold text-slate-900">Active Additional Commission</h3>
+                    <p className="text-[11px] text-slate-500">Bonus boosts on selected products</p>
+                  </div>
+                </div>
+                <a href="/offers" className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 hover:text-emerald-800">
+                  View Offers <ArrowUpRight className="w-3 h-3" />
                 </a>
               </div>
-              {stats?.recent_referrals && stats.recent_referrals.length > 0 ? (
-                <div className="space-y-3">
-                  {stats.recent_referrals.slice(0, 5).map((ref) => (
-                    <div key={ref.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">{ref.customer_name || 'Customer'}</p>
-                        <p className="text-xs text-gray-500">{ref.customer_email}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-xs text-gray-500">{formatDate(ref.referred_at)}</p>
-                        <p className="text-xs font-medium text-emerald-600">{ref.total_orders} orders</p>
-                      </div>
-                    </div>
-                  ))}
+
+              {!additionalData?.campaigns?.length ? (
+                <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                  <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center flex-shrink-0">
+                    <Info className="w-4 h-4 text-slate-400" />
+                  </div>
+                  <p className="text-sm text-slate-500">No additional commission campaign is active for you right now.</p>
                 </div>
               ) : (
-                <div className="text-center py-8 text-gray-400">
-                  <Users className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">No referrals yet</p>
-                  <p className="text-xs">Share your code to start earning!</p>
-                </div>
-              )}
-            </div>
-
-            {/* Recent Commission */}
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-base font-semibold text-gray-900 flex items-center gap-2">
-                  <DollarSign className="w-4 h-4 text-green-600" />
-                  Recent Commission
-                </h3>
-                <a href="/dashboard/orders" className="text-xs font-medium text-emerald-700 hover:text-emerald-800">
-                  View all
-                </a>
-              </div>
-              {stats?.recent_commissions && stats.recent_commissions.length > 0 ? (
-                <div className="space-y-3">
-                  {stats.recent_commissions.slice(0, 5).map((comm) => (
-                    <div key={comm.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">{comm.product_name}</p>
-                        <p className="text-xs text-gray-500">₹{comm.order_amount} @ {comm.commission_rate}%</p>
-                        <p className="text-[11px] text-gray-400">{comm.order_id}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className={`text-sm font-bold ${comm.has_return ? "text-gray-400 line-through" : "text-emerald-600"}`}>
-                          +₹{(comm.has_return ? 0 : comm.commission_amount).toFixed(2)}
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {(additionalData.campaigns as AdditionalCampaign[]).slice(0, 3).map((campaign) => (
+                    <div
+                      key={campaign.id}
+                      className="group relative overflow-hidden bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-100 rounded-xl p-4 hover:shadow-md hover:border-emerald-200 transition-all"
+                    >
+                      <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full bg-emerald-200/40 group-hover:bg-emerald-200/60 transition-colors" />
+                      <div className="relative">
+                        <p className="text-sm font-semibold text-slate-900 line-clamp-1">{campaign.product_name || campaign.product_id}</p>
+                        <p className="text-[11px] text-slate-500 mt-0.5">
+                          Ends {campaign.ends_at ? new Date(campaign.ends_at).toLocaleString("en-IN") : "Not set"}
                         </p>
-                        <div className="mt-1">
-                          <CommissionStatusBadge
-                            status={comm.status}
-                            unlockAt={comm.unlock_at}
-                            hasReturn={comm.has_return}
-                          />
+                        <div className="mt-3 inline-flex items-center gap-1 px-2.5 py-1 bg-white rounded-full shadow-sm">
+                          <ArrowUpRight className="w-3 h-3 text-emerald-600" />
+                          <span className="text-xs font-bold text-emerald-700">+{Number(campaign.additional_rate || 0).toFixed(2)}%</span>
                         </div>
                       </div>
                     </div>
                   ))}
                 </div>
-              ) : (
-                <div className="text-center py-8 text-gray-400">
-                  <DollarSign className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">No commission yet</p>
-                  <p className="text-xs">Earn when referrals purchase!</p>
-                </div>
               )}
             </div>
-          </div>
+          </section>
 
-          {/* Your Information */}
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
-            <h3 className="text-base font-semibold mb-4 text-gray-900">Your Information</h3>
-            <div className="grid gap-6 md:grid-cols-4">
-              <div>
-                <p className="text-xs text-gray-500 mb-1">Name</p>
-                <p className="text-sm font-medium text-gray-900">{user?.first_name && user?.last_name ? `${user.first_name} ${user.last_name}` : "N/A"}</p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-500 mb-1">Email</p>
-                <p className="text-sm font-medium text-gray-900">{user?.email}</p>
-              </div>
-              {user?.phone && (
-                <div>
-                  <p className="text-xsl text-gray-500 mb-1">Phone</p>
-                  <p className="text-sm font-medium text-gray-900">{user.phone}</p>
+          {/* ─── Partner Code + QR + How It Works ─────────────────── */}
+          <section className="grid gap-6 lg:grid-cols-3">
+            {/* Partner Code */}
+            <div className="relative overflow-hidden rounded-2xl bg-white border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-emerald-100/50 to-transparent rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
+              <div className="relative p-6">
+                <div className="flex items-center justify-between mb-5">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
+                      <Hash className="w-4 h-4 text-emerald-600" />
+                    </div>
+                    <h3 className="text-sm font-semibold text-slate-900">Your Partner Code</h3>
+                  </div>
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-sm">
+                    <CheckCircle2 className="w-3 h-3" />
+                    Active
+                  </span>
                 </div>
-              )}
-              {/* <div>
-                <p className="text-xs text-gray-500 mb-1">Status</p>
-                <p className="text-sm font-medium text-gray-900">{user?.is_agent ? "Partner" : "User"}</p>
-              </div> */}
+
+                <div className="rounded-xl border-2 border-dashed border-emerald-200 bg-emerald-50/40 p-4 mb-4">
+                  <p className="text-[10px] uppercase tracking-wider text-emerald-700/70 font-semibold mb-1">Referral Code</p>
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-xl font-extrabold text-slate-900 tracking-wide flex-1 truncate">{user?.refer_code}</span>
+                    <button
+                      onClick={copyReferralCode}
+                      className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-all ${copied
+                        ? 'bg-emerald-600 text-white shadow-md'
+                        : 'bg-white border border-slate-200 text-slate-700 hover:border-emerald-300 hover:text-emerald-700 shadow-sm'
+                        }`}
+                    >
+                      {copied ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                      {copied ? 'Copied!' : 'Copy'}
+                    </button>
+                  </div>
+                </div>
+
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  Share this code with customers — they get registered under you and you earn commission on every purchase they make.
+                </p>
+              </div>
             </div>
-          </div>
+
+            {/* QR Code */}
+            <div className="relative overflow-hidden rounded-2xl bg-white border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center">
+                      <QrCode className="w-4 h-4 text-white" />
+                    </div>
+                    <h3 className="text-sm font-semibold text-slate-900">Customer Registration</h3>
+                  </div>
+                </div>
+                <p className="text-xs text-slate-500 mb-4">Scan or share to onboard customers</p>
+
+                {qrDataUrl ? (
+                  <div className="flex flex-col items-center">
+                    <div className="p-3 bg-gradient-to-br from-slate-50 to-white rounded-xl border border-slate-200">
+                      <img
+                        src={qrDataUrl}
+                        alt="QR Code"
+                        className="w-full max-w-[180px] h-auto rounded-lg"
+                      />
+                    </div>
+                    <button
+                      onClick={downloadQR}
+                      className="mt-4 inline-flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-gradient-to-r from-slate-900 to-slate-800 hover:from-slate-800 hover:to-slate-700 text-white rounded-xl text-xs font-semibold shadow-sm transition-all"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      Download QR
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center py-6">
+                    <div className="w-[180px] h-[180px] rounded-xl bg-slate-100 animate-pulse" />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* How It Works */}
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white border border-slate-700 shadow-lg">
+              <div className="absolute top-0 right-0 w-40 h-40 bg-emerald-500/20 blur-3xl rounded-full -translate-y-1/2 translate-x-1/2" />
+              <div className="relative p-6">
+                <div className="flex items-center gap-2 mb-5">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-500/20 ring-1 ring-emerald-400/30 flex items-center justify-center">
+                    <Info className="w-4 h-4 text-emerald-300" />
+                  </div>
+                  <h3 className="text-sm font-semibold text-white">How It Works</h3>
+                </div>
+
+                <ol className="space-y-4">
+                  <Step n={1} text="Share your QR code or referral link with customers" />
+                  <Step n={2} text="Customer signs up using your unique code" />
+                  <Step n={3} text="Earn commission on every purchase they make" />
+                </ol>
+              </div>
+            </div>
+          </section>
+
+          {/* ─── Recent Activity ──────────────────────────────────── */}
+          <section className="grid gap-6 lg:grid-cols-2">
+            {/* Recent Referrals */}
+            <div className="rounded-2xl bg-white border border-slate-200 shadow-sm">
+              <div className="flex items-center justify-between p-6 pb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
+                    <Users className="w-4 h-4 text-blue-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold text-slate-900">Recent Referrals</h3>
+                    <p className="text-[11px] text-slate-500">Latest customers you onboarded</p>
+                  </div>
+                </div>
+                <a href="/dashboard/referrals" className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 hover:text-emerald-800">
+                  View all <ArrowUpRight className="w-3 h-3" />
+                </a>
+              </div>
+
+              <div className="px-6 pb-6">
+                {stats?.recent_referrals && stats.recent_referrals.length > 0 ? (
+                  <div className="space-y-2">
+                    {stats.recent_referrals.slice(0, 5).map((ref) => {
+                      const refInitials = ((ref.customer_name || ref.customer_email || 'C').trim()[0] || 'C').toUpperCase()
+                      return (
+                        <div key={ref.id} className="group flex items-center justify-between gap-3 p-3 rounded-xl border border-transparent hover:border-slate-200 hover:bg-slate-50 transition-colors">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                              {refInitials}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-sm font-semibold text-slate-900 truncate">{ref.customer_name || 'Customer'}</p>
+                              <p className="text-xs text-slate-500 truncate">{ref.customer_email}</p>
+                            </div>
+                          </div>
+                          <div className="text-right flex-shrink-0">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100">
+                              {ref.total_orders} {ref.total_orders === 1 ? 'order' : 'orders'}
+                            </span>
+                            <p className="text-[10px] text-slate-400 mt-1">{formatDate(ref.referred_at)}</p>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-10 text-center">
+                    <div className="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center mb-3">
+                      <Users className="w-6 h-6 text-slate-400" />
+                    </div>
+                    <p className="text-sm font-semibold text-slate-700">No referrals yet</p>
+                    <p className="text-xs text-slate-500 mt-1">Share your code to start earning</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Recent Commission */}
+            <div className="rounded-2xl bg-white border border-slate-200 shadow-sm">
+              <div className="flex items-center justify-between p-6 pb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
+                    <DollarSign className="w-4 h-4 text-emerald-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold text-slate-900">Recent Commission</h3>
+                    <p className="text-[11px] text-slate-500">Earnings from your last referrals</p>
+                  </div>
+                </div>
+                <a href="/dashboard/orders" className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 hover:text-emerald-800">
+                  View all <ArrowUpRight className="w-3 h-3" />
+                </a>
+              </div>
+
+              <div className="px-6 pb-6">
+                {stats?.recent_commissions && stats.recent_commissions.length > 0 ? (
+                  <div className="space-y-2">
+                    {stats.recent_commissions.slice(0, 5).map((comm) => (
+                      <div key={comm.id} className="group flex items-center justify-between gap-3 p-3 rounded-xl border border-transparent hover:border-slate-200 hover:bg-slate-50 transition-colors">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-100 to-teal-100 flex items-center justify-center flex-shrink-0">
+                            <Package className="w-4 h-4 text-emerald-700" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold text-slate-900 truncate">{comm.product_name}</p>
+                            <p className="text-xs text-slate-500">
+                              ₹{comm.order_amount} <span className="text-slate-300">·</span> {comm.commission_rate}%
+                            </p>
+                            <p className="text-[10px] text-slate-400 truncate">{comm.order_id}</p>
+                          </div>
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <p className={`text-base font-bold ${comm.has_return ? "text-slate-400 line-through" : "text-emerald-600"}`}>
+                            +₹{(comm.has_return ? 0 : comm.commission_amount).toFixed(2)}
+                          </p>
+                          <div className="mt-1 flex justify-end">
+                            <CommissionStatusBadge
+                              status={comm.status}
+                              unlockAt={comm.unlock_at}
+                              hasReturn={comm.has_return}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-10 text-center">
+                    <div className="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center mb-3">
+                      <DollarSign className="w-6 h-6 text-slate-400" />
+                    </div>
+                    <p className="text-sm font-semibold text-slate-700">No commission yet</p>
+                    <p className="text-xs text-slate-500 mt-1">Earn when your referrals purchase</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </section>
+
+          {/* ─── Your Information ─────────────────────────────────── */}
+          <section className="rounded-2xl bg-white border border-slate-200 shadow-sm">
+            <div className="p-6">
+              <div className="flex items-center gap-2.5 mb-5">
+                <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center">
+                  <UserCircle2 className="w-4 h-4 text-slate-700" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-900">Your Information</h3>
+                  <p className="text-[11px] text-slate-500">Account details on file</p>
+                </div>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <InfoField
+                  icon={UserIcon}
+                  label="Name"
+                  value={user?.first_name && user?.last_name ? `${user.first_name} ${user.last_name}` : "N/A"}
+                />
+                <InfoField icon={Mail} label="Email" value={user?.email || "—"} />
+                {user?.phone && <InfoField icon={Phone} label="Phone" value={user.phone} />}
+                <InfoField icon={Hash} label="Referral Code" value={user?.refer_code || "—"} mono />
+              </div>
+            </div>
+          </section>
         </div>
       </main>
 
@@ -630,3 +791,105 @@ export default function DashboardPage() {
     </div>
   )
 }
+
+/* ─── UI Sub-components ──────────────────────────────────────────────
+ * Pure presentational helpers. No business logic, no data access —
+ * they only structure the redesigned dashboard chrome.
+ * ────────────────────────────────────────────────────────────────── */
+
+type LucideIcon = React.ComponentType<{ className?: string }>
+
+function NavTab({
+  href,
+  icon: Icon,
+  label,
+  active = false,
+}: {
+  href: string
+  icon: LucideIcon
+  label: string
+  active?: boolean
+}) {
+  return (
+    <a
+      href={href}
+      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${active
+        ? 'bg-white text-emerald-700 shadow-sm ring-1 ring-emerald-100'
+        : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+        }`}
+    >
+      <Icon className="w-4 h-4" />
+      {label}
+    </a>
+  )
+}
+
+function StatCard({
+  label,
+  value,
+  meta,
+  metaTone = 'muted',
+  icon: Icon,
+  gradient,
+  accent,
+  ringClass,
+}: {
+  label: string
+  value: string
+  meta: string
+  metaTone?: 'muted' | 'amber'
+  icon: LucideIcon
+  gradient: string
+  accent: string
+  ringClass: string
+}) {
+  return (
+    <div className="group relative overflow-hidden rounded-2xl bg-white border border-slate-200 p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all">
+      <div className="flex items-start justify-between mb-3">
+        <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center shadow-sm ring-4 ${ringClass}`}>
+          <Icon className="w-5 h-5 text-white" />
+        </div>
+        <ArrowUpRight className={`w-4 h-4 ${accent} opacity-0 group-hover:opacity-100 transition-opacity`} />
+      </div>
+      <p className="text-[11px] uppercase tracking-wider font-semibold text-slate-500">{label}</p>
+      <p className="text-3xl font-bold text-slate-900 mt-1 tracking-tight">{value}</p>
+      <p className={`text-xs mt-2 ${metaTone === 'amber' ? 'text-amber-600 font-medium' : 'text-slate-500'}`}>{meta}</p>
+    </div>
+  )
+}
+
+function Step({ n, text }: { n: number; text: string }) {
+  return (
+    <li className="flex items-start gap-3">
+      <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-gradient-to-br from-emerald-400 to-teal-500 text-white text-xs font-bold flex-shrink-0 shadow-sm shadow-emerald-500/30">
+        {n}
+      </span>
+      <span className="text-sm text-slate-200 leading-relaxed pt-1">{text}</span>
+    </li>
+  )
+}
+
+function InfoField({
+  icon: Icon,
+  label,
+  value,
+  mono = false,
+}: {
+  icon: LucideIcon
+  label: string
+  value: string
+  mono?: boolean
+}) {
+  return (
+    <div className="flex items-start gap-3 p-3 rounded-xl bg-slate-50/60 border border-slate-100">
+      <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center flex-shrink-0">
+        <Icon className="w-4 h-4 text-slate-500" />
+      </div>
+      <div className="min-w-0">
+        <p className="text-[10px] uppercase tracking-wider font-semibold text-slate-400">{label}</p>
+        <p className={`text-sm font-semibold text-slate-900 mt-0.5 truncate ${mono ? 'font-mono' : ''}`}>{value}</p>
+      </div>
+    </div>
+  )
+}
+
