@@ -289,7 +289,7 @@ export default function AdminDashboardPage() {
                   </div>
                 </div>
                 <p className="text-3xl font-bold text-gray-900 text-center">{adminStats.areaManagers}</p>
-                <p className="text-sm text-gray-600 text-center mt-2">Area Managers</p>
+                <p className="text-sm text-gray-600 text-center mt-2">Branch Managers</p>
               </div>
 
               <div className="group bg-white p-6 rounded-xl border-2 border-blue-100 hover:border-blue-300 transition-all cursor-pointer">
@@ -299,7 +299,7 @@ export default function AdminDashboardPage() {
                   </div>
                 </div>
                 <p className="text-3xl font-bold text-gray-900 text-center">{adminStats.branchAdmins}</p>
-                <p className="text-sm text-gray-600 text-center mt-2">Branch Admins</p>
+                <p className="text-sm text-gray-600 text-center mt-2">Area sales Managers</p>
               </div>
             </div>
           </div>

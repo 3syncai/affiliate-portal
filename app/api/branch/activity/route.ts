@@ -129,7 +129,7 @@ export async function GET(req: NextRequest) {
                     data: {
                         name: `${row.first_name} ${row.last_name}`,
                         email: row.email,
-                        action: 'approved as affiliate'
+                        action: 'approved as sales executive'
                     }
                 });
             } else if (!row.is_approved) {
