@@ -244,7 +244,7 @@ export default function ASMDashboard() {
                 <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
                     <div className="flex justify-between items-start">
                         <div>
-                            <p className="text-sm font-medium text-gray-500">Total Branches</p>
+                            <p className="text-sm font-medium text-gray-500">Total Asm</p>
                             <h3 className="text-2xl font-bold text-gray-900 mt-2">{stats.branchAdmins.length}</h3>
                         </div>
                         <div className="p-3 bg-orange-50 rounded-xl">

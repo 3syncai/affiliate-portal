@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import axios from "axios"
-import { MapPin, Eye, ToggleLeft, ToggleRight, Search } from "lucide-react"
+import { MapPin, Eye, ToggleLeft, ToggleRight, Search, X, Mail, Phone, Calendar, Shield, BadgeCheck, XCircle } from "lucide-react"
 
 type StateAdmin = {
     id: string
@@ -208,27 +208,138 @@ export default function StateAdminsPage() {
 
             {/* View Modal */}
             {selectedAdmin && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-lg max-w-lg w-full p-6">
-                        <h2 className="text-xl font-bold text-gray-900 mb-4">State Admin Details</h2>
-                        <div className="space-y-3 text-sm">
-                            <p><strong>Name:</strong> {selectedAdmin.first_name} {selectedAdmin.last_name}</p>
-                            <p><strong>Email:</strong> {selectedAdmin.email}</p>
-                            <p><strong>Phone:</strong> {selectedAdmin.phone || "-"}</p>
-                            <p><strong>State:</strong> {selectedAdmin.state}</p>
-                            <p><strong>Role:</strong> {selectedAdmin.role}</p>
-                            <p><strong>Status:</strong> {selectedAdmin.is_active ? "Active" : "Inactive"}</p>
-                            <p><strong>Created:</strong> {formatDate(selectedAdmin.created_at)}</p>
+                <div
+                    className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200"
+                    onClick={() => setSelectedAdmin(null)}
+                >
+                    <div
+                        className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden animate-in zoom-in-95 duration-200"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {/* Header with gradient */}
+                        <div className="relative bg-gradient-to-br from-indigo-600 via-indigo-500 to-purple-600 px-6 pt-6 pb-16">
+                            <button
+                                onClick={() => setSelectedAdmin(null)}
+                                className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition-colors"
+                                aria-label="Close"
+                            >
+                                <X className="w-4 h-4" />
+                            </button>
+                            <div className="text-white">
+                                <p className="text-xs uppercase tracking-wider opacity-80 font-medium">State Admin</p>
+                                <h2 className="text-xl font-bold mt-1">Profile Details</h2>
+                            </div>
                         </div>
-                        <button
-                            onClick={() => setSelectedAdmin(null)}
-                            className="mt-6 w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
-                        >
-                            Close
-                        </button>
+
+                        {/* Avatar + Name */}
+                        <div className="relative px-6 -mt-12">
+                            <div className="flex items-end gap-4">
+                                <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 ring-4 ring-white shadow-lg flex items-center justify-center text-white text-3xl font-bold">
+                                    {selectedAdmin.first_name?.[0]?.toUpperCase()}{selectedAdmin.last_name?.[0]?.toUpperCase()}
+                                </div>
+                                <div className="pb-2 flex-1 min-w-0">
+                                    <h3 className="text-xl font-bold text-gray-900 truncate capitalize">
+                                        {selectedAdmin.first_name} {selectedAdmin.last_name}
+                                    </h3>
+                                    <div className="flex items-center gap-2 mt-1">
+                                        {selectedAdmin.is_active ? (
+                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs font-medium">
+                                                <BadgeCheck className="w-3 h-3" />
+                                                Active
+                                            </span>
+                                        ) : (
+                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-xs font-medium">
+                                                <XCircle className="w-3 h-3" />
+                                                Inactive
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Details list */}
+                        <div className="px-6 py-6 space-y-1">
+                            <DetailRow
+                                icon={<Mail className="w-4 h-4" />}
+                                label="Email"
+                                value={selectedAdmin.email}
+                                iconBg="bg-blue-50 text-blue-600"
+                            />
+                            <DetailRow
+                                icon={<Phone className="w-4 h-4" />}
+                                label="Phone"
+                                value={selectedAdmin.phone || "—"}
+                                iconBg="bg-emerald-50 text-emerald-600"
+                            />
+                            <DetailRow
+                                icon={<MapPin className="w-4 h-4" />}
+                                label="State"
+                                value={selectedAdmin.state}
+                                iconBg="bg-orange-50 text-orange-600"
+                            />
+                            <DetailRow
+                                icon={<Shield className="w-4 h-4" />}
+                                label="Role"
+                                value={<span className="capitalize">{selectedAdmin.role}</span>}
+                                iconBg="bg-purple-50 text-purple-600"
+                            />
+                            <DetailRow
+                                icon={<Calendar className="w-4 h-4" />}
+                                label="Created"
+                                value={formatDate(selectedAdmin.created_at)}
+                                iconBg="bg-pink-50 text-pink-600"
+                            />
+                        </div>
+
+                        {/* Footer actions */}
+                        <div className="px-6 pb-6 flex gap-3">
+                            <button
+                                onClick={() => setSelectedAdmin(null)}
+                                className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 font-medium transition-colors"
+                            >
+                                Close
+                            </button>
+                            <button
+                                onClick={() => {
+                                    toggleStatus(selectedAdmin.id, selectedAdmin.is_active)
+                                    setSelectedAdmin(null)
+                                }}
+                                className={`flex-1 px-4 py-2.5 rounded-xl font-medium transition-colors ${selectedAdmin.is_active
+                                    ? "bg-red-50 text-red-600 hover:bg-red-100"
+                                    : "bg-green-50 text-green-600 hover:bg-green-100"
+                                    }`}
+                            >
+                                {selectedAdmin.is_active ? "Deactivate" : "Activate"}
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
+        </div>
+    )
+}
+
+function DetailRow({
+    icon,
+    label,
+    value,
+    iconBg,
+}: {
+    icon: React.ReactNode
+    label: string
+    value: React.ReactNode
+    iconBg: string
+}) {
+    return (
+        <div className="flex items-center gap-3 py-2.5 border-b border-gray-100 last:border-0">
+            <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${iconBg}`}>
+                {icon}
+            </div>
+            <div className="flex-1 min-w-0">
+                <p className="text-xs text-gray-500 font-medium">{label}</p>
+                <p className="text-sm text-gray-900 font-medium truncate">{value}</p>
+            </div>
         </div>
     )
 }

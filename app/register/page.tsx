@@ -718,7 +718,7 @@ export default function RegisterPage() {
                         {uploadStatus.aadhar_card_photo === "uploading" && (
                           <p className="mt-2 text-sm text-blue-600 flex items-center gap-2">
                             <span className="animate-spin">⏳</span>
-                            Uploading to S3...
+                            Uploading ...
                           </p>
                         )}
                         {uploadStatus.aadhar_card_photo === "success" && files.aadhar_card_photo && (
@@ -833,6 +833,7 @@ export default function RegisterPage() {
                         <option value="urban">Urban</option>
                         <option value="rural">Rural</option>
                         <option value="suburban">Suburban</option>
+                        <option value="Metropolitan">Metropolitan</option>
                       </select>
                     </div>
 
