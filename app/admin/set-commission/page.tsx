@@ -9,7 +9,7 @@ interface Product {
   id: string
   title: string
   thumbnail?: string
-  categories?: { id: string; name: string }[]
+  categories?: { id: string; name: string; parent_category_id?: string | null }[]
   collection?: { id: string; title: string }
   type?: { id: string; value: string }
   variants?: { sku: string }[]
@@ -96,7 +96,10 @@ export default function SetCommissionPage() {
       const uniqueTypes = new Map<string, FilterOption>()
 
       data.products?.forEach((product: Product) => {
-        product.categories?.forEach((cat: { id: string; name: string }) => {
+        product.categories?.forEach((cat) => {
+          // Only show top-level categories in the dropdown (no subcategories).
+          // Subcategories have a non-null parent_category_id.
+          if (cat.parent_category_id) return
           if (!uniqueCategories.has(cat.id)) {
             uniqueCategories.set(cat.id, { id: cat.id, name: cat.name })
           }

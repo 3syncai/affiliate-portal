@@ -46,41 +46,76 @@ export async function POST(request: NextRequest) {
         }
 
 
-        // STEP 0: Enrich Payload - Fetch Category/Collection if missing
-        if (!payload.category_id || !payload.collection_id) {
-            try {
-                // Fetch Category
-                if (!payload.category_id) {
-                    const catRes = await pool.query(`
-                        SELECT product_category_id FROM product_category_product 
-                        WHERE product_id = $1 LIMIT 1
-                    `, [payload.product_id]);
-                    if (catRes.rows.length > 0) {
-                        payload.category_id = catRes.rows[0].product_category_id;
-                        console.log(`[Enrichment] Found Category ID: ${payload.category_id}`);
-                    }
-                }
+        // STEP 0: Enrich Payload - Fetch ALL Categories (including ancestors), Collection, and Type
+        // Products can belong to multiple categories (especially combo/bundle products).
+        // We must consider EVERY category the product is linked to — direct AND ancestor —
+        // so a commission rule on a parent category (e.g. "Health Care") still applies
+        // to products tagged only with its subcategory ("Sassiest Health Care").
+        let productCategoryIds: string[] = [];
+        try {
+            // Fetch every category the product is directly linked to, plus the full
+            // ancestor chain via parent_category_id.
+            const catRes = await pool.query(`
+                WITH RECURSIVE category_tree AS (
+                    SELECT pc.id, pc.parent_category_id
+                    FROM product_category_product pcp
+                    JOIN product_category pc ON pc.id = pcp.product_category_id
+                    WHERE pcp.product_id = $1
 
-                // Fetch Collection
-                if (!payload.collection_id) {
-                    const collRes = await pool.query(`
-                        SELECT collection_id FROM product WHERE id = $1
-                    `, [payload.product_id]);
-                    if (collRes.rows.length > 0) {
-                        payload.collection_id = collRes.rows[0].collection_id;
-                        console.log(`[Enrichment] Found Collection ID: ${payload.collection_id}`);
-                    }
-                }
-            } catch (enrichErr) {
-                console.error("[Enrichment] Failed to fetch product metadata:", enrichErr);
+                    UNION
+
+                    SELECT parent.id, parent.parent_category_id
+                    FROM product_category parent
+                    JOIN category_tree ct ON ct.parent_category_id = parent.id
+                )
+                SELECT DISTINCT id FROM category_tree
+            `, [payload.product_id]);
+            productCategoryIds = catRes.rows.map(r => r.id).filter(Boolean);
+
+            // If the storefront passed a specific category_id, make sure it's included
+            if (payload.category_id && !productCategoryIds.includes(payload.category_id)) {
+                productCategoryIds.push(payload.category_id);
             }
+
+            // Pick a representative category_id for logging/ledger columns
+            if (!payload.category_id && productCategoryIds.length > 0) {
+                payload.category_id = productCategoryIds[0];
+            }
+
+            console.log(`[Enrichment] Product belongs to ${productCategoryIds.length} categor${productCategoryIds.length === 1 ? "y" : "ies"} (incl. ancestors): [${productCategoryIds.join(", ")}]`);
+
+            // Fetch Collection
+            if (!payload.collection_id) {
+                const collRes = await pool.query(`
+                    SELECT collection_id FROM product WHERE id = $1
+                `, [payload.product_id]);
+                if (collRes.rows.length > 0) {
+                    payload.collection_id = collRes.rows[0].collection_id;
+                    console.log(`[Enrichment] Found Collection ID: ${payload.collection_id}`);
+                }
+            }
+
+            // Fetch Product Type
+            if (!payload.product_type_id) {
+                const typeRes = await pool.query(`
+                    SELECT type_id FROM product WHERE id = $1
+                `, [payload.product_id]);
+                if (typeRes.rows.length > 0 && typeRes.rows[0].type_id) {
+                    payload.product_type_id = typeRes.rows[0].type_id;
+                    console.log(`[Enrichment] Found Type ID: ${payload.product_type_id}`);
+                }
+            }
+        } catch (enrichErr) {
+            console.error("[Enrichment] Failed to fetch product metadata:", enrichErr);
         }
 
-        // STEP 1: Lookup commission percentage from product_commissions table
-        // Priority: product_id > category_id > collection_id > product_type_id
+        // STEP 1: Lookup commission percentage from affiliate_commission table
+        // Priority: product_id > category (ANY of the product's categories or ancestors)
+        //          > collection_id > product_type_id
         let commissionPercentage = 0;
         const commissionQuery = `
-            SELECT commission_rate as commission_percentage, 
+            SELECT commission_rate as commission_percentage,
+                   product_id, category_id, collection_id, type_id,
                    CASE 
                        WHEN product_id IS NOT NULL THEN 'product'
                        WHEN category_id IS NOT NULL THEN 'category'
@@ -89,7 +124,7 @@ export async function POST(request: NextRequest) {
                    END as source
             FROM affiliate_commission
             WHERE (product_id = $1)
-               OR (category_id = $2 AND product_id IS NULL)
+               OR (category_id = ANY($2::text[]) AND product_id IS NULL)
                OR (collection_id = $3 AND product_id IS NULL AND category_id IS NULL)
                OR (type_id = $4 AND product_id IS NULL AND category_id IS NULL AND collection_id IS NULL)
             ORDER BY 
@@ -98,26 +133,29 @@ export async function POST(request: NextRequest) {
                     WHEN category_id IS NOT NULL THEN 2
                     WHEN collection_id IS NOT NULL THEN 3
                     WHEN type_id IS NOT NULL THEN 4
-                END
+                END,
+                commission_rate DESC
             LIMIT 1
         `;
 
         const commissionResult = await pool.query(commissionQuery, [
             payload.product_id,
-            payload.category_id || null,
+            productCategoryIds.length > 0 ? productCategoryIds : [null],
             payload.collection_id || null,
             payload.product_type_id || null
         ]);
 
         if (commissionResult.rows.length > 0) {
             commissionPercentage = parseFloat(commissionResult.rows[0].commission_percentage);
-            console.log(`[Commission Lookup] Found ${commissionPercentage}% commission via ${commissionResult.rows[0].source}`);
+            const row = commissionResult.rows[0];
+            // Record the actually matched category on the ledger for clarity
+            if (row.source === "category" && row.category_id) {
+                payload.category_id = row.category_id;
+            }
+            console.log(`[Commission Lookup] Found ${commissionPercentage}% commission via ${row.source}${row.category_id ? ` (category=${row.category_id})` : ""}`);
         } else {
-            console.log('[Commission Lookup] No commission found for this product. Using default fallback (0%).');
-            // FALLBACK: Don't fail, just log with 0% commission so the order is tracked
+            console.log(`[Commission Lookup] No commission found for product=${payload.product_id}, categories=[${productCategoryIds.join(", ")}], collection=${payload.collection_id}, type=${payload.product_type_id}. Using fallback 0%.`);
             commissionPercentage = 0;
-
-            // Optional: You could fetch a global default from a settings table here if it existed
         }
 
         // STEP 2: Calculate commission amount based on price and percentage
