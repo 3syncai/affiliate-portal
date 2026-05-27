@@ -87,7 +87,8 @@ export async function GET(req: NextRequest) {
                     pcp.product_id,
                     pc.id as category_id,
                     pc.name as category_name,
-                    pc.handle as category_handle
+                    pc.handle as category_handle,
+                    pc.parent_category_id
                 FROM product_category_product pcp
                 JOIN product_category pc ON pc.id = pcp.product_category_id
             `),
@@ -139,7 +140,12 @@ export async function GET(req: NextRequest) {
         const productCategories = new Map<string, any[]>();
         categoryRes.rows.forEach(row => {
             const existing = productCategories.get(row.product_id) || [];
-            existing.push({ id: row.category_id, name: row.category_name, handle: row.category_handle });
+            existing.push({
+                id: row.category_id,
+                name: row.category_name,
+                handle: row.category_handle,
+                parent_category_id: row.parent_category_id || null
+            });
             productCategories.set(row.product_id, existing);
         });
 
