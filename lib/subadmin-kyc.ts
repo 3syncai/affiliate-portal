@@ -129,7 +129,7 @@ export async function handleCompleteSubAdminProfile(
         }
 
         const userRes = await pool.query(
-            `SELECT id FROM ${table} WHERE id = $1`,
+            `SELECT id, first_name, last_name FROM ${table} WHERE id = $1`,
             [authUserId]
         )
         if (userRes.rows.length === 0) {
@@ -138,11 +138,21 @@ export async function handleCompleteSubAdminProfile(
                 { status: 404 }
             )
         }
+        const agentName = composeAgentName(
+            userRes.rows[0].first_name,
+            userRes.rows[0].last_name
+        )
 
         let panUrl: string
         let aadharUrl: string
         try {
-            panUrl = await uploadSubAdminDocument(panFile, s3Level, authUserId, "pancard")
+            panUrl = await uploadSubAdminDocument(
+                panFile,
+                s3Level,
+                agentName,
+                authUserId,
+                "pancard"
+            )
             uploadedUrls.push(panUrl)
         } catch (err: any) {
             console.error(`${logPrefix} PAN upload failed`, err)
@@ -152,7 +162,13 @@ export async function handleCompleteSubAdminProfile(
             )
         }
         try {
-            aadharUrl = await uploadSubAdminDocument(aadharFile, s3Level, authUserId, "aadhar")
+            aadharUrl = await uploadSubAdminDocument(
+                aadharFile,
+                s3Level,
+                agentName,
+                authUserId,
+                "aadhar"
+            )
             uploadedUrls.push(aadharUrl)
         } catch (err: any) {
             console.error(`${logPrefix} Aadhar upload failed`, err)
@@ -236,6 +252,18 @@ async function cleanupUploads(urls: string[], logPrefix: string): Promise<void> 
     await Promise.all(urls.map((url) => deleteFromS3(url)))
 }
 
+/**
+ * Build the "agent name" passed to `buildSubAdminFolder` from the
+ * first/last name columns on the sub-admin row. Either or both may be
+ * NULL on legacy rows; we coerce nulls to empty strings and rely on
+ * `buildSubAdminFolder`'s `"agent"` fallback when both are blank.
+ */
+function composeAgentName(firstName: unknown, lastName: unknown): string {
+    const first = typeof firstName === "string" ? firstName : ""
+    const last = typeof lastName === "string" ? lastName : ""
+    return `${first} ${last}`.trim()
+}
+
 type KycEditOptions = {
     pool: Pool
     table: SubAdminTable
@@ -297,9 +325,11 @@ export async function handleSubAdminKycEdit(
 
         // Look up the existing photo URLs so cleanup-on-failure can decide
         // whether a freshly-uploaded object would orphan the URL the DB
-        // still points to. Also confirms the authenticated row exists.
+        // still points to. Also confirms the authenticated row exists and
+        // gives us the name we need for the hybrid S3 folder.
         const existingRes = await pool.query(
-            `SELECT pan_card_photo, aadhar_card_photo FROM ${table} WHERE id = $1`,
+            `SELECT first_name, last_name, pan_card_photo, aadhar_card_photo
+             FROM ${table} WHERE id = $1`,
             [authUserId]
         )
         if (existingRes.rows.length === 0) {
@@ -308,6 +338,10 @@ export async function handleSubAdminKycEdit(
                 { status: 404 }
             )
         }
+        const agentName = composeAgentName(
+            existingRes.rows[0].first_name,
+            existingRes.rows[0].last_name
+        )
         const oldPanUrl: string | null = existingRes.rows[0].pan_card_photo ?? null
         const oldAadharUrl: string | null = existingRes.rows[0].aadhar_card_photo ?? null
 
@@ -320,6 +354,7 @@ export async function handleSubAdminKycEdit(
                 newPanUrl = await uploadSubAdminDocumentReplacement(
                     panFile as File,
                     s3Level,
+                    agentName,
                     authUserId,
                     "pancard",
                     panIndex
@@ -340,6 +375,7 @@ export async function handleSubAdminKycEdit(
                 newAadharUrl = await uploadSubAdminDocumentReplacement(
                     aadharFile as File,
                     s3Level,
+                    agentName,
                     authUserId,
                     "aadhar",
                     aadharIndex
