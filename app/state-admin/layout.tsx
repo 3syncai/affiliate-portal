@@ -78,7 +78,11 @@ export default function StateAdminLayout({
 
         try {
             const parsed = JSON.parse(userData)
-            if (parsed?.profile_completed === false) {
+            // Treat any non-true value (undefined for sessions stored before
+            // profile_completed existed, plus literal false) as incomplete.
+            // `authChecked` stays false on the redirect path so the dashboard
+            // never flashes between gating and navigation.
+            if (parsed?.profile_completed !== true) {
                 router.replace("/complete-profile")
                 return
             }

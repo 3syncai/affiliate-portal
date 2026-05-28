@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, type ChangeEvent } from "react"
 import {
     Building2,
     CreditCard,
@@ -11,12 +11,15 @@ import {
     Loader2,
     MapPin,
     ShieldCheck,
+    Upload,
     User as UserIcon,
     X,
     Save,
     ExternalLink,
     AlertCircle,
 } from "lucide-react"
+
+const MAX_KYC_FILE_BYTES = 5 * 1024 * 1024
 
 type SubAdminKycBank = {
     pan_card_no: string | null
@@ -80,6 +83,30 @@ export default function SubAdminKycBankSection({ apiBase, themePrimary }: SubAdm
     const [saving, setSaving] = useState(false)
     const [saveError, setSaveError] = useState<string | null>(null)
     const [saveSuccess, setSaveSuccess] = useState<string | null>(null)
+
+    // KYC edit mode — separate from bank edit so a user can have one card open
+    // at a time without losing the other's draft. PAN/Aadhar numbers are
+    // intentionally NOT seeded from localStorage; they come from React state
+    // hydrated by the /me fetch (CodeRabbit PR #32 fix keeps them out of
+    // localStorage entirely).
+    const [isEditingKyc, setIsEditingKyc] = useState(false)
+    const [kycForm, setKycForm] = useState<{
+        pan_card_no: string
+        aadhar_card_no: string
+        panFile: File | null
+        aadharFile: File | null
+    }>({
+        pan_card_no: "",
+        aadhar_card_no: "",
+        panFile: null,
+        aadharFile: null,
+    })
+    const [savingKyc, setSavingKyc] = useState(false)
+    const [kycError, setKycError] = useState<string | null>(null)
+    const [kycSuccess, setKycSuccess] = useState<string | null>(null)
+    // The endpoint URL is derived from the bank `apiBase` so callers don't
+    // need to wire a second prop. e.g. "/api/state-admin/me" → "/api/state-admin/kyc".
+    const kycEndpoint = apiBase.replace(/\/me$/, "/kyc")
 
     useEffect(() => {
         let cancelled = false
@@ -146,15 +173,24 @@ export default function SubAdminKycBankSection({ apiBase, themePrimary }: SubAdm
             const stored = localStorage.getItem("affiliate_user")
             if (!stored) return
             const parsed = JSON.parse(stored)
+            // Persist ONLY bank fields. PAN and Aadhar identifiers are
+            // sensitive PII and must not leak into localStorage where any
+            // injected script can read them. The PAN/Aadhar values rendered
+            // by this component come straight from the freshly-fetched
+            // /me response and stay in React state for the page lifetime.
+            // If a prior cached copy snuck in, scrub it on next sync.
+            const {
+                pan_card_no: _droppedPan,
+                aadhar_card_no: _droppedAadhar,
+                ...sanitizedExisting
+            } = parsed || {}
             const merged = {
-                ...parsed,
-                pan_card_no: freshUser.pan_card_no ?? parsed.pan_card_no ?? null,
-                aadhar_card_no: freshUser.aadhar_card_no ?? parsed.aadhar_card_no ?? null,
-                account_name: freshUser.account_name ?? parsed.account_name ?? null,
-                bank_name: freshUser.bank_name ?? parsed.bank_name ?? null,
-                bank_branch: freshUser.bank_branch ?? parsed.bank_branch ?? null,
-                ifsc_code: freshUser.ifsc_code ?? parsed.ifsc_code ?? null,
-                account_number: freshUser.account_number ?? parsed.account_number ?? null,
+                ...sanitizedExisting,
+                account_name: freshUser.account_name ?? sanitizedExisting.account_name ?? null,
+                bank_name: freshUser.bank_name ?? sanitizedExisting.bank_name ?? null,
+                bank_branch: freshUser.bank_branch ?? sanitizedExisting.bank_branch ?? null,
+                ifsc_code: freshUser.ifsc_code ?? sanitizedExisting.ifsc_code ?? null,
+                account_number: freshUser.account_number ?? sanitizedExisting.account_number ?? null,
             }
             localStorage.setItem("affiliate_user", JSON.stringify(merged))
         } catch {
@@ -229,6 +265,94 @@ export default function SubAdminKycBankSection({ apiBase, themePrimary }: SubAdm
         }
     }
 
+    function startEditKyc() {
+        if (!data) return
+        setKycForm({
+            pan_card_no: data.pan_card_no || "",
+            aadhar_card_no: data.aadhar_card_no || "",
+            panFile: null,
+            aadharFile: null,
+        })
+        setKycError(null)
+        setKycSuccess(null)
+        setIsEditingKyc(true)
+    }
+
+    function cancelEditKyc() {
+        setIsEditingKyc(false)
+        setKycError(null)
+    }
+
+    function handleKycFileChange(
+        which: "panFile" | "aadharFile"
+    ): (e: ChangeEvent<HTMLInputElement>) => void {
+        return (e) => {
+            const file = e.target.files?.[0] || null
+            if (file && file.size > MAX_KYC_FILE_BYTES) {
+                setKycError("Each document must be 5 MB or smaller.")
+                setKycForm((prev) => ({ ...prev, [which]: null }))
+                // Reset the file input so picking the same oversized file again triggers onChange.
+                e.target.value = ""
+                return
+            }
+            setKycError(null)
+            setKycForm((prev) => ({ ...prev, [which]: file }))
+        }
+    }
+
+    async function handleSaveKyc(e: React.FormEvent) {
+        e.preventDefault()
+        if (!data) return
+
+        const panNo = kycForm.pan_card_no.trim().toUpperCase()
+        const aadharNo = kycForm.aadhar_card_no.trim()
+        if (!panNo) {
+            setKycError("PAN card number is required")
+            return
+        }
+        if (!aadharNo) {
+            setKycError("Aadhar card number is required")
+            return
+        }
+
+        setSavingKyc(true)
+        setKycError(null)
+        setKycSuccess(null)
+        try {
+            const token = typeof window !== "undefined" ? localStorage.getItem("affiliate_token") : null
+            if (!token) {
+                setKycError("You are not logged in")
+                return
+            }
+
+            const formData = new FormData()
+            formData.append("pan_card_no", panNo)
+            formData.append("aadhar_card_no", aadharNo)
+            if (kycForm.panFile) formData.append("pan_card_photo", kycForm.panFile)
+            if (kycForm.aadharFile) formData.append("aadhar_card_photo", kycForm.aadharFile)
+
+            const res = await fetch(kycEndpoint, {
+                method: "PATCH",
+                headers: { Authorization: `Bearer ${token}` },
+                body: formData,
+            })
+            const json = await res.json()
+            if (!res.ok || !json?.success) {
+                setKycError(json?.message || "Failed to update KYC details")
+                return
+            }
+            // applyUser refreshes both PAN/Aadhar React state and re-scrubs
+            // them from localStorage via syncLocalStorageUser.
+            applyUser(json.user)
+            setIsEditingKyc(false)
+            setKycSuccess("KYC details updated successfully")
+        } catch (err: any) {
+            setKycError(err?.message || "Failed to update KYC details")
+        } finally {
+            setSavingKyc(false)
+        }
+    }
+
     if (loading) {
         return (
             <div className="flex items-center justify-center py-16 text-gray-500">
@@ -264,28 +388,122 @@ export default function SubAdminKycBankSection({ apiBase, themePrimary }: SubAdm
                         <div>
                             <h3 className="text-base font-semibold text-gray-900">KYC Documents</h3>
                             <p className="text-xs text-gray-500">
-                                PAN and Aadhar details collected during onboarding. View only.
+                                {isEditingKyc
+                                    ? "Update your PAN and Aadhar. Leave a file picker empty to keep the current photo."
+                                    : "Update your PAN and Aadhar numbers, or replace either photo."}
                             </p>
                         </div>
                     </div>
-                    <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600">
-                        <ShieldCheck className="w-3 h-3" />
-                        Locked
-                    </span>
+                    {!isEditingKyc ? (
+                        <button
+                            onClick={startEditKyc}
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                        >
+                            <Pencil className="w-3.5 h-3.5" />
+                            Edit
+                        </button>
+                    ) : (
+                        <button
+                            onClick={cancelEditKyc}
+                            disabled={savingKyc}
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                        >
+                            <X className="w-3.5 h-3.5" />
+                            Cancel
+                        </button>
+                    )}
                 </header>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
-                    <DocumentBlock
-                        label="PAN Card"
-                        number={data.pan_card_no}
-                        photoUrl={data.pan_card_photo}
-                    />
-                    <DocumentBlock
-                        label="Aadhar Card"
-                        number={data.aadhar_card_no}
-                        photoUrl={data.aadhar_card_photo}
-                    />
-                </div>
+                {kycSuccess && !isEditingKyc && (
+                    <div className="mx-6 mt-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-700">
+                        {kycSuccess}
+                    </div>
+                )}
+
+                {!isEditingKyc ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
+                        <DocumentBlock
+                            label="PAN Card"
+                            number={data.pan_card_no}
+                            photoUrl={data.pan_card_photo}
+                        />
+                        <DocumentBlock
+                            label="Aadhar Card"
+                            number={data.aadhar_card_no}
+                            photoUrl={data.aadhar_card_photo}
+                        />
+                    </div>
+                ) : (
+                    <form onSubmit={handleSaveKyc} className="p-6 space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <KycEditBlock
+                                label="PAN Card"
+                                numberLabel="PAN Number"
+                                numberPlaceholder="ABCDE1234F"
+                                numberValue={kycForm.pan_card_no}
+                                onNumberChange={(v) =>
+                                    setKycForm((prev) => ({ ...prev, pan_card_no: v.toUpperCase() }))
+                                }
+                                currentPhotoUrl={data.pan_card_photo}
+                                pickedFile={kycForm.panFile}
+                                onFilePick={handleKycFileChange("panFile")}
+                                onClearFile={() =>
+                                    setKycForm((prev) => ({ ...prev, panFile: null }))
+                                }
+                                disabled={savingKyc}
+                                accent={accent}
+                            />
+                            <KycEditBlock
+                                label="Aadhar Card"
+                                numberLabel="Aadhar Number"
+                                numberPlaceholder="1234 5678 9012"
+                                numberValue={kycForm.aadhar_card_no}
+                                onNumberChange={(v) =>
+                                    setKycForm((prev) => ({ ...prev, aadhar_card_no: v }))
+                                }
+                                currentPhotoUrl={data.aadhar_card_photo}
+                                pickedFile={kycForm.aadharFile}
+                                onFilePick={handleKycFileChange("aadharFile")}
+                                onClearFile={() =>
+                                    setKycForm((prev) => ({ ...prev, aadharFile: null }))
+                                }
+                                disabled={savingKyc}
+                                accent={accent}
+                            />
+                        </div>
+
+                        {kycError && (
+                            <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                                <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+                                <span>{kycError}</span>
+                            </div>
+                        )}
+
+                        <div className="flex justify-end gap-3 pt-2">
+                            <button
+                                type="button"
+                                onClick={cancelEditKyc}
+                                disabled={savingKyc}
+                                className="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={savingKyc}
+                                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-lg disabled:opacity-60"
+                                style={{ background: accent }}
+                            >
+                                {savingKyc ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                    <Save className="w-4 h-4" />
+                                )}
+                                {savingKyc ? "Saving..." : "Save Changes"}
+                            </button>
+                        </div>
+                    </form>
+                )}
             </section>
 
             {/* Bank Card */}
@@ -425,6 +643,131 @@ function ReadOnlyField({
             <div className="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-900">
                 <Icon className="w-4 h-4 text-gray-400 shrink-0" />
                 <span className="truncate">{value || <span className="text-gray-400">Not provided</span>}</span>
+            </div>
+        </div>
+    )
+}
+
+type KycEditBlockProps = {
+    label: string
+    numberLabel: string
+    numberPlaceholder: string
+    numberValue: string
+    onNumberChange: (value: string) => void
+    currentPhotoUrl: string | null
+    pickedFile: File | null
+    onFilePick: (e: ChangeEvent<HTMLInputElement>) => void
+    onClearFile: () => void
+    disabled: boolean
+    accent: string
+}
+
+function KycEditBlock({
+    label,
+    numberLabel,
+    numberPlaceholder,
+    numberValue,
+    onNumberChange,
+    currentPhotoUrl,
+    pickedFile,
+    onFilePick,
+    onClearFile,
+    disabled,
+    accent,
+}: KycEditBlockProps) {
+    return (
+        <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 space-y-4">
+            <div className="flex items-center gap-2">
+                <FileText className="w-4 h-4 text-gray-500" />
+                <span className="text-sm font-medium text-gray-700">{label}</span>
+            </div>
+
+            <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">
+                    {numberLabel} <span className="text-red-500">*</span>
+                </label>
+                <input
+                    type="text"
+                    value={numberValue}
+                    onChange={(e) => onNumberChange(e.target.value)}
+                    placeholder={numberPlaceholder}
+                    disabled={disabled}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono bg-white focus:outline-none focus:ring-2 focus:ring-offset-1 disabled:bg-gray-100"
+                    style={{
+                        // @ts-expect-error CSS var for ring color
+                        "--tw-ring-color": accent,
+                    }}
+                />
+            </div>
+
+            <div>
+                <div className="text-xs font-medium text-gray-600 mb-1">Current document</div>
+                {currentPhotoUrl ? (
+                    <div className="flex items-end gap-3">
+                        <a
+                            href={currentPhotoUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block shrink-0"
+                            aria-label={`View current ${label} in a new tab`}
+                        >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                                src={currentPhotoUrl}
+                                alt={`${label} current preview`}
+                                className="h-20 w-auto rounded-md border border-gray-200 bg-white object-contain"
+                            />
+                        </a>
+                        <a
+                            href={currentPhotoUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700 pb-1"
+                        >
+                            <ExternalLink className="w-3.5 h-3.5" />
+                            View
+                        </a>
+                    </div>
+                ) : (
+                    <span className="text-xs text-gray-400">No document on file</span>
+                )}
+            </div>
+
+            <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">
+                    Replace photo (optional, JPG/PNG/PDF up to 5 MB)
+                </label>
+                <label className="flex items-center justify-between gap-3 w-full px-3 py-2 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-gray-400 bg-white transition-colors">
+                    <span className="flex items-center gap-2 text-xs text-gray-600 truncate">
+                        <Upload className="w-3.5 h-3.5 text-gray-500 flex-shrink-0" />
+                        <span className="truncate">
+                            {pickedFile ? pickedFile.name : "Click to upload a new photo"}
+                        </span>
+                    </span>
+                    <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/jpg,application/pdf"
+                        onChange={onFilePick}
+                        disabled={disabled}
+                        className="hidden"
+                    />
+                </label>
+                {pickedFile && (
+                    <div className="mt-1 flex items-center justify-between gap-2 text-[11px] text-emerald-700">
+                        <span className="truncate">
+                            Selected: {pickedFile.name} ({(pickedFile.size / 1024).toFixed(0)} KB)
+                        </span>
+                        <button
+                            type="button"
+                            onClick={onClearFile}
+                            disabled={disabled}
+                            className="text-gray-500 hover:text-gray-700 disabled:opacity-50"
+                        >
+                            Clear
+                        </button>
+                    </div>
+                )}
             </div>
         </div>
     )
