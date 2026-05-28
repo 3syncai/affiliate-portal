@@ -113,18 +113,35 @@ export default function PaymentsPage() {
             alert("Transaction ID is required")
             return
         }
+        if (paymentMethod === "Bank Transfer" && (!accountNumber.trim() || !ifscCode.trim())) {
+            alert("Account Number and IFSC Code are required for Bank Transfer.")
+            return
+        }
+        if (paymentMethod === "UPI" && !upiId.trim()) {
+            alert("UPI ID is required for UPI payments.")
+            return
+        }
 
         setProcessing(true)
         try {
-            const accountDetails = paymentMethod === "UPI"
-                ? { upiId }
-                : {
-                    accountNumber,
-                    ifscCode,
+            // Each payment method carries only its own payout metadata so
+            // Cheque/Cash submissions don't bleed bank details into the
+            // audit trail and UPI submissions don't ship empty bank fields.
+            let accountDetails: Record<string, unknown>
+            if (paymentMethod === "UPI") {
+                accountDetails = { upiId: upiId.trim() }
+            } else if (paymentMethod === "Bank Transfer") {
+                accountDetails = {
+                    accountNumber: accountNumber.trim(),
+                    ifscCode: ifscCode.trim().toUpperCase(),
                     accountHolderName: selectedAdmin.bankDetails?.account_name || null,
                     bankName: selectedAdmin.bankDetails?.bank_name || null,
                     bankBranch: selectedAdmin.bankDetails?.bank_branch || null,
                 }
+            } else {
+                // Cheque / Cash: no payout-account metadata applies.
+                accountDetails = {}
+            }
 
             const response = await axios.post("/api/admin/payments", {
                 recipientId: selectedAdmin.id,
@@ -203,10 +220,16 @@ export default function PaymentsPage() {
     const netAmount = parseFloat(amount) || 0
     const hasZeroEarnings = Boolean(selectedAdmin) && netAmount <= 0
     const transactionIdMissing = !transactionId.trim()
+    const bankFieldsMissing =
+        paymentMethod === "Bank Transfer" &&
+        (!accountNumber.trim() || !ifscCode.trim())
+    const upiMissing = paymentMethod === "UPI" && !upiId.trim()
     const canSubmit =
         Boolean(selectedAdmin) &&
         netAmount > 0 &&
         !transactionIdMissing &&
+        !bankFieldsMissing &&
+        !upiMissing &&
         !processing
 
     if (loading) {
