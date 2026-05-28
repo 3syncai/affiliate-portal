@@ -375,6 +375,125 @@ export default function SubAdminKycBankSection({ apiBase, themePrimary }: SubAdm
 
     return (
         <div className="space-y-6">
+            {/* Bank Card */}
+            <section className="rounded-lg border border-gray-200 bg-white">
+                <header className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+                    <div className="flex items-center gap-3">
+                        <div
+                            className="w-9 h-9 rounded-lg flex items-center justify-center text-white"
+                            style={{ background: accent }}
+                        >
+                            <Building2 className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <h3 className="text-base font-semibold text-gray-900">Bank Details</h3>
+                            <p className="text-xs text-gray-500">
+                                Used for commission payouts. You can update these anytime.
+                            </p>
+                        </div>
+                    </div>
+                    {!isEditing ? (
+                        <button
+                            onClick={startEdit}
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                        >
+                            <Pencil className="w-3.5 h-3.5" />
+                            Edit
+                        </button>
+                    ) : (
+                        <button
+                            onClick={cancelEdit}
+                            disabled={saving}
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                        >
+                            <X className="w-3.5 h-3.5" />
+                            Cancel
+                        </button>
+                    )}
+                </header>
+
+                {saveSuccess && !isEditing && (
+                    <div className="mx-6 mt-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-700">
+                        {saveSuccess}
+                    </div>
+                )}
+
+                {!isEditing ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-6">
+                        {BANK_FIELDS.map((field) => (
+                            <ReadOnlyField
+                                key={field}
+                                label={BANK_LABELS[field]}
+                                value={data[field]}
+                                Icon={BANK_ICONS[field]}
+                            />
+                        ))}
+                    </div>
+                ) : (
+                    <form onSubmit={handleSave} className="p-6 space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {BANK_FIELDS.map((field) => {
+                                const Icon = BANK_ICONS[field]
+                                return (
+                                    <div key={field}>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                                            {BANK_LABELS[field]}
+                                        </label>
+                                        <div className="relative">
+                                            <Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                            <input
+                                                type="text"
+                                                value={form[field]}
+                                                onChange={(e) =>
+                                                    setForm((prev) => ({ ...prev, [field]: e.target.value }))
+                                                }
+                                                disabled={saving}
+                                                className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-offset-1 disabled:bg-gray-50"
+                                                style={{
+                                                    // @ts-expect-error CSS var for ring color
+                                                    "--tw-ring-color": accent,
+                                                }}
+                                            />
+                                        </div>
+                                    </div>
+                                )
+                            })}
+                        </div>
+
+                        {saveError && (
+                            <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                                <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+                                <span>{saveError}</span>
+                            </div>
+                        )}
+
+                        <div className="flex justify-end gap-3 pt-2">
+                            <button
+                                type="button"
+                                onClick={cancelEdit}
+                                disabled={saving}
+                                className="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={saving}
+                                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-lg disabled:opacity-60"
+                                style={{ background: accent }}
+                            >
+                                {saving ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                    <Save className="w-4 h-4" />
+                                )}
+                                {saving ? "Saving..." : "Save Changes"}
+                            </button>
+                        </div>
+                    </form>
+                )}
+            </section>
+
             {/* KYC Card */}
             <section className="rounded-lg border border-gray-200 bg-white">
                 <header className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
@@ -500,125 +619,6 @@ export default function SubAdminKycBankSection({ apiBase, themePrimary }: SubAdm
                                     <Save className="w-4 h-4" />
                                 )}
                                 {savingKyc ? "Saving..." : "Save Changes"}
-                            </button>
-                        </div>
-                    </form>
-                )}
-            </section>
-
-            {/* Bank Card */}
-            <section className="rounded-lg border border-gray-200 bg-white">
-                <header className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-                    <div className="flex items-center gap-3">
-                        <div
-                            className="w-9 h-9 rounded-lg flex items-center justify-center text-white"
-                            style={{ background: accent }}
-                        >
-                            <Building2 className="w-5 h-5" />
-                        </div>
-                        <div>
-                            <h3 className="text-base font-semibold text-gray-900">Bank Details</h3>
-                            <p className="text-xs text-gray-500">
-                                Used for commission payouts. You can update these anytime.
-                            </p>
-                        </div>
-                    </div>
-                    {!isEditing ? (
-                        <button
-                            onClick={startEdit}
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
-                        >
-                            <Pencil className="w-3.5 h-3.5" />
-                            Edit
-                        </button>
-                    ) : (
-                        <button
-                            onClick={cancelEdit}
-                            disabled={saving}
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-                        >
-                            <X className="w-3.5 h-3.5" />
-                            Cancel
-                        </button>
-                    )}
-                </header>
-
-                {saveSuccess && !isEditing && (
-                    <div className="mx-6 mt-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-700">
-                        {saveSuccess}
-                    </div>
-                )}
-
-                {!isEditing ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-6">
-                        {BANK_FIELDS.map((field) => (
-                            <ReadOnlyField
-                                key={field}
-                                label={BANK_LABELS[field]}
-                                value={data[field]}
-                                Icon={BANK_ICONS[field]}
-                            />
-                        ))}
-                    </div>
-                ) : (
-                    <form onSubmit={handleSave} className="p-6 space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {BANK_FIELDS.map((field) => {
-                                const Icon = BANK_ICONS[field]
-                                return (
-                                    <div key={field}>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                                            {BANK_LABELS[field]}
-                                        </label>
-                                        <div className="relative">
-                                            <Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                                            <input
-                                                type="text"
-                                                value={form[field]}
-                                                onChange={(e) =>
-                                                    setForm((prev) => ({ ...prev, [field]: e.target.value }))
-                                                }
-                                                disabled={saving}
-                                                className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-offset-1 disabled:bg-gray-50"
-                                                style={{
-                                                    // @ts-expect-error CSS var for ring color
-                                                    "--tw-ring-color": accent,
-                                                }}
-                                            />
-                                        </div>
-                                    </div>
-                                )
-                            })}
-                        </div>
-
-                        {saveError && (
-                            <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-                                <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
-                                <span>{saveError}</span>
-                            </div>
-                        )}
-
-                        <div className="flex justify-end gap-3 pt-2">
-                            <button
-                                type="button"
-                                onClick={cancelEdit}
-                                disabled={saving}
-                                className="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                type="submit"
-                                disabled={saving}
-                                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-lg disabled:opacity-60"
-                                style={{ background: accent }}
-                            >
-                                {saving ? (
-                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                ) : (
-                                    <Save className="w-4 h-4" />
-                                )}
-                                {saving ? "Saving..." : "Save Changes"}
                             </button>
                         </div>
                     </form>
