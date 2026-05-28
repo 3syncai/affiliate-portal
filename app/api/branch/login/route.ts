@@ -2,14 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { Pool } from "pg";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { ensureSubAdminKycSchema } from "@/lib/subadmin-kyc";
+import { getDatabaseUrl, getJwtSecret } from "@/lib/env";
 
 export const dynamic = "force-dynamic"
 
-const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-in-production";
-
 export async function POST(req: NextRequest) {
     console.log("=== Branch Admin Login ===");
+
+    let pool: Pool | undefined
 
     try {
         const body = await req.json();
@@ -19,14 +19,13 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ success: false, message: "Email and password are required" }, { status: 400 });
         }
 
-        const pool = new Pool({
-            connectionString: process.env.DATABASE_URL || process.env.NEXT_PUBLIC_DATABASE_URL,
+        pool = new Pool({
+            connectionString: getDatabaseUrl(),
             ssl: { rejectUnauthorized: false }
         });
 
-        // Make sure profile_completed + KYC columns exist before we SELECT them.
-        await ensureSubAdminKycSchema(pool);
-
+        // Schema is provisioned by migrations/add_subadmin_kyc.sql at deploy
+        // time; we no longer ALTER TABLE on the hot path.
         const result = await pool.query(
             `SELECT id, first_name, last_name, email, password_hash, phone, branch, city, state, role, is_active, refer_code,
                     COALESCE(profile_completed, FALSE) AS profile_completed
@@ -35,28 +34,23 @@ export async function POST(req: NextRequest) {
         );
 
         if (result.rows.length === 0) {
-            await pool.end();
             return NextResponse.json({ success: false, message: "Invalid email or password" }, { status: 401 });
         }
 
         const branchAdmin = result.rows[0];
 
         if (!branchAdmin.is_active) {
-            await pool.end();
             return NextResponse.json({ success: false, message: "Account is deactivated. Please contact your Area Manager." }, { status: 403 });
         }
 
         const isPasswordValid = await bcrypt.compare(password, branchAdmin.password_hash);
         if (!isPasswordValid) {
-            await pool.end();
             return NextResponse.json({ success: false, message: "Invalid email or password" }, { status: 401 });
         }
 
-        await pool.end();
-
         const token = jwt.sign(
             { id: branchAdmin.id, email: branchAdmin.email, role: "branch", branch: branchAdmin.branch, city: branchAdmin.city, state: branchAdmin.state },
-            JWT_SECRET,
+            getJwtSecret(),
             { expiresIn: "7d" }
         );
 
@@ -87,5 +81,9 @@ export async function POST(req: NextRequest) {
     } catch (error: any) {
         console.error("Branch Admin login failed:", error);
         return NextResponse.json({ success: false, message: "Login failed" }, { status: 500 });
+    } finally {
+        await pool?.end().catch((endError) => {
+            console.error("Failed to close Branch Admin login pool:", endError);
+        });
     }
 }
