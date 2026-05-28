@@ -16,7 +16,101 @@
  * applied.
  */
 
+const fs = require("fs");
+const path = require("path");
 const { Pool } = require("pg");
+
+// ──────────────────────────────────────────────────────────────────────
+// .env loader (no dependency on `dotenv`)
+// ──────────────────────────────────────────────────────────────────────
+// Reads <repo-root>/.env into a plain map. We deliberately do NOT
+// auto-overwrite process.env — instead the calling code below resolves
+// DATABASE_URL with explicit precedence and refuses to run when the
+// shell env disagrees with the file (footgun guard for a script that
+// truncates production tables).
+function readDotEnv() {
+    const envPath = path.join(__dirname, "..", ".env");
+    const out = {};
+    if (!fs.existsSync(envPath)) return out;
+    const text = fs.readFileSync(envPath, "utf8");
+    for (const rawLine of text.split(/\r?\n/)) {
+        const line = rawLine.trim();
+        if (!line || line.startsWith("#")) continue;
+        const eq = line.indexOf("=");
+        if (eq <= 0) continue;
+        const key = line.slice(0, eq).trim();
+        let value = line.slice(eq + 1).trim();
+        if (
+            (value.startsWith('"') && value.endsWith('"')) ||
+            (value.startsWith("'") && value.endsWith("'"))
+        ) {
+            value = value.slice(1, -1);
+        }
+        out[key] = value;
+    }
+    return out;
+}
+
+const dotEnv = readDotEnv();
+
+// Helper: extract the host:port/db identity from a connection string for
+// comparison + display. Returns "" if unparseable (e.g. mangled by shell
+// expansion).
+function dbIdentity(connStr) {
+    if (!connStr) return "";
+    try {
+        const u = new URL(connStr);
+        return `${u.hostname}${u.port ? `:${u.port}` : ""}${u.pathname || ""}`;
+    } catch {
+        return "";
+    }
+}
+
+// Resolve DATABASE_URL with explicit, auditable precedence and refuse to
+// run when the shell-exported value targets a different database than the
+// committed .env file. This script truncates 27 tables — silently obeying
+// a stale `export DATABASE_URL=…` from a previous shell session has
+// already cost us a near-miss.
+{
+    const fileVal = dotEnv.DATABASE_URL || dotEnv.NEXT_PUBLIC_DATABASE_URL || "";
+    const shellVal = process.env.DATABASE_URL || process.env.NEXT_PUBLIC_DATABASE_URL || "";
+    const fileId = dbIdentity(fileVal);
+    const shellId = dbIdentity(shellVal);
+    const allowOverride = process.argv.includes("--allow-shell-override");
+
+    if (fileVal && shellVal && fileId && shellId && fileId !== shellId) {
+        console.error("");
+        console.error("Refusing to run: DATABASE_URL mismatch.");
+        console.error(`  shell env  -> ${shellId}`);
+        console.error(`  .env file  -> ${fileId}`);
+        console.error("");
+        console.error("Your shell has a stale DATABASE_URL from an earlier session.");
+        console.error("Fix one of these and re-run:");
+        console.error("  • unset DATABASE_URL NEXT_PUBLIC_DATABASE_URL          (use .env)");
+        console.error("  • update the export in your shell to match .env");
+        console.error("  • re-run with --allow-shell-override to use the shell value anyway");
+        console.error("");
+        process.exit(2);
+    }
+
+    // Prefer the .env file unless the shell value is the only one set, or
+    // the user explicitly opted in to the shell value with the override
+    // flag. Inverts the "shell wins" default of dotenv-style libraries —
+    // intentional, because for a destructive script the committed file
+    // should be authoritative.
+    if (fileVal && (!shellVal || !allowOverride)) {
+        process.env.DATABASE_URL = fileVal;
+    } else if (shellVal) {
+        process.env.DATABASE_URL = shellVal;
+    }
+
+    // Also forward other .env keys for any future use, but never override
+    // a real shell value for non-DB settings.
+    for (const [k, v] of Object.entries(dotEnv)) {
+        if (k === "DATABASE_URL" || k === "NEXT_PUBLIC_DATABASE_URL") continue;
+        if (process.env[k] === undefined) process.env[k] = v;
+    }
+}
 
 // ──────────────────────────────────────────────────────────────────────
 // Argument parsing
@@ -81,10 +175,26 @@ if (!rawConnectionString) {
     process.exit(1);
 }
 
-// Drop the `sslmode` query param if present — node-postgres reads SSL from
-// the explicit `ssl` option below, and some Postgres setups reject sslmode
-// query params they don't understand.
-const connectionString = rawConnectionString.replace(/\?sslmode=[^&]*/g, "");
+// Strip libpq-only query params (sslmode, channel_binding) — node-postgres
+// reads SSL from the explicit `ssl` option below, and rejects/misinterprets
+// some libpq params. Using URL.searchParams instead of a regex so it stays
+// correct when there are multiple params (e.g. Neon's
+// `?sslmode=require&channel_binding=require`).
+let connectionString = rawConnectionString;
+let connectionHostname = "";
+try {
+    const u = new URL(rawConnectionString);
+    connectionHostname = u.hostname;
+    u.searchParams.delete("sslmode");
+    u.searchParams.delete("channel_binding");
+    connectionString = u.toString();
+} catch {
+    // Fall back to the previous regex approach if the URL is unparseable.
+    connectionString = rawConnectionString.replace(/[?&]sslmode=[^&]*/g, "");
+    connectionString = connectionString.replace(/[?&]channel_binding=[^&]*/g, "");
+    // Repair leading `&` if `?sslmode=...` was the first param.
+    connectionString = connectionString.replace(/(postgres(?:ql)?:\/\/[^?#]*)&/, "$1?");
+}
 
 function dbHostFor(connStr) {
     try {
@@ -95,11 +205,21 @@ function dbHostFor(connStr) {
     }
 }
 
+// Enable SSL for managed Postgres providers that require it. Neon and AWS RDS
+// both require TLS; localhost/dev sockets stay unencrypted. `rejectUnauthorized:
+// false` matches the rest of this app (lib/db.ts) and avoids CA-bundle issues
+// on developer machines.
+const requiresSsl =
+    /\.rds\.amazonaws\.com$/i.test(connectionHostname) ||
+    /\.neon\.tech$/i.test(connectionHostname) ||
+    /\.supabase\.co$/i.test(connectionHostname) ||
+    /\.render\.com$/i.test(connectionHostname) ||
+    /\.azure\.com$/i.test(connectionHostname) ||
+    /\.googleapis\.com$/i.test(connectionHostname);
+
 const pool = new Pool({
     connectionString,
-    ssl: connectionString.includes("rds.amazonaws.com")
-        ? { rejectUnauthorized: false }
-        : false,
+    ssl: requiresSsl ? { rejectUnauthorized: false } : false,
 });
 
 // ──────────────────────────────────────────────────────────────────────
@@ -182,6 +302,26 @@ function quoteIdent(name) {
     return `"${name}"`;
 }
 
+// Connections we always ignore when deciding whether the DB has live writers.
+// These are managed Postgres internals (Neon's pgbouncer pool, autovacuum,
+// walsenders, etc.) — they don't write to application tables and are always
+// present, so flagging them as "live writers" produces unfixable false
+// positives that block the wipe.
+function isManagedInternalConn(row) {
+    const app = (row.application_name || "").toLowerCase();
+    const addr = (row.client_addr || "").toLowerCase();
+    const isLoopback =
+        addr === "local" ||
+        addr === "127.0.0.1/32" ||
+        addr === "::1/128" ||
+        addr.startsWith("127.0.0.1") ||
+        addr.startsWith("::1");
+    if (app === "pgbouncer" && isLoopback) return true; // Neon
+    if (app.startsWith("walsender")) return true;        // replication
+    if (app === "autovacuum worker") return true;        // background vacuum
+    return false;
+}
+
 async function checkActiveConnections(client) {
     const res = await client.query(`
         SELECT
@@ -195,7 +335,16 @@ async function checkActiveConnections(client) {
         GROUP BY application_name, client_addr, state
         ORDER BY c DESC, application_name ASC
     `);
-    return res.rows;
+    // Split into "real writers" (anything we should block on) and "managed
+    // internals" (Neon pgbouncer etc., which we still display for visibility
+    // but never block on).
+    const realWriters = [];
+    const internals = [];
+    for (const row of res.rows) {
+        if (isManagedInternalConn(row)) internals.push(row);
+        else realWriters.push(row);
+    }
+    return { realWriters, internals, all: res.rows };
 }
 
 function printRowCountTable(label, counts) {
@@ -230,7 +379,7 @@ async function main() {
         // Without this, a live Medusa or affiliate-portal dev server will
         // repopulate the wiped tables seconds after COMMIT — which is
         // exactly what happened on the previous run.
-        const activeRows = await checkActiveConnections(client);
+        const { realWriters, internals, all: activeRows } = await checkActiveConnections(client);
         if (activeRows.length > 0) {
             console.log("\nOther active connections to this database:");
             console.log("─".repeat(60));
@@ -243,15 +392,23 @@ async function main() {
                 15
             );
             for (const row of activeRows) {
+                const tag = isManagedInternalConn(row) ? "  [managed-internal, ignored]" : "";
                 console.log(
                     `  · ${row.application_name.padEnd(appW)}  ` +
                         `${row.client_addr.padEnd(addrW)}  ` +
-                        `${row.state.padEnd(20)}  ×${row.c}`
+                        `${row.state.padEnd(20)}  ×${row.c}${tag}`
                 );
             }
             console.log("─".repeat(60));
 
-            if (!dryRun && !forceWithActive) {
+            if (internals.length > 0 && realWriters.length === 0) {
+                console.log(
+                    `Ignoring ${internals.length} managed-internal connection(s) ` +
+                        "(Neon pgbouncer / walsender / autovacuum)."
+                );
+            }
+
+            if (realWriters.length > 0 && !dryRun && !forceWithActive) {
                 console.error(
                     "\nRefusing to wipe while other clients are connected.\n" +
                         "They will refill the wiped tables seconds after COMMIT\n" +
@@ -267,7 +424,7 @@ async function main() {
                 process.exit(2);
             }
 
-            if (forceWithActive) {
+            if (realWriters.length > 0 && forceWithActive) {
                 console.log(
                     "\n--force-with-active-connections supplied — proceeding anyway.\n" +
                         "Expect operational tables to repopulate immediately after commit."

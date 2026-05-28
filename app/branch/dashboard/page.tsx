@@ -102,16 +102,16 @@ export default function BranchDashboard() {
             ctx.fill()
             ctx.drawImage(logo, logoX, logoY, logoSize, logoSize)
         } catch (error) {
-            console.error("Branch logo overlay failed:", error)
+            console.error("ASM logo overlay failed:", error)
         }
 
         ctx.textAlign = "center"
         ctx.fillStyle = "#111827"
         ctx.font = "600 16px Arial"
-        ctx.fillText(name || "Branch User", canvasWidth / 2, qrY + qrSize + 30)
+        ctx.fillText(name || "ASM User", canvasWidth / 2, qrY + qrSize + 30)
         ctx.fillStyle = "#4B5563"
         ctx.font = "500 14px Arial"
-        ctx.fillText(role || "Branch", canvasWidth / 2, qrY + qrSize + 52)
+        ctx.fillText(role || "ASM", canvasWidth / 2, qrY + qrSize + 52)
         setQrDataUrl(canvas.toDataURL("image/png"))
     }
 
@@ -174,8 +174,8 @@ export default function BranchDashboard() {
 
     useEffect(() => {
         if (!user?.refer_code) return
-        const name = user?.first_name && user?.last_name ? `${user.first_name} ${user.last_name}` : (user?.email || "Branch User")
-        generateBrandedQr(user.refer_code, name, "Branch").catch(console.error)
+        const name = user?.first_name && user?.last_name ? `${user.first_name} ${user.last_name}` : (user?.email || "ASM User")
+        generateBrandedQr(user.refer_code, name, "ASM").catch(console.error)
     }, [user])
 
 
@@ -233,7 +233,7 @@ export default function BranchDashboard() {
     const downloadQR = () => {
         if (!qrDataUrl || !user?.refer_code) return
         const link = document.createElement("a")
-        link.download = `branch-qr-${user.refer_code}.png`
+        link.download = `asm-qr-${user.refer_code}.png`
         link.href = qrDataUrl
         link.click()
     }
@@ -420,7 +420,7 @@ export default function BranchDashboard() {
                                 </div>
                                 <p className="text-xs text-gray-500 mb-4">For customer sign-ups</p>
                                 <div className="flex flex-col items-center">
-                                    <img src={qrDataUrl} alt="Branch QR Code" className="w-full max-w-[220px] h-auto rounded-lg" />
+                                    <img src={qrDataUrl} alt="ASM QR Code" className="w-full max-w-[220px] h-auto rounded-lg" />
                                     <button
                                         onClick={downloadQR}
                                         className="mt-4 flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors text-xs font-medium w-full justify-center"
