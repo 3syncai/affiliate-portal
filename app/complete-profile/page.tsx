@@ -119,16 +119,8 @@ export default function CompleteProfilePage() {
             return
         }
 
-        const token =
-            typeof window !== "undefined"
-                ? localStorage.getItem("affiliate_token")
-                : null
-        if (!token) {
-            setError("Session expired. Please log in again.")
-            return
-        }
-
         const formData = new FormData()
+        formData.append("userId", String(user.id))
         formData.append("pan_card_no", panCardNo.trim())
         formData.append("aadhar_card_no", aadharCardNo.trim())
         formData.append("account_name", accountName.trim())
@@ -141,13 +133,8 @@ export default function CompleteProfilePage() {
 
         setSubmitting(true)
         try {
-            // The userId is no longer trusted from the request body; the server
-            // derives it from the verified JWT in the Authorization header.
             const res = await axios.post(ROLE_CONFIG[role].apiPath, formData, {
-                headers: {
-                    "Content-Type": "multipart/form-data",
-                    Authorization: `Bearer ${token}`,
-                },
+                headers: { "Content-Type": "multipart/form-data" },
             })
             if (!res.data?.success) {
                 throw new Error(res.data?.message || "Failed to save profile")
@@ -333,8 +320,7 @@ export default function CompleteProfilePage() {
                     <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                         <p className="text-xs text-slate-500 max-w-md">
                             By submitting you confirm that the information provided is accurate.
-                            Your bank details remain editable from the profile page, but PAN and
-                            Aadhar cannot be changed once submitted.
+                            You can update it later from your profile page.
                         </p>
                         <button
                             type="submit"

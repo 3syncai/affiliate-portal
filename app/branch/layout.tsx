@@ -78,19 +78,16 @@ export default function BranchLayout({
 
         try {
             const parsed = JSON.parse(userData)
-            // Treat any non-true value (undefined for sessions stored before
-            // profile_completed existed, plus literal false) as incomplete.
-            // We deliberately leave `loading` true on the redirect path so
-            // the dashboard never flashes in between gating and navigation.
-            if (parsed?.profile_completed !== true) {
+            if (parsed?.profile_completed === false) {
                 router.replace("/complete-profile")
                 return
             }
             setUser(parsed)
-            setLoading(false)
         } catch (e) {
             console.error("Error parsing user data:", e)
             router.push("/login")
+        } finally {
+            setLoading(false)
         }
     }, [router])
 

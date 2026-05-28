@@ -1,5 +1,4 @@
 import { Pool, types } from 'pg';
-import { getDatabaseUrl } from '@/lib/env';
 
 // Force `timestamp without time zone` (OID 1114) to be parsed as UTC.
 // node-postgres' default parser treats the bare timestamp string as the Node
@@ -16,15 +15,10 @@ declare global {
     var pgPool: Pool | undefined;
 }
 
-// Server-only secret. Reading from NEXT_PUBLIC_DATABASE_URL would let a
-// client-exposed env wire the server pool, so we now fail closed via
-// getDatabaseUrl() when DATABASE_URL is unset.
-const connectionString = getDatabaseUrl();
-
 // Initialize the pool only once
 const pool = global.pgPool || new Pool({
-    connectionString,
-    ssl: connectionString.includes('rds.amazonaws.com')
+    connectionString: process.env.DATABASE_URL || process.env.NEXT_PUBLIC_DATABASE_URL,
+    ssl: (process.env.DATABASE_URL || process.env.NEXT_PUBLIC_DATABASE_URL)?.includes('rds.amazonaws.com')
         ? { rejectUnauthorized: false }
         : false,
     max: 20, // Maximum number of connections in the pool

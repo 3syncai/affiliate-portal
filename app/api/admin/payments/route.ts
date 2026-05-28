@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Pool } from "pg";
-import { getDatabaseUrl } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
     try {
         const pool = new Pool({
-            connectionString: getDatabaseUrl(),
+            connectionString: process.env.DATABASE_URL || process.env.NEXT_PUBLIC_DATABASE_URL,
             ssl: { rejectUnauthorized: false }
         });
 
@@ -74,61 +73,8 @@ export async function POST(req: NextRequest) {
             }, { status: 400 });
         }
 
-        const numericAmount = parseFloat(amount);
-        if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
-            return NextResponse.json({
-                success: false,
-                error: "Amount must be a positive number"
-            }, { status: 400 });
-        }
-
-        const method = paymentMethod || "Bank Transfer";
-        const allowedMethods = ["Bank Transfer", "UPI", "Cheque", "Cash"];
-        if (!allowedMethods.includes(method)) {
-            return NextResponse.json({
-                success: false,
-                error: `Unsupported payment method: ${method}`
-            }, { status: 400 });
-        }
-
-        // Per-method payout-detail validation. We also rebuild a sanitised
-        // accountDetails object so Cheque/Cash submissions don't accidentally
-        // persist stale bank metadata leaked through from the client form.
-        const incoming = (accountDetails && typeof accountDetails === "object")
-            ? accountDetails as Record<string, unknown>
-            : {};
-        let cleanAccountDetails: Record<string, unknown> = {};
-
-        if (method === "Bank Transfer") {
-            const accountNumber = typeof incoming.accountNumber === "string" ? incoming.accountNumber.trim() : "";
-            const ifscCode = typeof incoming.ifscCode === "string" ? incoming.ifscCode.trim() : "";
-            if (!accountNumber || !ifscCode) {
-                return NextResponse.json({
-                    success: false,
-                    error: "Account number and IFSC code are required for Bank Transfer"
-                }, { status: 400 });
-            }
-            cleanAccountDetails = {
-                accountNumber,
-                ifscCode,
-                accountHolderName: incoming.accountHolderName ?? null,
-                bankName: incoming.bankName ?? null,
-                bankBranch: incoming.bankBranch ?? null,
-            };
-        } else if (method === "UPI") {
-            const upiId = typeof incoming.upiId === "string" ? incoming.upiId.trim() : "";
-            if (!upiId) {
-                return NextResponse.json({
-                    success: false,
-                    error: "UPI ID is required for UPI payments"
-                }, { status: 400 });
-            }
-            cleanAccountDetails = { upiId };
-        }
-        // Cheque / Cash carry no payout-account metadata.
-
         const pool = new Pool({
-            connectionString: getDatabaseUrl(),
+            connectionString: process.env.DATABASE_URL || process.env.NEXT_PUBLIC_DATABASE_URL,
             ssl: { rejectUnauthorized: false }
         });
 
@@ -152,9 +98,7 @@ export async function POST(req: NextRequest) {
             RETURNING *
         `;
 
-        const accountDetailsJson = Object.keys(cleanAccountDetails).length > 0
-            ? JSON.stringify(cleanAccountDetails)
-            : null;
+        const accountDetailsJson = accountDetails ? JSON.stringify(accountDetails) : null;
 
         // Ensure values are numbers/decimals
         const cleanTds = tdsAmount ? parseFloat(tdsAmount) : 0;
@@ -165,11 +109,11 @@ export async function POST(req: NextRequest) {
             recipientType,
             recipientName,
             recipientEmail,
-            numericAmount,
+            amount,
             cleanTds,
             cleanGross,
             transactionId,
-            method,
+            paymentMethod || 'Bank Transfer',
             accountDetailsJson,
             'Main Admin',
             notes || null,
@@ -191,7 +135,7 @@ export async function POST(req: NextRequest) {
             ) VALUES ($1, $2, $3, $4, $5, $6, $7)
         `;
 
-        const message = `Payment of ₹${numericAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })} has been credited to your account. Transaction ID: ${transactionId}`;
+        const message = `Payment of ₹${parseFloat(amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })} has been credited to your account. Transaction ID: ${transactionId}`;
 
         await pool.query(notificationQuery, [
             recipientId,

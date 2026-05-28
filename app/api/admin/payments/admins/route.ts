@@ -1,20 +1,18 @@
 import { NextResponse } from "next/server";
 import { Pool } from "pg";
-import { getDatabaseUrl } from "@/lib/env";
+import { ensureSubAdminKycSchema } from "@/lib/subadmin-kyc";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
     try {
         const pool = new Pool({
-            connectionString: getDatabaseUrl(),
+            connectionString: process.env.DATABASE_URL || process.env.NEXT_PUBLIC_DATABASE_URL,
             ssl: { rejectUnauthorized: false }
         });
 
-        // KYC + bank columns are guaranteed to exist via
-        // migrations/add_subadmin_kyc.sql applied at deploy time. We no
-        // longer ALTER TABLE on this read path because runtime DDL needs
-        // table locks and elevated privileges.
+        // Guarantee KYC + bank columns exist on a fresh DB before we SELECT them.
+        await ensureSubAdminKycSchema(pool);
 
         // Fetch all Branch Admins with their earnings
         const branchQuery = `
