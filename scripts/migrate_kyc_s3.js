@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 /**
  * Migrate sub-admin KYC documents in S3 to the hybrid folder layout.
  *
