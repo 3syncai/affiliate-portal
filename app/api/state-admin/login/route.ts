@@ -2,14 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { Pool } from "pg";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { ensureSubAdminKycSchema } from "@/lib/subadmin-kyc";
+import { getDatabaseUrl, getJwtSecret } from "@/lib/env";
 
 export const dynamic = "force-dynamic"
 
-const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-in-production";
-
 export async function POST(req: NextRequest) {
     console.log("=== State Admin Login ===");
+
+    let pool: Pool | undefined
 
     try {
         const body = await req.json();
@@ -22,15 +22,13 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        const pool = new Pool({
-            connectionString: process.env.DATABASE_URL || process.env.NEXT_PUBLIC_DATABASE_URL,
+        pool = new Pool({
+            connectionString: getDatabaseUrl(),
             ssl: { rejectUnauthorized: false }
         });
 
-        // Make sure profile_completed + KYC columns exist before we SELECT them.
-        await ensureSubAdminKycSchema(pool);
-
-        // Find state admin by email
+        // Schema is provisioned by migrations/add_subadmin_kyc.sql at deploy
+        // time; we no longer ALTER TABLE on the hot path.
         const result = await pool.query(
             `SELECT id, first_name, last_name, email, password_hash, phone, state, refer_code, is_active,
                     COALESCE(profile_completed, FALSE) AS profile_completed, created_at
@@ -39,7 +37,6 @@ export async function POST(req: NextRequest) {
         );
 
         if (result.rows.length === 0) {
-            await pool.end();
             return NextResponse.json(
                 { success: false, message: "Invalid email or password" },
                 { status: 401 }
@@ -50,7 +47,6 @@ export async function POST(req: NextRequest) {
 
         // Check if account is active
         if (!stateAdmin.is_active) {
-            await pool.end();
             return NextResponse.json(
                 { success: false, message: "Account is deactivated. Please contact admin." },
                 { status: 403 }
@@ -60,14 +56,11 @@ export async function POST(req: NextRequest) {
         // Verify password
         const isPasswordValid = await bcrypt.compare(password, stateAdmin.password_hash);
         if (!isPasswordValid) {
-            await pool.end();
             return NextResponse.json(
                 { success: false, message: "Invalid email or password" },
                 { status: 401 }
             );
         }
-
-        await pool.end();
 
         // Generate JWT token
         const token = jwt.sign(
@@ -77,7 +70,7 @@ export async function POST(req: NextRequest) {
                 role: "state",
                 state: stateAdmin.state
             },
-            JWT_SECRET,
+            getJwtSecret(),
             { expiresIn: "7d" }
         );
 
@@ -114,5 +107,9 @@ export async function POST(req: NextRequest) {
             },
             { status: 500 }
         );
+    } finally {
+        await pool?.end().catch((endError) => {
+            console.error("Failed to close State Admin login pool:", endError);
+        });
     }
 }
