@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { Pool } from "pg";
+import { ensureSubAdminKycSchema } from "@/lib/subadmin-kyc";
 
 export const dynamic = "force-dynamic";
 
@@ -9,6 +10,9 @@ export async function GET() {
             connectionString: process.env.DATABASE_URL || process.env.NEXT_PUBLIC_DATABASE_URL,
             ssl: { rejectUnauthorized: false }
         });
+
+        // Guarantee KYC + bank columns exist on a fresh DB before we SELECT them.
+        await ensureSubAdminKycSchema(pool);
 
         // Fetch all Branch Admins with their earnings
         const branchQuery = `
@@ -20,6 +24,12 @@ export async function GET() {
                 ba.branch,
                 ba.city,
                 ba.state,
+                ba.account_name,
+                ba.bank_name,
+                ba.bank_branch,
+                ba.ifsc_code,
+                ba.account_number,
+                COALESCE(ba.profile_completed, FALSE) AS profile_completed,
                 'branch' as admin_type,
                 COALESCE(
                     (SELECT SUM(acl.affiliate_commission) 
@@ -49,6 +59,12 @@ export async function GET() {
                 asm.email,
                 asm.city,
                 asm.state,
+                asm.account_name,
+                asm.bank_name,
+                asm.bank_branch,
+                asm.ifsc_code,
+                asm.account_number,
+                COALESCE(asm.profile_completed, FALSE) AS profile_completed,
                 'asm' as admin_type,
                 asm.refer_code,
                 (SELECT commission_percentage FROM commission_rates WHERE role_type = 'area') as commission_rate,
@@ -104,6 +120,12 @@ export async function GET() {
                 sa.email,
                 sa.state,
                 sa.refer_code,
+                sa.account_name,
+                sa.bank_name,
+                sa.bank_branch,
+                sa.ifsc_code,
+                sa.account_number,
+                COALESCE(sa.profile_completed, FALSE) AS profile_completed,
                 'state' as admin_type,
                 COALESCE(
                     (SELECT SUM(acl.commission_amount) 
@@ -177,7 +199,15 @@ export async function GET() {
                     lifetimeEarnings,
                     paidAmount,
                     currentEarnings: Math.round((lifetimeEarnings - paidAmount) * 100) / 100 + 0,
-                    totalEarnings: Math.round((lifetimeEarnings - paidAmount) * 100) / 100 + 0
+                    totalEarnings: Math.round((lifetimeEarnings - paidAmount) * 100) / 100 + 0,
+                    bankDetails: {
+                        account_name: admin.account_name || null,
+                        bank_name: admin.bank_name || null,
+                        bank_branch: admin.bank_branch || null,
+                        ifsc_code: admin.ifsc_code || null,
+                        account_number: admin.account_number || null,
+                    },
+                    profileCompleted: Boolean(admin.profile_completed)
                 };
             }),
             ...asmResult.rows.map(admin => {
@@ -197,7 +227,15 @@ export async function GET() {
                     lifetimeEarnings,
                     paidAmount,
                     currentEarnings: Math.round((lifetimeEarnings - paidAmount) * 100) / 100 + 0,
-                    totalEarnings: Math.round((lifetimeEarnings - paidAmount) * 100) / 100 + 0
+                    totalEarnings: Math.round((lifetimeEarnings - paidAmount) * 100) / 100 + 0,
+                    bankDetails: {
+                        account_name: admin.account_name || null,
+                        bank_name: admin.bank_name || null,
+                        bank_branch: admin.bank_branch || null,
+                        ifsc_code: admin.ifsc_code || null,
+                        account_number: admin.account_number || null,
+                    },
+                    profileCompleted: Boolean(admin.profile_completed)
                 };
             }),
             ...stateResult.rows.map(admin => {
@@ -219,7 +257,15 @@ export async function GET() {
                     lifetimeEarnings,
                     paidAmount,
                     currentEarnings: Math.round((lifetimeEarnings - paidAmount) * 100) / 100 + 0,
-                    totalEarnings: Math.round((lifetimeEarnings - paidAmount) * 100) / 100 + 0
+                    totalEarnings: Math.round((lifetimeEarnings - paidAmount) * 100) / 100 + 0,
+                    bankDetails: {
+                        account_name: admin.account_name || null,
+                        bank_name: admin.bank_name || null,
+                        bank_branch: admin.bank_branch || null,
+                        ifsc_code: admin.ifsc_code || null,
+                        account_number: admin.account_number || null,
+                    },
+                    profileCompleted: Boolean(admin.profile_completed)
                 };
             })
         ];

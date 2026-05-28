@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Pool } from "pg";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { ensureSubAdminKycSchema } from "@/lib/subadmin-kyc";
 
 export const dynamic = "force-dynamic"
 
@@ -26,9 +27,13 @@ export async function POST(req: NextRequest) {
             ssl: { rejectUnauthorized: false }
         });
 
+        // Make sure profile_completed + KYC columns exist before we SELECT them.
+        await ensureSubAdminKycSchema(pool);
+
         // Find ASM by email
         const result = await pool.query(
-            `SELECT id, first_name, last_name, email, password_hash, phone, city, state, role, is_active, refer_code, created_at
+            `SELECT id, first_name, last_name, email, password_hash, phone, city, state, role, is_active, refer_code,
+                    COALESCE(profile_completed, FALSE) AS profile_completed, created_at
              FROM area_sales_manager WHERE email = $1`,
             [email]
         );
@@ -79,11 +84,15 @@ export async function POST(req: NextRequest) {
 
         console.log(`ASM logged in: ${asm.email} (${asm.city}, ${asm.state})`);
 
+        const profileCompleted = !!asm.profile_completed;
+
         return NextResponse.json({
             success: true,
             message: "Login successful",
             token,
             role: "asm",
+            profile_completed: profileCompleted,
+            redirectTo: profileCompleted ? null : "/complete-profile",
             user: {
                 id: asm.id,
                 first_name: asm.first_name,
@@ -92,7 +101,8 @@ export async function POST(req: NextRequest) {
                 phone: asm.phone,
                 city: asm.city,
                 state: asm.state,
-                refer_code: asm.refer_code
+                refer_code: asm.refer_code,
+                profile_completed: profileCompleted
             }
         });
 

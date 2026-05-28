@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { User, Mail, Phone, Lock, Shield, Calendar, MapPin, Briefcase, Palette } from "lucide-react"
+import { User, Mail, Phone, Lock, Shield, Calendar, MapPin, Briefcase, Palette, CreditCard } from "lucide-react"
 import ThemeSelector from "@/components/ThemeSelector"
+import SubAdminKycBankSection from "@/components/SubAdminKycBankSection"
 import { useTheme } from "@/contexts/ThemeContext"
 
 export default function ASMProfilePage() {
@@ -11,7 +12,7 @@ export default function ASMProfilePage() {
     const { theme } = useTheme()
     const [user, setUser] = useState<any>(null)
     const [loading, setLoading] = useState(true)
-    const [activeTab, setActiveTab] = useState<'info' | 'security' | 'theme'>('info')
+    const [activeTab, setActiveTab] = useState<'info' | 'security' | 'kyc' | 'theme'>('info')
 
     useEffect(() => {
         const userData = localStorage.getItem("affiliate_user")
@@ -107,6 +108,18 @@ export default function ASMProfilePage() {
                             <div className="flex items-center gap-2">
                                 <Lock className="w-4 h-4" />
                                 Security
+                            </div>
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('kyc')}
+                            className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors ${activeTab === 'kyc'
+                                ? 'border-blue-600 text-blue-600'
+                                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                }`}
+                        >
+                            <div className="flex items-center gap-2">
+                                <CreditCard className="w-4 h-4" />
+                                KYC & Bank
                             </div>
                         </button>
                         <button
@@ -211,6 +224,11 @@ export default function ASMProfilePage() {
                                 </div>
                             </div>
                         </div>
+                    )}
+
+                    {/* KYC & Bank Tab */}
+                    {activeTab === 'kyc' && (
+                        <SubAdminKycBankSection apiBase="/api/asm/me" themePrimary={theme.primary} />
                     )}
 
                     {/* Theme Tab */}

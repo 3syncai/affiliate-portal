@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Pool } from "pg";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { ensureSubAdminKycSchema } from "@/lib/subadmin-kyc";
 
 export const dynamic = "force-dynamic"
 
@@ -26,9 +27,13 @@ export async function POST(req: NextRequest) {
             ssl: { rejectUnauthorized: false }
         });
 
+        // Make sure profile_completed + KYC columns exist before we SELECT them.
+        await ensureSubAdminKycSchema(pool);
+
         // Find state admin by email
         const result = await pool.query(
-            `SELECT id, first_name, last_name, email, password_hash, phone, state, refer_code, is_active, created_at
+            `SELECT id, first_name, last_name, email, password_hash, phone, state, refer_code, is_active,
+                    COALESCE(profile_completed, FALSE) AS profile_completed, created_at
              FROM state_admin WHERE email = $1`,
             [email]
         );
@@ -78,11 +83,15 @@ export async function POST(req: NextRequest) {
 
         console.log(`State admin logged in: ${stateAdmin.email} (${stateAdmin.state})`);
 
+        const profileCompleted = !!stateAdmin.profile_completed;
+
         return NextResponse.json({
             success: true,
             message: "Login successful",
             token,
             role: "state",
+            profile_completed: profileCompleted,
+            redirectTo: profileCompleted ? null : "/complete-profile",
             user: {
                 id: stateAdmin.id,
                 first_name: stateAdmin.first_name,
@@ -90,7 +99,8 @@ export async function POST(req: NextRequest) {
                 email: stateAdmin.email,
                 phone: stateAdmin.phone,
                 state: stateAdmin.state,
-                refer_code: stateAdmin.refer_code
+                refer_code: stateAdmin.refer_code,
+                profile_completed: profileCompleted
             }
         });
 
