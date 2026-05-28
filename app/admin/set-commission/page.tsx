@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Search, Plus, Edit, Trash2, Package, Tag, Boxes, Type, Save, X, ChevronDown, Check } from "lucide-react"
+import { Search, Plus, Edit, Trash2, Package, Tag, Boxes, Type, Save, X, ChevronDown, Check, Maximize2 } from "lucide-react"
 import axios from "axios"
 import Image from "next/image"
 
@@ -63,6 +63,33 @@ export default function SetCommissionPage() {
   // Custom dropdown state
   const [isProductDropdownOpen, setIsProductDropdownOpen] = useState(false)
   const [productSearchTerm, setProductSearchTerm] = useState("")
+
+  // Modal size preference. Persisted in localStorage so the admin's chosen
+  // width sticks the next time they open Add/Edit Commission.
+  type ModalSize = "sm" | "md" | "lg"
+  const MODAL_SIZE_STORAGE_KEY = "set-commission:modal-size"
+  const [modalSize, setModalSize] = useState<ModalSize>("sm")
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    const stored = window.localStorage.getItem(MODAL_SIZE_STORAGE_KEY)
+    if (stored === "sm" || stored === "md" || stored === "lg") {
+      setModalSize(stored)
+    }
+  }, [])
+
+  const updateModalSize = (size: ModalSize) => {
+    setModalSize(size)
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(MODAL_SIZE_STORAGE_KEY, size)
+    }
+  }
+
+  const modalWidthClass: Record<ModalSize, string> = {
+    sm: "max-w-md",
+    md: "max-w-2xl",
+    lg: "max-w-5xl",
+  }
 
   useEffect(() => {
     loadCommissions()
@@ -328,14 +355,47 @@ export default function SetCommissionPage() {
       {/* Form Modal */}
       {showForm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] backdrop-blur-sm">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-4">
+          <div className={`bg-white rounded-lg p-6 ${modalWidthClass[modalSize]} w-full mx-4 max-h-[90vh] overflow-y-auto transition-[max-width] duration-200`}>
+            <div className="flex items-center justify-between mb-4 gap-3">
               <h2 className="text-xl font-bold">
                 {editingCommission ? "Edit Commission" : "Add Commission"}
               </h2>
-              <button onClick={handleCancel} className="text-gray-500 hover:text-gray-700">
-                <X className="w-5 h-5" />
-              </button>
+              <div className="flex items-center gap-2">
+                <div
+                  className="hidden sm:flex items-center gap-1 bg-gray-100 rounded-lg p-1"
+                  role="group"
+                  aria-label="Modal size"
+                  title="Modal size"
+                >
+                  <Maximize2 className="w-3.5 h-3.5 text-gray-400 ml-1.5" aria-hidden="true" />
+                  {(["sm", "md", "lg"] as ModalSize[]).map((size) => {
+                    const label = size === "sm" ? "S" : size === "md" ? "M" : "L"
+                    const isActive = modalSize === size
+                    return (
+                      <button
+                        key={size}
+                        type="button"
+                        onClick={() => updateModalSize(size)}
+                        aria-pressed={isActive}
+                        title={`${size === "sm" ? "Small" : size === "md" ? "Medium" : "Large"} width`}
+                        className={`px-2.5 py-1 text-xs font-bold rounded-md transition-colors ${isActive
+                          ? "bg-white text-indigo-700 shadow-sm"
+                          : "text-gray-500 hover:text-gray-700"
+                          }`}
+                      >
+                        {label}
+                      </button>
+                    )
+                  })}
+                </div>
+                <button
+                  onClick={handleCancel}
+                  className="text-gray-500 hover:text-gray-700"
+                  aria-label="Close"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
             </div>
 
             <div className="space-y-4">
