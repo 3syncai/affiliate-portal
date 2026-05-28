@@ -28,12 +28,13 @@ const PROTECTED_FIELDS = new Set([
     "first_name",
     "last_name",
     "phone",
+    "city",
     "state",
     "refer_code",
 ]);
 
 const SELECT_COLUMNS = `
-    id, first_name, last_name, email, phone, state, refer_code,
+    id, first_name, last_name, email, phone, city, state, refer_code,
     pan_card_no, pan_card_photo, aadhar_card_no, aadhar_card_photo,
     account_name, bank_name, bank_branch, ifsc_code, account_number,
     COALESCE(profile_completed, FALSE) AS profile_completed
@@ -58,7 +59,7 @@ function authorize(req: NextRequest): { ok: true; userId: string } | { ok: false
     } catch {
         return { ok: false, res: NextResponse.json({ success: false, message: "Invalid token" }, { status: 401 }) };
     }
-    if (decoded.role !== "state") {
+    if (decoded.role !== "asm") {
         return { ok: false, res: NextResponse.json({ success: false, message: "Invalid role" }, { status: 403 }) };
     }
     return { ok: true, userId: decoded.id };
@@ -72,7 +73,7 @@ export async function GET(req: NextRequest) {
     try {
         await ensureSubAdminKycSchema(pool);
         const result = await pool.query(
-            `SELECT ${SELECT_COLUMNS} FROM state_admin WHERE id = $1`,
+            `SELECT ${SELECT_COLUMNS} FROM area_sales_manager WHERE id = $1`,
             [auth.userId]
         );
 
@@ -82,7 +83,7 @@ export async function GET(req: NextRequest) {
 
         return NextResponse.json({ success: true, user: result.rows[0] });
     } catch (error: any) {
-        console.error("Failed to fetch state admin profile:", error);
+        console.error("Failed to fetch ASM profile:", error);
         return NextResponse.json({ success: false, message: error.message }, { status: 500 });
     } finally {
         await pool.end();
@@ -142,7 +143,7 @@ export async function PATCH(req: NextRequest) {
         values.push(auth.userId);
 
         const result = await pool.query(
-            `UPDATE state_admin SET ${setClauses.join(", ")} WHERE id = $${idx} RETURNING ${SELECT_COLUMNS}`,
+            `UPDATE area_sales_manager SET ${setClauses.join(", ")} WHERE id = $${idx} RETURNING ${SELECT_COLUMNS}`,
             values
         );
 
@@ -156,7 +157,7 @@ export async function PATCH(req: NextRequest) {
             user: result.rows[0],
         });
     } catch (error: any) {
-        console.error("Failed to update state admin bank details:", error);
+        console.error("Failed to update ASM bank details:", error);
         return NextResponse.json({ success: false, message: error.message }, { status: 500 });
     } finally {
         await pool.end();

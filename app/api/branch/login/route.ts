@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Pool } from "pg";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { ensureSubAdminKycSchema } from "@/lib/subadmin-kyc";
 
 export const dynamic = "force-dynamic"
 
@@ -23,8 +24,12 @@ export async function POST(req: NextRequest) {
             ssl: { rejectUnauthorized: false }
         });
 
+        // Make sure profile_completed + KYC columns exist before we SELECT them.
+        await ensureSubAdminKycSchema(pool);
+
         const result = await pool.query(
-            `SELECT id, first_name, last_name, email, password_hash, phone, branch, city, state, role, is_active, refer_code
+            `SELECT id, first_name, last_name, email, password_hash, phone, branch, city, state, role, is_active, refer_code,
+                    COALESCE(profile_completed, FALSE) AS profile_completed
              FROM branch_admin WHERE email = $1`,
             [email]
         );
@@ -57,11 +62,15 @@ export async function POST(req: NextRequest) {
 
         console.log(`Branch Admin logged in: ${branchAdmin.email} (${branchAdmin.branch})`);
 
+        const profileCompleted = !!branchAdmin.profile_completed;
+
         return NextResponse.json({
             success: true,
             message: "Login successful",
             token,
             role: "branch",
+            profile_completed: profileCompleted,
+            redirectTo: profileCompleted ? null : "/complete-profile",
             user: {
                 id: branchAdmin.id,
                 first_name: branchAdmin.first_name,
@@ -71,7 +80,8 @@ export async function POST(req: NextRequest) {
                 branch: branchAdmin.branch,
                 city: branchAdmin.city,
                 state: branchAdmin.state,
-                refer_code: branchAdmin.refer_code
+                refer_code: branchAdmin.refer_code,
+                profile_completed: profileCompleted
             }
         });
     } catch (error: any) {

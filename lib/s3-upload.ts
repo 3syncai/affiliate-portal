@@ -55,3 +55,26 @@ export async function uploadAffiliateDocument(
 
     return uploadToS3(file, folder, filename)
 }
+
+export type SubAdminLevel = "state_admin" | "branch_head" | "asm"
+
+/**
+ * Upload sub-admin (state/branch_head/asm) KYC documents to S3.
+ * Path layout: affiliate/agent_detail/{level}/{sanitized-name}/{docType}.{ext}
+ */
+export async function uploadSubAdminDocument(
+    file: File,
+    level: SubAdminLevel,
+    agentName: string,
+    docType: "aadhar" | "pancard"
+): Promise<string> {
+    const sanitized = (agentName || "agent")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "") || "agent"
+    const folder = `affiliate/agent_detail/${level}/${sanitized}`
+    const extension = (file.name.split(".").pop() || "jpg").toLowerCase()
+    const filename = `${docType}.${extension}`
+
+    return uploadToS3(file, folder, filename)
+}

@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { User, Mail, Phone, Lock, Shield, Calendar, Building, MapPin, Palette } from "lucide-react"
+import { User, Mail, Phone, Lock, Shield, Calendar, Building, MapPin, Palette, CreditCard } from "lucide-react"
 import ThemeSelector from "@/components/ThemeSelector"
+import SubAdminKycBankSection from "@/components/SubAdminKycBankSection"
 import { useTheme } from "@/contexts/ThemeContext"
 
 export default function BranchProfilePage() {
@@ -11,7 +12,7 @@ export default function BranchProfilePage() {
     const { theme } = useTheme()
     const [user, setUser] = useState<any>(null)
     const [loading, setLoading] = useState(true)
-    const [activeTab, setActiveTab] = useState<'info' | 'security' | 'theme'>('info')
+    const [activeTab, setActiveTab] = useState<'info' | 'security' | 'kyc' | 'theme'>('info')
 
     useEffect(() => {
         // Check URL hash for theme tab
@@ -110,6 +111,19 @@ export default function BranchProfilePage() {
                             </div>
                         </button>
                         <button
+                            onClick={() => setActiveTab('kyc')}
+                            className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors ${activeTab === 'kyc'
+                                ? 'border-orange-600 text-orange-600'
+                                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                }`}
+                            style={activeTab === 'kyc' ? { borderColor: theme.primary, color: theme.primary } : {}}
+                        >
+                            <div className="flex items-center gap-2">
+                                <CreditCard className="w-4 h-4" />
+                                KYC & Bank
+                            </div>
+                        </button>
+                        <button
                             onClick={() => setActiveTab('theme')}
                             className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors ${activeTab === 'theme'
                                 ? 'border-orange-600 text-orange-600'
@@ -200,6 +214,11 @@ export default function BranchProfilePage() {
                                 </div>
                             </div>
                         </div>
+                    )}
+
+                    {/* KYC & Bank Tab */}
+                    {activeTab === 'kyc' && (
+                        <SubAdminKycBankSection apiBase="/api/branch/me" themePrimary={theme.primary} />
                     )}
 
                     {/* Theme Tab */}

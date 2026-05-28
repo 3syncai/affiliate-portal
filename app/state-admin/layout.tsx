@@ -52,6 +52,7 @@ export default function StateAdminLayout({
     const [showUserMenu, setShowUserMenu] = useState(false)
     const [user, setUser] = useState<any>(null)
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
+    const [authChecked, setAuthChecked] = useState(false)
     // `mounted` stays false during SSR + first client render so the layout
     // emits identical markup on both sides. Theme-derived inline styles are
     // applied only after hydration to avoid a mismatch (which would otherwise
@@ -60,15 +61,34 @@ export default function StateAdminLayout({
 
     useEffect(() => {
         setMounted(true)
+
+        const token = localStorage.getItem("affiliate_token")
         const userData = localStorage.getItem("affiliate_user")
-        if (userData) {
-            try {
-                setUser(JSON.parse(userData))
-            } catch (e) {
-                console.error("Error parsing user data:", e)
-            }
+        const role = localStorage.getItem("affiliate_role")
+
+        if (!token || !userData) {
+            router.replace("/login")
+            return
         }
-    }, [])
+
+        if (role !== "state") {
+            router.replace("/dashboard")
+            return
+        }
+
+        try {
+            const parsed = JSON.parse(userData)
+            if (parsed?.profile_completed === false) {
+                router.replace("/complete-profile")
+                return
+            }
+            setUser(parsed)
+            setAuthChecked(true)
+        } catch (e) {
+            console.error("Error parsing user data:", e)
+            router.replace("/login")
+        }
+    }, [router])
 
     // ────────────────────────────────────────────────────────────────────
     // Live sidebar badges (poll every 5s via SWR). The badge for each item
@@ -168,6 +188,14 @@ export default function StateAdminLayout({
 
     const initial =
         (user?.name || user?.first_name || "S").charAt(0).toUpperCase()
+
+    if (!authChecked) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+                <div className="text-lg">Loading...</div>
+            </div>
+        )
+    }
 
     return (
         <div

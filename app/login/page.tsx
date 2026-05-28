@@ -62,7 +62,7 @@ function LoginContent() {
           localStorage.setItem("affiliate_token", stateData.token)
           localStorage.setItem("affiliate_user", JSON.stringify(stateData.user))
           localStorage.setItem("affiliate_role", "state")
-          window.location.href = "/state-admin/dashboard"
+          window.location.href = stateData.redirectTo || "/state-admin/dashboard"
           return
         }
       } catch {
@@ -75,7 +75,7 @@ function LoginContent() {
             localStorage.setItem("affiliate_token", asmData.token)
             localStorage.setItem("affiliate_user", JSON.stringify(asmData.user))
             localStorage.setItem("affiliate_role", "asm")
-            window.location.href = "/asm/dashboard"
+            window.location.href = asmData.redirectTo || "/asm/dashboard"
             return
           }
         } catch {
@@ -88,7 +88,7 @@ function LoginContent() {
               localStorage.setItem("affiliate_token", branchData.token)
               localStorage.setItem("affiliate_user", JSON.stringify(branchData.user))
               localStorage.setItem("affiliate_role", "branch")
-              window.location.href = "/branch/dashboard"
+              window.location.href = branchData.redirectTo || "/branch/dashboard"
               return
             }
           } catch {

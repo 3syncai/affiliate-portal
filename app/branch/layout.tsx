@@ -78,6 +78,10 @@ export default function BranchLayout({
 
         try {
             const parsed = JSON.parse(userData)
+            if (parsed?.profile_completed === false) {
+                router.replace("/complete-profile")
+                return
+            }
             setUser(parsed)
         } catch (e) {
             console.error("Error parsing user data:", e)

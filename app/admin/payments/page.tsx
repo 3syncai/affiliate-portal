@@ -2,7 +2,15 @@
 
 import { useEffect, useState } from "react"
 import axios from "axios"
-import { Search, DollarSign, CreditCard, Building, User, CheckCircle, Clock, AlertCircle } from "lucide-react"
+import { Search, DollarSign, CreditCard, Building, User, CheckCircle, Clock, AlertCircle, Landmark, MapPin } from "lucide-react"
+
+type BankDetails = {
+    account_name: string | null
+    bank_name: string | null
+    bank_branch: string | null
+    ifsc_code: string | null
+    account_number: string | null
+}
 
 type Admin = {
     id: string
@@ -16,6 +24,8 @@ type Admin = {
     totalSales: number
     commissionRate: number
     totalEarnings: number
+    bankDetails?: BankDetails
+    profileCompleted?: boolean
 }
 
 type Payment = {
@@ -45,6 +55,7 @@ export default function PaymentsPage() {
     const [ifscCode, setIfscCode] = useState("")
     const [upiId, setUpiId] = useState("")
     const [notes, setNotes] = useState("")
+    const [bankPrefilled, setBankPrefilled] = useState(false)
 
     // TDS State
     const [tdsPercentage, setTdsPercentage] = useState(18)
@@ -88,8 +99,18 @@ export default function PaymentsPage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        if (!selectedAdmin || !amount || !transactionId) {
-            alert("Please fill in all required fields")
+
+        if (!selectedAdmin) {
+            alert("Please select an admin to pay")
+            return
+        }
+        const net = parseFloat(amount) || 0
+        if (net <= 0) {
+            alert("Net payable amount must be greater than zero. This sub-admin has no outstanding earnings.")
+            return
+        }
+        if (!transactionId.trim()) {
+            alert("Transaction ID is required")
             return
         }
 
@@ -97,7 +118,13 @@ export default function PaymentsPage() {
         try {
             const accountDetails = paymentMethod === "UPI"
                 ? { upiId }
-                : { accountNumber, ifscCode }
+                : {
+                    accountNumber,
+                    ifscCode,
+                    accountHolderName: selectedAdmin.bankDetails?.account_name || null,
+                    bankName: selectedAdmin.bankDetails?.bank_name || null,
+                    bankBranch: selectedAdmin.bankDetails?.bank_branch || null,
+                }
 
             const response = await axios.post("/api/admin/payments", {
                 recipientId: selectedAdmin.id,
@@ -126,6 +153,7 @@ export default function PaymentsPage() {
                 setSearchTerm("")
                 setGrossAmount(0)
                 setTdsDeduction(0)
+                setBankPrefilled(false)
                 // Refresh data
                 fetchData()
             }
@@ -147,6 +175,15 @@ export default function PaymentsPage() {
         setTdsDeduction(tds)
         setAmount(net.toFixed(2))
         setNotes(`TDS Deducted: ₹${tds.toFixed(2)} (${tdsPercentage}%)`)
+
+        // Auto-fill bank details from the sub-admin's stored profile data.
+        // Sub-admins are bank-only (no UPI) per the complete-profile flow.
+        const bd = admin.bankDetails
+        setPaymentMethod("Bank Transfer")
+        setAccountNumber(bd?.account_number || "")
+        setIfscCode(bd?.ifsc_code || "")
+        setUpiId("")
+        setBankPrefilled(Boolean(bd?.account_number || bd?.ifsc_code))
     }
 
     const formatCurrency = (amount: number) => {
@@ -162,6 +199,15 @@ export default function PaymentsPage() {
             minute: '2-digit'
         })
     }
+
+    const netAmount = parseFloat(amount) || 0
+    const hasZeroEarnings = Boolean(selectedAdmin) && netAmount <= 0
+    const transactionIdMissing = !transactionId.trim()
+    const canSubmit =
+        Boolean(selectedAdmin) &&
+        netAmount > 0 &&
+        !transactionIdMissing &&
+        !processing
 
     if (loading) {
         return (
@@ -257,6 +303,14 @@ export default function PaymentsPage() {
                                         <span className="text-gray-900">Net Payable:</span>
                                         <span className="text-indigo-600">{formatCurrency(parseFloat(amount))}</span>
                                     </div>
+                                    {hasZeroEarnings && (
+                                        <div className="mt-2 flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 p-2 text-xs text-amber-800">
+                                            <AlertCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                                            <span>
+                                                This sub-admin has no outstanding earnings to pay out right now.
+                                            </span>
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Amount (Net) */}
@@ -313,31 +367,101 @@ export default function PaymentsPage() {
 
                                 {/* Account Details */}
                                 {paymentMethod === "Bank Transfer" && (
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                Account Number
-                                            </label>
-                                            <input
-                                                type="text"
-                                                value={accountNumber}
-                                                onChange={(e) => setAccountNumber(e.target.value)}
-                                                placeholder="Account number"
-                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                IFSC Code
-                                            </label>
-                                            <input
-                                                type="text"
-                                                value={ifscCode}
-                                                onChange={(e) => setIfscCode(e.target.value)}
-                                                placeholder="IFSC code"
-                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                                            />
-                                        </div>
+                                    <div className="space-y-4">
+                                        {(() => {
+                                            const bd = selectedAdmin.bankDetails
+                                            const hasAny = Boolean(
+                                                bd?.account_name ||
+                                                bd?.bank_name ||
+                                                bd?.bank_branch ||
+                                                bd?.account_number ||
+                                                bd?.ifsc_code
+                                            )
+                                            const profileMissing =
+                                                selectedAdmin.profileCompleted === false || !hasAny
+
+                                            return (
+                                                <>
+                                                    {profileMissing ? (
+                                                        <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+                                                            <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+                                                            <div>
+                                                                <p className="font-medium">No bank details on file</p>
+                                                                <p className="text-amber-700 text-xs mt-0.5">
+                                                                    This sub-admin has not completed their profile yet.
+                                                                    Ask them to fill their KYC and bank details, or enter
+                                                                    bank details manually below.
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                                                            <div className="flex items-center justify-between mb-3">
+                                                                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                                                                    Beneficiary Details
+                                                                </p>
+                                                                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
+                                                                    <CheckCircle className="w-3 h-3" />
+                                                                    From profile
+                                                                </span>
+                                                            </div>
+                                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
+                                                                <div className="flex items-center gap-2 text-gray-700">
+                                                                    <User className="w-4 h-4 text-gray-400 shrink-0" />
+                                                                    <span className="truncate">
+                                                                        {bd?.account_name || "—"}
+                                                                    </span>
+                                                                </div>
+                                                                <div className="flex items-center gap-2 text-gray-700">
+                                                                    <Landmark className="w-4 h-4 text-gray-400 shrink-0" />
+                                                                    <span className="truncate">
+                                                                        {bd?.bank_name || "—"}
+                                                                    </span>
+                                                                </div>
+                                                                <div className="flex items-center gap-2 text-gray-700">
+                                                                    <MapPin className="w-4 h-4 text-gray-400 shrink-0" />
+                                                                    <span className="truncate">
+                                                                        {bd?.bank_branch || "—"}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    <div className="grid grid-cols-2 gap-4">
+                                                        <div>
+                                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                                Account Number
+                                                            </label>
+                                                            <input
+                                                                type="text"
+                                                                value={accountNumber}
+                                                                onChange={(e) => setAccountNumber(e.target.value)}
+                                                                placeholder="Account number"
+                                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                                IFSC Code
+                                                            </label>
+                                                            <input
+                                                                type="text"
+                                                                value={ifscCode}
+                                                                onChange={(e) => setIfscCode(e.target.value)}
+                                                                placeholder="IFSC code"
+                                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                                            />
+                                                        </div>
+                                                        {bankPrefilled && (
+                                                            <p className="col-span-2 -mt-2 text-xs text-indigo-600">
+                                                                Pre-filled from profile — edit if needed.
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                </>
+                                            )
+                                        })()}
                                     </div>
                                 )}
 
@@ -373,13 +497,18 @@ export default function PaymentsPage() {
                                 {/* Submit Button */}
                                 <button
                                     type="submit"
-                                    disabled={processing}
+                                    disabled={!canSubmit}
                                     className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     {processing ? (
                                         <>
                                             <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                                             Processing...
+                                        </>
+                                    ) : hasZeroEarnings ? (
+                                        <>
+                                            <AlertCircle className="w-5 h-5" />
+                                            Nothing to Pay
                                         </>
                                     ) : (
                                         <>
