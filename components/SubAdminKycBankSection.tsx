@@ -251,43 +251,6 @@ export default function SubAdminKycBankSection({ apiBase, themePrimary }: SubAdm
 
     return (
         <div className="space-y-6">
-            {/* KYC Card */}
-            <section className="rounded-lg border border-gray-200 bg-white">
-                <header className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-                    <div className="flex items-center gap-3">
-                        <div
-                            className="w-9 h-9 rounded-lg flex items-center justify-center text-white"
-                            style={{ background: accent }}
-                        >
-                            <ShieldCheck className="w-5 h-5" />
-                        </div>
-                        <div>
-                            <h3 className="text-base font-semibold text-gray-900">KYC Documents</h3>
-                            <p className="text-xs text-gray-500">
-                                PAN and Aadhar details collected during onboarding. View only.
-                            </p>
-                        </div>
-                    </div>
-                    <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600">
-                        <ShieldCheck className="w-3 h-3" />
-                        Locked
-                    </span>
-                </header>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
-                    <DocumentBlock
-                        label="PAN Card"
-                        number={data.pan_card_no}
-                        photoUrl={data.pan_card_photo}
-                    />
-                    <DocumentBlock
-                        label="Aadhar Card"
-                        number={data.aadhar_card_no}
-                        photoUrl={data.aadhar_card_photo}
-                    />
-                </div>
-            </section>
-
             {/* Bank Card */}
             <section className="rounded-lg border border-gray-200 bg-white">
                 <header className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
@@ -405,6 +368,43 @@ export default function SubAdminKycBankSection({ apiBase, themePrimary }: SubAdm
                         </div>
                     </form>
                 )}
+            </section>
+
+            {/* KYC Card */}
+            <section className="rounded-lg border border-gray-200 bg-white">
+                <header className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+                    <div className="flex items-center gap-3">
+                        <div
+                            className="w-9 h-9 rounded-lg flex items-center justify-center text-white"
+                            style={{ background: accent }}
+                        >
+                            <ShieldCheck className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <h3 className="text-base font-semibold text-gray-900">KYC Documents</h3>
+                            <p className="text-xs text-gray-500">
+                                PAN and Aadhar details collected during onboarding. View only.
+                            </p>
+                        </div>
+                    </div>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600">
+                        <ShieldCheck className="w-3 h-3" />
+                        Locked
+                    </span>
+                </header>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
+                    <DocumentBlock
+                        label="PAN Card"
+                        number={data.pan_card_no}
+                        photoUrl={data.pan_card_photo}
+                    />
+                    <DocumentBlock
+                        label="Aadhar Card"
+                        number={data.aadhar_card_no}
+                        photoUrl={data.aadhar_card_photo}
+                    />
+                </div>
             </section>
         </div>
     )
