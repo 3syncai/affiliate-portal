@@ -40,6 +40,17 @@ const navigationItems = [
     { name: "Profile", href: "/state-admin/profile", icon: Settings },
 ]
 
+/** Parsed `affiliate_user` from localStorage for state-admin session. */
+type StoredStateAdminUser = {
+    id?: string | number
+    state?: string
+    refer_code?: string
+    name?: string
+    first_name?: string
+    last_name?: string
+    profile_completed?: boolean
+}
+
 export default function StateAdminLayout({
     children,
 }: {
@@ -50,7 +61,7 @@ export default function StateAdminLayout({
     const { theme } = useTheme()
     const [sidebarOpen, setSidebarOpen] = useState(true)
     const [showUserMenu, setShowUserMenu] = useState(false)
-    const [user, setUser] = useState<any>(null)
+    const [user, setUser] = useState<StoredStateAdminUser | null>(null)
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
     const [authChecked, setAuthChecked] = useState(false)
     // `mounted` stays false during SSR + first client render so the layout
@@ -86,7 +97,7 @@ export default function StateAdminLayout({
                 router.replace("/complete-profile")
                 return
             }
-            setUser(parsed)
+            setUser(parsed as StoredStateAdminUser)
             setAuthChecked(true)
         } catch (e) {
             console.error("Error parsing user data:", e)
@@ -368,7 +379,7 @@ export default function StateAdminLayout({
                     <div className="flex items-center space-x-4 lg:space-x-6">
                         {user?.id && (
                             <NotificationDropdown
-                                userId={user.id}
+                                userId={String(user.id)}
                                 userRole="state"
                             />
                         )}
