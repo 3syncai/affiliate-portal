@@ -152,7 +152,37 @@ export default function ASMEarningsPage() {
             {/* Main Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
-                {/* 1. Lifetime Earnings Card (White) */}
+                {/* 1. Total Orders (White with Progress) */}
+                <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm relative">
+                    <div className="flex justify-between items-start mb-2">
+                        <div>
+                            <p className="text-gray-500 text-sm font-medium">Total Orders</p>
+                            <h2 className="text-3xl font-bold text-gray-900 mt-2">{stats.totalOrders}</h2>
+                        </div>
+                        <div className="bg-orange-50 p-2 rounded-lg">
+                            <ShoppingBag className="w-5 h-5 text-orange-500" />
+                        </div>
+                    </div>
+
+                    <div className="mt-8">
+                        <div className="flex h-2 w-full rounded-full overflow-hidden bg-gray-100 mb-2">
+                            <div style={{ width: `${branchPercent}%` }} className="h-full bg-blue-500 rounded-full"></div>
+                            <div style={{ width: `${directPercent}%` }} className="h-full bg-emerald-400 rounded-full ml-1"></div>
+                        </div>
+                        <div className="flex justify-between text-xs mt-3">
+                            <div className="flex items-center">
+                                <div className="w-2 h-2 rounded-full bg-blue-500 mr-2"></div>
+                                <span className="text-gray-600">{stats.ordersFromBranch} Area Orders</span>
+                            </div>
+                            <div className="flex items-center">
+                                <div className="w-2 h-2 rounded-full bg-emerald-400 mr-2"></div>
+                                <span className="text-gray-600">{stats.ordersFromDirect} Direct Orders</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* 2. Lifetime Earnings Card (White) */}
                 <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm relative overflow-hidden">
                     <div className="flex justify-between items-start mb-6">
                         <div>
@@ -189,7 +219,7 @@ export default function ASMEarningsPage() {
                     </div>
                 </div>
 
-                {/* 2. Available to Withdraw (Dark) */}
+                {/* 3. Available to Withdraw (Dark) */}
                 <div className="bg-[#0f172a] rounded-xl p-6 text-white relative overflow-hidden shadow-lg">
                     <div className="absolute top-0 right-0 p-6 opacity-10">
                         <Wallet className="w-24 h-24" />
@@ -214,36 +244,6 @@ export default function ASMEarningsPage() {
                                 Pending until delivery: {formatCurrency(stats.pendingEarnings)}
                             </p>
                         )}
-                    </div>
-                </div>
-
-                {/* 3. Total Orders (White with Progress) */}
-                <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm relative">
-                    <div className="flex justify-between items-start mb-2">
-                        <div>
-                            <p className="text-gray-500 text-sm font-medium">Total Orders</p>
-                            <h2 className="text-3xl font-bold text-gray-900 mt-2">{stats.totalOrders}</h2>
-                        </div>
-                        <div className="bg-orange-50 p-2 rounded-lg">
-                            <ShoppingBag className="w-5 h-5 text-orange-500" />
-                        </div>
-                    </div>
-
-                    <div className="mt-8">
-                        <div className="flex h-2 w-full rounded-full overflow-hidden bg-gray-100 mb-2">
-                            <div style={{ width: `${branchPercent}%` }} className="h-full bg-blue-500 rounded-full"></div>
-                            <div style={{ width: `${directPercent}%` }} className="h-full bg-emerald-400 rounded-full ml-1"></div>
-                        </div>
-                        <div className="flex justify-between text-xs mt-3">
-                            <div className="flex items-center">
-                                <div className="w-2 h-2 rounded-full bg-blue-500 mr-2"></div>
-                                <span className="text-gray-600">{stats.ordersFromBranch} Area Orders</span>
-                            </div>
-                            <div className="flex items-center">
-                                <div className="w-2 h-2 rounded-full bg-emerald-400 mr-2"></div>
-                                <span className="text-gray-600">{stats.ordersFromDirect} Direct Orders</span>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>

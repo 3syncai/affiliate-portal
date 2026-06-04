@@ -153,7 +153,31 @@ export default function EarningsPage() {
 
             {/* Income Breakdown Section */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* 1. Total Earnings Card */}
+                {/* 1. Order Volume Card */}
+                <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 hover:border-gray-300 transition-colors">
+                    <div className="flex justify-between items-start mb-2">
+                        <div>
+                            <p className="text-sm font-medium text-gray-500">Total Orders</p>
+                            <h3 className="text-2xl font-bold text-gray-900 mt-1 tracking-tight">{stats.totalOrders}</h3>
+                        </div>
+                        <div className="p-2.5 rounded-lg bg-orange-50">
+                            <ShoppingBag className="w-5 h-5 text-orange-600" />
+                        </div>
+                    </div>
+
+                    <div className="mt-4 space-y-2">
+                        <div className="w-full bg-gray-100 rounded-full h-1.5 flex overflow-hidden">
+                            <div className="bg-blue-500 h-1.5" style={{ width: `${stats.totalOrders > 0 ? (stats.overrideOrders / stats.totalOrders) * 100 : 0}%` }}></div>
+                            <div className="bg-emerald-500 h-1.5" style={{ width: `${stats.totalOrders > 0 ? (stats.directOrders / stats.totalOrders) * 100 : 0}%` }}></div>
+                        </div>
+                        <div className="flex justify-between text-xs text-gray-500 pt-1">
+                            <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-blue-500"></div> {stats.overrideOrders} Team Orders</span>
+                            <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-emerald-500"></div> {stats.directOrders} Direct Orders</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* 2. Total Earnings Card */}
                 <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 relative overflow-hidden group transition-all hover:shadow-md">
                     <div className="absolute top-0 right-0 p-4 opacity-10">
                         <DollarSign className="w-16 h-16 text-emerald-600" />
@@ -177,7 +201,7 @@ export default function EarningsPage() {
                     </div>
                 </div>
 
-                {/* 2. Wallet/Balance Card (Dark) */}
+                {/* 3. Wallet/Balance Card (Dark) */}
                 <div className="bg-gray-900 rounded-xl shadow-sm p-6 text-white relative overflow-hidden ring-1 ring-gray-900">
                     <div className="relative z-10">
                         <div className="flex items-center gap-2 mb-1">
@@ -210,30 +234,6 @@ export default function EarningsPage() {
                     </div>
                     <div className="absolute bottom-0 right-0 p-6 opacity-10">
                         <Wallet className="w-12 h-12 text-white" />
-                    </div>
-                </div>
-
-                {/* 3. Order Volume Card */}
-                <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 hover:border-gray-300 transition-colors">
-                    <div className="flex justify-between items-start mb-2">
-                        <div>
-                            <p className="text-sm font-medium text-gray-500">Total Orders</p>
-                            <h3 className="text-2xl font-bold text-gray-900 mt-1 tracking-tight">{stats.totalOrders}</h3>
-                        </div>
-                        <div className="p-2.5 rounded-lg bg-orange-50">
-                            <ShoppingBag className="w-5 h-5 text-orange-600" />
-                        </div>
-                    </div>
-
-                    <div className="mt-4 space-y-2">
-                        <div className="w-full bg-gray-100 rounded-full h-1.5 flex overflow-hidden">
-                            <div className="bg-blue-500 h-1.5" style={{ width: `${stats.totalOrders > 0 ? (stats.overrideOrders / stats.totalOrders) * 100 : 0}%` }}></div>
-                            <div className="bg-emerald-500 h-1.5" style={{ width: `${stats.totalOrders > 0 ? (stats.directOrders / stats.totalOrders) * 100 : 0}%` }}></div>
-                        </div>
-                        <div className="flex justify-between text-xs text-gray-500 pt-1">
-                            <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-blue-500"></div> {stats.overrideOrders} Team Orders</span>
-                            <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-emerald-500"></div> {stats.directOrders} Direct Orders</span>
-                        </div>
                     </div>
                 </div>
             </div>
