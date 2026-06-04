@@ -403,23 +403,30 @@ export default function SetCommissionPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Commission Type
                 </label>
-                <select
-                  value={formData.commission_type}
-                  onChange={(e) => {
-                    setFormData({
-                      ...formData,
-                      commission_type: e.target.value as "product" | "category" | "collection" | "type",
-                      entity_id: "",
-                    })
-                  }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white text-gray-900 appearance-none cursor-pointer"
-                  disabled={!!editingCommission}
-                >
-                  <option value="product">Product</option>
-                  <option value="category">Category</option>
-                  <option value="collection">Collection</option>
-                  <option value="type">Type</option>
-                </select>
+                <div className="relative">
+                  <select
+                    value={formData.commission_type}
+                    onChange={(e) => {
+                      setFormData({
+                        ...formData,
+                        commission_type: e.target.value as "product" | "category" | "collection" | "type",
+                        entity_id: "",
+                      })
+                    }}
+                    className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white text-gray-900 appearance-none cursor-pointer"
+                    disabled={!!editingCommission}
+                  >
+                    <option value="product">Product</option>
+                    <option value="category">Category</option>
+                    <option value="collection">Brand</option>
+                    <option value="type">Type</option>
+                  </select>
+                  <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
+                    <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                </div>
               </div>
 
               <div className="relative">
@@ -429,7 +436,7 @@ export default function SetCommissionPage() {
                     : formData.commission_type === "category"
                       ? "Category"
                       : formData.commission_type === "collection"
-                        ? "Collection"
+                        ? "Brand"
                         : "Type"}
                 </label>
 
@@ -541,10 +548,11 @@ export default function SetCommissionPage() {
                     )}
                   </div>
                 ) : (
+                  <div className="relative">
                   <select
                     value={formData.entity_id}
                     onChange={(e) => setFormData({ ...formData, entity_id: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white text-gray-900 appearance-none cursor-pointer"
+                    className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white text-gray-900 appearance-none cursor-pointer"
                   >
                     <option value="">Select {formData.commission_type}</option>
                     {formData.commission_type === "category" &&
@@ -566,6 +574,12 @@ export default function SetCommissionPage() {
                         </option>
                       ))}
                   </select>
+                  <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
+                    <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                  </div>
                 )}
               </div>
 

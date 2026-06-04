@@ -31,6 +31,26 @@ type Product = {
   updated_at: string
 }
 
+type AdditionalCampaign = {
+  id: number
+  product_id: string
+  product_name: string | null
+  additional_rate: number
+  target_role: string
+  starts_at: string
+  ends_at: string | null
+  is_active: boolean
+  runtime_status: "ACTIVE" | "UPCOMING" | "ENDED" | "INACTIVE"
+}
+
+const roleLabels: Record<string, string> = {
+  partner: "Sales Executive",
+  asm: "Area Sales Manager",
+  branch: "Branch Admin",
+  state: "State Admin",
+  all: "All",
+}
+
 type Filters = {
   categories: Array<{ id: string; name: string; handle: string; commission: number }>
   collections: Array<{ id: string; title: string; handle: string; commission: number }>
@@ -49,6 +69,7 @@ export default function ProductCommissionPage() {
   const [selectedType, setSelectedType] = useState<string>("all")
   const [stockFilter, setStockFilter] = useState<string>("all")
   const [showFilters, setShowFilters] = useState(false)
+  const [additionalCampaigns, setAdditionalCampaigns] = useState<AdditionalCampaign[]>([])
 
   useEffect(() => {
     loadProducts()
@@ -61,11 +82,15 @@ export default function ProductCommissionPage() {
   const loadProducts = async () => {
     setLoading(true)
     try {
-      const response = await axios.get("/api/affiliate/admin/products")
-      const data = response.data
+      const [productsRes, campaignsRes] = await Promise.all([
+        axios.get("/api/affiliate/admin/products"),
+        axios.get("/api/admin/additional-commissions"),
+      ])
+      const data = productsRes.data
       setProducts(data.products || [])
       setFilters(data.filters || { categories: [], collections: [], types: [] })
       setStats(data.stats || { total: 0, in_stock: 0, out_of_stock: 0 })
+      setAdditionalCampaigns(campaignsRes.data?.campaigns || [])
     } catch (error: any) {
       console.error("Failed to fetch products:", error)
       const errorMessage = error.response?.data?.message || error.message || "Unknown error"
@@ -304,6 +329,9 @@ export default function ProductCommissionPage() {
                   Commission
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Additional Commission
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Status
                 </th>
               </tr>
@@ -311,7 +339,7 @@ export default function ProductCommissionPage() {
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredProducts.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
+                  <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
                     No products found
                   </td>
                 </tr>
@@ -390,6 +418,37 @@ export default function ProductCommissionPage() {
                           </div>
                         )}
                       </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      {(() => {
+                        const active = additionalCampaigns.filter(
+                          (c) => c.product_id === product.id && c.runtime_status === "ACTIVE"
+                        )
+                        const upcoming = additionalCampaigns.filter(
+                          (c) => c.product_id === product.id && c.runtime_status === "UPCOMING"
+                        )
+                        if (active.length === 0 && upcoming.length === 0) {
+                          return <span className="text-xs text-gray-400">—</span>
+                        }
+                        return (
+                          <div className="space-y-1">
+                            {active.map((c) => (
+                              <div key={c.id} className="flex items-center gap-1.5">
+                                <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                                <span className="text-xs font-semibold text-emerald-700">+{c.additional_rate}%</span>
+                                <span className="text-xs text-gray-500">({roleLabels[c.target_role] ?? c.target_role})</span>
+                              </div>
+                            ))}
+                            {upcoming.map((c) => (
+                              <div key={c.id} className="flex items-center gap-1.5">
+                                <span className="inline-block w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0" />
+                                <span className="text-xs font-semibold text-blue-600">+{c.additional_rate}%</span>
+                                <span className="text-xs text-gray-400">(upcoming · {roleLabels[c.target_role] ?? c.target_role})</span>
+                              </div>
+                            ))}
+                          </div>
+                        )
+                      })()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span

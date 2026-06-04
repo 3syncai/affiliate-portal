@@ -27,16 +27,16 @@ import {
 
 const navigationItems = [
   { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
-  { name: "State Admins", href: "/admin/state-admins", icon: MapPin },
-  { name: "Create State User", href: "/admin/create-state-user", icon: UserPlus },
   { name: "Store Management", href: "/admin/stores", icon: Store },
+  { name: "Create State User", href: "/admin/create-state-user", icon: UserPlus },
+  { name: "State Admins", href: "/admin/state-admins", icon: MapPin },
   { name: "Commission Settings", href: "/admin/commission-settings", icon: Percent },
-  { name: "Payments", href: "/admin/payments", icon: Banknote },
   { name: "Set Commission", href: "/admin/set-commission", icon: Percent },
-  { name: "Product Commission", href: "/admin/product-commission", icon: Percent },
   { name: "Additional Commission", href: "/admin/additional-commission", icon: Percent },
-  { name: "Total Agent", href: "/admin/total-agent", icon: Users },
+  { name: "Commission overview", href: "/admin/product-commission", icon: Percent },
+  //{ name: "Total Agent", href: "/admin/total-agent", icon: Users },
   { name: "TDS Settings", href: "/admin/tds-settings", icon: Settings },
+  { name: "Payments", href: "/admin/payments", icon: Banknote },
   { name: "Commission Ledger", href: "/admin/ledger", icon: Banknote },
 ]
 
