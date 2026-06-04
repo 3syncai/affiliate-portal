@@ -90,7 +90,7 @@ export default function StateAgentsPage() {
     if (loading) {
         return (
             <div className="flex items-center justify-center h-64">
-                <div className="text-lg text-gray-500">Loading agents...</div>
+                <div className="text-lg text-gray-500">Loading partners...</div>
             </div>
         )
     }
@@ -98,7 +98,7 @@ export default function StateAgentsPage() {
     return (
         <div className="space-y-6">
             <div>
-                <h1 className="text-3xl font-bold text-gray-900">Agents by Branch</h1>
+                <h1 className="text-3xl font-bold text-gray-900">Partners by Branch</h1>
                 <p className="text-gray-600 mt-1">View all Oweg Partners grouped by their branch in {user?.state}</p>
             </div>
 
@@ -132,13 +132,13 @@ export default function StateAgentsPage() {
                         <Users className="w-6 h-6 text-green-600" />
                     </div>
                     <div>
-                        <p className="text-sm text-gray-600">Total Agents</p>
+                        <p className="text-sm text-gray-600">Total Partners</p>
                         <p className="text-2xl font-bold text-gray-900">{agents.length}</p>
                     </div>
                 </div>
             </div>
 
-            {/* Branches with Agents */}
+            {/* Branches with Partners */}
             {filteredBranches.length === 0 ? (
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
                     <Building2 className="w-12 h-12 mx-auto text-gray-300 mb-4" />
@@ -159,7 +159,7 @@ export default function StateAgentsPage() {
                                     </div>
                                     <div>
                                         <h3 className="font-bold text-gray-900">{branch.name}</h3>
-                                        <p className="text-sm text-gray-600">{branch.count} agents</p>
+                                        <p className="text-sm text-gray-600">{branch.count} partners</p>
                                     </div>
                                 </div>
                                 {expandedBranches.has(branch.name) ? (
@@ -169,7 +169,7 @@ export default function StateAgentsPage() {
                                 )}
                             </div>
 
-                            {/* Agents Table */}
+                            {/* Partners Table */}
                             {expandedBranches.has(branch.name) && (
                                 <div className="overflow-x-auto">
                                     <table className="min-w-full divide-y divide-gray-200">
@@ -228,11 +228,11 @@ export default function StateAgentsPage() {
                 </div>
             )}
 
-            {/* View Agent Modal */}
+            {/* View Partner Modal */}
             {selectedAgent && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
                     <div className="bg-white rounded-lg max-w-lg w-full p-6">
-                        <h2 className="text-xl font-bold text-gray-900 mb-4">Agent Details</h2>
+                        <h2 className="text-xl font-bold text-gray-900 mb-4">Partner Details</h2>
                         <div className="space-y-3 text-sm">
                             <p><strong>Name:</strong> {selectedAgent.first_name} {selectedAgent.last_name}</p>
                             <p><strong>Email:</strong> {selectedAgent.email}</p>

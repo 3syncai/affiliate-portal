@@ -87,7 +87,7 @@ export default function OrderLayoutPage() {
     const headers = [
       "Order ID", "Date", "Sale By Name", "Sale By Code",
       "Product", "Quantity", "Item Price", "Order Amount",
-      "Agent Earned", "Branch Earned", "ASM Earned", "Status"
+      "Partner Earned", "Branch Earned", "ASM Earned", "Status"
     ]
     const rows = filteredOrders.map(o => [
       o.order_id,
@@ -382,7 +382,7 @@ export default function OrderLayoutPage() {
                     <th className="px-3 py-2.5 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Product</th>
                     <th className="px-3 py-2.5 text-right text-[10px] font-bold text-gray-500 uppercase tracking-wider">Qty</th>
                     <th className="px-3 py-2.5 text-right text-[10px] font-bold text-gray-500 uppercase tracking-wider">Amount</th>
-                    <th className="px-3 py-2.5 text-right text-[10px] font-bold text-gray-500 uppercase tracking-wider">Agent</th>
+                    <th className="px-3 py-2.5 text-right text-[10px] font-bold text-gray-500 uppercase tracking-wider">Partner</th>
                     <th className="px-3 py-2.5 text-right text-[10px] font-bold text-gray-500 uppercase tracking-wider">Branch</th>
                     <th className="px-3 py-2.5 text-right text-[10px] font-bold text-emerald-600 uppercase tracking-wider">ASM</th>
                     <th className="px-3 py-2.5 text-center text-[10px] font-bold text-gray-500 uppercase tracking-wider">Status</th>
@@ -616,7 +616,7 @@ export default function OrderLayoutPage() {
                 <h3 className="text-xs font-bold text-gray-500 mb-3 uppercase tracking-wide">Commission Details</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="bg-gray-50 border border-gray-200 p-4 rounded-xl">
-                    <p className="text-xs text-gray-600 font-bold uppercase mb-2">Agent Earning</p>
+                    <p className="text-xs text-gray-600 font-bold uppercase mb-2">Partner Earning</p>
                     <p className="text-xl md:text-2xl font-bold text-gray-700 tabular-nums">{selectedOrder.affiliate_earned > 0 ? formatCurrency(selectedOrder.affiliate_earned) : "-"}</p>
                   </div>
                   <div className="bg-gray-50 border border-gray-200 p-4 rounded-xl">

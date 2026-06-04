@@ -30,10 +30,10 @@ import {
 
 const navigationItems = [
     { name: "Dashboard", href: "/state-admin/dashboard", icon: LayoutDashboard },
-    { name: "Products", href: "/state-admin/products", icon: Package },
+    { name: "Commission Overview", href: "/state-admin/products", icon: Package },
     { name: "Offers", href: "/state-admin/offers", icon: BadgePercent },
     { name: "Branch Admins", href: "/state-admin/area-managers", icon: Users },
-    { name: "Agents", href: "/state-admin/agents", icon: Share2 },
+    { name: "Partners", href: "/state-admin/agents", icon: Share2 },
     { name: "Earnings", href: "/state-admin/earnings", icon: TrendingUp },
     { name: "My Referrals", href: "/state-admin/my-referrals", icon: Link2 },
     { name: "Order Layout", href: "/state-admin/order-layout", icon: ShoppingCart },

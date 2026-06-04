@@ -198,7 +198,7 @@ export default function ASMEarningsPage() {
                         <div className="flex justify-between items-center text-sm">
                             <div className="flex items-center text-gray-500">
                                 <Users className="w-4 h-4 mr-2" />
-                                From ASM Overrides
+                                From Partners overrides
                             </div>
                             <span className="font-semibold text-gray-900">{formatCurrency(stats.earningsFromBranch)}</span>
                         </div>

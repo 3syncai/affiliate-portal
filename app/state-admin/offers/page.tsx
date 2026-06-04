@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import useSWR from "swr"
 import axios from "axios"
-import { Box, IndianRupee, Percent, Share2 } from "lucide-react"
+import { Box, IndianRupee, Share2 } from "lucide-react"
 import { STORE_URL } from "@/lib/config"
 
 type AdditionalCampaign = {
@@ -181,10 +181,9 @@ function OfferCard({
         <div className="flex items-center justify-between">
           <span className="text-xs font-medium text-gray-500 bg-gray-100 px-3 py-1.5 rounded-full border border-gray-200">{product.category}</span>
           {product.commissionRate && (
-            <div className="flex items-center gap-1.5 bg-emerald-50 px-3 py-1.5 rounded-full">
-              <Percent size={14} className="text-emerald-600" />
-              <span className="text-sm font-bold text-emerald-700">{product.commissionRate}%</span>
-            </div>
+            <span className="text-sm font-bold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-full">
+              {product.commissionRate}%
+            </span>
           )}
         </div>
 

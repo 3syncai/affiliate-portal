@@ -187,7 +187,7 @@ export default function EarningsPage() {
 
                     <div className="mt-4 pt-4 border-t border-gray-100 space-y-2">
                         <div className="flex justify-between text-xs">
-                            <span className="text-gray-500 flex items-center gap-1"><Users className="w-3 h-3" /> From Partners</span>
+                            <span className="text-gray-500 flex items-center gap-1"><Users className="w-3 h-3" /> From Partners overrides</span>
                             <span className="font-medium text-gray-900">{formatCurrency(stats.overrideEarnings)}</span>
                         </div>
                         <div className="flex justify-between text-xs">
@@ -272,7 +272,7 @@ export default function EarningsPage() {
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Details</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer/Agent</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer/Partner</th>
                                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Your Earning</th>
                                 </tr>
                             </thead>

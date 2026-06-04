@@ -377,7 +377,7 @@ export default function StateAdminDashboard() {
                         <div className="space-y-4">
                             <QuickAttrItem
                                 icon={Users}
-                                label="View Agents"
+                                label="View Partners"
                                 value="Manage team"
                                 color="orange"
                                 href="/state-admin/agents"

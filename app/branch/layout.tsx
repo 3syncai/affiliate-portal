@@ -32,10 +32,10 @@ import {
 
 const navigationItems = [
     { name: "Dashboard", href: "/branch/dashboard", icon: LayoutDashboard },
-    { name: "Products", href: "/branch/products", icon: Package },
+    { name: "Commission Overview", href: "/branch/products", icon: Package },
     { name: "Offers", href: "/branch/offers", icon: BadgePercent },
     { name: "Partner Request", href: "/branch/affiliate-request", icon: UserCheck },
-    { name: "Partners in ASM", href: "/branch/agents", icon: Users },
+    { name: "Partners", href: "/branch/agents", icon: Users },
     { name: "My Earnings", href: "/branch/earnings", icon: TrendingUp },
     { name: "My Referrals", href: "/branch/my-referrals", icon: Link2 },
     { name: "Pending Payout", href: "/branch/pending-payout", icon: Clock },
