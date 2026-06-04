@@ -152,72 +152,7 @@ export default function ASMEarningsPage() {
             {/* Main Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
-                {/* 1. Lifetime Earnings Card (White) */}
-                <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm relative overflow-hidden">
-                    <div className="flex justify-between items-start mb-6">
-                        <div>
-                            <p className="text-gray-500 text-sm font-medium">Total Lifetime Earnings</p>
-                            <h2 className="text-3xl font-bold text-gray-900 mt-2">{formatCurrency(stats.lifetimeEarnings || stats.totalEarnings)}</h2>
-                        </div>
-                        <div className="bg-green-50 p-3 rounded-lg">
-                            <DollarSign className="w-6 h-6 text-green-600" />
-                        </div>
-                    </div>
-
-                    <div className="space-y-3 pt-4 border-t border-gray-50">
-                        <div className="flex justify-between items-center text-sm">
-                            <div className="flex items-center text-gray-500">
-                                <Users className="w-4 h-4 mr-2" />
-                                From ASM Overrides
-                            </div>
-                            <span className="font-semibold text-gray-900">{formatCurrency(stats.earningsFromBranch)}</span>
-                        </div>
-                        <div className="flex justify-between items-center text-sm">
-                            <div className="flex items-center text-gray-500">
-                                <User className="w-4 h-4 mr-2" />
-                                From Direct Referrals
-                            </div>
-                            <span className="font-semibold text-gray-900">{formatCurrency(stats.earningsFromDirect)}</span>
-                        </div>
-                        <div className="flex justify-between items-center text-sm">
-                            <div className="flex items-center text-amber-600">
-                                <AlertCircle className="w-4 h-4 mr-2" />
-                                Pending Until Delivery
-                            </div>
-                            <span className="font-semibold text-amber-700">{formatCurrency(stats.pendingEarnings)}</span>
-                        </div>
-                    </div>
-                </div>
-
-                {/* 2. Available to Withdraw (Dark) */}
-                <div className="bg-[#0f172a] rounded-xl p-6 text-white relative overflow-hidden shadow-lg">
-                    <div className="absolute top-0 right-0 p-6 opacity-10">
-                        <Wallet className="w-24 h-24" />
-                    </div>
-
-                    <div className="relative z-10">
-                        <p className="text-gray-400 text-sm font-medium">Available to Withdraw</p>
-                        <h2 className="text-4xl font-bold text-white mt-2">{formatCurrency(stats.currentEarnings)}</h2>
-
-                        <div className="flex items-center mt-8 gap-4">
-                            <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-3 py-1 rounded-md text-xs font-semibold flex items-center">
-                                <CheckCircle2 className="w-3 h-3 mr-1.5" />
-                                Ready
-                            </span>
-                            <span className="text-xs text-gray-400">
-                                Paid Out: <span className="text-gray-300 ml-1">{formatCurrency(stats.paidAmount)}</span>
-                            </span>
-                        </div>
-
-                        {stats.pendingEarnings > 0 && (
-                            <p className="text-xs text-amber-300 mt-3">
-                                Pending until delivery: {formatCurrency(stats.pendingEarnings)}
-                            </p>
-                        )}
-                    </div>
-                </div>
-
-                {/* 3. Total Orders (White with Progress) */}
+                {/* 1. Total Orders (White with Progress) */}
                 <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm relative">
                     <div className="flex justify-between items-start mb-2">
                         <div>
@@ -244,6 +179,71 @@ export default function ASMEarningsPage() {
                                 <span className="text-gray-600">{stats.ordersFromDirect} Direct Orders</span>
                             </div>
                         </div>
+                    </div>
+                </div>
+
+                {/* 2. Lifetime Earnings Card (White) */}
+                <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm relative overflow-hidden">
+                    <div className="flex justify-between items-start mb-6">
+                        <div>
+                            <p className="text-gray-500 text-sm font-medium">Total Lifetime Earnings</p>
+                            <h2 className="text-3xl font-bold text-gray-900 mt-2">{formatCurrency(stats.lifetimeEarnings || stats.totalEarnings)}</h2>
+                        </div>
+                        <div className="bg-green-50 p-3 rounded-lg">
+                            <DollarSign className="w-6 h-6 text-green-600" />
+                        </div>
+                    </div>
+
+                    <div className="space-y-3 pt-4 border-t border-gray-50">
+                        <div className="flex justify-between items-center text-sm">
+                            <div className="flex items-center text-gray-500">
+                                <Users className="w-4 h-4 mr-2" />
+                                From Partners overrides
+                            </div>
+                            <span className="font-semibold text-gray-900">{formatCurrency(stats.earningsFromBranch)}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-sm">
+                            <div className="flex items-center text-gray-500">
+                                <User className="w-4 h-4 mr-2" />
+                                From Direct Referrals
+                            </div>
+                            <span className="font-semibold text-gray-900">{formatCurrency(stats.earningsFromDirect)}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-sm">
+                            <div className="flex items-center text-amber-600">
+                                <AlertCircle className="w-4 h-4 mr-2" />
+                                Pending Until Delivery
+                            </div>
+                            <span className="font-semibold text-amber-700">{formatCurrency(stats.pendingEarnings)}</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* 3. Available to Withdraw (Dark) */}
+                <div className="bg-[#0f172a] rounded-xl p-6 text-white relative overflow-hidden shadow-lg">
+                    <div className="absolute top-0 right-0 p-6 opacity-10">
+                        <Wallet className="w-24 h-24" />
+                    </div>
+
+                    <div className="relative z-10">
+                        <p className="text-gray-400 text-sm font-medium">Available to Withdraw</p>
+                        <h2 className="text-4xl font-bold text-white mt-2">{formatCurrency(stats.currentEarnings)}</h2>
+
+                        <div className="flex items-center mt-8 gap-4">
+                            <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-3 py-1 rounded-md text-xs font-semibold flex items-center">
+                                <CheckCircle2 className="w-3 h-3 mr-1.5" />
+                                Ready
+                            </span>
+                            <span className="text-xs text-gray-400">
+                                Paid Out: <span className="text-gray-300 ml-1">{formatCurrency(stats.paidAmount)}</span>
+                            </span>
+                        </div>
+
+                        {stats.pendingEarnings > 0 && (
+                            <p className="text-xs text-amber-300 mt-3">
+                                Pending until delivery: {formatCurrency(stats.pendingEarnings)}
+                            </p>
+                        )}
                     </div>
                 </div>
             </div>

@@ -30,11 +30,11 @@ import {
 
 const navigationItems = [
     { name: "Dashboard", href: "/asm/dashboard", icon: LayoutDashboard },
-    { name: "Products", href: "/asm/products", icon: Package },
+    { name: "Commission Overview", href: "/asm/products", icon: Package },
     { name: "Offers", href: "/asm/offers", icon: BadgePercent },
     { name: "Create Area Sales Manager", href: "/asm/create-branch", icon: UserPlus },
     { name: "Area Sales Managers", href: "/asm/branch-admins", icon: Building },
-    { name: "Partners in ASM", href: "/asm/agents", icon: Users },
+    { name: "Partners", href: "/asm/agents", icon: Users },
     { name: "My Earnings", href: "/asm/earnings", icon: TrendingUp },
     { name: "My Referrals", href: "/asm/my-referrals", icon: Users },
     { name: "Order Layout", href: "/asm/order-layout", icon: ShoppingBag },
