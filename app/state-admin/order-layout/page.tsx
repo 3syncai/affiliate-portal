@@ -85,7 +85,7 @@ export default function OrderLayoutPage() {
     const headers = [
       "Order ID", "Date", "Sale By Name", "Sale By Code",
       "Product", "Quantity", "Item Price", "Order Amount",
-      "Agent Earned", "Branch Earned", "ASM Earned", "My Earned", "Status"
+      "Partner Earned", "Branch Earned", "ASM Earned", "My Earned", "Status"
     ]
     const rows = filteredOrders.map(o => [
       o.order_id,
@@ -179,7 +179,7 @@ export default function OrderLayoutPage() {
       <div className="flex justify-between items-start">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-gray-900">Order Layout</h1>
-          <p className="text-sm text-gray-500 mt-1">View agent, branch and ASM commission breakdown per order</p>
+          <p className="text-sm text-gray-500 mt-1">View partner, branch and ASM commission breakdown per order</p>
         </div>
         <button
           onClick={exportToCSV}
@@ -612,7 +612,7 @@ export default function OrderLayoutPage() {
                     <p className="text-xl md:text-2xl font-bold text-emerald-600 tabular-nums">{formatCurrency(selectedOrder.my_earned)}</p>
                   </div>
                   <div className="bg-gray-50 border border-gray-200 p-4 rounded-xl">
-                    <p className="text-xs text-gray-600 font-bold uppercase mb-2">Agent Earning</p>
+                    <p className="text-xs text-gray-600 font-bold uppercase mb-2">Partner Earning</p>
                     <p className="text-xl md:text-2xl font-bold text-gray-700 tabular-nums">{selectedOrder.affiliate_earned > 0 ? formatCurrency(selectedOrder.affiliate_earned) : "-"}</p>
                   </div>
                   <div className="bg-gray-50 border border-gray-200 p-4 rounded-xl">

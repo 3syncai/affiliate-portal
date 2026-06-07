@@ -66,7 +66,7 @@ export default function ASMAgentsPage() {
     if (loading) {
         return (
             <div className="flex items-center justify-center h-64">
-                <div className="text-lg text-gray-500">Loading agents...</div>
+                <div className="text-lg text-gray-500">Loading partners...</div>
             </div>
         )
     }
@@ -74,7 +74,7 @@ export default function ASMAgentsPage() {
     return (
         <div className="space-y-6">
             <div>
-                <h1 className="text-3xl font-bold text-gray-900">Agents in {user?.city}</h1>
+                <h1 className="text-3xl font-bold text-gray-900">Partners in {user?.city}</h1>
                 <p className="text-gray-600 mt-1">View all Oweg Partners in your area</p>
             </div>
 
@@ -95,14 +95,14 @@ export default function ASMAgentsPage() {
             {/* Stats */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
                 <p className="text-gray-600">
-                    Total Agents: <span className="font-bold text-gray-900">{filteredAgents.length}</span>
+                    Total Partners: <span className="font-bold text-gray-900">{filteredAgents.length}</span>
                 </p>
             </div>
 
-            {/* Agents Table */}
+            {/* Partners Table */}
             {filteredAgents.length === 0 ? (
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
-                    <p className="text-gray-500">No agents found in {user?.city}</p>
+                    <p className="text-gray-500">No partners found in {user?.city}</p>
                 </div>
             ) : (
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
@@ -164,11 +164,11 @@ export default function ASMAgentsPage() {
                 </div>
             )}
 
-            {/* View Agent Modal */}
+            {/* View Partner Modal */}
             {selectedAgent && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
                     <div className="bg-white rounded-lg max-w-lg w-full p-6">
-                        <h2 className="text-xl font-bold text-gray-900 mb-4">Agent Details</h2>
+                        <h2 className="text-xl font-bold text-gray-900 mb-4">Partner Details</h2>
                         <div className="space-y-3 text-sm">
                             <p><strong>Name:</strong> {selectedAgent.first_name} {selectedAgent.last_name}</p>
                             <p><strong>Email:</strong> {selectedAgent.email}</p>

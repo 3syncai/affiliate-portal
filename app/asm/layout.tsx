@@ -30,11 +30,11 @@ import {
 
 const navigationItems = [
     { name: "Dashboard", href: "/asm/dashboard", icon: LayoutDashboard },
-    { name: "Products", href: "/asm/products", icon: Package },
+    { name: "Commission Overview", href: "/asm/products", icon: Package },
     { name: "Offers", href: "/asm/offers", icon: BadgePercent },
     { name: "Create Area Sales Manager", href: "/asm/create-branch", icon: UserPlus },
     { name: "Area Sales Managers", href: "/asm/branch-admins", icon: Building },
-    { name: "Partners in ASM", href: "/asm/agents", icon: Users },
+    { name: "Partners", href: "/asm/agents", icon: Users },
     { name: "My Earnings", href: "/asm/earnings", icon: TrendingUp },
     { name: "My Referrals", href: "/asm/my-referrals", icon: Users },
     { name: "Order Layout", href: "/asm/order-layout", icon: ShoppingBag },
@@ -74,16 +74,19 @@ export default function ASMLayout({
 
         try {
             const parsed = JSON.parse(userData)
-            if (parsed?.profile_completed === false) {
+            // Treat any non-true value (undefined for sessions stored before
+            // profile_completed existed, plus literal false) as incomplete.
+            // We deliberately leave `loading` true on the redirect path so
+            // the dashboard never flashes in between gating and navigation.
+            if (parsed?.profile_completed !== true) {
                 router.replace("/complete-profile")
                 return
             }
             setUser(parsed)
+            setLoading(false)
         } catch (e) {
             console.error("Error parsing user data:", e)
             router.push("/login")
-        } finally {
-            setLoading(false)
         }
     }, [router])
 

@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Search, Package, IndianRupee, Percent, Box, Share2 } from "lucide-react"
+import { Search, Package, IndianRupee, Box, Share2 } from "lucide-react"
 import axios from "axios"
 import { BACKEND_URL, STORE_URL } from "@/lib/config"
 import { useTheme } from "@/contexts/ThemeContext"
@@ -126,8 +126,8 @@ export default function StateAdminProductsPage() {
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-900">Product Catalog</h1>
-                    <p className="text-gray-600 mt-1">Direct sales earn you maximum commission (~{Math.round(commissionRate)}%)</p>
+                    <h1 className="text-3xl font-bold text-gray-900">Commission Overview</h1>
+                    <p className="text-gray-600 mt-1">Direct sales earn you maximum commission</p>
                 </div>
                 <div className="px-4 py-2 rounded-full text-sm font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
                     {filteredProducts.length} Products Available
@@ -289,10 +289,9 @@ function ProductCard({ product, user, theme, commissionRate, additionalCommissio
                         </span>
                     </div>
                     {product.commissionRate && (
-                        <div className="flex items-center gap-1 text-emerald-600">
-                            <Percent size={14} />
-                            <span className="text-sm font-medium">{product.commissionRate}% commission</span>
-                        </div>
+                        <span className="text-sm font-medium text-emerald-600">
+                            {product.commissionRate}% commission
+                        </span>
                     )}
                 </div>
 
