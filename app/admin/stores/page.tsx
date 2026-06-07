@@ -374,7 +374,7 @@ export default function StoresPage() {
                                 />
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
+                            {/* <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">
                                         Contact Phone
@@ -404,7 +404,7 @@ export default function StoresPage() {
                                         placeholder="e.g., branch@example.com"
                                     />
                                 </div>
-                            </div>
+                            </div> */}
 
                             <div className="flex gap-3 pt-4">
                                 <button

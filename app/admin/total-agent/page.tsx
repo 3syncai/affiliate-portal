@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useSearchParams } from "next/navigation"
 import { Eye, Users, Building2, MapPin, GitBranch, Search, Filter, X, User, Mail, Phone, Calendar, Briefcase } from "lucide-react"
 import axios from "axios"
 
@@ -32,8 +33,15 @@ const tabs: { id: TabType; label: string; icon: any; color: string }[] = [
   { id: "state_admins", label: "State Admins", icon: Building2, color: "from-purple-500 to-purple-600" },
 ]
 
+const VALID_TABS: TabType[] = ["affiliates", "state_admins", "area_managers", "branch_admins"]
+
 export default function AllUsersPage() {
-  const [activeTab, setActiveTab] = useState<TabType>("affiliates")
+  const searchParams = useSearchParams()
+  const tabParam = searchParams.get("tab")
+  const initialTab: TabType =
+    tabParam && VALID_TABS.includes(tabParam as TabType) ? (tabParam as TabType) : "affiliates"
+
+  const [activeTab, setActiveTab] = useState<TabType>(initialTab)
   const [users, setUsers] = useState<UserData[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedUser, setSelectedUser] = useState<UserData | null>(null)
@@ -63,6 +71,12 @@ export default function AllUsersPage() {
   useEffect(() => {
     loadAllStats()
   }, [])
+
+  useEffect(() => {
+    if (tabParam && VALID_TABS.includes(tabParam as TabType)) {
+      setActiveTab(tabParam as TabType)
+    }
+  }, [tabParam])
 
   useEffect(() => {
     loadUsers(activeTab)

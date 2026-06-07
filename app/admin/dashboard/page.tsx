@@ -216,7 +216,7 @@ export default function AdminDashboardPage() {
             >
               <div className="flex items-center justify-between">
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-600 mb-1">Total Agents</p>
+                  <p className="text-sm font-medium text-gray-600 mb-1">Total Sales Executive</p>
                   <p className="text-3xl font-bold text-gray-900">{stats.totalAgents}</p>
                   <div className="mt-2 flex items-center text-xs text-gray-500">
                     <span>View all</span>
@@ -272,35 +272,56 @@ export default function AdminDashboardPage() {
           <div className="bg-gradient-to-br from-white to-gray-50 rounded-xl shadow-sm border border-gray-200 p-6 sm:p-8">
             <h2 className="text-xl font-semibold text-gray-900 mb-6">Admin Overview</h2>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="group bg-white p-6 rounded-xl border-2 border-indigo-100 hover:border-indigo-300 transition-all cursor-pointer">
-                <div className="flex items-center justify-center mb-4">
-                  <div className="p-3 bg-indigo-100 rounded-xl group-hover:bg-indigo-200 transition-colors">
-                    <MapPin className="w-8 h-8 text-indigo-600" />
-                  </div>
-                </div>
-                <p className="text-3xl font-bold text-gray-900 text-center">{adminStats.stateAdmins}</p>
-                <p className="text-sm text-gray-600 text-center mt-2">State Admins</p>
-              </div>
-
-              <div className="group bg-white p-6 rounded-xl border-2 border-emerald-100 hover:border-emerald-300 transition-all cursor-pointer">
-                <div className="flex items-center justify-center mb-4">
-                  <div className="p-3 bg-emerald-100 rounded-xl group-hover:bg-emerald-200 transition-colors">
-                    <Users className="w-8 h-8 text-emerald-600" />
-                  </div>
-                </div>
-                <p className="text-3xl font-bold text-gray-900 text-center">{adminStats.areaManagers}</p>
-                <p className="text-sm text-gray-600 text-center mt-2">Branch Managers</p>
-              </div>
-
-              <div className="group bg-white p-6 rounded-xl border-2 border-blue-100 hover:border-blue-300 transition-all cursor-pointer">
+              <a
+                href="/admin/total-agent?tab=branch_admins"
+                className="group bg-white p-6 rounded-xl border-2 border-blue-100 hover:border-blue-300 transition-all cursor-pointer"
+              >
                 <div className="flex items-center justify-center mb-4">
                   <div className="p-3 bg-blue-100 rounded-xl group-hover:bg-blue-200 transition-colors">
                     <Building2 className="w-8 h-8 text-blue-600" />
                   </div>
                 </div>
-                <p className="text-3xl font-bold text-gray-900 text-center">{adminStats.branchAdmins}</p>
-                <p className="text-sm text-gray-600 text-center mt-2">Area sales Managers</p>
-              </div>
+                <p className="text-sm text-gray-600 text-center">Area sales Managers</p>
+                <p className="text-3xl font-bold text-gray-900 text-center mt-1">{adminStats.branchAdmins}</p>
+                <div className="mt-2 flex items-center justify-center text-xs text-gray-500">
+                  <span>View all</span>
+                  <ArrowUpRight className="w-3 h-3 ml-1 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                </div>
+              </a>
+
+              <a
+                href="/admin/total-agent?tab=area_managers"
+                className="group bg-white p-6 rounded-xl border-2 border-emerald-100 hover:border-emerald-300 transition-all cursor-pointer"
+              >
+                <div className="flex items-center justify-center mb-4">
+                  <div className="p-3 bg-emerald-100 rounded-xl group-hover:bg-emerald-200 transition-colors">
+                    <Users className="w-8 h-8 text-emerald-600" />
+                  </div>
+                </div>
+                <p className="text-sm text-gray-600 text-center">Branch Managers</p>
+                <p className="text-3xl font-bold text-gray-900 text-center mt-1">{adminStats.areaManagers}</p>
+                <div className="mt-2 flex items-center justify-center text-xs text-gray-500">
+                  <span>View all</span>
+                  <ArrowUpRight className="w-3 h-3 ml-1 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                </div>
+              </a>
+
+              <a
+                href="/admin/total-agent?tab=state_admins"
+                className="group bg-white p-6 rounded-xl border-2 border-indigo-100 hover:border-indigo-300 transition-all cursor-pointer"
+              >
+                <div className="flex items-center justify-center mb-4">
+                  <div className="p-3 bg-indigo-100 rounded-xl group-hover:bg-indigo-200 transition-colors">
+                    <MapPin className="w-8 h-8 text-indigo-600" />
+                  </div>
+                </div>
+                <p className="text-sm text-gray-600 text-center">State Admins</p>
+                <p className="text-3xl font-bold text-gray-900 text-center mt-1">{adminStats.stateAdmins}</p>
+                <div className="mt-2 flex items-center justify-center text-xs text-gray-500">
+                  <span>View all</span>
+                  <ArrowUpRight className="w-3 h-3 ml-1 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                </div>
+              </a>
             </div>
           </div>
 
