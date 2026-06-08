@@ -29,16 +29,3 @@ export function getJwtSecret(): string {
 export function getDatabaseUrl(): string {
     return requireEnv("DATABASE_URL")
 }
-
-export function getDebugControllerId(): string {
-    return requireEnv("DEBUG_CONTROLLER_ID")
-}
-
-export function getDebugControllerPassword(): string {
-    return requireEnv("DEBUG_CONTROLLER_PASSWORD")
-}
-
-/** Separate secret for debug sessions; falls back to JWT_SECRET. */
-export function getDebugControllerSecret(): string {
-    return process.env.DEBUG_CONTROLLER_SECRET || getJwtSecret()
-}

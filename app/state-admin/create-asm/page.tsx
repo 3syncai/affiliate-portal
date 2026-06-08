@@ -120,7 +120,7 @@ export default function CreateASMPage() {
             })
 
             if (response.data.success) {
-                setSuccess(`Area Sales Manager created successfully for ${formData.city}!`)
+                setSuccess(`Branch Manager created successfully for ${formData.city}!`)
                 setFormData({
                     first_name: "",
                     last_name: "",
@@ -131,10 +131,10 @@ export default function CreateASMPage() {
                     confirm_password: ""
                 })
             } else {
-                setError(response.data.message || "Failed to create ASM")
+                setError(response.data.message || "Failed to create Branch Manager")
             }
         } catch (err: any) {
-            setError(err.response?.data?.message || err.message || "Failed to create ASM")
+            setError(err.response?.data?.message || err.message || "Failed to create Branch Manager")
         } finally {
             setLoading(false)
         }
@@ -306,7 +306,7 @@ export default function CreateASMPage() {
                     {/* Info Box */}
                     <div className={`${colors.lightBg} border border-${theme}-200 rounded-lg p-4`}>
                         <p className={`text-sm ${colors.secondaryText}`}>
-                            <strong>Note:</strong> This Area Sales Manager will be assigned to <strong>{stateAdminState}</strong> state. They will have access to the ASM Dashboard and can manage affiliates in their assigned city.
+                            <strong>Note:</strong> This Branch Manager will be assigned to <strong>{stateAdminState}</strong> state. They will have access to the Branch Manager Dashboard and can manage partners in their assigned city.
                         </p>
                     </div>
 

@@ -25,8 +25,23 @@ const BANK_FIELDS = [
     "account_number",
 ] as const
 
+const PERSONAL_FIELDS = ["phone"] as const
+
 export type BankField = (typeof BANK_FIELDS)[number]
+export type PersonalField = (typeof PERSONAL_FIELDS)[number]
+
 const BANK_FIELD_SET: ReadonlySet<string> = new Set(BANK_FIELDS)
+const PERSONAL_FIELD_SET: ReadonlySet<string> = new Set(PERSONAL_FIELDS)
+const ALLOWED_PATCH_FIELDS: ReadonlySet<string> = new Set([
+    ...BANK_FIELDS,
+    ...PERSONAL_FIELDS,
+])
+
+function normalizePhone(value: unknown): string | null {
+    if (typeof value !== "string") return null
+    const digits = value.replace(/\D/g, "").slice(0, 10)
+    return digits.length === 10 ? digits : null
+}
 
 export type SubAdminTable = "state_admin" | "area_sales_manager" | "branch_admin"
 
@@ -97,12 +112,8 @@ export async function handleSubAdminMePatch(
         )
     }
 
-    // Reject any key that isn't an explicit bank field. This both blocks
-    // KYC/identity overwrites (the old PROTECTED_FIELDS allowlist) and
-    // unknown keys (e.g. "foo") that the previous implementation silently
-    // accepted into the build loop.
     for (const key of Object.keys(body)) {
-        if (!BANK_FIELD_SET.has(key)) {
+        if (!ALLOWED_PATCH_FIELDS.has(key)) {
             return NextResponse.json(
                 {
                     success: false,
@@ -113,7 +124,7 @@ export async function handleSubAdminMePatch(
         }
     }
 
-    const updates: Partial<Record<BankField, string>> = {}
+    const bankUpdates: Partial<Record<BankField, string>> = {}
     for (const field of BANK_FIELDS) {
         const raw = body[field]
         if (raw === undefined) continue
@@ -124,12 +135,27 @@ export async function handleSubAdminMePatch(
                 { status: 400 }
             )
         }
-        updates[field] = value
+        bankUpdates[field] = value
     }
 
-    if (Object.keys(updates).length === 0) {
+    let phoneUpdate: string | undefined
+    if (body.phone !== undefined) {
+        const normalized = normalizePhone(body.phone)
+        if (!normalized) {
+            return NextResponse.json(
+                {
+                    success: false,
+                    message: "Phone number must be a valid 10-digit mobile number",
+                },
+                { status: 400 }
+            )
+        }
+        phoneUpdate = normalized
+    }
+
+    if (Object.keys(bankUpdates).length === 0 && phoneUpdate === undefined) {
         return NextResponse.json(
-            { success: false, message: "No bank fields supplied" },
+            { success: false, message: "No updatable fields supplied" },
             { status: 400 }
         )
     }
@@ -141,9 +167,13 @@ export async function handleSubAdminMePatch(
         const setClauses: string[] = []
         const values: unknown[] = []
         let idx = 1
-        for (const [field, value] of Object.entries(updates)) {
+        for (const [field, value] of Object.entries(bankUpdates)) {
             setClauses.push(`${field} = $${idx++}`)
             values.push(value)
+        }
+        if (phoneUpdate !== undefined) {
+            setClauses.push(`phone = $${idx++}`)
+            values.push(phoneUpdate)
         }
         setClauses.push(`updated_at = NOW()`)
         values.push(auth.userId)
@@ -160,9 +190,16 @@ export async function handleSubAdminMePatch(
             )
         }
 
+        const message =
+            Object.keys(bankUpdates).length > 0 && phoneUpdate !== undefined
+                ? "Profile updated successfully"
+                : phoneUpdate !== undefined
+                  ? "Mobile number updated successfully"
+                  : "Bank details updated successfully"
+
         return NextResponse.json({
             success: true,
-            message: "Bank details updated successfully",
+            message,
             user: result.rows[0],
         })
     } catch (error: any) {

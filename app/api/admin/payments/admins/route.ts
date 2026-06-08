@@ -193,7 +193,7 @@ export async function GET() {
                     name: `${admin.first_name} ${admin.last_name}`,
                     email: admin.email,
                     type: admin.admin_type,
-                    typeLabel: 'Branch Manager',
+                    typeLabel: 'Branch Admin',
                     location: admin.branch,
                     city: admin.city,
                     state: admin.state,

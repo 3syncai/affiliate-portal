@@ -71,7 +71,7 @@ export default function BranchProfilePage() {
                         <div className="flex items-center gap-4 mt-3">
                             <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
                                 <Building className="w-3 h-3 mr-1" />
-                                {user?.branch || 'Branch Manager'}
+                                {user?.branch || 'Branch Admin'}
                             </span>
                             <span className="text-sm text-gray-500 flex items-center">
                                 <Calendar className="w-4 h-4 mr-1" />

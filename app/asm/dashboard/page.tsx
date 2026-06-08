@@ -324,6 +324,7 @@ export default function ASMDashboard() {
             icon: RotateCcw,
             bg: "bg-rose-50",
             color: "text-rose-600",
+            href: "/asm/returns",
           },
           {
             title: "Total Commission",
@@ -341,10 +342,13 @@ export default function ASMDashboard() {
           },
         ].map((card) => {
           const Icon = card.icon;
-          return (
+          const content = (
             <div
-              key={card.title}
-              className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow"
+              className={`bg-white rounded-xl p-6 shadow-sm border border-gray-100 transition-shadow ${
+                "href" in card && card.href
+                  ? "hover:border-rose-200 cursor-pointer hover:shadow-md"
+                  : "hover:shadow-md"
+              }`}
             >
               <div className="flex justify-between items-start">
                 <div>
@@ -360,6 +364,14 @@ export default function ASMDashboard() {
                 </div>
               </div>
             </div>
+          );
+
+          return "href" in card && card.href ? (
+            <Link key={card.title} href={card.href} className="block">
+              {content}
+            </Link>
+          ) : (
+            <div key={card.title}>{content}</div>
           );
         })}
       </div>
@@ -592,7 +604,7 @@ export default function ASMDashboard() {
                 <p className="text-xs text-gray-500">Loading offers...</p>
               ) : !additionalData?.campaigns?.length ? (
                 <p className="text-xs text-gray-500">
-                  No active additional commission offers for Branch Manager.
+                  No active additional commission offers for Branch Admin.
                 </p>
               ) : (
                 (additionalData.campaigns as AdditionalCampaign[])

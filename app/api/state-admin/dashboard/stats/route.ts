@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Pool } from "pg";
 import { fetchCommissionRates } from "@/lib/commission-rates";
 import { syncAffiliateCommissionStatuses } from "@/lib/affiliate-commission-sync";
-import { COMMISSION_HAS_RETURN_SQL } from "@/lib/dashboard-return-sql";
+import { COMMISSION_IS_RETURN_OR_CANCELLED_SQL } from "@/lib/dashboard-return-sql";
 
 export const dynamic = "force-dynamic";
 
@@ -68,7 +68,9 @@ export async function GET(req: NextRequest) {
       const ordersResult = await pool.query(
         `SELECT
            COUNT(*)::int AS total_orders,
-           COUNT(*) FILTER (WHERE ${COMMISSION_HAS_RETURN_SQL})::int AS total_returns,
+           COUNT(DISTINCT acl.order_id) FILTER (
+             WHERE ${COMMISSION_IS_RETURN_OR_CANCELLED_SQL}
+           )::int AS total_returns,
            COALESCE(SUM(acl.affiliate_commission), 0) AS total_commission,
            COALESCE(SUM(CASE WHEN acl.status = 'PENDING' THEN acl.affiliate_commission ELSE 0 END), 0) AS pending_commission,
            COALESCE(SUM(CASE WHEN acl.status = 'CREDITED' THEN acl.affiliate_commission ELSE 0 END), 0) AS credited_commission
