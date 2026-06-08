@@ -592,7 +592,7 @@ export default function ASMDashboard() {
                 <p className="text-xs text-gray-500">Loading offers...</p>
               ) : !additionalData?.campaigns?.length ? (
                 <p className="text-xs text-gray-500">
-                  No active additional commission offers for Branch Admin.
+                  No active additional commission offers for Branch Manager.
                 </p>
               ) : (
                 (additionalData.campaigns as AdditionalCampaign[])

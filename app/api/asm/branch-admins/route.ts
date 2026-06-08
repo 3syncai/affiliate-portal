@@ -58,7 +58,7 @@ export async function GET(req: NextRequest) {
         return NextResponse.json(
             {
                 success: false,
-                error: "Failed to fetch Branch Admins",
+                error: "Failed to fetch Branch Managers",
                 message: error instanceof Error ? error.message : "Unknown error"
             },
             { status: 500 }

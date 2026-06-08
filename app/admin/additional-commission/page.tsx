@@ -25,7 +25,7 @@ type Campaign = {
 const roleOptions = [
   { value: "partner", label: "Sales Executive" },
   { value: "asm", label: "Area Sales Manager" },
-  { value: "branch", label: "Branch Admin" },
+  { value: "branch", label: "Branch Manager" },
   { value: "state", label: "State Admin" },
   { value: "all", label: "All" },
 ]

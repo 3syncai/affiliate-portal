@@ -2,19 +2,31 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { User, Mail, Phone, Lock, Camera, Shield, Calendar, Palette } from "lucide-react"
+import axios from "axios"
+import { User, Mail, Phone, Lock, Shield, Calendar, Palette, Save } from "lucide-react"
 import ThemeSelector from "@/components/ThemeSelector"
 import { useTheme } from "@/contexts/ThemeContext"
+
+type AdminProfile = {
+    id: string
+    name: string | null
+    email: string | null
+    phone: string | null
+}
 
 export default function AdminProfilePage() {
     const router = useRouter()
     const { theme } = useTheme()
     const [user, setUser] = useState<any>(null)
+    const [profile, setProfile] = useState<AdminProfile | null>(null)
+    const [phone, setPhone] = useState("")
     const [loading, setLoading] = useState(true)
+    const [saving, setSaving] = useState(false)
+    const [saveError, setSaveError] = useState("")
+    const [saveSuccess, setSaveSuccess] = useState("")
     const [activeTab, setActiveTab] = useState<'info' | 'security' | 'theme'>('info')
 
     useEffect(() => {
-        // Check URL hash for theme tab
         if (window.location.hash === '#theme') {
             setActiveTab('theme')
         }
@@ -27,16 +39,72 @@ export default function AdminProfilePage() {
             return
         }
 
-        try {
-            const parsed = JSON.parse(userData)
-            setUser(parsed)
-        } catch (e) {
-            console.error("Error parsing user data:", e)
-            router.push("/login")
-        } finally {
-            setLoading(false)
+        const loadProfile = async () => {
+            try {
+                const parsed = JSON.parse(userData)
+                setUser(parsed)
+
+                if (parsed?.id) {
+                    try {
+                        const response = await axios.get(`/api/admin/profile?id=${encodeURIComponent(parsed.id)}`)
+                        if (response.data?.success) {
+                            const fetched = response.data.profile as AdminProfile
+                            setProfile(fetched)
+                            setPhone(fetched.phone || "")
+                            const merged = { ...parsed, phone: fetched.phone }
+                            setUser(merged)
+                            localStorage.setItem("affiliate_user", JSON.stringify(merged))
+                            return
+                        }
+                    } catch (err) {
+                        console.error("Failed to fetch admin profile:", err)
+                    }
+                }
+
+                setPhone(parsed.phone || "")
+            } catch (e) {
+                console.error("Error parsing user data:", e)
+                router.push("/login")
+            } finally {
+                setLoading(false)
+            }
         }
+
+        void loadProfile()
     }, [router])
+
+    const displayProfile = profile || user
+
+    const savePhone = async () => {
+        if (!user?.id) return
+
+        setSaving(true)
+        setSaveError("")
+        setSaveSuccess("")
+
+        try {
+            const response = await axios.put("/api/admin/profile", {
+                id: user.id,
+                phone: phone.trim(),
+            })
+
+            if (response.data?.success) {
+                const updated = response.data.profile as AdminProfile
+                setProfile(updated)
+                setPhone(updated.phone || "")
+                const merged = { ...user, phone: updated.phone }
+                setUser(merged)
+                localStorage.setItem("affiliate_user", JSON.stringify(merged))
+                setSaveSuccess("Phone number updated successfully.")
+            } else {
+                setSaveError(response.data?.error || "Failed to update phone number")
+            }
+        } catch (err: any) {
+            setSaveError(err?.response?.data?.error || "Failed to update phone number")
+        } finally {
+            setSaving(false)
+        }
+    }
 
     if (loading) {
         return (
@@ -48,25 +116,22 @@ export default function AdminProfilePage() {
 
     return (
         <div className="max-w-4xl mx-auto space-y-6">
-            {/* Header */}
             <div>
                 <h1 className="text-3xl font-bold text-gray-900">Profile Settings</h1>
-                <p className="text-gray-600 mt-1">View your account information and security details</p>
+                <p className="text-gray-600 mt-1">Manage your account information and security details</p>
             </div>
 
-            {/* Profile Card with Photo */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                 <div className="flex items-center gap-6">
                     <div className="relative">
                         <div className="w-24 h-24 rounded-full flex items-center justify-center text-white text-3xl font-bold" style={{ background: `linear-gradient(to bottom right, ${theme.primary}, ${theme.sidebar})` }}>
-                            {(user?.name || user?.email || 'A').charAt(0).toUpperCase()}
+                            {(displayProfile?.name || displayProfile?.email || 'A').charAt(0).toUpperCase()}
                         </div>
                     </div>
 
-                    {/* User Info */}
                     <div className="flex-1">
-                        <h2 className="text-2xl font-bold text-gray-900">{user?.name || user?.email || 'Admin User'}</h2>
-                        <p className="text-gray-600">{user?.email}</p>
+                        <h2 className="text-2xl font-bold text-gray-900">{displayProfile?.name || displayProfile?.email || 'Admin User'}</h2>
+                        <p className="text-gray-600">{displayProfile?.email}</p>
                         <div className="flex items-center gap-4 mt-3">
                             <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
                                 <Shield className="w-3 h-3 mr-1" />
@@ -81,7 +146,6 @@ export default function AdminProfilePage() {
                 </div>
             </div>
 
-            {/* Tabs */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200">
                 <div className="border-b border-gray-200">
                     <nav className="flex -mb-px">
@@ -126,7 +190,6 @@ export default function AdminProfilePage() {
                 </div>
 
                 <div className="p-6">
-                    {/* Personal Information Tab */}
                     {activeTab === 'info' && (
                         <div className="space-y-6">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -137,7 +200,7 @@ export default function AdminProfilePage() {
                                     <div className="relative">
                                         <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                                         <div className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg bg-gray-50 text-gray-900">
-                                            {user?.name || user?.email || 'Not set'}
+                                            {displayProfile?.name || displayProfile?.email || 'Not set'}
                                         </div>
                                     </div>
                                 </div>
@@ -149,33 +212,66 @@ export default function AdminProfilePage() {
                                     <div className="relative">
                                         <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                                         <div className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg bg-gray-50 text-gray-900">
-                                            {user?.email || 'Not set'}
+                                            {displayProfile?.email || 'Not set'}
                                         </div>
                                     </div>
                                 </div>
 
                                 <div className="md:col-span-2">
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    <label htmlFor="admin-phone" className="block text-sm font-medium text-gray-700 mb-2">
                                         Phone Number
                                     </label>
                                     <div className="relative">
                                         <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                                        <div className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg bg-gray-50 text-gray-900">
-                                            {user?.phone || 'Not set'}
-                                        </div>
+                                        <input
+                                            id="admin-phone"
+                                            type="tel"
+                                            inputMode="numeric"
+                                            value={phone}
+                                            onChange={(e) => setPhone(e.target.value)}
+                                            placeholder="Enter 10-digit mobile number"
+                                            className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                        />
                                     </div>
+                                    <p className="mt-1 text-xs text-gray-500">Enter your mobile number without country code.</p>
                                 </div>
                             </div>
 
-                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                                <p className="text-sm text-blue-800">
-                                    <strong>Note:</strong> To update your profile information, please contact the system administrator.
-                                </p>
+                            {saveError && (
+                                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                                    <p className="text-sm text-red-800">{saveError}</p>
+                                </div>
+                            )}
+
+                            {saveSuccess && (
+                                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                                    <p className="text-sm text-green-800">{saveSuccess}</p>
+                                </div>
+                            )}
+
+                            <div className="flex justify-end">
+                                <button
+                                    type="button"
+                                    onClick={savePhone}
+                                    disabled={saving || !phone.trim()}
+                                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                                >
+                                    {saving ? (
+                                        <>
+                                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                            Saving...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Save className="w-4 h-4" />
+                                            Save Phone Number
+                                        </>
+                                    )}
+                                </button>
                             </div>
                         </div>
                     )}
 
-                    {/* Security Tab */}
                     {activeTab === 'security' && (
                         <div className="space-y-6">
                             <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-6 text-center">
@@ -221,7 +317,6 @@ export default function AdminProfilePage() {
                         </div>
                     )}
 
-                    {/* Theme Tab */}
                     {activeTab === 'theme' && (
                         <div className="space-y-6">
                             <ThemeSelector />
@@ -235,7 +330,6 @@ export default function AdminProfilePage() {
                 </div>
             </div>
 
-            {/* Account Stats */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
                     <div className="text-sm text-gray-600">Account Type</div>

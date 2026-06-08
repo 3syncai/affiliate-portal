@@ -29,12 +29,12 @@ const ROLE_CONFIG: Record<SubAdminRole, RoleConfig> = {
         dashboard: "/state-admin/dashboard",
     },
     asm: {
-        label: "Branch Head",
+        label: "Area Sales Manager",
         apiPath: "/api/asm/complete-profile",
         dashboard: "/asm/dashboard",
     },
     branch: {
-        label: "Area Sales Manager",
+        label: "Branch Manager",
         apiPath: "/api/branch/complete-profile",
         dashboard: "/branch/dashboard",
     },

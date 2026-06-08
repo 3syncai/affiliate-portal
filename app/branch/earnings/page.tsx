@@ -142,7 +142,7 @@ export default function EarningsPage() {
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight text-gray-900">Area Sales Manager Earnings</h1>
+                    <h1 className="text-2xl font-bold tracking-tight text-gray-900">Branch Manager Earnings</h1>
                     <p className="text-sm text-gray-500 mt-1">Detailed breakdown of your income sources</p>
                 </div>
                 <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium ${isConnected ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>

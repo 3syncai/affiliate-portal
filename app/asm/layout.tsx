@@ -32,8 +32,8 @@ const navigationItems = [
     { name: "Dashboard", href: "/asm/dashboard", icon: LayoutDashboard },
     { name: "Commission Overview", href: "/asm/products", icon: Package },
     { name: "Offers", href: "/asm/offers", icon: BadgePercent },
-    { name: "Create Area Sales Manager", href: "/asm/create-branch", icon: UserPlus },
-    { name: "Area Sales Managers", href: "/asm/branch-admins", icon: Building },
+    { name: "Create Branch Manager", href: "/asm/create-branch", icon: UserPlus },
+    { name: "Branch Managers", href: "/asm/branch-admins", icon: Building },
     { name: "Partners", href: "/asm/agents", icon: Users },
     { name: "My Earnings", href: "/asm/earnings", icon: TrendingUp },
     { name: "My Referrals", href: "/asm/my-referrals", icon: Users },
@@ -232,7 +232,7 @@ export default function ASMLayout({
                             <Briefcase className="w-6 h-6 text-indigo-200" />
                         </div>
                         <div>
-                            <h1 className="text-lg font-bold text-white tracking-wide">Branch Manager</h1>
+                            <h1 className="text-lg font-bold text-white tracking-wide">Area Sales Manager</h1>
                             <p className="text-[10px] text-indigo-300 font-medium tracking-wider uppercase">Workspace</p>
                         </div>
                     </div>
