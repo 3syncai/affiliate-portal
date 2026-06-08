@@ -1,6 +1,8 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useMemo } from "react"
+import Link from "next/link"
+import { useSearchParams } from "next/navigation"
 import axios from "axios"
 import useSWR from 'swr'
 import { DollarSign, User, Users, ShoppingBag, Wallet, CheckCircle2, AlertCircle, Wifi, WifiOff } from "lucide-react"
@@ -60,6 +62,8 @@ const getStoredUser = (): DashboardUser | null => {
 }
 
 export default function ASMEarningsPage() {
+    const searchParams = useSearchParams()
+    const listFilter = searchParams.get("filter")
     const [userData] = useState<DashboardUser | null>(() => getStoredUser())
 
     // Toast state
@@ -94,6 +98,23 @@ export default function ASMEarningsPage() {
     }
 
     const recentOrders: Order[] = data?.success ? data.recentOrders : []
+    const displayedOrders = useMemo(() => {
+        if (listFilter === "returns") {
+            return recentOrders.filter((order) => order.has_return === true)
+        }
+        if (listFilter === "pending") {
+            return recentOrders.filter((order) => order.status === "PENDING")
+        }
+        return recentOrders
+    }, [recentOrders, listFilter])
+
+    const filterLabel =
+        listFilter === "returns"
+            ? "Returns only"
+            : listFilter === "pending"
+              ? "Pending commission only"
+              : null
+
     const loading = isLoading
 
     // Live updates
@@ -248,6 +269,21 @@ export default function ASMEarningsPage() {
                 </div>
             </div>
 
+            {filterLabel && (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 flex items-center justify-between gap-4">
+                    <p className="text-sm text-amber-900">
+                        Showing: <span className="font-semibold">{filterLabel}</span>
+                        {" "}({displayedOrders.length} record{displayedOrders.length === 1 ? "" : "s"})
+                    </p>
+                    <Link
+                        href="/asm/earnings"
+                        className="text-sm font-medium text-amber-800 hover:text-amber-950 underline shrink-0"
+                    >
+                        Clear filter
+                    </Link>
+                </div>
+            )}
+
             {/* Info Banner */}
             <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 flex items-start">
                 <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5 mr-3 flex-shrink-0" />
@@ -278,14 +314,16 @@ export default function ASMEarningsPage() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
-                            {recentOrders.length === 0 ? (
+                            {displayedOrders.length === 0 ? (
                                 <tr>
                                     <td colSpan={5} className="px-6 py-12 text-center text-gray-500 text-sm">
-                                        No transactions found.
+                                        {filterLabel
+                                            ? `No transactions match this filter (${filterLabel.toLowerCase()}).`
+                                            : "No transactions found."}
                                     </td>
                                 </tr>
                             ) : (
-                                recentOrders.map((order) => {
+                                displayedOrders.map((order) => {
                                     const isDirect = order.commission_source === 'asm_direct' || order.branch === 'ASM Direct'
                                     const typeLabel = isDirect ? 'Direct Sale' : 'Team Sales Commission'
                                     const typeColor = isDirect

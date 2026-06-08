@@ -33,6 +33,7 @@ export async function GET(req: NextRequest) {
                 SELECT id, first_name, last_name, email, phone, branch, city, state, role, is_active, created_at, updated_at
                 FROM branch_admin
                 WHERE LOWER(city) = LOWER($1) AND LOWER(state) = LOWER($2)
+                  AND COALESCE(is_active, true) = true
                 ORDER BY created_at DESC
             `, [city, state]);
         } else {

@@ -30,14 +30,18 @@ export default function BranchAdminsPage() {
         if (userData) {
             const parsed = JSON.parse(userData)
             setUser(parsed)
-            fetchBranchAdmins(parsed.id)
+            if (parsed.city && parsed.state) {
+                fetchBranchAdmins(parsed.city, parsed.state)
+            }
         }
     }, [])
 
-    const fetchBranchAdmins = async (asmId: string) => {
+    const fetchBranchAdmins = async (city: string, state: string) => {
         setLoading(true)
         try {
-            const response = await axios.get(`/api/asm/branch-admins?asm_id=${asmId}`)
+            const response = await axios.get(
+                `/api/asm/branch-admins?city=${encodeURIComponent(city)}&state=${encodeURIComponent(state)}`
+            )
             if (response.data.success) {
                 setBranchAdmins(response.data.branchAdmins)
             }
@@ -54,8 +58,8 @@ export default function BranchAdminsPage() {
                 adminId,
                 isActive: !currentStatus
             })
-            if (user?.id) {
-                fetchBranchAdmins(user.id)
+            if (user?.city && user?.state) {
+                fetchBranchAdmins(user.city, user.state)
             }
         } catch (error) {
             console.error("Failed to toggle status:", error)

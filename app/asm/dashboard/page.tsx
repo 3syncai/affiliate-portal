@@ -303,6 +303,7 @@ export default function ASMDashboard() {
             icon: Building2,
             bg: "bg-orange-50",
             color: "text-orange-600",
+            href: "/asm/branch-admins",
           },
           {
             title: "Sales Executives",
@@ -310,6 +311,7 @@ export default function ASMDashboard() {
             icon: UserCheck,
             bg: "bg-blue-50",
             color: "text-blue-600",
+            href: "/asm/agents",
           },
           {
             title: "Total Orders",
@@ -317,6 +319,7 @@ export default function ASMDashboard() {
             icon: ShoppingBag,
             bg: "bg-purple-50",
             color: "text-purple-600",
+            href: "/asm/order-layout",
           },
           {
             title: "Total Returns",
@@ -332,6 +335,7 @@ export default function ASMDashboard() {
             icon: DollarSign,
             bg: "bg-green-50",
             color: "text-green-600",
+            href: "/asm/earnings",
           },
           {
             title: "Pending Commission",
@@ -339,6 +343,7 @@ export default function ASMDashboard() {
             icon: Clock,
             bg: "bg-amber-50",
             color: "text-amber-600",
+            href: "/asm/earnings?filter=pending",
           },
         ].map((card) => {
           const Icon = card.icon;
@@ -346,7 +351,7 @@ export default function ASMDashboard() {
             <div
               className={`bg-white rounded-xl p-6 shadow-sm border border-gray-100 transition-shadow ${
                 "href" in card && card.href
-                  ? "hover:border-rose-200 cursor-pointer hover:shadow-md"
+                  ? "hover:border-gray-200 cursor-pointer hover:shadow-md"
                   : "hover:shadow-md"
               }`}
             >
