@@ -84,7 +84,7 @@ export async function GET(req: NextRequest) {
 
                 // Construct message based on referrer
                 if (row.b_first) {
-                    message = `Branch Admin ${row.b_first} ${row.b_last} referred ${row.first_name} ${row.last_name}`;
+                    message = `Branch Manager ${row.b_first} ${row.b_last} referred ${row.first_name} ${row.last_name}`;
                 } else if (row.asm_first) {
                     message = `ASM ${row.asm_first} ${row.asm_last} referred ${row.first_name} ${row.last_name}`;
                 } else if (row.aff_first) {

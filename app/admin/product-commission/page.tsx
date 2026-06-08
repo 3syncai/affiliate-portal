@@ -46,7 +46,7 @@ type AdditionalCampaign = {
 const roleLabels: Record<string, string> = {
   partner: "Sales Executive",
   asm: "Area Sales Manager",
-  branch: "Branch Admin",
+  branch: "Branch Manager",
   state: "State Admin",
   all: "All",
 }

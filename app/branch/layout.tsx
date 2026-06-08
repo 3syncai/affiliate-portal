@@ -256,7 +256,7 @@ export default function BranchLayout({
                             <Building className="w-6 h-6 text-indigo-200" />
                         </div>
                         <div>
-                            <h1 className="text-lg font-bold text-white tracking-wide">Area Sales Manager</h1>
+                            <h1 className="text-lg font-bold text-white tracking-wide">Branch Manager</h1>
                             <p className="text-[10px] text-indigo-300 font-medium tracking-wider uppercase">Workspace</p>
                         </div>ˍ
                     </div>
@@ -381,7 +381,7 @@ export default function BranchLayout({
 
                         <span className="px-4 py-1.5 rounded-full text-sm font-semibold flex items-center gap-2 bg-indigo-50 text-indigo-700 border border-indigo-100 shadow-sm">
                             <Building className="w-3.5 h-3.5" />
-                            {user?.branch || "Branch Admin"}
+                            {user?.branch || "Branch Manager"}
                         </span>
                     </div>
                 </header>

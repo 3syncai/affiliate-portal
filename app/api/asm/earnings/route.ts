@@ -212,7 +212,7 @@ export async function GET(req: NextRequest) {
                     ) AS has_return,
                     acl_asm.commission_source,
                     COALESCE(ba.first_name, 'Unknown') as first_name,
-                    COALESCE(ba.last_name, 'Branch Admin') as last_name,
+                    COALESCE(ba.last_name, 'Branch Manager') as last_name,
                     COALESCE(ba.refer_code, 'DIRECT') as refer_code,
                     COALESCE(ba.city, $2) as city,
                     COALESCE(ba.branch, 'Direct Assigned') as branch

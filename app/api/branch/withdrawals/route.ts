@@ -113,7 +113,7 @@ export async function POST(req: NextRequest) {
             // Update status (use reviewed_at instead of updated_at)
             await pool.query(
                 `UPDATE withdrawal_request SET status = 'APPROVED', admin_notes = $1, reviewed_at = NOW() WHERE id = $2`,
-                [adminNotes || 'Approved by branch admin', withdrawalId]
+                [adminNotes || 'Approved by branch manager', withdrawalId]
             );
 
             // Log activity for all admins to see
@@ -156,7 +156,7 @@ export async function POST(req: NextRequest) {
 
             await pool.query(
                 `UPDATE withdrawal_request SET status = 'REJECTED', admin_notes = $1, reviewed_at = NOW() WHERE id = $2`,
-                [adminNotes || 'Rejected by branch admin', withdrawalId]
+                [adminNotes || 'Rejected by branch manager', withdrawalId]
             );
 
             // Log activity
