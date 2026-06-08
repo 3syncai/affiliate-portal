@@ -26,20 +26,31 @@ export default function CreateStateUserPage() {
     })
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState("")
+    const [actionRequired, setActionRequired] = useState("")
     const [success, setSuccess] = useState("")
+    const [occupiedStates, setOccupiedStates] = useState<string[]>([])
     const [showPassword, setShowPassword] = useState(false)
     const [showConfirmPassword, setShowConfirmPassword] = useState(false)
     const [availableStates, setAvailableStates] = useState<string[]>([])
     const [loadingStates, setLoadingStates] = useState(true)
 
-    // Fetch available states from stores
+    // Fetch available states from stores and occupied states from existing admins
     useEffect(() => {
         const fetchStates = async () => {
             try {
                 setLoadingStates(true)
-                const response = await axios.get("/api/admin/stores/states")
-                if (response.data.success) {
-                    setAvailableStates(response.data.states)
+                const [statesResponse, adminsResponse] = await Promise.all([
+                    axios.get("/api/admin/stores/states"),
+                    axios.get("/api/admin/state-admins"),
+                ])
+                if (statesResponse.data.success) {
+                    setAvailableStates(statesResponse.data.states)
+                }
+                if (adminsResponse.data.success) {
+                    const takenStates = adminsResponse.data.stateAdmins
+                        .map((admin: { state?: string }) => admin.state?.trim().toLowerCase())
+                        .filter(Boolean) as string[]
+                    setOccupiedStates(takenStates)
                 }
             } catch (err) {
                 console.error("Error fetching states:", err)
@@ -54,7 +65,13 @@ export default function CreateStateUserPage() {
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target
         setFormData(prev => ({ ...prev, [name]: value }))
+        if (name === "state") {
+            setActionRequired("")
+        }
     }
+
+    const isStateOccupied = (stateName: string) =>
+        occupiedStates.includes(stateName.trim().toLowerCase())
 
     const formatPhone = (value: string) => {
         return value.replace(/\D/g, '').slice(0, 10)
@@ -68,7 +85,15 @@ export default function CreateStateUserPage() {
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault()
         setError("")
+        setActionRequired("")
         setSuccess("")
+
+        if (isStateOccupied(formData.state)) {
+            setActionRequired(
+                `One State Admin for One State. ${formData.state} already has a state admin assigned. Please manage the existing admin from State Admins or choose a different state.`
+            )
+            return
+        }
 
         // Validation
         if (!formData.first_name || !formData.last_name || !formData.email || !formData.phone || !formData.state || !formData.password) {
@@ -105,6 +130,7 @@ export default function CreateStateUserPage() {
 
             if (response.data.success) {
                 setSuccess(`State admin created successfully for ${response.data.user.state}!`)
+                setOccupiedStates(prev => [...prev, response.data.user.state.trim().toLowerCase()])
                 setFormData({
                     first_name: "",
                     last_name: "",
@@ -114,11 +140,17 @@ export default function CreateStateUserPage() {
                     password: "",
                     confirm_password: ""
                 })
+            } else if (response.data.actionRequired) {
+                setActionRequired(response.data.message)
             } else {
                 setError(response.data.message || "Failed to create user")
             }
         } catch (err: any) {
-            setError(err.response?.data?.message || err.message || "Failed to create user")
+            if (err.response?.data?.actionRequired) {
+                setActionRequired(err.response.data.message)
+            } else {
+                setError(err.response?.data?.message || err.message || "Failed to create user")
+            }
         } finally {
             setLoading(false)
         }
@@ -133,6 +165,19 @@ export default function CreateStateUserPage() {
 
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 max-w-2xl">
                 <form onSubmit={handleSubmit} className="space-y-6">
+                    {/* Action Required Alert */}
+                    {actionRequired && (
+                        <div className="bg-amber-50 border border-amber-300 text-amber-900 px-4 py-3 rounded-lg">
+                            <div className="flex items-start gap-2">
+                                <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5 text-amber-600" />
+                                <div>
+                                    <p className="font-semibold">Action Required</p>
+                                    <p className="text-sm mt-1">{actionRequired}</p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Error Alert */}
                     {error && (
                         <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
@@ -235,6 +280,11 @@ export default function CreateStateUserPage() {
                         {!loadingStates && availableStates.length === 0 && (
                             <p className="text-sm text-amber-600 mt-1">
                                 Please add stores in Store Management first to enable state selection.
+                            </p>
+                        )}
+                        {formData.state && isStateOccupied(formData.state) && (
+                            <p className="text-sm text-amber-700 mt-1">
+                                This state already has a state admin. One State Admin for One State.
                             </p>
                         )}
                     </div>

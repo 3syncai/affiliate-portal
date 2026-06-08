@@ -35,6 +35,15 @@ interface FilterOption {
   value?: string
 }
 
+const COMMISSION_TYPE_LABELS = {
+  product: "Product",
+  category: "Category",
+  collection: "Brand",
+  type: "Sub-Category",
+} as const
+
+type CommissionScope = keyof typeof COMMISSION_TYPE_LABELS
+
 export default function SetCommissionPage() {
   const [commissions, setCommissions] = useState<Commission[]>([])
   const [loading, setLoading] = useState(true)
@@ -42,7 +51,7 @@ export default function SetCommissionPage() {
   const [showForm, setShowForm] = useState(false)
   const [editingCommission, setEditingCommission] = useState<Commission | null>(null)
   const [formData, setFormData] = useState({
-    commission_type: "product" as "product" | "category" | "collection" | "type",
+    commission_type: "product" as CommissionScope,
     entity_id: "",
     commission_rate: "",
   })
@@ -164,7 +173,7 @@ export default function SetCommissionPage() {
   const handleSave = async () => {
     // Validate entity_id
     if (!formData.entity_id || formData.entity_id.trim() === "") {
-      showToast("Please select a " + formData.commission_type, "error")
+      showToast(`Please select a ${COMMISSION_TYPE_LABELS[formData.commission_type].toLowerCase()}`, "error")
       return
     }
 
@@ -239,7 +248,7 @@ export default function SetCommissionPage() {
 
   const handleEdit = (commission: Commission) => {
     setEditingCommission(commission)
-    let commissionType: "product" | "category" | "collection" | "type" = "product"
+    let commissionType: CommissionScope = "product"
     let entityId = ""
 
     if (commission.product_id) {
@@ -280,9 +289,9 @@ export default function SetCommissionPage() {
     } else if (commission.category_id && commission.category) {
       return commission.category.name || "Unknown Category"
     } else if (commission.collection_id && commission.collection) {
-      return commission.collection.title || "Unknown Collection"
+      return commission.collection.title || "Unknown Brand"
     } else if (commission.type_id && commission.type) {
-      return commission.type.value || "Unknown Type"
+      return commission.type.value || "Unknown Sub-Category"
     }
     return "Unknown"
   }
@@ -290,8 +299,8 @@ export default function SetCommissionPage() {
   const getEntityType = (commission: Commission): string => {
     if (commission.product_id) return "Product"
     if (commission.category_id) return "Category"
-    if (commission.collection_id) return "Collection"
-    if (commission.type_id) return "Type"
+    if (commission.collection_id) return "Brand"
+    if (commission.type_id) return "Sub-Category"
     return "Unknown"
   }
 
@@ -319,7 +328,7 @@ export default function SetCommissionPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Set Commission</h1>
-          <p className="text-gray-600 mt-1">Manage commission rates for products, categories, collections, and types</p>
+          <p className="text-gray-600 mt-1">Manage commission rates for products, categories, brands, and sub-categories</p>
         </div>
         <button
           onClick={() => setShowForm(true)}
@@ -409,7 +418,7 @@ export default function SetCommissionPage() {
                     onChange={(e) => {
                       setFormData({
                         ...formData,
-                        commission_type: e.target.value as "product" | "category" | "collection" | "type",
+                        commission_type: e.target.value as CommissionScope,
                         entity_id: "",
                       })
                     }}
@@ -419,7 +428,7 @@ export default function SetCommissionPage() {
                     <option value="product">Product</option>
                     <option value="category">Category</option>
                     <option value="collection">Brand</option>
-                    <option value="type">Type</option>
+                    <option value="type">Sub-Category</option>
                   </select>
                   <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
                     <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -431,13 +440,7 @@ export default function SetCommissionPage() {
 
               <div className="relative">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {formData.commission_type === "product"
-                    ? "Product"
-                    : formData.commission_type === "category"
-                      ? "Category"
-                      : formData.commission_type === "collection"
-                        ? "Brand"
-                        : "Type"}
+                  {COMMISSION_TYPE_LABELS[formData.commission_type]}
                 </label>
 
                 {formData.commission_type === "product" ? (
@@ -554,7 +557,7 @@ export default function SetCommissionPage() {
                     onChange={(e) => setFormData({ ...formData, entity_id: e.target.value })}
                     className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white text-gray-900 appearance-none cursor-pointer"
                   >
-                    <option value="">Select {formData.commission_type}</option>
+                    <option value="">Select {COMMISSION_TYPE_LABELS[formData.commission_type].toLowerCase()}</option>
                     {formData.commission_type === "category" &&
                       categories.map((cat) => (
                         <option key={cat.id} value={cat.id}>
@@ -640,7 +643,7 @@ export default function SetCommissionPage() {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Type</th>
+                <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Scope</th>
                 <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Entity</th>
                 <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Commission Rate</th>
                 <th className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Actions</th>
