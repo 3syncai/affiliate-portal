@@ -189,7 +189,7 @@ export default function DashboardProfilePage() {
         const changed: string[] = response.data.changedFields || [];
         setSaveSuccess(
           changed.length > 0
-            ? `Profile updated. Your branch manager has been notified about the ${changed.join(", ")} change.`
+            ? `Profile updated. Your branch admin has been notified about the ${changed.join(", ")} change.`
             : "Profile saved."
         );
       } else {
@@ -330,7 +330,7 @@ export default function DashboardProfilePage() {
               <div>
                 <h3 className="text-lg font-semibold text-gray-900">Personal Details</h3>
                 <p className="text-xs text-gray-500 mt-0.5">
-                  Changes to name, email or phone will notify your branch manager.
+                  Changes to name, email or phone will notify your branch admin.
                 </p>
               </div>
               {!editing ? (
@@ -450,7 +450,7 @@ export default function DashboardProfilePage() {
               <h3 className="text-lg font-semibold text-gray-900">Change Password</h3>
             </div>
             <p className="text-xs text-gray-500 mb-4">
-              Use at least 6 characters. Password changes are private and not shared with the branch manager.
+              Use at least 6 characters. Password changes are private and not shared with the branch admin.
             </p>
 
             {pwError && (

@@ -35,13 +35,6 @@ interface FilterOption {
   value?: string
 }
 
-const COMMISSION_TYPE_LABELS: Record<"product" | "category" | "collection" | "type", string> = {
-  product: "Product",
-  category: "Category",
-  collection: "Brand",
-  type: "Sub-Category",
-}
-
 export default function SetCommissionPage() {
   const [commissions, setCommissions] = useState<Commission[]>([])
   const [loading, setLoading] = useState(true)
@@ -171,7 +164,7 @@ export default function SetCommissionPage() {
   const handleSave = async () => {
     // Validate entity_id
     if (!formData.entity_id || formData.entity_id.trim() === "") {
-      showToast(`Please select a ${COMMISSION_TYPE_LABELS[formData.commission_type].toLowerCase()}`, "error")
+      showToast("Please select a " + formData.commission_type, "error")
       return
     }
 
@@ -297,8 +290,8 @@ export default function SetCommissionPage() {
   const getEntityType = (commission: Commission): string => {
     if (commission.product_id) return "Product"
     if (commission.category_id) return "Category"
-    if (commission.collection_id) return "Brand"
-    if (commission.type_id) return "Sub-Category"
+    if (commission.collection_id) return "Collection"
+    if (commission.type_id) return "Type"
     return "Unknown"
   }
 
@@ -326,7 +319,7 @@ export default function SetCommissionPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Set Commission</h1>
-          <p className="text-gray-600 mt-1">Manage commission rates for products, categories, brands, and sub-categories</p>
+          <p className="text-gray-600 mt-1">Manage commission rates for products, categories, collections, and types</p>
         </div>
         <button
           onClick={() => setShowForm(true)}
@@ -426,7 +419,7 @@ export default function SetCommissionPage() {
                     <option value="product">Product</option>
                     <option value="category">Category</option>
                     <option value="collection">Brand</option>
-                    <option value="type">Sub-Category</option>
+                    <option value="type">Type</option>
                   </select>
                   <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
                     <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -438,7 +431,13 @@ export default function SetCommissionPage() {
 
               <div className="relative">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {COMMISSION_TYPE_LABELS[formData.commission_type]}
+                  {formData.commission_type === "product"
+                    ? "Product"
+                    : formData.commission_type === "category"
+                      ? "Category"
+                      : formData.commission_type === "collection"
+                        ? "Brand"
+                        : "Type"}
                 </label>
 
                 {formData.commission_type === "product" ? (
@@ -555,7 +554,7 @@ export default function SetCommissionPage() {
                     onChange={(e) => setFormData({ ...formData, entity_id: e.target.value })}
                     className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white text-gray-900 appearance-none cursor-pointer"
                   >
-                    <option value="">Select {COMMISSION_TYPE_LABELS[formData.commission_type].toLowerCase()}</option>
+                    <option value="">Select {formData.commission_type}</option>
                     {formData.commission_type === "category" &&
                       categories.map((cat) => (
                         <option key={cat.id} value={cat.id}>

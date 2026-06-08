@@ -28,8 +28,8 @@ type TabType = "affiliates" | "state_admins" | "area_managers" | "branch_admins"
 
 const tabs: { id: TabType; label: string; icon: any; color: string }[] = [
   { id: "affiliates", label: "Sales Executive", icon: Users, color: "from-blue-500 to-blue-600" },
-  { id: "branch_admins", label: "Branch Managers", icon: GitBranch, color: "from-orange-500 to-orange-600" },
-  { id: "area_managers", label: "Area Sales Managers", icon: MapPin, color: "from-emerald-500 to-emerald-600" },
+  { id: "branch_admins", label: "Area Sales Managers", icon: GitBranch, color: "from-orange-500 to-orange-600" },
+  { id: "area_managers", label: "Branch Admins", icon: MapPin, color: "from-emerald-500 to-emerald-600" },
   { id: "state_admins", label: "State Admins", icon: Building2, color: "from-purple-500 to-purple-600" },
 ]
 
@@ -298,7 +298,7 @@ export default function AllUsersPage() {
                   </th>
                   {activeTab !== "affiliates" && (
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      {activeTab === "state_admins" ? "State" : activeTab === "area_managers" ? "City" : "Branch"}
+                      {activeTab === "state_admins" ? "State" : activeTab === "area_managers" ? "Branch" : "Area Sales Manager"}
                     </th>
                   )}
                   {activeTab === "affiliates" && (
@@ -472,7 +472,7 @@ export default function AllUsersPage() {
                           <GitBranch className="w-5 h-5 text-orange-600" />
                         </div>
                         <div>
-                          <p className="text-xs text-gray-500">Branch Manager</p>
+                          <p className="text-xs text-gray-500">Area Sales Manager</p>
                           <p className="text-sm font-medium text-gray-900">{selectedUser.branch}</p>
                         </div>
                       </div>

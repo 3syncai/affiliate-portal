@@ -17,7 +17,7 @@ export async function GET(request: Request) {
 
         if (!referCode) {
             return NextResponse.json(
-                { success: false, error: 'Branch manager referral code required' },
+                { success: false, error: 'Branch admin referral code required' },
                 { status: 400 }
             );
         }
@@ -36,7 +36,7 @@ export async function GET(request: Request) {
         if (adminCheck.rows.length === 0) {
             await pool.end();
             return NextResponse.json(
-                { success: false, error: 'Branch manager not found' },
+                { success: false, error: 'Branch admin not found' },
                 { status: 404 }
             );
         }

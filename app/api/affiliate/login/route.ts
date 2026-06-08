@@ -22,13 +22,9 @@ export async function POST(req: NextRequest) {
         }
 
         // 1. CHECK MAIN ADMIN TABLE (affiliate_admin)
-        await pool.query(`
-            ALTER TABLE affiliate_admin
-            ADD COLUMN IF NOT EXISTS phone VARCHAR(20)
-        `);
-
+        // This table was missing but has been restored
         const adminQuery = `
-            SELECT id, name, email, phone, password_hash 
+            SELECT id, name, email, password_hash 
             FROM affiliate_admin 
             WHERE email = $1
         `;
@@ -68,7 +64,6 @@ export async function POST(req: NextRequest) {
                     id: admin.id,
                     name: admin.name,
                     email: admin.email,
-                    phone: admin.phone ?? null,
                     role: "admin"
                 }
             });

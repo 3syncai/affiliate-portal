@@ -25,12 +25,12 @@ export async function POST(req: NextRequest) {
         await pool.end();
 
         if (result.rows.length === 0) {
-            return NextResponse.json({ success: false, message: "Branch Manager not found" }, { status: 404 });
+            return NextResponse.json({ success: false, message: "Branch Admin not found" }, { status: 404 });
         }
 
         return NextResponse.json({
             success: true,
-            message: `Branch Manager ${isActive ? 'activated' : 'deactivated'} successfully`,
+            message: `Branch Admin ${isActive ? 'activated' : 'deactivated'} successfully`,
             admin: result.rows[0]
         });
     } catch (error) {
