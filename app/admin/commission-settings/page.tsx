@@ -109,9 +109,9 @@ export default function CommissionSettingsPage() {
             case "state":
                 return "State Admin"
             case "area":
-                return "Area Sales Manager"
+                return "Branch Admin"
             case "branch":
-                return "Branch Manager"
+                return "Area sales Manager"
             default:
                 return roleType
         }
@@ -120,9 +120,9 @@ export default function CommissionSettingsPage() {
     const getRoleDescription = (rate: CommissionRate) => {
         switch (rate.role_type) {
             case "branch":
-                return "Commission rate for Branch Manager"
+                return "Commission rate for Area sales Manager"
             case "area":
-                return "Commission rate for Area Sales Manager"
+                return "Commission rate for branch admin"
             default:
                 return rate.description
         }
@@ -248,7 +248,7 @@ export default function CommissionSettingsPage() {
                     </li>
                     <li className="flex items-start">
                         <span className="font-medium mr-2">•</span>
-                        <span><strong>Area Sales Manager</strong> → <strong>Branch Manager</strong> → <strong>State Admin</strong> each get their share</span>
+                        <span><strong>Area sales Manager</strong> → <strong>Branch Admin</strong> → <strong>State Admin</strong> each get their share</span>
                     </li>
                     <li className="flex items-start">
                         <span className="font-medium mr-2">•</span>

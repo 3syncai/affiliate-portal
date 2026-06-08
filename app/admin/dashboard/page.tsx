@@ -15,8 +15,7 @@ import {
   Building2,
   Percent,
   TrendingUp,
-  ArrowUpRight,
-  RotateCcw
+  ArrowUpRight
 } from "lucide-react"
 
 type Activity = {
@@ -39,7 +38,6 @@ export default function AdminDashboardPage() {
     totalCommission: 0,
     pendingPayout: 0,
     totalOrders: 0,
-    totalReturns: 0,
   })
   const [adminStats, setAdminStats] = useState({
     stateAdmins: 0,
@@ -67,7 +65,6 @@ export default function AdminDashboardPage() {
           totalCommission: statsData.stats.totalCommission || 0,
           pendingPayout: statsData.stats.pendingPayout || 0,
           totalOrders: statsData.stats.totalOrders || 0,
-          totalReturns: statsData.stats.totalReturns || 0,
         })
       }
 
@@ -167,11 +164,11 @@ export default function AdminDashboardPage() {
       case "state":
         return "State Admin"
       case "area":
-        return "Area Sales Manager"
+        return "Branch Admin"
       case "branch":
-        return "Branch Manager"
+        return "Area sales Manager"
       case "branch_direct":
-        return "Branch Manager Direct Bonus"
+        return "Area sales Manager Direct Bonus"
       case "affiliate":
         return "Sales Executive"
       default:
@@ -211,71 +208,14 @@ export default function AdminDashboardPage() {
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
         {/* Left Side - Stats (3 columns on large screens) */}
         <div className="xl:col-span-3 space-y-6">
-          {/* Dashboard stats — single merged sequence */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-7 gap-4">
-            <a
-              href="/admin/total-agent?tab=state_admins"
-              className="group bg-white rounded-xl shadow-sm hover:shadow-lg border border-gray-200 p-5 transition-all duration-200 hover:-translate-y-1"
-            >
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-600 mb-1">State Admins</p>
-                  <p className="text-3xl font-bold text-gray-900">{adminStats.stateAdmins}</p>
-                  <div className="mt-2 flex items-center text-xs text-gray-500">
-                    <span>View all</span>
-                    <ArrowUpRight className="w-3 h-3 ml-1 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-                  </div>
-                </div>
-                <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 p-3 rounded-xl shadow-lg shrink-0">
-                  <MapPin className="w-6 h-6 text-white" />
-                </div>
-              </div>
-            </a>
-
-            <a
-              href="/admin/total-agent?tab=area_managers"
-              className="group bg-white rounded-xl shadow-sm hover:shadow-lg border border-gray-200 p-5 transition-all duration-200 hover:-translate-y-1"
-            >
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-600 mb-1">Area Sales Managers</p>
-                  <p className="text-3xl font-bold text-gray-900">{adminStats.areaManagers}</p>
-                  <div className="mt-2 flex items-center text-xs text-gray-500">
-                    <span>View all</span>
-                    <ArrowUpRight className="w-3 h-3 ml-1 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-                  </div>
-                </div>
-                <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 p-3 rounded-xl shadow-lg shrink-0">
-                  <Users className="w-6 h-6 text-white" />
-                </div>
-              </div>
-            </a>
-
-            <a
-              href="/admin/total-agent?tab=branch_admins"
-              className="group bg-white rounded-xl shadow-sm hover:shadow-lg border border-gray-200 p-5 transition-all duration-200 hover:-translate-y-1"
-            >
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-600 mb-1">Branch Managers</p>
-                  <p className="text-3xl font-bold text-gray-900">{adminStats.branchAdmins}</p>
-                  <div className="mt-2 flex items-center text-xs text-gray-500">
-                    <span>View all</span>
-                    <ArrowUpRight className="w-3 h-3 ml-1 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-                  </div>
-                </div>
-                <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-3 rounded-xl shadow-lg shrink-0">
-                  <Building2 className="w-6 h-6 text-white" />
-                </div>
-              </div>
-            </a>
-
+          {/* Affiliate Stats - Responsive Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <a
               href="/admin/total-agent"
-              className="group bg-white rounded-xl shadow-sm hover:shadow-lg border border-gray-200 p-5 transition-all duration-200 hover:-translate-y-1"
+              className="group bg-white rounded-xl shadow-sm hover:shadow-lg border border-gray-200 p-6 transition-all duration-200 hover:-translate-y-1"
             >
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
                   <p className="text-sm font-medium text-gray-600 mb-1">Total Sales Executive</p>
                   <p className="text-3xl font-bold text-gray-900">{stats.totalAgents}</p>
                   <div className="mt-2 flex items-center text-xs text-gray-500">
@@ -283,18 +223,18 @@ export default function AdminDashboardPage() {
                     <ArrowUpRight className="w-3 h-3 ml-1 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
                   </div>
                 </div>
-                <div className="bg-gradient-to-br from-sky-500 to-sky-600 p-3 rounded-xl shadow-lg shrink-0">
-                  <Users className="w-6 h-6 text-white" />
+                <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-4 rounded-xl shadow-lg">
+                  <Users className="w-7 h-7 text-white" />
                 </div>
               </div>
             </a>
 
             <a
               href="/admin/affiliate-request"
-              className="group bg-white rounded-xl shadow-sm hover:shadow-lg border border-gray-200 p-5 transition-all duration-200 hover:-translate-y-1"
+              className="group bg-white rounded-xl shadow-sm hover:shadow-lg border border-gray-200 p-6 transition-all duration-200 hover:-translate-y-1"
             >
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
                   <p className="text-sm font-medium text-gray-600 mb-1">Sales Executive Requests</p>
                   <p className="text-3xl font-bold text-gray-900">{stats.pendingRequests}</p>
                   <div className="mt-2 flex items-center text-xs text-gray-500">
@@ -302,18 +242,18 @@ export default function AdminDashboardPage() {
                     <ArrowUpRight className="w-3 h-3 ml-1 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
                   </div>
                 </div>
-                <div className="bg-gradient-to-br from-orange-500 to-orange-600 p-3 rounded-xl shadow-lg shrink-0">
-                  <UserCheck className="w-6 h-6 text-white" />
+                <div className="bg-gradient-to-br from-orange-500 to-orange-600 p-4 rounded-xl shadow-lg">
+                  <UserCheck className="w-7 h-7 text-white" />
                 </div>
               </div>
             </a>
 
             <a
               href="/admin/order-layout"
-              className="group bg-white rounded-xl shadow-sm hover:shadow-lg border border-gray-200 p-5 transition-all duration-200 hover:-translate-y-1"
+              className="group bg-white rounded-xl shadow-sm hover:shadow-lg border border-gray-200 p-6 transition-all duration-200 hover:-translate-y-1 sm:col-span-2 lg:col-span-1"
             >
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
                   <p className="text-sm font-medium text-gray-600 mb-1">Total Orders</p>
                   <p className="text-3xl font-bold text-gray-900">{stats.totalOrders}</p>
                   <div className="mt-2 flex items-center text-xs text-gray-500">
@@ -321,30 +261,68 @@ export default function AdminDashboardPage() {
                     <ArrowUpRight className="w-3 h-3 ml-1 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
                   </div>
                 </div>
-                <div className="bg-gradient-to-br from-purple-500 to-purple-600 p-3 rounded-xl shadow-lg shrink-0">
-                  <ShoppingBag className="w-6 h-6 text-white" />
+                <div className="bg-gradient-to-br from-purple-500 to-purple-600 p-4 rounded-xl shadow-lg">
+                  <ShoppingBag className="w-7 h-7 text-white" />
                 </div>
               </div>
             </a>
+          </div>
 
-            <a
-              href="/admin/order-layout"
-              className="group bg-white rounded-xl shadow-sm hover:shadow-lg border border-gray-200 p-5 transition-all duration-200 hover:-translate-y-1"
-            >
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-600 mb-1">Total returns</p>
-                  <p className="text-3xl font-bold text-gray-900">{stats.totalReturns}</p>
-                  <div className="mt-2 flex items-center text-xs text-gray-500">
-                    <span>With return request</span>
-                    <ArrowUpRight className="w-3 h-3 ml-1 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+          {/* Admin Counts - Enhanced Design */}
+          <div className="bg-gradient-to-br from-white to-gray-50 rounded-xl shadow-sm border border-gray-200 p-6 sm:p-8">
+            <h2 className="text-xl font-semibold text-gray-900 mb-6">Admin Overview</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <a
+                href="/admin/total-agent?tab=branch_admins"
+                className="group bg-white p-6 rounded-xl border-2 border-blue-100 hover:border-blue-300 transition-all cursor-pointer"
+              >
+                <div className="flex items-center justify-center mb-4">
+                  <div className="p-3 bg-blue-100 rounded-xl group-hover:bg-blue-200 transition-colors">
+                    <Building2 className="w-8 h-8 text-blue-600" />
                   </div>
                 </div>
-                <div className="bg-gradient-to-br from-rose-500 to-rose-600 p-3 rounded-xl shadow-lg shrink-0">
-                  <RotateCcw className="w-6 h-6 text-white" />
+                <p className="text-sm text-gray-600 text-center">Area sales Managers</p>
+                <p className="text-3xl font-bold text-gray-900 text-center mt-1">{adminStats.branchAdmins}</p>
+                <div className="mt-2 flex items-center justify-center text-xs text-gray-500">
+                  <span>View all</span>
+                  <ArrowUpRight className="w-3 h-3 ml-1 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
                 </div>
-              </div>
-            </a>
+              </a>
+
+              <a
+                href="/admin/total-agent?tab=area_managers"
+                className="group bg-white p-6 rounded-xl border-2 border-emerald-100 hover:border-emerald-300 transition-all cursor-pointer"
+              >
+                <div className="flex items-center justify-center mb-4">
+                  <div className="p-3 bg-emerald-100 rounded-xl group-hover:bg-emerald-200 transition-colors">
+                    <Users className="w-8 h-8 text-emerald-600" />
+                  </div>
+                </div>
+                <p className="text-sm text-gray-600 text-center">Branch Managers</p>
+                <p className="text-3xl font-bold text-gray-900 text-center mt-1">{adminStats.areaManagers}</p>
+                <div className="mt-2 flex items-center justify-center text-xs text-gray-500">
+                  <span>View all</span>
+                  <ArrowUpRight className="w-3 h-3 ml-1 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                </div>
+              </a>
+
+              <a
+                href="/admin/total-agent?tab=state_admins"
+                className="group bg-white p-6 rounded-xl border-2 border-indigo-100 hover:border-indigo-300 transition-all cursor-pointer"
+              >
+                <div className="flex items-center justify-center mb-4">
+                  <div className="p-3 bg-indigo-100 rounded-xl group-hover:bg-indigo-200 transition-colors">
+                    <MapPin className="w-8 h-8 text-indigo-600" />
+                  </div>
+                </div>
+                <p className="text-sm text-gray-600 text-center">State Admins</p>
+                <p className="text-3xl font-bold text-gray-900 text-center mt-1">{adminStats.stateAdmins}</p>
+                <div className="mt-2 flex items-center justify-center text-xs text-gray-500">
+                  <span>View all</span>
+                  <ArrowUpRight className="w-3 h-3 ml-1 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                </div>
+              </a>
+            </div>
           </div>
 
           {/* Recent Activity - Enhanced */}

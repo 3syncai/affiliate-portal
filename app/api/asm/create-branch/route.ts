@@ -115,7 +115,7 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json({
             success: true,
-            message: "Branch Manager created successfully",
+            message: "Branch Admin created successfully",
             branchAdmin: {
                 id: branchAdmin.id,
                 email: branchAdmin.email,
@@ -135,7 +135,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json(
             {
                 success: false,
-                message: "Failed to create Branch Manager",
+                message: "Failed to create Branch Admin",
                 error: error instanceof Error ? error.message : "Unknown error"
             },
             { status: 500 }

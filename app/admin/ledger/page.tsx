@@ -73,7 +73,7 @@ export default function CommissionLedgerPage() {
             role = "Area Sales Manager";
             colorClass = "bg-indigo-100 text-indigo-800";
         } else if (item.commission_source === 'branch_admin' || (item.commission_source && item.commission_source.includes('branch'))) {
-            role = "Branch Manager";
+            role = "Branch Admin";
             colorClass = "bg-orange-100 text-orange-800";
         }
 
@@ -101,7 +101,7 @@ export default function CommissionLedgerPage() {
                     const role = item.is_agent ? 'Sales Executive' :
                         item.commission_source === 'state_admin' ? 'State Admin' :
                             item.commission_source === 'area_manager' ? 'Area Sales Manager' :
-                                item.commission_source?.includes('branch') ? 'Branch Manager' : 'User';
+                                item.commission_source?.includes('branch') ? 'Branch Admin' : 'User';
 
                     return [
                         `"${new Date(item.created_at).toLocaleDateString('en-IN')}"`,

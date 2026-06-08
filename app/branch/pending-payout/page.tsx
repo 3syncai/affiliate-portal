@@ -96,7 +96,7 @@ export default function PendingPayoutPage() {
       await axios.post('/api/branch/withdrawals', {
         withdrawalId,
         action: 'APPROVE',
-        adminNotes: 'Approved by branch manager'
+        adminNotes: 'Approved by branch admin'
       })
       alert('✅ Withdrawal approved! Amount deducted from wallet.\n\nNow you can mark it as paid after transferring money.')
       mutate()
@@ -117,7 +117,7 @@ export default function PendingPayoutPage() {
       await axios.post('/api/branch/withdrawals', {
         withdrawalId,
         action: 'REJECT',
-        adminNotes: reason || 'Rejected by branch manager'
+        adminNotes: reason || 'Rejected by branch admin'
       })
       alert('Withdrawal rejected')
       mutate()

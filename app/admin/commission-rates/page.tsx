@@ -14,16 +14,16 @@ interface CommissionRate {
 
 const roleLabels: Record<string, string> = {
     affiliate: "Sales Executive",
-    branch_direct: "Branch Manager Direct Referrals",
-    branch: "Branch Manager (Team Commission)",
+    branch_direct: "Branch Admin Direct Referrals",
+    branch: "Branch Admin (Team Commission)",
     area: "Area Sales Manager",
     state: "State Admin"
 }
 
 const roleDescriptions: Record<string, string> = {
     affiliate: "Commission percentage that Oweg Partners receive from their product commissions",
-    branch_direct: "Additional bonus for branch managers on their direct referrals (added to affiliate base rate)",
-    branch: "Commission percentage branch managers earn from their team's affiliate sales",
+    branch_direct: "Additional bonus for branch admins on their direct referrals (added to affiliate base rate)",
+    branch: "Commission percentage branch admins earn from their team's affiliate sales",
     area: "Commission percentage area managers earn from affiliate sales in their area",
     state: "Commission percentage state admins earn from affiliate sales in their state"
 }
@@ -146,7 +146,7 @@ export default function CommissionRatesPage() {
                         <p className="font-semibold mb-1">How Commission Rates Work:</p>
                         <ul className="list-disc list-inside space-y-1 ml-2">
                             <li><strong>Affiliate:</strong> Base commission percentage for regular affiliate users</li>
-                            <li><strong>Branch Manager Direct:</strong> Bonus added to affiliate rate when branch manager refers directly (Total = Affiliate % + Branch Direct %)</li>
+                            <li><strong>Branch Admin Direct:</strong> Bonus added to affiliate rate when branch admin refers directly (Total = Affiliate % + Branch Direct %)</li>
                             <li><strong>Branch/Area/State:</strong> Percentage of affiliate team earnings distributed to admins</li>
                         </ul>
                     </div>
@@ -203,7 +203,7 @@ export default function CommissionRatesPage() {
                                             </p>
                                         ) : (
                                             <p className="text-gray-600">
-                                                Branch manager direct referral: {editedRates["affiliate"] || 70}% + {editedRates[rate.role_type] || 15}% = <span className="font-semibold text-indigo-600">{(editedRates["affiliate"] || 70) + (editedRates[rate.role_type] || 15)}%</span> total
+                                                Branch admin direct referral: {editedRates["affiliate"] || 70}% + {editedRates[rate.role_type] || 15}% = <span className="font-semibold text-indigo-600">{(editedRates["affiliate"] || 70) + (editedRates[rate.role_type] || 15)}%</span> total
                                             </p>
                                         )}
                                     </div>
@@ -231,7 +231,7 @@ export default function CommissionRatesPage() {
                     </div>
 
                     <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-4">
-                        <p className="text-sm text-purple-600 font-medium">Branch Manager Direct Referral</p>
+                        <p className="text-sm text-purple-600 font-medium">Branch Admin Direct Referral</p>
                         <p className="text-2xl font-bold text-purple-900 mt-1">
                             {(editedRates["affiliate"] || 70) + (editedRates["branch_direct"] || 15)}%
                         </p>

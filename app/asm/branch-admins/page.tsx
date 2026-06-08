@@ -224,7 +224,7 @@ export default function BranchAdminsPage() {
                                 <X className="w-4 h-4" />
                             </button>
                             <div className="text-white">
-                                <p className="text-xs uppercase tracking-wider opacity-80 font-medium">Branch Manager</p>
+                                <p className="text-xs uppercase tracking-wider opacity-80 font-medium">Area Sales Manager</p>
                                 <h2 className="text-xl font-bold mt-1">Profile Details</h2>
                             </div>
                         </div>

@@ -344,7 +344,7 @@ export default function StateAdminDashboard() {
           value={stats.totalASMs ?? 0}
           icon={Users}
           color="blue"
-          sublabel="Area sales managers"
+          sublabel="Branch admins"
         />
         <StatCard
           label="Sales Executives"
