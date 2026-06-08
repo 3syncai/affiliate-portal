@@ -1,8 +1,9 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import Link from "next/link"
+import axios from "axios"
 import { SmoothScroll } from "@/components/SmoothScroll"
 import ConfirmModal from "@/app/components/ConfirmModal"
 import { useTheme } from "@/contexts/ThemeContext"
@@ -58,6 +59,23 @@ export default function AdminLayout({
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
 
+  const loadAdminProfile = useCallback(async () => {
+    const token = localStorage.getItem("affiliate_token")
+    if (!token) return
+
+    try {
+      const response = await axios.get("/api/admin/me", {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (response.data.success) {
+        setUser(response.data.user)
+        localStorage.setItem("affiliate_user", JSON.stringify(response.data.user))
+      }
+    } catch (error) {
+      console.error("Failed to load admin profile:", error)
+    }
+  }, [])
+
   useEffect(() => {
     const token = localStorage.getItem("affiliate_token")
     const userData = localStorage.getItem("affiliate_user")
@@ -78,10 +96,11 @@ export default function AdminLayout({
     } catch (e) {
       console.error("Error parsing user data:", e)
       router.push("/login")
-    } finally {
-      setLoading(false)
+      return
     }
-  }, [router])
+
+    void loadAdminProfile().finally(() => setLoading(false))
+  }, [router, loadAdminProfile])
 
   const performLogout = () => {
     localStorage.removeItem("affiliate_token")
@@ -152,7 +171,9 @@ export default function AdminLayout({
                 <p className="text-sm font-medium text-white truncate">
                   {user?.name || user?.email}
                 </p>
-                <p className="text-xs text-white/60 truncate">{user?.email}</p>
+                <p className="text-xs text-white/60 truncate">
+                  {user?.phone || user?.email}
+                </p>
               </div>
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
@@ -220,7 +241,7 @@ export default function AdminLayout({
                   <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
                 </button>
                 <span className="px-3 py-1 rounded-full text-sm font-medium" style={{ backgroundColor: theme.primaryLight, color: theme.primary }}>
-                  Admin
+                  National Head
                 </span>
               </div>
             </div>

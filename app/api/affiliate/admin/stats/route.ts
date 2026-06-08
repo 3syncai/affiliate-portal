@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { Pool } from "pg";
 import { ensureAdditionalCommissionSchema } from "@/lib/additional-commission";
+import { COMMISSION_IS_RETURN_OR_CANCELLED_SQL } from "@/lib/dashboard-return-sql";
 
 export const dynamic = "force-dynamic";
 
@@ -42,13 +43,18 @@ export async function GET() {
         const pendingPayoutResult = await pool.query(pendingPayoutQuery);
         const pendingPayout = parseFloat(pendingPayoutResult.rows[0]?.total) || 0;
 
-        // Get total orders
-        const totalOrdersQuery = `
-      SELECT COUNT(DISTINCT order_id) as count 
-      FROM affiliate_commission_log
+        // Get total orders and returns
+        const ordersQuery = `
+      SELECT
+        COUNT(DISTINCT order_id)::int AS total_orders,
+        COUNT(DISTINCT order_id) FILTER (
+          WHERE ${COMMISSION_IS_RETURN_OR_CANCELLED_SQL}
+        )::int AS total_returns
+      FROM affiliate_commission_log acl
     `;
-        const totalOrdersResult = await pool.query(totalOrdersQuery);
-        const totalOrders = parseInt(totalOrdersResult.rows[0]?.count) || 0;
+        const ordersResult = await pool.query(ordersQuery);
+        const totalOrders = parseInt(ordersResult.rows[0]?.total_orders) || 0;
+        const totalReturns = parseInt(ordersResult.rows[0]?.total_returns) || 0;
 
         await pool.end();
 
@@ -57,7 +63,8 @@ export async function GET() {
             pendingRequests,
             totalCommission,
             pendingPayout,
-            totalOrders
+            totalOrders,
+            totalReturns,
         };
 
         console.log("Dashboard stats:", stats);

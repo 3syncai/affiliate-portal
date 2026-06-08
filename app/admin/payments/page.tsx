@@ -207,6 +207,19 @@ export default function PaymentsPage() {
         return `₹${amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
     }
 
+    const getRecipientTypeLabel = (recipientType: string) => {
+        switch (recipientType) {
+            case "branch":
+                return "Area Sales Manager"
+            case "asm":
+                return "Branch Admin"
+            case "state":
+                return "State Admin"
+            default:
+                return recipientType
+        }
+    }
+
     const formatDate = (dateString: string) => {
         return new Date(dateString).toLocaleDateString('en-IN', {
             day: 'numeric',
@@ -248,7 +261,7 @@ export default function PaymentsPage() {
             {/* Header */}
             <div>
                 <h1 className="text-3xl font-bold text-gray-900">Admin Payments</h1>
-                <p className="text-gray-600 mt-1">Process payments to Branch, ASM, and State admins</p>
+                <p className="text-gray-600 mt-1">Process payments to Area Sales Managers, Branch Admins, and State Admins</p>
             </div>
 
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
@@ -562,7 +575,7 @@ export default function PaymentsPage() {
                                         <div className="flex items-start justify-between mb-2">
                                             <div className="flex-1">
                                                 <p className="font-semibold text-gray-900 text-sm">{payment.recipient_name}</p>
-                                                <p className="text-xs text-gray-500 capitalize">{payment.recipient_type} Admin</p>
+                                                <p className="text-xs text-gray-500">{getRecipientTypeLabel(payment.recipient_type)}</p>
                                             </div>
                                             {payment.status === 'completed' && (
                                                 <CheckCircle className="w-4 h-4 text-green-500" />

@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
         // 1. CHECK MAIN ADMIN TABLE (affiliate_admin)
         // This table was missing but has been restored
         const adminQuery = `
-            SELECT id, name, email, password_hash 
+            SELECT id, name, email, phone, password_hash 
             FROM affiliate_admin 
             WHERE email = $1
         `;
@@ -64,7 +64,9 @@ export async function POST(req: NextRequest) {
                     id: admin.id,
                     name: admin.name,
                     email: admin.email,
-                    role: "admin"
+                    phone: admin.phone,
+                    role: "admin",
+                    designation: "National Head",
                 }
             });
         }

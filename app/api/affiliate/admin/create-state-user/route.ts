@@ -49,6 +49,27 @@ export async function POST(req: NextRequest) {
             );
         }
 
+        const existingStateForRegion = await pool.query(
+            `SELECT id, first_name, last_name, state
+             FROM state_admin
+             WHERE LOWER(TRIM(state)) = LOWER(TRIM($1))
+             LIMIT 1`,
+            [state]
+        );
+
+        if (existingStateForRegion.rows.length > 0) {
+            const existing = existingStateForRegion.rows[0];
+            await pool.end();
+            return NextResponse.json(
+                {
+                    success: false,
+                    actionRequired: true,
+                    message: `One State Admin for One State. ${existing.state} already has a state admin (${existing.first_name} ${existing.last_name}).`,
+                },
+                { status: 409 }
+            );
+        }
+
         // Generate unique referral code: STATE + first 3 chars of name + 5 random digits
         // Example: STATEVIS12345
         const generateReferCode = () => {
