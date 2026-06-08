@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, type ComponentType } from "react";
 import axios from "axios";
 import useSWR from "swr";
 import Link from "next/link";
@@ -331,20 +331,23 @@ export default function StateAdminDashboard() {
           icon={Building2}
           color="orange"
           sublabel="In your state"
+          href="/state-admin/branches"
         />
         <StatCard
-          label="Branch Heads"
+          label="Branch Managers"
           value={stats.branchHeads ?? 0}
           icon={Briefcase}
           color="yellow"
-          sublabel="Area managers"
+          sublabel="In your state"
+          href="/state-admin/area-managers"
         />
         <StatCard
           label="ASM's"
           value={stats.totalASMs ?? 0}
           icon={Users}
           color="blue"
-          sublabel="Branch admins"
+          sublabel="In your state"
+          href="/state-admin/asms"
         />
         <StatCard
           label="Sales Executives"
@@ -352,6 +355,7 @@ export default function StateAdminDashboard() {
           icon={UserCheck}
           color="indigo"
           sublabel="Partners in state"
+          href="/state-admin/agents"
         />
         <StatCard
           label="Total Orders"
@@ -359,6 +363,7 @@ export default function StateAdminDashboard() {
           icon={ShoppingBag}
           color="purple"
           sublabel="All time"
+          href="/state-admin/order-layout"
         />
         <StatCard
           label="Total Returns"
@@ -366,6 +371,7 @@ export default function StateAdminDashboard() {
           icon={RotateCcw}
           color="rose"
           sublabel="With return request"
+          href="/state-admin/returns"
         />
         <StatCard
           label="Total Commission"
@@ -374,6 +380,7 @@ export default function StateAdminDashboard() {
           color="green"
           isCurrency
           sublabel={`Credited: ${formatCurrency(stats.credited_commission || 0)}`}
+          href="/state-admin/earnings"
         />
         <StatCard
           label="Pending Commission"
@@ -382,6 +389,7 @@ export default function StateAdminDashboard() {
           color="amber"
           isCurrency
           sublabel="Awaiting credit"
+          href="/state-admin/earnings?filter=pending"
         />
       </div>
 
@@ -597,7 +605,16 @@ function StatCard({
   color,
   sublabel,
   isCurrency,
-}: any) {
+  href,
+}: {
+  label: string;
+  value: string | number;
+  icon: ComponentType<{ className?: string }>;
+  color: string;
+  sublabel?: string;
+  isCurrency?: boolean;
+  href?: string;
+}) {
   const styles = {
     orange: { bg: "bg-orange-50", text: "text-orange-600", iconBg: "bg-white" },
     purple: { bg: "bg-purple-50", text: "text-purple-600", iconBg: "bg-white" },
@@ -616,8 +633,8 @@ function StatCard({
   // @ts-ignore
   const currentStyle = styles[color] || styles.orange;
 
-  return (
-    <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 hover:shadow-md transition-shadow relative overflow-hidden group">
+  const cardContent = (
+    <>
       <div className="flex items-start justify-between relative z-10">
         <div>
           <p className="text-xs font-medium text-slate-500 mb-1">{label}</p>
@@ -636,12 +653,32 @@ function StatCard({
           <Icon className="w-5 h-5" />
         </div>
       </div>
-      {/* Decorative blob */}
+      {href && (
+        <div className="absolute bottom-4 right-4 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+          <ArrowUpRight className="w-4 h-4 text-slate-400" />
+        </div>
+      )}
       <div
         className={`absolute -bottom-4 -right-4 w-24 h-24 ${currentStyle.bg} rounded-full opacity-50 blur-2xl group-hover:opacity-70 transition-opacity`}
       ></div>
-    </div>
+    </>
   );
+
+  const className =
+    "bg-white rounded-2xl p-6 shadow-sm border border-slate-100 relative overflow-hidden group transition-all duration-200 " +
+    (href
+      ? "cursor-pointer hover:shadow-md hover:ring-2 hover:ring-emerald-200 hover:-translate-y-0.5"
+      : "hover:shadow-md");
+
+  if (href) {
+    return (
+      <Link href={href} className={className}>
+        {cardContent}
+      </Link>
+    );
+  }
+
+  return <div className={className}>{cardContent}</div>;
 }
 
 function ActivityItem({ activity }: { activity: Activity }) {

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import pool from "@/lib/db";
 import { fetchCommissionRates } from "@/lib/commission-rates";
 import { syncAffiliateCommissionStatuses } from "@/lib/affiliate-commission-sync";
-import { COMMISSION_HAS_RETURN_SQL } from "@/lib/dashboard-return-sql";
+import { COMMISSION_IS_RETURN_OR_CANCELLED_SQL } from "@/lib/dashboard-return-sql";
 
 export const dynamic = "force-dynamic";
 
@@ -47,7 +47,9 @@ export async function GET(req: NextRequest) {
     const territoryResult = await pool.query(
       `SELECT
          COUNT(*)::int AS total_orders,
-         COUNT(*) FILTER (WHERE ${COMMISSION_HAS_RETURN_SQL})::int AS total_returns
+         COUNT(DISTINCT acl.order_id) FILTER (
+           WHERE ${COMMISSION_IS_RETURN_OR_CANCELLED_SQL}
+         )::int AS total_returns
        FROM affiliate_commission_log acl
        INNER JOIN affiliate_user au ON acl.affiliate_code = au.refer_code
        WHERE au.branch ILIKE $1`,

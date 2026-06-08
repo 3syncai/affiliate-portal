@@ -1,9 +1,10 @@
 "use client"
 
 import { useEffect, useState, useCallback } from "react"
+import Link from "next/link"
 import axios from "axios"
 import useSWR from "swr"
-import { Users, DollarSign, ShoppingBag, TrendingUp, Package, Wifi, WifiOff } from "lucide-react"
+import { Users, DollarSign, ShoppingBag, TrendingUp, Package, Wifi, WifiOff, RotateCcw } from "lucide-react"
 import { useSSE } from "@/hooks/useSSE"
 import { Toast } from "@/components/Toast"
 import { formatISTDate } from "@/lib/datetime"
@@ -46,6 +47,18 @@ export default function StateAdminMyReferralsPage() {
         fetcher,
         { refreshInterval: 5000, revalidateOnFocus: true, keepPreviousData: true }
     )
+
+    const { data: dashboardData } = useSWR(
+        user?.state
+            ? `/api/state-admin/dashboard/stats?state=${encodeURIComponent(user.state)}`
+            : null,
+        fetcher,
+        { refreshInterval: 5000, revalidateOnFocus: true, keepPreviousData: true }
+    )
+
+    const totalReturns = dashboardData?.success
+        ? Number(dashboardData.stats?.totalReturns ?? 0)
+        : 0
 
     const customers: Customer[] = data?.success ? data.customers || [] : []
 
@@ -124,7 +137,7 @@ export default function StateAdminMyReferralsPage() {
             </div>
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 lg:gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-7 gap-3 lg:gap-4">
                 <StatCard
                     label="Total Customers"
                     value={String(stats.total_customers)}
@@ -136,6 +149,15 @@ export default function StateAdminMyReferralsPage() {
                     value={String(stats.total_orders)}
                     icon={<ShoppingBag className="w-4 h-4 text-purple-600" />}
                     iconBg="bg-purple-50"
+                />
+                <StatCard
+                    label="Total Returns"
+                    value={String(totalReturns)}
+                    valueClass="text-rose-600"
+                    sublabel="Cancelled + return requests"
+                    icon={<RotateCcw className="w-4 h-4 text-rose-600" />}
+                    iconBg="bg-rose-50"
+                    href="/state-admin/returns"
                 />
                 <StatCard
                     label="Total Sales"
@@ -239,6 +261,7 @@ function StatCard({
     icon,
     iconBg,
     valueClass = "text-gray-900",
+    href,
 }: {
     label: string
     value: string
@@ -246,9 +269,14 @@ function StatCard({
     icon: React.ReactNode
     iconBg: string
     valueClass?: string
+    href?: string
 }) {
-    return (
-        <div className="bg-white rounded-xl border border-gray-200 p-3 lg:p-4 shadow-sm">
+    const card = (
+        <div
+            className={`bg-white rounded-xl border border-gray-200 p-3 lg:p-4 shadow-sm ${
+                href ? "hover:border-rose-200 cursor-pointer transition-colors" : ""
+            }`}
+        >
             <div className="flex items-start justify-between gap-2">
                 <p className="text-xs text-gray-500 font-medium leading-tight flex-1 min-w-0">{label}</p>
                 <div className={`p-1.5 rounded-md flex-shrink-0 ${iconBg}`}>{icon}</div>
@@ -257,4 +285,14 @@ function StatCard({
             {sublabel && <p className="text-[10px] text-gray-400 mt-1">{sublabel}</p>}
         </div>
     )
+
+    if (href) {
+        return (
+            <Link href={href} className="block">
+                {card}
+            </Link>
+        )
+    }
+
+    return card
 }

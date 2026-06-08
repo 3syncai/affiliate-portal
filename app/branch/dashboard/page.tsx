@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import Link from "next/link";
 import {
   Users,
   DollarSign,
@@ -350,6 +351,7 @@ export default function BranchDashboard() {
       icon: RotateCcw,
       color: "text-rose-600",
       bg: "bg-rose-50",
+      href: "/branch/returns",
     },
     {
       title: "Total Commission",
@@ -421,10 +423,13 @@ export default function BranchDashboard() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
         {statCards.map((stat, index) => {
           const Icon = stat.icon;
-          return (
+          const card = (
             <div
-              key={index}
-              className="bg-white rounded-xl border border-gray-200 p-6 hover:border-gray-300 transition-all duration-200 shadow-sm"
+              className={`bg-white rounded-xl border border-gray-200 p-6 shadow-sm transition-all duration-200 ${
+                stat.href
+                  ? "hover:border-rose-200 cursor-pointer"
+                  : "hover:border-gray-300"
+              }`}
             >
               <div className="flex justify-between items-start mb-4">
                 <div>
@@ -440,6 +445,14 @@ export default function BranchDashboard() {
                 </div>
               </div>
             </div>
+          );
+
+          return stat.href ? (
+            <Link key={index} href={stat.href} className="block">
+              {card}
+            </Link>
+          ) : (
+            <div key={index}>{card}</div>
           );
         })}
       </div>

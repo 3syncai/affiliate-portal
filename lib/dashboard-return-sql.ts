@@ -7,3 +7,8 @@ export const COMMISSION_HAS_RETURN_SQL = `
       AND LOWER(COALESCE(rr.status, '')) NOT IN ('rejected','cancelled','canceled')
   )
 `;
+
+/** Cancelled commission row or active customer return request. */
+export const COMMISSION_IS_RETURN_OR_CANCELLED_SQL = `
+  acl.status = 'CANCELLED' OR ${COMMISSION_HAS_RETURN_SQL}
+`;

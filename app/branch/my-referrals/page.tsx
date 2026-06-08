@@ -1,9 +1,10 @@
 "use client"
 
 import { useEffect, useState, useCallback } from "react"
+import Link from "next/link"
 import axios from "axios"
 import useSWR from "swr"
-import { Users, DollarSign, ShoppingBag, TrendingUp, Package, Wifi, WifiOff } from "lucide-react"
+import { Users, DollarSign, ShoppingBag, TrendingUp, Package, Wifi, WifiOff, RotateCcw } from "lucide-react"
 import { useSSE } from "@/hooks/useSSE"
 import { Toast } from "@/components/Toast"
 import { formatISTDate } from "@/lib/datetime"
@@ -68,6 +69,18 @@ export default function BranchMyReferralsPage() {
         fetcher,
         { refreshInterval: 5000, revalidateOnFocus: true, keepPreviousData: true }
     )
+
+    const { data: branchStatsData } = useSWR(
+        user?.branch
+            ? `/api/branch/stats?branch=${encodeURIComponent(user.branch)}${user.id ? `&adminId=${user.id}` : ""}`
+            : null,
+        fetcher,
+        { refreshInterval: 5000, revalidateOnFocus: true, keepPreviousData: true }
+    )
+
+    const totalReturns = branchStatsData?.success
+        ? Number(branchStatsData.stats?.totalReturns ?? 0)
+        : 0
 
     const customers: Customer[] = data?.success ? data.customers || [] : []
     const recentOrders: RecentOrder[] = data?.success ? data.recentOrders || [] : []
@@ -141,8 +154,8 @@ export default function BranchMyReferralsPage() {
                 </div>
             </div>
 
-            {/* Stats Cards (6) */}
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-4">
                 <StatCard
                     label="Total Customers"
                     value={String(stats.total_customers)}
@@ -154,6 +167,15 @@ export default function BranchMyReferralsPage() {
                     value={String(stats.total_orders)}
                     icon={<ShoppingBag className="w-6 h-6 text-purple-600" />}
                     iconBg="bg-purple-50"
+                />
+                <StatCard
+                    label="Total Returns"
+                    value={String(totalReturns)}
+                    valueClass="text-rose-600"
+                    sublabel="Cancelled + return requests"
+                    icon={<RotateCcw className="w-6 h-6 text-rose-600" />}
+                    iconBg="bg-rose-50"
+                    href="/branch/returns"
                 />
                 <StatCard
                     label="Total Sales"
@@ -314,6 +336,7 @@ function StatCard({
     icon,
     iconBg,
     valueClass = "text-gray-900",
+    href,
 }: {
     label: string
     value: string
@@ -321,9 +344,14 @@ function StatCard({
     icon: React.ReactNode
     iconBg: string
     valueClass?: string
+    href?: string
 }) {
-    return (
-        <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+    const card = (
+        <div
+            className={`bg-white rounded-xl border border-gray-200 p-5 shadow-sm ${
+                href ? "hover:border-rose-200 cursor-pointer transition-colors" : ""
+            }`}
+        >
             <div className="flex items-center justify-between">
                 <div>
                     <p className="text-sm text-gray-500 font-medium">{label}</p>
@@ -334,4 +362,14 @@ function StatCard({
             </div>
         </div>
     )
+
+    if (href) {
+        return (
+            <Link href={href} className="block">
+                {card}
+            </Link>
+        )
+    }
+
+    return card
 }

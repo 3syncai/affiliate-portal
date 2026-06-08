@@ -1,9 +1,10 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import Link from "next/link"
 import axios from "axios"
 import useSWR from "swr"
-import { Package, DollarSign, TrendingUp, Eye, Download, Search, ChevronDown, Copy } from "lucide-react"
+import { Package, DollarSign, TrendingUp, Eye, Download, Search, ChevronDown, Copy, RotateCcw } from "lucide-react"
 import { useTheme } from "@/contexts/ThemeContext"
 
 const fetcher = (url: string) => axios.get(url).then(res => res.data)
@@ -48,6 +49,18 @@ export default function OrderLayoutPage() {
     user?.id ? `/api/state-admin/orders?adminId=${user.id}` : null,
     fetcher
   )
+
+  const { data: dashboardData } = useSWR(
+    user?.state
+      ? `/api/state-admin/dashboard/stats?state=${encodeURIComponent(user.state)}`
+      : null,
+    fetcher,
+    { refreshInterval: 5000, revalidateOnFocus: true, keepPreviousData: true }
+  )
+
+  const totalReturns = dashboardData?.success
+    ? Number(dashboardData.stats?.totalReturns ?? 0)
+    : 0
 
   const orders: AffiliateOrder[] = data?.success ? data.orders : []
   const loading = isLoading
@@ -191,7 +204,7 @@ export default function OrderLayoutPage() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
         <div className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between">
             <div>
@@ -203,6 +216,21 @@ export default function OrderLayoutPage() {
             </div>
           </div>
         </div>
+
+        <Link href="/state-admin/returns" className="block">
+          <div className="bg-white rounded-xl border border-gray-200 p-5 hover:border-rose-200 hover:shadow-md transition-all cursor-pointer h-full">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Total Returns</p>
+                <p className="text-3xl font-bold text-rose-600">{totalReturns}</p>
+                <p className="text-[10px] text-gray-400 mt-1">Cancelled + return requests</p>
+              </div>
+              <div className="w-12 h-12 rounded-lg bg-rose-50 flex items-center justify-center">
+                <RotateCcw className="w-6 h-6 text-rose-600" />
+              </div>
+            </div>
+          </div>
+        </Link>
 
         <div className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between">

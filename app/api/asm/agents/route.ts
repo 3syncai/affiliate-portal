@@ -11,9 +11,9 @@ export async function GET(request: Request) {
         const city = searchParams.get('city');
         const state = searchParams.get('state');
 
-        if (!city) {
+        if (!city || !state) {
             return NextResponse.json(
-                { success: false, error: "City parameter is required" },
+                { success: false, error: "City and State parameters are required" },
                 { status: 400 }
             );
         }
@@ -23,41 +23,20 @@ export async function GET(request: Request) {
             ssl: { rejectUnauthorized: false }
         });
 
-        // Get all affiliates in the city/state through stores table (linked by branch)
-        // Affiliates are linked to branches, branches are in stores with city/state
-        let query;
-        let params;
-
-        if (state) {
-            query = `
-                SELECT DISTINCT
-                    a.id, a.first_name, a.last_name, a.email, a.phone, a.refer_code,
-                    a.is_agent, a.is_approved, a.designation, a.branch, a.city, a.created_at
-                FROM affiliate_user a
-                LEFT JOIN stores s ON LOWER(a.branch) = LOWER(s.branch_name)
-                WHERE (LOWER(s.city) = LOWER($1) AND LOWER(s.state) = LOWER($2))
-                   OR LOWER(a.city) = LOWER($1)
-                ORDER BY a.created_at DESC
-            `;
-            params = [city, state];
-        } else {
-            query = `
-                SELECT DISTINCT
-                    a.id, a.first_name, a.last_name, a.email, a.phone, a.refer_code,
-                    a.is_agent, a.is_approved, a.designation, a.branch, a.city, a.created_at
-                FROM affiliate_user a
-                LEFT JOIN stores s ON LOWER(a.branch) = LOWER(s.branch_name)
-                WHERE LOWER(s.city) = LOWER($1) OR LOWER(a.city) = LOWER($1)
-                ORDER BY a.created_at DESC
-            `;
-            params = [city];
-        }
-
-        const result = await pool.query(query, params);
+        const result = await pool.query(
+            `SELECT
+                u.id, u.first_name, u.last_name, u.email, u.phone, u.refer_code,
+                u.is_agent, u.is_approved, u.designation, u.branch, u.city, u.created_at
+             FROM affiliate_user u
+             JOIN stores s ON u.branch ILIKE s.branch_name
+             WHERE s.city ILIKE $1 AND s.state ILIKE $2 AND u.is_agent = true
+             ORDER BY u.created_at DESC`,
+            [city, state]
+        );
 
         await pool.end();
 
-        console.log(`Found ${result.rows.length} agents in ${city}`);
+        console.log(`Found ${result.rows.length} agents in ${city}, ${state}`);
 
         return NextResponse.json({
             success: true,

@@ -1,9 +1,10 @@
 "use client"
 
 import { useEffect, useState, useCallback } from "react"
+import Link from "next/link"
 import axios from "axios"
 import useSWR from 'swr'
-import { Users, DollarSign, ShoppingBag, TrendingUp, Package, Wifi, WifiOff } from "lucide-react"
+import { Users, DollarSign, ShoppingBag, TrendingUp, Package, Wifi, WifiOff, RotateCcw } from "lucide-react"
 import { useSSE } from "@/hooks/useSSE"
 import { Toast } from "@/components/Toast"
 
@@ -39,6 +40,18 @@ export default function ASMMyReferralsPage() {
         userData?.id ? `/api/asm/my-referrals?adminId=${userData.id}` : null,
         fetcher
     )
+
+    const { data: territoryStatsData } = useSWR(
+        userData?.city && userData?.state
+            ? `/api/asm/dashboard/stats?city=${encodeURIComponent(userData.city)}&state=${encodeURIComponent(userData.state)}${userData.id ? `&adminId=${userData.id}` : ""}`
+            : null,
+        fetcher,
+        { refreshInterval: 5000, revalidateOnFocus: true, keepPreviousData: true }
+    )
+
+    const totalReturns = territoryStatsData?.success
+        ? Number(territoryStatsData.stats?.totalReturns ?? 0)
+        : 0
 
     const customers: Customer[] = data?.success ? data.customers || [] : []
 
@@ -124,7 +137,7 @@ export default function ASMMyReferralsPage() {
             </div>
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-4">
                 <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
                     <div className="flex items-center justify-between">
                         <div>
@@ -148,6 +161,21 @@ export default function ASMMyReferralsPage() {
                         </div>
                     </div>
                 </div>
+
+                <Link href="/asm/returns" className="block">
+                    <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm hover:border-rose-200 cursor-pointer transition-colors h-full">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-sm text-gray-500 font-medium">Total Returns</p>
+                                <p className="text-2xl font-bold text-rose-600 mt-1">{totalReturns}</p>
+                                <p className="text-xs text-gray-400 mt-1">Cancelled + return requests</p>
+                            </div>
+                            <div className="p-3 bg-rose-50 rounded-lg">
+                                <RotateCcw className="w-6 h-6 text-rose-600" />
+                            </div>
+                        </div>
+                    </div>
+                </Link>
 
                 <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
                     <div className="flex items-center justify-between">
