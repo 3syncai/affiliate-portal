@@ -1,6 +1,8 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useMemo } from "react"
+import Link from "next/link"
+import { useSearchParams } from "next/navigation"
 import axios from "axios"
 import useSWR from 'swr'
 import { DollarSign, ShoppingBag, AlertCircle, Wallet, ArrowUpCircle, Users, Package, Info, Wifi, WifiOff } from "lucide-react"
@@ -60,6 +62,8 @@ const getStoredUser = (): DashboardUser | null => {
 }
 
 export default function EarningsPage() {
+    const searchParams = useSearchParams()
+    const listFilter = searchParams.get("filter")
     const [user] = useState<DashboardUser | null>(() => getStoredUser())
 
     // Toast state
@@ -92,6 +96,23 @@ export default function EarningsPage() {
     }
 
     const recentOrders: Order[] = data?.success ? data.recentOrders : []
+    const displayedOrders = useMemo(() => {
+        if (listFilter === "returns") {
+            return recentOrders.filter((order) => order.has_return === true)
+        }
+        if (listFilter === "pending") {
+            return recentOrders.filter((order) => order.status === "PENDING")
+        }
+        return recentOrders
+    }, [recentOrders, listFilter])
+
+    const filterLabel =
+        listFilter === "returns"
+            ? "Returns only"
+            : listFilter === "pending"
+              ? "Pending commission only"
+              : null
+
     const loading = isLoading
 
     // Live updates
@@ -238,6 +259,21 @@ export default function EarningsPage() {
                 </div>
             </div>
 
+            {filterLabel && (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 flex items-center justify-between gap-4">
+                    <p className="text-sm text-amber-900">
+                        Showing: <span className="font-semibold">{filterLabel}</span>
+                        {" "}({displayedOrders.length} record{displayedOrders.length === 1 ? "" : "s"})
+                    </p>
+                    <Link
+                        href="/branch/earnings"
+                        className="text-sm font-medium text-amber-800 hover:text-amber-950 underline shrink-0"
+                    >
+                        Clear filter
+                    </Link>
+                </div>
+            )}
+
             {/* Info Section */}
             <div className="bg-blue-50/50 rounded-lg p-4 border border-blue-100 flex items-start gap-4">
                 <AlertCircle className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
@@ -256,13 +292,15 @@ export default function EarningsPage() {
                 <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-gray-50/50">
                     <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">Recent Transactions</h2>
                     <div className="text-xs text-gray-500 font-medium bg-white px-2 py-1 rounded border border-gray-200">
-                        Last {recentOrders.length} records
+                        Last {displayedOrders.length} records
                     </div>
                 </div>
 
-                {recentOrders.length === 0 ? (
+                {displayedOrders.length === 0 ? (
                     <div className="p-12 text-center text-gray-500 text-sm">
-                        No earnings recorded yet.
+                        {filterLabel
+                            ? `No transactions match this filter (${filterLabel.toLowerCase()}).`
+                            : "No earnings recorded yet."}
                     </div>
                 ) : (
                     <div className="overflow-x-auto">
@@ -277,7 +315,7 @@ export default function EarningsPage() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-200 bg-white">
-                                {recentOrders.map((order) => (
+                                {displayedOrders.map((order) => (
                                     <tr key={order.id} className="hover:bg-gray-50 transition-colors">
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             {new Date(order.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}

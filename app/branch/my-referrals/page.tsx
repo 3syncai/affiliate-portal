@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useState, useCallback } from "react"
-import Link from "next/link"
 import axios from "axios"
 import useSWR from "swr"
 import { Users, DollarSign, ShoppingBag, TrendingUp, Package, Wifi, WifiOff, RotateCcw } from "lucide-react"
@@ -175,7 +174,6 @@ export default function BranchMyReferralsPage() {
                     sublabel="Cancelled + return requests"
                     icon={<RotateCcw className="w-6 h-6 text-rose-600" />}
                     iconBg="bg-rose-50"
-                    href="/branch/returns"
                 />
                 <StatCard
                     label="Total Sales"
@@ -336,7 +334,6 @@ function StatCard({
     icon,
     iconBg,
     valueClass = "text-gray-900",
-    href,
 }: {
     label: string
     value: string
@@ -344,14 +341,9 @@ function StatCard({
     icon: React.ReactNode
     iconBg: string
     valueClass?: string
-    href?: string
 }) {
-    const card = (
-        <div
-            className={`bg-white rounded-xl border border-gray-200 p-5 shadow-sm ${
-                href ? "hover:border-rose-200 cursor-pointer transition-colors" : ""
-            }`}
-        >
+    return (
+        <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
             <div className="flex items-center justify-between">
                 <div>
                     <p className="text-sm text-gray-500 font-medium">{label}</p>
@@ -362,14 +354,4 @@ function StatCard({
             </div>
         </div>
     )
-
-    if (href) {
-        return (
-            <Link href={href} className="block">
-                {card}
-            </Link>
-        )
-    }
-
-    return card
 }
