@@ -1,5 +1,7 @@
 export type IssueType = "cancelled" | "return_requested" | "both";
 
+export type ReferralCategory = "self" | "team";
+
 export type ReturnOrderRow = {
   order_id: string;
   product_name: string;
@@ -12,6 +14,10 @@ export type ReturnOrderRow = {
   return_requested_at: string | null;
   issue_type: IssueType;
   created_at: string;
+  referral_category?: ReferralCategory;
+  sale_type?: string;
+  referrer_name?: string;
+  refer_code?: string;
 };
 
 export function resolveIssueType(
@@ -42,6 +48,12 @@ export function buildReturnsResponse(rows: Array<Record<string, unknown>>) {
       return_requested_at: (row.return_requested_at as string | null) ?? null,
       issue_type: issueType,
       created_at: String(row.created_at),
+      referral_category: row.referral_category as ReferralCategory | undefined,
+      sale_type: row.sale_type ? String(row.sale_type) : undefined,
+      referrer_name: row.referrer_name
+        ? String(row.referrer_name).trim()
+        : undefined,
+      refer_code: row.refer_code ? String(row.refer_code) : undefined,
     };
   });
 
