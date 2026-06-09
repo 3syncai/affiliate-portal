@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { Suspense, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import axios from "axios"
@@ -64,7 +64,7 @@ function SalesExecutiveNav({ userName }: { userName: string }) {
   )
 }
 
-export default function AffiliateEarningsPage() {
+function EarningsContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const listFilter = searchParams.get("filter")
@@ -269,5 +269,19 @@ export default function AffiliateEarningsPage() {
         </div>
       </main>
     </div>
+  )
+}
+
+export default function AffiliateEarningsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+          <div className="text-lg text-gray-600">Loading commission...</div>
+        </div>
+      }
+    >
+      <EarningsContent />
+    </Suspense>
   )
 }
