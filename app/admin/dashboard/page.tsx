@@ -269,12 +269,13 @@ export default function AdminDashboardPage() {
     {
       label: "Total returns",
       value: stats.totalReturns,
-      href: "/admin/order-layout",
+      href: "/admin/returns",
       icon: RotateCcw,
       iconBg: "bg-rose-100 group-hover:bg-rose-200",
       iconColor: "text-rose-600",
       borderColor: "border-rose-100",
       hoverBorderColor: "hover:border-rose-300",
+      linkText: "View all",
     },
   ]
 

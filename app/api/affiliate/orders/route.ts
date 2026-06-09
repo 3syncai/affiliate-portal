@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { syncAffiliateCommissionStatuses } from '@/lib/affiliate-commission-sync';
+import { COMMISSION_HAS_RETURN_SQL } from '@/lib/dashboard-return-sql';
 
 export const dynamic = 'force-dynamic';
 
@@ -51,13 +52,7 @@ export async function GET(request: NextRequest) {
           acl.unlock_at,
           acl.credited_at,
           acl.created_at,
-          EXISTS (
-            SELECT 1
-            FROM return_request rr
-            WHERE rr.order_id = acl.order_id
-              AND rr.deleted_at IS NULL
-              AND LOWER(COALESCE(rr.status, '')) NOT IN ('rejected','cancelled','canceled')
-          ) AS has_return
+          (${COMMISSION_HAS_RETURN_SQL}) AS has_return
         FROM affiliate_commission_log acl
         WHERE acl.affiliate_code = $1
         ORDER BY acl.created_at DESC
@@ -73,7 +68,10 @@ export async function GET(request: NextRequest) {
       customer_email: row.customer_email,
       order_amount: parseFloat(row.order_amount || '0'),
       commission_rate: parseFloat(row.commission_rate || '0'),
-      commission_amount: row.status === 'CANCELLED' ? 0 : parseFloat(row.affiliate_commission || '0'),
+      commission_amount:
+        row.status === 'CANCELLED' || row.has_return
+          ? 0
+          : parseFloat(row.affiliate_commission || '0'),
       commission_source: row.commission_source,
       status: row.status,
       unlock_at: row.unlock_at,

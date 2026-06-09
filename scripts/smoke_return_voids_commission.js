@@ -58,7 +58,7 @@ async function main() {
         `INSERT INTO return_request
             (id, order_id, customer_id, type, status, payment_type, refund_method,
              created_at, updated_at)
-         VALUES ($1, $2, 'cust_sim', 'REFUND', 'pending_approval',
+         VALUES ($1, $2, 'cust_sim', 'REFUND', 'approved',
                  'PREPAID', 'wallet', NOW(), NOW())`,
         [TEST_RR_ID, orderId]
     );

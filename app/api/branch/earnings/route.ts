@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Pool } from "pg";
 import { fetchCommissionRates } from "@/lib/commission-rates";
 import { syncAffiliateCommissionStatuses } from "@/lib/affiliate-commission-sync";
+import { COMMISSION_HAS_RETURN_SQL } from "@/lib/dashboard-return-sql";
 
 export const dynamic = "force-dynamic";
 
@@ -111,12 +112,7 @@ export async function GET(req: NextRequest) {
                 acl.commission_source,
                 CASE
                     WHEN acl.status = 'CANCELLED' THEN 0
-                    WHEN EXISTS (
-                        SELECT 1 FROM return_request rr
-                        WHERE rr.order_id = acl.order_id
-                          AND rr.deleted_at IS NULL
-                          AND LOWER(COALESCE(rr.status, '')) NOT IN ('rejected','cancelled','canceled')
-                    ) THEN 0
+                    WHEN (${COMMISSION_HAS_RETURN_SQL}) THEN 0
                     ELSE acl.affiliate_commission
                 END as commission_amount,
                 acl.created_at,
@@ -124,12 +120,7 @@ export async function GET(req: NextRequest) {
                 acl.status,
                 acl.unlock_at,
                 acl.credited_at,
-                EXISTS (
-                    SELECT 1 FROM return_request rr
-                    WHERE rr.order_id = acl.order_id
-                      AND rr.deleted_at IS NULL
-                      AND LOWER(COALESCE(rr.status, '')) NOT IN ('rejected','cancelled','canceled')
-                ) AS has_return,
+                (${COMMISSION_HAS_RETURN_SQL}) AS has_return,
                 COALESCE(au.first_name, acl.customer_name, ba.first_name, 'Customer') as first_name,
                 COALESCE(au.last_name, ba.last_name, '') as last_name,
                 acl.affiliate_code as refer_code,
