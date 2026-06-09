@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { syncAffiliateCommissionStatuses } from '@/lib/affiliate-commission-sync';
-import { COMMISSION_IS_RETURN_OR_CANCELLED_SQL } from '@/lib/dashboard-return-sql';
+import {
+    COMMISSION_HAS_RETURN_SQL,
+    COMMISSION_IS_RETURN_OR_CANCELLED_SQL,
+} from '@/lib/dashboard-return-sql';
 
 export const dynamic = 'force-dynamic';
 
