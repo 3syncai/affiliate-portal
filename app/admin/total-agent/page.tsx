@@ -154,6 +154,13 @@ export default function AllUsersPage() {
     return `${user.first_name || ""} ${user.last_name || ""}`.trim() || "Unknown"
   }
 
+  const getUserSubtitle = (user: UserData, tab: TabType): string => {
+    if (tab === "affiliates") return "Sales Executive"
+    const d = (user.designation || "").toLowerCase()
+    if (d === "agent" || d === "affiliate") return "Sales Executive"
+    return user.designation || tabs.find(t => t.id === tab)!.label.replace(/s$/, "")
+  }
+
   // Treat missing `is_active` as active so legacy rows don't appear blocked.
   const isUserActive = (user: UserData) => user.is_active !== false
 
@@ -203,7 +210,7 @@ export default function AllUsersPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">All Users</h1>
-          <p className="text-gray-600 mt-1">Manage all agents and administrators</p>
+          <p className="text-gray-600 mt-1">Manage all sales executives and administrators</p>
         </div>
       </div>
 
@@ -329,9 +336,9 @@ export default function AllUsersPage() {
                           <div className="text-sm font-semibold text-gray-900">
                             {getName(user)}
                           </div>
-                          {user.designation && (
-                            <div className="text-xs text-gray-500">{user.designation}</div>
-                          )}
+                          <div className="text-xs text-gray-500">
+                            {getUserSubtitle(user, activeTab)}
+                          </div>
                         </div>
                       </div>
                     </td>
@@ -400,7 +407,7 @@ export default function AllUsersPage() {
                   </div>
                   <div>
                     <h2 className="text-2xl font-bold text-white">{getName(selectedUser)}</h2>
-                    <p className="text-white/80">{selectedUser.designation || currentTab.label.slice(0, -1)}</p>
+                    <p className="text-white/80">{getUserSubtitle(selectedUser, activeTab)}</p>
                   </div>
                 </div>
                 <button
