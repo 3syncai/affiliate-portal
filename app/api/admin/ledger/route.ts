@@ -1,6 +1,6 @@
-
 import { NextRequest, NextResponse } from "next/server";
 import { Pool } from "pg";
+import { COMMISSION_HAS_RETURN_SQL } from "@/lib/dashboard-return-sql";
 
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
@@ -41,10 +41,14 @@ export async function GET(req: NextRequest) {
         acl.quantity,
         acl.order_amount,
         acl.commission_amount,
-        COALESCE(acl.affiliate_commission, acl.commission_amount * ${affiliateRateDecimal}) as affiliate_commission,
+        CASE
+          WHEN (${COMMISSION_HAS_RETURN_SQL}) THEN 0
+          ELSE COALESCE(acl.affiliate_commission, acl.commission_amount * ${affiliateRateDecimal})
+        END AS affiliate_commission,
         acl.branch_admin_bonus,
         acl.status,
         acl.commission_source,
+        (${COMMISSION_HAS_RETURN_SQL}) AS has_return,
         COALESCE(
           NULLIF(TRIM(CONCAT(au.first_name, ' ', au.last_name)), ''),
           NULLIF(TRIM(CONCAT(sa.first_name, ' ', sa.last_name)), ''),
@@ -92,7 +96,11 @@ export async function GET(req: NextRequest) {
             paramIndex++;
         }
 
-        if (status && status !== "ALL") {
+        if (status === "RETURNED") {
+            query += ` AND (${COMMISSION_HAS_RETURN_SQL})`;
+        } else if (status === "CANCELLED") {
+            query += ` AND acl.status = 'CANCELLED' AND NOT (${COMMISSION_HAS_RETURN_SQL})`;
+        } else if (status && status !== "ALL") {
             query += ` AND acl.status = $${paramIndex}`;
             params.push(status);
             paramIndex++;

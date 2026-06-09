@@ -1,3 +1,5 @@
+import { voidCommissionsForApprovedReturns } from "@/lib/void-return-commission";
+
 type Queryable = {
     query: (text: string, params?: any[]) => Promise<any>;
 };
@@ -42,30 +44,14 @@ export async function syncAffiliateCommissionStatuses(db: Queryable, options: Sy
         );
         const orderCols = new Set(orderColsRes.rows.map((row: { column_name: string }) => row.column_name));
 
-        // Detect customer-initiated returns. An active return on an order
-        // (the customer asked for the product back) must immediately void
-        // the commission, even if the post-delivery 5-minute timer is still
-        // running. We treat anything that's not 'rejected' / 'cancelled' as
-        // "active". The Medusa-native `return` table is included for safety;
-        // most return flows in this project go through `return_request`.
+        // Admin-approved returns are voided first (stops timer, zeros pending).
+        // Customer requests still awaiting approval keep the countdown running.
+        await voidCommissionsForApprovedReturns(db, {
+            affiliateCode,
+            logPrefix: `${logPrefix} approved-return`,
+        });
+
         const returnConditionParts: string[] = [];
-        const returnRequestExists = await db.query(
-            `SELECT 1
-             FROM information_schema.tables
-             WHERE table_schema = 'public' AND table_name = 'return_request'
-             LIMIT 1`
-        );
-        if (returnRequestExists.rows.length > 0) {
-            returnConditionParts.push(`
-                EXISTS (
-                    SELECT 1
-                    FROM return_request rr
-                    WHERE rr.order_id = o.id
-                      AND rr.deleted_at IS NULL
-                      AND LOWER(COALESCE(rr.status, '')) NOT IN ('rejected', 'cancelled', 'canceled')
-                )
-            `);
-        }
         const returnTableExists = await db.query(
             `SELECT 1
              FROM information_schema.tables

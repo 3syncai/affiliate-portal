@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { Pool } from 'pg';
 import { syncAffiliateCommissionStatuses } from '@/lib/affiliate-commission-sync';
+import { COMMISSION_HAS_RETURN_SQL } from '@/lib/dashboard-return-sql';
 
 export const dynamic = 'force-dynamic';
 
@@ -66,8 +67,7 @@ export async function GET(request: Request) {
 
 
         // 2. Get all orders/commissions for these customers. The `has_return`
-        //    column lets the UI flip the badge to "RETURNED" the moment the
-        //    customer files a return — even mid-countdown.
+        //    column flips the badge to "RETURNED" once admin approves the return.
         const ordersQuery = `
             SELECT 
                 acl.id,
@@ -85,13 +85,7 @@ export async function GET(request: Request) {
                 acl.unlock_at,
                 acl.credited_at,
                 acl.created_at,
-                EXISTS (
-                    SELECT 1
-                    FROM return_request rr
-                    WHERE rr.order_id = acl.order_id
-                      AND rr.deleted_at IS NULL
-                      AND LOWER(COALESCE(rr.status, '')) NOT IN ('rejected','cancelled','canceled')
-                ) AS has_return
+                (${COMMISSION_HAS_RETURN_SQL}) AS has_return
             FROM affiliate_commission_log acl
             WHERE acl.commission_source = 'branch_admin'
               AND acl.affiliate_code = $1

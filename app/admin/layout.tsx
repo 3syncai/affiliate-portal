@@ -22,7 +22,8 @@ import {
   User,
   Palette,
   Bell,
-  Banknote
+  Banknote,
+  RotateCcw,
 } from "lucide-react"
 
 
@@ -38,6 +39,7 @@ const navigationItems = [
   //{ name: "Total Agent", href: "/admin/total-agent", icon: Users },
   { name: "TDS Settings", href: "/admin/tds-settings", icon: Settings },
   { name: "Payments", href: "/admin/payments", icon: Banknote },
+  { name: "Returns", href: "/admin/returns", icon: RotateCcw },
   { name: "Commission Ledger", href: "/admin/ledger", icon: Banknote },
 ]
 

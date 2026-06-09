@@ -21,9 +21,9 @@ const formatRemaining = (msRemaining: number) => {
  * Renders the commission status. While a delivered commission is waiting out
  * the post-delivery unlock window, a live countdown is shown instead of the
  * raw "PENDING" badge so the affiliate can see exactly when the money will
- * land in their wallet. If the customer initiated a return at any point
- * (including mid-countdown), the badge switches to "Returned" and the
- * commission amount is zeroed.
+ * land in their wallet. Once an admin approves a customer return (even
+ * mid-countdown), the badge switches to "RETURNED" and the commission is
+ * zeroed while the timer stops.
  */
 export default function CommissionStatusBadge({
   status,

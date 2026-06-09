@@ -30,7 +30,20 @@ interface LedgerItem {
     email: string;
     refer_code: string;
     is_agent: boolean;
+    has_return?: boolean;
 }
+
+const ledgerDisplayStatus = (item: LedgerItem) =>
+    item.has_return ? "RETURNED" : item.status;
+
+const ledgerStatusBadgeClass = (item: LedgerItem) => {
+    const label = ledgerDisplayStatus(item);
+    if (label === "RETURNED") return "bg-rose-100 text-rose-800";
+    if (label === "CREDITED") return "bg-green-100 text-green-800";
+    if (label === "PENDING") return "bg-yellow-100 text-yellow-800";
+    if (label === "CANCELLED") return "bg-gray-100 text-gray-800";
+    return "bg-gray-100 text-gray-800";
+};
 
 const fetcher = (url: string) => axios.get(url).then((res) => res.data);
 
@@ -110,7 +123,7 @@ export default function CommissionLedgerPage() {
                         item.quantity,
                         item.order_amount,
                         item.affiliate_commission,
-                        item.status,
+                        ledgerDisplayStatus(item),
                         item.commission_source,
                         `"${item.first_name ? item.first_name + ' ' + item.last_name : 'Unknown'}"`,
                         `"${item.refer_code}"`,
@@ -175,6 +188,8 @@ export default function CommissionLedgerPage() {
                         <option value="ALL">All Status</option>
                         <option value="CREDITED">Credited</option>
                         <option value="PENDING">Pending</option>
+                        <option value="RETURNED">Returned</option>
+                        <option value="CANCELLED">Cancelled</option>
                     </select>
                 </div>
             </div>
@@ -232,19 +247,25 @@ export default function CommissionLedgerPage() {
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
                                             <div className="flex flex-col items-end">
-                                                <span className="font-bold text-emerald-600">+{formatCurrency(item.affiliate_commission)}</span>
+                                                <span
+                                                    className={`font-bold ${
+                                                        item.has_return || item.affiliate_commission === 0
+                                                            ? "text-gray-400 line-through"
+                                                            : "text-emerald-600"
+                                                    }`}
+                                                >
+                                                    +{formatCurrency(item.affiliate_commission)}
+                                                </span>
                                                 {item.branch_admin_bonus > 0 && (
                                                     <span className="text-xs text-blue-600">Incl. Bonus: {formatCurrency(item.branch_admin_bonus)}</span>
                                                 )}
-                                                <span className="text-xs text-gray-400">Source: {item.commission_source}</span>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-center">
-                                            <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${item.status === 'CREDITED' ? 'bg-green-100 text-green-800' :
-                                                item.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
-                                                    'bg-gray-100 text-gray-800'
-                                                }`}>
-                                                {item.status}
+                                            <span
+                                                className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${ledgerStatusBadgeClass(item)}`}
+                                            >
+                                                {ledgerDisplayStatus(item)}
                                             </span>
                                         </td>
                                     </tr>
