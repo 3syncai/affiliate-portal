@@ -1,6 +1,8 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
+import Link from "next/link"
+import { useSearchParams } from "next/navigation"
 import axios from "axios"
 import {
     Eye,
@@ -73,6 +75,8 @@ const statusInfo = (a: Agent) => {
 }
 
 export default function BranchAgentsPage() {
+    const searchParams = useSearchParams()
+    const approvedOnly = searchParams.get("approved") === "true"
     const [agents, setAgents] = useState<Agent[]>([])
     const [loading, setLoading] = useState(true)
     const [searchTerm, setSearchTerm] = useState("")
@@ -84,14 +88,16 @@ export default function BranchAgentsPage() {
         if (userData) {
             const parsed = JSON.parse(userData)
             setUser(parsed)
-            fetchAgents(parsed.branch)
+            fetchAgents(parsed.branch, approvedOnly)
         }
-    }, [])
+    }, [approvedOnly])
 
-    const fetchAgents = async (branch: string) => {
+    const fetchAgents = async (branch: string, approved: boolean) => {
         setLoading(true)
         try {
-            const response = await axios.get(`/api/branch/agents?branch=${encodeURIComponent(branch)}`)
+            let url = `/api/branch/agents?branch=${encodeURIComponent(branch)}`
+            if (approved) url += "&approved=true"
+            const response = await axios.get(url)
             if (response.data.success) {
                 setAgents(response.data.agents)
             }
@@ -131,6 +137,21 @@ export default function BranchAgentsPage() {
                 <p className="text-gray-600 mt-1">View all partners in your area</p>
             </div>
 
+            {approvedOnly && (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 flex items-center justify-between gap-4">
+                    <p className="text-sm text-amber-900">
+                        Showing: <span className="font-semibold">Approved partners only</span>
+                        {" "}({filteredAgents.length} record{filteredAgents.length === 1 ? "" : "s"})
+                    </p>
+                    <Link
+                        href="/branch/agents"
+                        className="text-sm font-medium text-amber-800 hover:text-amber-950 underline shrink-0"
+                    >
+                        Show all partners
+                    </Link>
+                </div>
+            )}
+
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
                 <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -146,7 +167,8 @@ export default function BranchAgentsPage() {
 
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
                 <p className="text-gray-600">
-                    Total Partners: <span className="font-bold text-gray-900">{filteredAgents.length}</span>
+                    {approvedOnly ? "Sales Executives" : "Total Partners"}:{" "}
+                    <span className="font-bold text-gray-900">{filteredAgents.length}</span>
                 </p>
             </div>
 

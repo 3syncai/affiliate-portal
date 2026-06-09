@@ -337,6 +337,7 @@ export default function BranchDashboard() {
       icon: UserCheck,
       color: "text-orange-600",
       bg: "bg-orange-50",
+      href: "/branch/agents?approved=true",
     },
     {
       title: "Total Orders",
@@ -344,6 +345,7 @@ export default function BranchDashboard() {
       icon: ShoppingBag,
       color: "text-purple-600",
       bg: "bg-purple-50",
+      href: "/branch/order-layout",
     },
     {
       title: "Total Returns",
@@ -359,6 +361,7 @@ export default function BranchDashboard() {
       icon: DollarSign,
       color: "text-green-600",
       bg: "bg-green-50",
+      href: "/branch/earnings",
     },
     {
       title: "Pending Commission",
@@ -366,6 +369,7 @@ export default function BranchDashboard() {
       icon: Clock,
       color: "text-amber-600",
       bg: "bg-amber-50",
+      href: "/branch/earnings?filter=pending",
     },
   ];
 
@@ -427,7 +431,7 @@ export default function BranchDashboard() {
             <div
               className={`bg-white rounded-xl border border-gray-200 p-6 shadow-sm transition-all duration-200 ${
                 stat.href
-                  ? "hover:border-rose-200 cursor-pointer"
+                  ? "hover:border-gray-200 cursor-pointer hover:shadow-md"
                   : "hover:border-gray-300"
               }`}
             >

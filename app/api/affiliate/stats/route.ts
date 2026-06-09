@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { syncAffiliateCommissionStatuses } from '@/lib/affiliate-commission-sync';
-import { COMMISSION_HAS_RETURN_SQL } from '@/lib/dashboard-return-sql';
+import { COMMISSION_IS_RETURN_OR_CANCELLED_SQL } from '@/lib/dashboard-return-sql';
 
 export const dynamic = 'force-dynamic';
 
@@ -70,11 +70,20 @@ export async function GET(request: NextRequest) {
         `;
         const ordersResult = await pool.query(ordersQuery, [affiliateCode]);
 
+        const returnsResult = await pool.query(
+            `SELECT COUNT(DISTINCT acl.order_id)::int AS total_returns
+             FROM affiliate_commission_log acl
+             WHERE acl.affiliate_code = $1
+               AND (${COMMISSION_IS_RETURN_OR_CANCELLED_SQL})`,
+            [affiliateCode]
+        );
+
         const referrals = {
             total: parseInt(referralsResult.rows[0]?.total || '0'),
             active: parseInt(activeResult.rows[0]?.active || '0'),
             total_orders: parseInt(ordersResult.rows[0]?.total_orders || '0'),
-            total_order_value: parseFloat(ordersResult.rows[0]?.total_order_value || '0')
+            total_order_value: parseFloat(ordersResult.rows[0]?.total_order_value || '0'),
+            total_returns: parseInt(returnsResult.rows[0]?.total_returns || '0')
         };
 
         // 2. Get commission stats (use STORED affiliate_commission to preserve historical rates)
