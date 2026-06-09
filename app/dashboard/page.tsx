@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState, useRef } from "react"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
 import QRCode from 'qrcode'
 import axios from 'axios'
@@ -13,6 +14,7 @@ import {
   Wallet,
   TrendingUp,
   DollarSign,
+  RotateCcw,
   ArrowUpRight,
   LogOut,
   LayoutDashboard,
@@ -38,6 +40,7 @@ interface AffiliateStats {
     active: number
     total_orders: number
     total_order_value: number
+    total_returns: number
   }
   commission: {
     total_earned: number
@@ -422,7 +425,7 @@ export default function DashboardPage() {
           </section>
 
           {/* ─── Stats Grid ────────────────────────────────────────── */}
-          <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
             <StatCard
               label="Total Referrals"
               value={String(stats?.referrals.total || 0)}
@@ -431,6 +434,7 @@ export default function DashboardPage() {
               gradient="from-blue-500 to-indigo-500"
               accent="text-blue-600"
               ringClass="ring-blue-100"
+              href="/dashboard/referrals"
             />
             <StatCard
               label="Total Orders"
@@ -440,6 +444,17 @@ export default function DashboardPage() {
               gradient="from-violet-500 to-purple-500"
               accent="text-violet-600"
               ringClass="ring-violet-100"
+              href="/dashboard/orders"
+            />
+            <StatCard
+              label="Total Returns"
+              value={String(stats?.referrals.total_returns || 0)}
+              meta="Cancelled + return requests"
+              icon={RotateCcw}
+              gradient="from-rose-500 to-red-500"
+              accent="text-rose-600"
+              ringClass="ring-rose-100"
+              href="/dashboard/returns"
             />
             <StatCard
               label="Total Commission"
@@ -450,6 +465,7 @@ export default function DashboardPage() {
               gradient="from-amber-500 to-orange-500"
               accent="text-amber-600"
               ringClass="ring-amber-100"
+              href="/dashboard/earnings"
             />
 
             {/* Wallet Card — featured */}
@@ -833,6 +849,7 @@ function StatCard({
   gradient,
   accent,
   ringClass,
+  href,
 }: {
   label: string
   value: string
@@ -842,20 +859,31 @@ function StatCard({
   gradient: string
   accent: string
   ringClass: string
+  href?: string
 }) {
-  return (
-    <div className="group relative overflow-hidden rounded-2xl bg-white border border-slate-200 p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all">
+  const card = (
+    <div className={`group relative overflow-hidden rounded-2xl bg-white border border-slate-200 p-5 shadow-sm transition-all h-full ${href ? 'hover:shadow-md hover:-translate-y-0.5 cursor-pointer' : 'hover:shadow-md hover:-translate-y-0.5'}`}>
       <div className="flex items-start justify-between mb-3">
         <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center shadow-sm ring-4 ${ringClass}`}>
           <Icon className="w-5 h-5 text-white" />
         </div>
-        <ArrowUpRight className={`w-4 h-4 ${accent} opacity-0 group-hover:opacity-100 transition-opacity`} />
+        <ArrowUpRight className={`w-4 h-4 ${accent} ${href ? 'opacity-60 group-hover:opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity`} />
       </div>
       <p className="text-[11px] uppercase tracking-wider font-semibold text-slate-500">{label}</p>
       <p className="text-3xl font-bold text-slate-900 mt-1 tracking-tight">{value}</p>
       <p className={`text-xs mt-2 ${metaTone === 'amber' ? 'text-amber-600 font-medium' : 'text-slate-500'}`}>{meta}</p>
     </div>
   )
+
+  if (href) {
+    return (
+      <Link href={href} className="block">
+        {card}
+      </Link>
+    )
+  }
+
+  return card
 }
 
 function Step({ n, text }: { n: number; text: string }) {
