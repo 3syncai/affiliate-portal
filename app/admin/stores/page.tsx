@@ -9,8 +9,6 @@ interface Store {
     city: string
     state: string
     address: string | null
-    contact_phone: string | null
-    contact_email: string | null
     is_active: boolean
     created_at: string
     updated_at: string
@@ -27,8 +25,6 @@ export default function StoresPage() {
         city: "",
         state: "",
         address: "",
-        contact_phone: "",
-        contact_email: "",
     })
     const [formErrors, setFormErrors] = useState<any>({})
     const [submitting, setSubmitting] = useState(false)
@@ -103,8 +99,6 @@ export default function StoresPage() {
             city: store.city,
             state: store.state,
             address: store.address || "",
-            contact_phone: store.contact_phone || "",
-            contact_email: store.contact_email || "",
         })
         setShowModal(true)
     }
@@ -135,8 +129,6 @@ export default function StoresPage() {
             city: "",
             state: "",
             address: "",
-            contact_phone: "",
-            contact_email: "",
         })
         setFormErrors({})
         setEditingStore(null)
@@ -208,9 +200,6 @@ export default function StoresPage() {
                                     State  {/* state */}
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Contact
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Status
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -221,7 +210,7 @@ export default function StoresPage() {
                         <tbody className="bg-white divide-y divide-gray-200">
                             {filteredStores.length === 0 ? (
                                 <tr>
-                                    <td colSpan={6} className="px-6 py-12 text-center">
+                                    <td colSpan={5} className="px-6 py-12 text-center">
                                         <Building2 className="w-12 h-12 text-gray-400 mx-auto mb-3" />
                                         <p className="text-gray-500">No stores found</p>
                                     </td>
@@ -239,17 +228,6 @@ export default function StoresPage() {
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-gray-700">
                                             {store.state}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="text-sm text-gray-700">
-                                                {store.contact_phone && <div>{store.contact_phone}</div>}
-                                                {store.contact_email && (
-                                                    <div className="text-gray-500">{store.contact_email}</div>
-                                                )}
-                                                {!store.contact_phone && !store.contact_email && (
-                                                    <span className="text-gray-400">-</span>
-                                                )}
-                                            </div>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <span
@@ -373,38 +351,6 @@ export default function StoresPage() {
                                     placeholder="Full address (optional)"
                                 />
                             </div>
-
-                            {/* <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Contact Phone
-                                    </label>
-                                    <input
-                                        type="tel"
-                                        value={formData.contact_phone}
-                                        onChange={(e) =>
-                                            setFormData({ ...formData, contact_phone: e.target.value })
-                                        }
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900 placeholder-gray-400"
-                                        placeholder="e.g., +91 9876543210"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Contact Email
-                                    </label>
-                                    <input
-                                        type="email"
-                                        value={formData.contact_email}
-                                        onChange={(e) =>
-                                            setFormData({ ...formData, contact_email: e.target.value })
-                                        }
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900 placeholder-gray-400"
-                                        placeholder="e.g., branch@example.com"
-                                    />
-                                </div>
-                            </div> */}
 
                             <div className="flex gap-3 pt-4">
                                 <button
