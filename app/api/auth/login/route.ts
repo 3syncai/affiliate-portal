@@ -8,6 +8,7 @@ import {
   verifyAdminPassword,
 } from "@/lib/auth/admin-session";
 import { ensureAdminLoginVerificationSchema } from "@/lib/auth/admin-login-verification";
+import { requiresLoginOtp } from "@/lib/auth/login-otp-policy";
 import { ensureInitialPasswordResetSchema } from "@/lib/auth/initial-password-reset";
 import { ensureLoginOtpSchema } from "@/lib/login-otp/schema";
 import {
@@ -55,6 +56,11 @@ export async function POST(req: NextRequest) {
           { success: false, message: "Invalid email or password" },
           { status: 401 },
         );
+      }
+
+      // National Head: email + password only. OTP is for state / asm / branch.
+      if (!requiresLoginOtp(admin.role)) {
+        return NextResponse.json(buildAdminLoginResponse(admin));
       }
 
       if (admin.loginOtpVerified) {

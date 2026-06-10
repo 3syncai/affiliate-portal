@@ -1,6 +1,7 @@
 import { randomUUID } from "crypto";
 import pool from "@/lib/db";
 import type { AdminIdentity } from "@/lib/auth/admin-session";
+import { isLoginOtpRole, requiresLoginOtp } from "@/lib/auth/login-otp-policy";
 import {
   markAdminLoginOtpVerified,
   readLoginOtpVerified,
@@ -169,6 +170,13 @@ export async function createLoginOtpChallenge(
   identity: AdminIdentity,
   ipAddress: string,
 ) {
+  if (!requiresLoginOtp(identity.role)) {
+    throw new LoginOtpError(
+      "OTP verification applies only to State Admin, Branch Manager, and Area Sales Manager accounts.",
+      403,
+    );
+  }
+
   await ensureLoginOtpSchema();
 
   const phone = normalizeIndianMobile(identity.phone);
@@ -233,7 +241,7 @@ export async function resendLoginOtpChallenge(
   await ensureLoginOtpSchema();
 
   const result = await pool.query(
-    `SELECT id, email, phone, consumed_at, last_sent_at, expires_at
+    `SELECT id, email, phone, role, consumed_at, last_sent_at, expires_at
      FROM login_otp_challenge
      WHERE id = $1`,
     [challengeId],
@@ -244,6 +252,12 @@ export async function resendLoginOtpChallenge(
   }
 
   const challenge = result.rows[0];
+  if (!isLoginOtpRole(challenge.role)) {
+    throw new LoginOtpError(
+      "OTP verification applies only to State Admin, Branch Manager, and Area Sales Manager accounts.",
+      403,
+    );
+  }
   if (challenge.consumed_at) {
     throw new LoginOtpError("OTP already used. Please sign in again.", 400);
   }
@@ -316,6 +330,13 @@ export async function verifyLoginOtpChallenge(
   }
 
   const challenge = result.rows[0];
+
+  if (!isLoginOtpRole(challenge.role)) {
+    throw new LoginOtpError(
+      "OTP verification applies only to State Admin, Branch Manager, and Area Sales Manager accounts.",
+      403,
+    );
+  }
 
   if (challenge.consumed_at) {
     throw new LoginOtpError("OTP already used. Please sign in again.", 400);
