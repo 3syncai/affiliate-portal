@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Pool } from "pg";
 import bcrypt from "bcryptjs";
+import { ensureAdminLoginVerificationSchema } from "@/lib/auth/admin-login-verification";
+import { ensureInitialPasswordResetSchema } from "@/lib/auth/initial-password-reset";
+import { sendPartnerWelcomeEmail } from "@/lib/email/partner-welcome-email";
 
 export const dynamic = "force-dynamic"
 
@@ -88,12 +91,15 @@ export async function POST(req: NextRequest) {
             }
         }
 
+        await ensureAdminLoginVerificationSchema();
+        await ensureInitialPasswordResetSchema();
+
         // Insert ASM with normalized names (First letter caps)
         const insertQuery = `
             INSERT INTO area_sales_manager (
-                first_name, last_name, email, password_hash, phone, city, state, created_by, refer_code, role, is_active, created_at, updated_at
+                first_name, last_name, email, password_hash, phone, city, state, created_by, refer_code, role, is_active, login_otp_verified, initial_password_reset_completed, created_at, updated_at
             ) VALUES (
-                $1, $2, $3, $4, $5, INITCAP(LOWER($6)), INITCAP(LOWER($7)), $8, $9, 'asm', TRUE, NOW(), NOW()
+                $1, $2, $3, $4, $5, INITCAP(LOWER($6)), INITCAP(LOWER($7)), $8, $9, 'asm', TRUE, FALSE, FALSE, NOW(), NOW()
             ) RETURNING id, email, first_name, last_name, city, state, refer_code, role, is_active
         `;
 
@@ -114,9 +120,20 @@ export async function POST(req: NextRequest) {
         const asm = result.rows[0];
         console.log(`ASM created: ${asm.email} for city ${asm.city} in ${asm.state}`);
 
+        const emailSent = await sendPartnerWelcomeEmail({
+            role: "branch_manager",
+            firstName: asm.first_name,
+            lastName: asm.last_name,
+            email: asm.email,
+            password,
+            referCode: asm.refer_code,
+            territory: { state: asm.state, city: asm.city },
+        });
+
         return NextResponse.json({
             success: true,
             message: "Area Sales Manager created successfully",
+            emailSent,
             asm: {
                 id: asm.id,
                 email: asm.email,

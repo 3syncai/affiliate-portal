@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Pool } from "pg";
 import bcrypt from "bcryptjs";
+import { ensureAdminLoginVerificationSchema } from "@/lib/auth/admin-login-verification";
+import { ensureInitialPasswordResetSchema } from "@/lib/auth/initial-password-reset";
+import { sendPartnerWelcomeEmail } from "@/lib/email/partner-welcome-email";
 
 export const dynamic = "force-dynamic"
 
@@ -86,12 +89,15 @@ export async function POST(req: NextRequest) {
             }
         }
 
+        await ensureAdminLoginVerificationSchema();
+        await ensureInitialPasswordResetSchema();
+
         // Insert Branch Admin with normalized names (First letter caps)
         const insertQuery = `
             INSERT INTO branch_admin (
-                first_name, last_name, email, password_hash, phone, branch, city, state, created_by, refer_code, role, is_active, created_at, updated_at
+                first_name, last_name, email, password_hash, phone, branch, city, state, created_by, refer_code, role, is_active, login_otp_verified, initial_password_reset_completed, created_at, updated_at
             ) VALUES (
-                $1, $2, $3, $4, $5, INITCAP(LOWER($6)), INITCAP(LOWER($7)), INITCAP(LOWER($8)), $9, $10, 'branch', TRUE, NOW(), NOW()
+                $1, $2, $3, $4, $5, INITCAP(LOWER($6)), INITCAP(LOWER($7)), INITCAP(LOWER($8)), $9, $10, 'branch', TRUE, FALSE, FALSE, NOW(), NOW()
             ) RETURNING id, email, first_name, last_name, branch, city, state, refer_code, role, is_active
         `;
 
@@ -113,9 +119,24 @@ export async function POST(req: NextRequest) {
         const branchAdmin = result.rows[0];
         console.log(`Branch Admin created: ${branchAdmin.email} for branch ${branchAdmin.branch}`);
 
+        const emailSent = await sendPartnerWelcomeEmail({
+            role: "area_sales_manager",
+            firstName: branchAdmin.first_name,
+            lastName: branchAdmin.last_name,
+            email: branchAdmin.email,
+            password,
+            referCode: branchAdmin.refer_code,
+            territory: {
+                state: branchAdmin.state,
+                city: branchAdmin.city,
+                branch: branchAdmin.branch,
+            },
+        });
+
         return NextResponse.json({
             success: true,
             message: "Branch Admin created successfully",
+            emailSent,
             branchAdmin: {
                 id: branchAdmin.id,
                 email: branchAdmin.email,

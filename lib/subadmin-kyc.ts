@@ -1,5 +1,6 @@
 import type { Pool } from "pg"
 import { NextRequest, NextResponse } from "next/server"
+import { ensureInitialPasswordResetSchema } from "@/lib/auth/initial-password-reset"
 import {
     uploadSubAdminDocument,
     uploadSubAdminDocumentReplacement,
@@ -97,6 +98,8 @@ export async function handleCompleteSubAdminProfile(
     const uploadedUrls: string[] = []
 
     try {
+        await ensureInitialPasswordResetSchema()
+
         const formData = await req.formData()
 
         const values: Record<string, string> = {}

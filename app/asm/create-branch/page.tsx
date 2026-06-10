@@ -114,7 +114,12 @@ export default function CreateBranchAdminPage() {
             })
 
             if (response.data.success) {
-                setSuccess(`Branch Admin created successfully for ${formData.branch}!`)
+                const emailNote = response.data.emailSent
+                    ? " Welcome email sent with login details."
+                    : ""
+                setSuccess(
+                    `Area Sales Manager created successfully for ${formData.branch}!${emailNote}`,
+                )
                 setFormData({
                     first_name: "",
                     last_name: "",

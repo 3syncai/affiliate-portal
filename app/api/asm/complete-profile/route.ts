@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
         s3Level: "branch_head",
         authUserId: auth.userId,
         returningColumns:
-            "id, first_name, last_name, email, phone, city, state, refer_code, profile_completed",
+            "id, first_name, last_name, email, phone, city, state, refer_code, profile_completed, initial_password_reset_completed",
         logPrefix: "[asm/complete-profile]",
     })
 }

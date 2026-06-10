@@ -86,6 +86,10 @@ export default function BranchLayout({
                 router.replace("/complete-profile")
                 return
             }
+            if (parsed?.initial_password_reset_completed !== true) {
+                router.replace("/reset-initial-password")
+                return
+            }
             setUser(parsed)
             setLoading(false)
         } catch (e) {

@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
         s3Level: "state_admin",
         authUserId: auth.userId,
         returningColumns:
-            "id, first_name, last_name, email, phone, state, refer_code, profile_completed",
+            "id, first_name, last_name, email, phone, state, refer_code, profile_completed, initial_password_reset_completed",
         logPrefix: "[state-admin/complete-profile]",
     })
 }
