@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Pool } from 'pg'
+import {
+    ensureStoresPincodeSchema,
+    validateStorePincode,
+} from '@/lib/stores-schema'
 
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
@@ -41,9 +45,20 @@ export async function PUT(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        await ensureStoresPincodeSchema()
+
         const { id } = await params
         const body = await request.json()
-        const { branch_name, city, state, address, contact_phone, contact_email, is_active } = body
+        const {
+            branch_name,
+            city,
+            state,
+            address,
+            contact_phone,
+            contact_email,
+            is_active,
+            pincode,
+        } = body
 
         // Validation
         if (!branch_name || !city || !state) {
@@ -53,16 +68,25 @@ export async function PUT(
             )
         }
 
+        const normalizedPincode = validateStorePincode(pincode)
+        if (pincode !== undefined && pincode !== null && pincode !== "" && !normalizedPincode) {
+            return NextResponse.json(
+                { success: false, error: 'Pincode must be exactly 6 digits' },
+                { status: 400 }
+            )
+        }
+
         const result = await pool.query(
             `UPDATE stores 
-       SET branch_name = $1, city = $2, state = $3, address = $4, 
-           contact_phone = $5, contact_email = $6, is_active = $7
-       WHERE id = $8
+       SET branch_name = $1, city = $2, state = $3, pincode = $4, address = $5, 
+           contact_phone = $6, contact_email = $7, is_active = $8
+       WHERE id = $9
        RETURNING *`,
             [
                 branch_name,
                 city,
                 state,
+                normalizedPincode,
                 address || null,
                 contact_phone || null,
                 contact_email || null,

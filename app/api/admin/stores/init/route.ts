@@ -29,6 +29,8 @@ export async function GET(request: NextRequest) {
         await pool.query(`CREATE INDEX IF NOT EXISTS idx_stores_city ON stores(city)`)
         await pool.query(`CREATE INDEX IF NOT EXISTS idx_stores_branch_name ON stores(branch_name)`)
         await pool.query(`CREATE INDEX IF NOT EXISTS idx_stores_is_active ON stores(is_active)`)
+        await pool.query(`ALTER TABLE stores ADD COLUMN IF NOT EXISTS pincode VARCHAR(6)`)
+        await pool.query(`CREATE INDEX IF NOT EXISTS idx_stores_pincode ON stores(pincode)`)
 
         // Create update trigger function
         await pool.query(`
