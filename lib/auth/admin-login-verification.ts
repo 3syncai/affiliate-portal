@@ -11,7 +11,6 @@ const ADMIN_TABLES = [
 ] as const;
 
 const BACKFILL_TABLES: Array<{ table: string; emailColumn: string }> = [
-  { table: "affiliate_admin", emailColumn: "email" },
   { table: "state_admin", emailColumn: "email" },
   { table: "area_sales_manager", emailColumn: "email" },
   { table: "branch_admin", emailColumn: "email" },
@@ -26,6 +25,11 @@ export async function ensureAdminLoginVerificationSchema(): Promise<void> {
            ADD COLUMN IF NOT EXISTS login_otp_verified BOOLEAN NOT NULL DEFAULT TRUE`,
         );
       }
+
+      // National Head is exempt from first-login OTP verification.
+      await pool.query(
+        `UPDATE affiliate_admin SET login_otp_verified = TRUE`,
+      );
 
       await backfillLoginOtpVerifiedFromAudit();
     })();

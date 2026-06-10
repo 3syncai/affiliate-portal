@@ -364,7 +364,8 @@ function LoginContent() {
           ) : (
             <form onSubmit={handleVerifyOtp} className="space-y-5">
               <div className="rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
-                Enter the 6-digit OTP sent to{" "}
+                First-time verification for State Admin, Branch Manager, or Area
+                Sales Manager. Enter the 6-digit OTP sent to{" "}
                 <span className="font-semibold">{maskedPhone || "your mobile"}</span>.
               </div>
 
