@@ -6,6 +6,7 @@ import axios from "axios"
 import { User, Mail, Phone, Lock, MapPin, Briefcase, Palette, CreditCard, Save, Loader2 } from "lucide-react"
 import ThemeSelector from "@/components/ThemeSelector"
 import SubAdminKycBankSection from "@/components/SubAdminKycBankSection"
+import AdminChangePasswordForm from "@/components/AdminChangePasswordForm"
 import { useTheme } from "@/contexts/ThemeContext"
 
 const formatPhoneInput = (value: string) => value.replace(/\D/g, "").slice(0, 10)
@@ -332,27 +333,7 @@ export default function ASMProfilePage() {
                     {/* Security Tab */}
                     {activeTab === 'security' && (
                         <div className="space-y-6">
-                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
-                                <Lock className="w-12 h-12 text-blue-600 mx-auto mb-3" />
-                                <h3 className="text-lg font-semibold text-gray-900 mb-2">Password & Security</h3>
-                                <p className="text-sm text-gray-600 mb-4">
-                                    Your account is secured. Contact admin for password resets.
-                                </p>
-                                <div className="space-y-3">
-                                    <div className="flex items-center justify-between bg-white rounded-lg p-3 border border-gray-200">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                                                <Lock className="w-5 h-5 text-blue-600" />
-                                            </div>
-                                            <div className="text-left">
-                                                <p className="text-sm font-medium text-gray-900">Password</p>
-                                                <p className="text-xs text-gray-500">Managed by Administrator</p>
-                                            </div>
-                                        </div>
-                                        <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded">Secure</span>
-                                    </div>
-                                </div>
-                            </div>
+                            <AdminChangePasswordForm />
                         </div>
                     )}
 
