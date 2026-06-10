@@ -1,17 +1,54 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Plus, Edit2, Trash2, Search, Building2 } from "lucide-react"
+import { useState, useEffect, useCallback, useRef } from "react"
+import {
+    Plus,
+    Edit2,
+    Trash2,
+    Search,
+    Building2,
+    X,
+    Loader2,
+    CheckCircle2,
+    MapPin,
+} from "lucide-react"
+
+type PostOfficeOption = {
+    name: string
+    district: string
+    state: string
+    block: string
+    division: string
+    branchType: string
+    deliveryStatus: string
+    pincode: string
+}
 
 interface Store {
     id: string
     branch_name: string
     city: string
     state: string
+    pincode: string | null
     address: string | null
     is_active: boolean
     created_at: string
     updated_at: string
+}
+
+const emptyForm = {
+    pincode: "",
+    branch_name: "",
+    city: "",
+    state: "",
+    address: "",
+}
+
+function composeAddress(office: PostOfficeOption): string {
+    const parts = [office.division, office.block, office.district]
+        .map((part) => part.trim())
+        .filter(Boolean)
+    return parts.join(", ")
 }
 
 export default function StoresPage() {
@@ -20,14 +57,17 @@ export default function StoresPage() {
     const [showModal, setShowModal] = useState(false)
     const [editingStore, setEditingStore] = useState<Store | null>(null)
     const [searchTerm, setSearchTerm] = useState("")
-    const [formData, setFormData] = useState({
-        branch_name: "",
-        city: "",
-        state: "",
-        address: "",
-    })
-    const [formErrors, setFormErrors] = useState<any>({})
+    const [formData, setFormData] = useState(emptyForm)
+    const [formErrors, setFormErrors] = useState<Record<string, string>>({})
     const [submitting, setSubmitting] = useState(false)
+
+    const [postOffices, setPostOffices] = useState<PostOfficeOption[]>([])
+    const [selectedOfficeIndex, setSelectedOfficeIndex] = useState<number | null>(null)
+    const [pincodeLoading, setPincodeLoading] = useState(false)
+    const [pincodeError, setPincodeError] = useState("")
+    const [pincodeMessage, setPincodeMessage] = useState("")
+    const pincodeFetchRef = useRef(0)
+    const lastLookedUpPincode = useRef("")
 
     useEffect(() => {
         fetchStores()
@@ -48,14 +88,129 @@ export default function StoresPage() {
         }
     }
 
+    const applyOfficeToForm = useCallback((office: PostOfficeOption) => {
+        const suggestedAddress = composeAddress(office)
+        setFormData((prev) => ({
+            ...prev,
+            branch_name: office.name,
+            city: office.district,
+            state: office.state,
+            address: prev.address.trim() ? prev.address : suggestedAddress,
+        }))
+    }, [])
+
+    const lookupPincode = useCallback(
+        async (pincode: string) => {
+            const normalized = pincode.replace(/\D/g, "").slice(0, 6)
+            if (normalized.length !== 6) return
+
+            const requestId = ++pincodeFetchRef.current
+            setPincodeLoading(true)
+            setPincodeError("")
+            setPincodeMessage("")
+            setPostOffices([])
+            setSelectedOfficeIndex(null)
+
+            try {
+                const token = localStorage.getItem("affiliate_token")
+                const response = await fetch(
+                    `/api/admin/stores/pincode?pincode=${normalized}`,
+                    {
+                        headers: token
+                            ? { Authorization: `Bearer ${token}` }
+                            : undefined,
+                    },
+                )
+                const data = await response.json()
+
+                if (pincodeFetchRef.current !== requestId) return
+
+                if (!data.success) {
+                    setPincodeError(data.message || "Failed to lookup pincode")
+                    return
+                }
+
+                const offices = (data.offices || []) as PostOfficeOption[]
+                setPostOffices(offices)
+                setPincodeMessage(
+                    data.message ||
+                        `Found ${offices.length} location(s) for this pincode.`,
+                )
+
+                if (offices.length === 1) {
+                    setSelectedOfficeIndex(0)
+                    applyOfficeToForm(offices[0])
+                } else if (offices.length > 1) {
+                    setSelectedOfficeIndex(0)
+                    applyOfficeToForm(offices[0])
+                }
+            } catch (error) {
+                if (pincodeFetchRef.current !== requestId) return
+                console.error("Pincode lookup failed:", error)
+                setPincodeError("Failed to lookup pincode. Please try again.")
+            } finally {
+                if (pincodeFetchRef.current === requestId) {
+                    setPincodeLoading(false)
+                }
+            }
+        },
+        [applyOfficeToForm],
+    )
+
+    useEffect(() => {
+        if (!showModal) return
+
+        const digits = formData.pincode.replace(/\D/g, "")
+        if (digits.length !== 6) {
+            setPostOffices([])
+            setSelectedOfficeIndex(null)
+            setPincodeError("")
+            setPincodeMessage("")
+            if (digits.length < 6) {
+                lastLookedUpPincode.current = ""
+            }
+            return
+        }
+
+        if (digits === lastLookedUpPincode.current) {
+            return
+        }
+
+        const timer = window.setTimeout(() => {
+            lastLookedUpPincode.current = digits
+            lookupPincode(digits)
+        }, 300)
+
+        return () => window.clearTimeout(timer)
+    }, [formData.pincode, showModal, lookupPincode])
+
+    const handlePincodeChange = (value: string) => {
+        const digits = value.replace(/\D/g, "").slice(0, 6)
+        setFormData((prev) => ({ ...prev, pincode: digits }))
+        if (digits.length < 6) {
+            setPincodeError("")
+            setPincodeMessage("")
+        }
+    }
+
+    const handleOfficeSelect = (index: number) => {
+        setSelectedOfficeIndex(index)
+        const office = postOffices[index]
+        if (office) {
+            applyOfficeToForm(office)
+        }
+    }
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
 
-        // Validation
-        const errors: any = {}
-        if (!formData.branch_name.trim()) errors.branch_name = "Branch name is required"
-        if (!formData.city.trim()) errors.city = "City is required"
+        const errors: Record<string, string> = {}
+        if (!formData.branch_name.trim()) errors.branch_name = "Area sales location is required"
+        if (!formData.city.trim()) errors.city = "Branch sales location is required"
         if (!formData.state.trim()) errors.state = "State is required"
+        if (formData.pincode && formData.pincode.length !== 6) {
+            errors.pincode = "Pincode must be exactly 6 digits"
+        }
 
         if (Object.keys(errors).length > 0) {
             setFormErrors(errors)
@@ -94,12 +249,19 @@ export default function StoresPage() {
 
     const handleEdit = (store: Store) => {
         setEditingStore(store)
+        const storedPincode = store.pincode || ""
+        lastLookedUpPincode.current = storedPincode
         setFormData({
+            pincode: storedPincode,
             branch_name: store.branch_name,
             city: store.city,
             state: store.state,
             address: store.address || "",
         })
+        setPostOffices([])
+        setSelectedOfficeIndex(null)
+        setPincodeError("")
+        setPincodeMessage("")
         setShowModal(true)
     }
 
@@ -124,14 +286,15 @@ export default function StoresPage() {
     }
 
     const resetForm = () => {
-        setFormData({
-            branch_name: "",
-            city: "",
-            state: "",
-            address: "",
-        })
+        lastLookedUpPincode.current = ""
+        setFormData(emptyForm)
         setFormErrors({})
         setEditingStore(null)
+        setPostOffices([])
+        setSelectedOfficeIndex(null)
+        setPincodeLoading(false)
+        setPincodeError("")
+        setPincodeMessage("")
     }
 
     const handleOpenModal = () => {
@@ -139,12 +302,40 @@ export default function StoresPage() {
         setShowModal(true)
     }
 
+    const handleCloseModal = useCallback(() => {
+        setShowModal(false)
+        resetForm()
+    }, [])
+
+    useEffect(() => {
+        if (!showModal) return
+
+        const onKey = (e: KeyboardEvent) => {
+            if (e.key === "Escape") handleCloseModal()
+        }
+
+        document.addEventListener("keydown", onKey)
+        const prevOverflow = document.body.style.overflow
+        document.body.style.overflow = "hidden"
+
+        return () => {
+            document.removeEventListener("keydown", onKey)
+            document.body.style.overflow = prevOverflow
+        }
+    }, [showModal, handleCloseModal])
+
     const filteredStores = stores.filter(
         (store) =>
             store.branch_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             store.city.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            store.state.toLowerCase().includes(searchTerm.toLowerCase())
+            store.state.toLowerCase().includes(searchTerm.toLowerCase()),
     )
+
+    const pincodeLookupOk =
+        formData.pincode.length === 6 &&
+        !pincodeLoading &&
+        !pincodeError &&
+        postOffices.length > 0
 
     if (loading) {
         return (
@@ -170,13 +361,12 @@ export default function StoresPage() {
                 </button>
             </div>
 
-            {/* Search Bar */}
             <div className="bg-white rounded-lg shadow p-4">
                 <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                     <input
                         type="text"
-                        placeholder="Search by area sales location, branch sales location, or state..."
+                        placeholder="Search by area, branch, or state..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
@@ -184,20 +374,19 @@ export default function StoresPage() {
                 </div>
             </div>
 
-            {/* Stores Table */}
             <div className="bg-white rounded-lg shadow overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full">
                         <thead className="bg-gray-50 border-b border-gray-200">
                             <tr>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Area Sales Location   {/* branch name */}
+                                    Area Sales Location
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Branch Sales Location  {/* city */}
+                                    Branch Sales Location
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    State  {/* state */}
+                                    State
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Status
@@ -265,20 +454,107 @@ export default function StoresPage() {
                 </div>
             </div>
 
-            {/* Add/Edit Modal */}
             {showModal && (
-                <div className="fixed inset-0 bg-gray-900 bg-opacity-5 backdrop-blur-[2px] flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-                        <div className="px-6 py-4 border-b border-gray-200">
-                            <h2 className="text-xl font-bold text-gray-900">
+                <div
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="store-modal-title"
+                    className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+                >
+                    <button
+                        type="button"
+                        aria-label="Close"
+                        onClick={handleCloseModal}
+                        className="absolute inset-0 bg-black/50 backdrop-blur-sm cursor-default"
+                    />
+                    <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white rounded-xl shadow-2xl border border-gray-200">
+                        <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white rounded-t-xl">
+                            <h2
+                                id="store-modal-title"
+                                className="text-xl font-bold text-gray-900"
+                            >
                                 {editingStore ? "Edit Store" : "Add New Store"}
                             </h2>
+                            <button
+                                type="button"
+                                onClick={handleCloseModal}
+                                aria-label="Close dialog"
+                                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
                         </div>
                         <form onSubmit={handleSubmit} className="p-6 space-y-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Pincode
+                                </label>
+                                <div className="relative">
+                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <MapPin className="h-5 w-5 text-gray-400" />
+                                    </div>
+                                    <input
+                                        type="text"
+                                        inputMode="numeric"
+                                        value={formData.pincode}
+                                        onChange={(e) => handlePincodeChange(e.target.value)}
+                                        className={`w-full pl-10 pr-10 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900 placeholder-gray-400 font-mono ${formErrors.pincode ? "border-red-500" : pincodeLookupOk ? "border-emerald-500" : "border-gray-300"
+                                            }`}
+                                        placeholder="e.g. 400001"
+                                        maxLength={6}
+                                    />
+                                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                                        {pincodeLoading ? (
+                                            <Loader2 className="h-5 w-5 text-indigo-500 animate-spin" />
+                                        ) : pincodeLookupOk ? (
+                                            <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+                                        ) : null}
+                                    </div>
+                                </div>
+                                {formErrors.pincode && (
+                                    <p className="text-red-500 text-sm mt-1">{formErrors.pincode}</p>
+                                )}
+                                {pincodeError && (
+                                    <p className="text-red-500 text-sm mt-1">{pincodeError}</p>
+                                )}
+                                {pincodeMessage && !pincodeError && (
+                                    <p className="text-emerald-700 text-sm mt-1">{pincodeMessage}</p>
+                                )}
+                                <p className="text-xs text-gray-500 mt-1">
+                                    Enter 6 digits to auto-fill state, branch, and area from India Post data.
+                                </p>
+                            </div>
+
+                            {postOffices.length > 1 && (
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Select area / post office
+                                    </label>
+                                    <select
+                                        value={selectedOfficeIndex ?? 0}
+                                        onChange={(e) =>
+                                            handleOfficeSelect(Number(e.target.value))
+                                        }
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900 bg-white"
+                                    >
+                                        {postOffices.map((office, index) => (
+                                            <option key={`${office.name}-${index}`} value={index}>
+                                                {office.name} — {office.district}, {office.state}
+                                                {office.branchType ? ` (${office.branchType})` : ""}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    {selectedOfficeIndex !== null && postOffices[selectedOfficeIndex] && (
+                                        <p className="text-xs text-gray-500 mt-1">
+                                            Delivery: {postOffices[selectedOfficeIndex].deliveryStatus || "—"}
+                                        </p>
+                                    )}
+                                </div>
+                            )}
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
                                     Area Sales Location <span className="text-red-500">*</span>
-                                    {/* branch name */}
                                 </label>
                                 <input
                                     type="text"
@@ -299,7 +575,6 @@ export default function StoresPage() {
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">
                                         Branch Sales Location <span className="text-red-500">*</span>
-                                        {/* city */}
                                     </label>
                                     <input
                                         type="text"
@@ -319,7 +594,6 @@ export default function StoresPage() {
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">
                                         State <span className="text-red-500">*</span>
-                                        {/* state */}
                                     </label>
                                     <input
                                         type="text"
@@ -355,10 +629,7 @@ export default function StoresPage() {
                             <div className="flex gap-3 pt-4">
                                 <button
                                     type="button"
-                                    onClick={() => {
-                                        setShowModal(false)
-                                        resetForm()
-                                    }}
+                                    onClick={handleCloseModal}
                                     className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
                                     disabled={submitting}
                                 >
@@ -367,7 +638,7 @@ export default function StoresPage() {
                                 <button
                                     type="submit"
                                     className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50"
-                                    disabled={submitting}
+                                    disabled={submitting || pincodeLoading}
                                 >
                                     {submitting ? "Saving..." : editingStore ? "Update Store" : "Add Store"}
                                 </button>
