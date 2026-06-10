@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Pool } from "pg";
 import bcrypt from "bcryptjs";
+import { ensureAdminLoginVerificationSchema } from "@/lib/auth/admin-login-verification";
+import { ensureInitialPasswordResetSchema } from "@/lib/auth/initial-password-reset";
+import { sendPartnerWelcomeEmail } from "@/lib/email/partner-welcome-email";
 
 export const dynamic = "force-dynamic"
 
@@ -94,13 +97,16 @@ export async function POST(req: NextRequest) {
             }
         }
 
+        await ensureAdminLoginVerificationSchema();
+        await ensureInitialPasswordResetSchema();
+
         // Insert state admin into state_admin table
         // Normalize state name (First letter caps)
         const insertQuery = `
             INSERT INTO state_admin (
-                first_name, last_name, email, password_hash, phone, state, refer_code, is_active, created_at, updated_at
+                first_name, last_name, email, password_hash, phone, state, refer_code, is_active, login_otp_verified, initial_password_reset_completed, created_at, updated_at
             ) VALUES (
-                $1, $2, $3, $4, $5, INITCAP(LOWER($6)), $7, TRUE, NOW(), NOW()
+                $1, $2, $3, $4, $5, INITCAP(LOWER($6)), $7, TRUE, FALSE, FALSE, NOW(), NOW()
             ) RETURNING id, email, first_name, last_name, state, refer_code, is_active
         `;
 
@@ -119,9 +125,20 @@ export async function POST(req: NextRequest) {
         const user = result.rows[0];
         console.log(`State admin created: ${user.email} for state ${user.state}`);
 
+        const emailSent = await sendPartnerWelcomeEmail({
+            role: "state_admin",
+            firstName: user.first_name,
+            lastName: user.last_name,
+            email: user.email,
+            password,
+            referCode: user.refer_code,
+            territory: { state: user.state },
+        });
+
         return NextResponse.json({
             success: true,
             message: "State admin created successfully",
+            emailSent,
             user: {
                 id: user.id,
                 email: user.email,

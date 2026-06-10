@@ -9,7 +9,14 @@ export type ThemeName = 'blue' | 'emerald' | 'violet' | 'rose' | 'amber' | 'slat
 // regardless of any cached user theme. Without this, a previously-logged-in
 // user with the dark theme would see /login (and other auth pages) inherit
 // dark surfaces because <html data-theme="dark"> persists in the DOM.
-const PUBLIC_ROUTES = ['/login', '/register', '/verification-pending', '/forgot-password']
+const PUBLIC_ROUTES = [
+    '/login',
+    '/register',
+    '/verification-pending',
+    '/forgot-password',
+    '/complete-profile',
+    '/reset-initial-password',
+]
 const isPublicRoute = (pathname: string | null) => {
     if (!pathname) return false
     return PUBLIC_ROUTES.some(r => pathname === r || pathname.startsWith(r + '/'))

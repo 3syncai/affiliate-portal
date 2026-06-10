@@ -129,7 +129,12 @@ export default function CreateStateUserPage() {
             })
 
             if (response.data.success) {
-                setSuccess(`State admin created successfully for ${response.data.user.state}!`)
+                const emailNote = response.data.emailSent
+                    ? " Welcome email sent with login details."
+                    : ""
+                setSuccess(
+                    `State admin created successfully for ${response.data.user.state}!${emailNote}`,
+                )
                 setOccupiedStates(prev => [...prev, response.data.user.state.trim().toLowerCase()])
                 setFormData({
                     first_name: "",

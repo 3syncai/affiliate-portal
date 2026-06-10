@@ -77,8 +77,10 @@ export default function CompleteProfilePage() {
         try {
             const parsed = JSON.parse(userData)
             if (parsed?.profile_completed) {
-                // Already done — bounce to the role dashboard so this page
-                // can't be opened by accident from the URL bar.
+                if (parsed?.initial_password_reset_completed !== true) {
+                    router.replace("/reset-initial-password")
+                    return
+                }
                 router.replace(ROLE_CONFIG[storedRole].dashboard)
                 return
             }
@@ -154,12 +156,17 @@ export default function CompleteProfilePage() {
             }
 
             // Persist updated user so layout guards stop redirecting here.
-            const updatedUser = { ...user, ...res.data.user, profile_completed: true }
+            const updatedUser = {
+                ...user,
+                ...res.data.user,
+                profile_completed: true,
+                initial_password_reset_completed: false,
+            }
             localStorage.setItem("affiliate_user", JSON.stringify(updatedUser))
 
-            setSuccess("Profile completed. Redirecting to your dashboard...")
+            setSuccess("Profile completed. Set your permanent password to continue...")
             setTimeout(() => {
-                window.location.href = ROLE_CONFIG[role].dashboard
+                window.location.href = "/reset-initial-password"
             }, 900)
         } catch (err: any) {
             const message =

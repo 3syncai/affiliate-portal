@@ -120,7 +120,12 @@ export default function CreateASMPage() {
             })
 
             if (response.data.success) {
-                setSuccess(`Branch Manager created successfully for ${formData.city}!`)
+                const emailNote = response.data.emailSent
+                    ? " Welcome email sent with login details."
+                    : ""
+                setSuccess(
+                    `Branch Manager created successfully for ${formData.city}!${emailNote}`,
+                )
                 setFormData({
                     first_name: "",
                     last_name: "",

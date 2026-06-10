@@ -49,6 +49,7 @@ type StoredStateAdminUser = {
     first_name?: string
     last_name?: string
     profile_completed?: boolean
+    initial_password_reset_completed?: boolean
 }
 
 export default function StateAdminLayout({
@@ -95,6 +96,10 @@ export default function StateAdminLayout({
             // never flashes between gating and navigation.
             if (parsed?.profile_completed !== true) {
                 router.replace("/complete-profile")
+                return
+            }
+            if (parsed?.initial_password_reset_completed !== true) {
+                router.replace("/reset-initial-password")
                 return
             }
             setUser(parsed as StoredStateAdminUser)
