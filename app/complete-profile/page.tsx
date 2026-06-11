@@ -13,6 +13,14 @@ import {
     LogOut,
     Loader2,
 } from "lucide-react"
+import {
+    formatAadharInput,
+    formatPanInput,
+    normalizeAadhar,
+    normalizePan,
+    validateAadharNumber,
+    validatePanNumber,
+} from "@/lib/kyc-validation"
 
 type SubAdminRole = "state" | "asm" | "branch"
 
@@ -121,6 +129,18 @@ export default function CompleteProfilePage() {
             return
         }
 
+        const panValidation = validatePanNumber(panCardNo)
+        if (!panValidation.valid) {
+            setError(panValidation.message || "Invalid PAN card number.")
+            return
+        }
+
+        const aadharValidation = validateAadharNumber(aadharCardNo)
+        if (!aadharValidation.valid) {
+            setError(aadharValidation.message || "Invalid Aadhar card number.")
+            return
+        }
+
         const token =
             typeof window !== "undefined"
                 ? localStorage.getItem("affiliate_token")
@@ -131,8 +151,8 @@ export default function CompleteProfilePage() {
         }
 
         const formData = new FormData()
-        formData.append("pan_card_no", panCardNo.trim())
-        formData.append("aadhar_card_no", aadharCardNo.trim())
+        formData.append("pan_card_no", normalizePan(panCardNo))
+        formData.append("aadhar_card_no", normalizeAadhar(aadharCardNo))
         formData.append("account_name", accountName.trim())
         formData.append("bank_name", bankName.trim())
         formData.append("bank_branch", bankBranch.trim())
@@ -307,8 +327,16 @@ export default function CompleteProfilePage() {
                                 <Field
                                     label="PAN card number"
                                     value={panCardNo}
-                                    onChange={(v) => setPanCardNo(v.toUpperCase())}
+                                    onChange={(v) => setPanCardNo(formatPanInput(v))}
                                     placeholder="e.g. ABCDE1234F"
+                                    hint="5 letters, 4 digits, 1 letter"
+                                    error={
+                                        panCardNo
+                                            ? validatePanNumber(panCardNo).valid
+                                                ? undefined
+                                                : validatePanNumber(panCardNo).message
+                                            : undefined
+                                    }
                                     required
                                 />
                                 <FileInput
@@ -322,9 +350,17 @@ export default function CompleteProfilePage() {
                                 <Field
                                     label="Aadhar card number"
                                     value={aadharCardNo}
-                                    onChange={setAadharCardNo}
-                                    placeholder="e.g. 1234 5678 9012"
+                                    onChange={(v) => setAadharCardNo(formatAadharInput(v))}
+                                    placeholder="e.g. 2345 6789 0123"
                                     inputMode="numeric"
+                                    hint="12 digits; cannot start with 0 or 1"
+                                    error={
+                                        aadharCardNo
+                                            ? validateAadharNumber(aadharCardNo).valid
+                                                ? undefined
+                                                : validateAadharNumber(aadharCardNo).message
+                                            : undefined
+                                    }
                                     required
                                 />
                                 <FileInput
@@ -374,9 +410,20 @@ type FieldProps = {
     placeholder?: string
     required?: boolean
     inputMode?: "text" | "numeric"
+    hint?: string
+    error?: string
 }
 
-function Field({ label, value, onChange, placeholder, required, inputMode }: FieldProps) {
+function Field({
+    label,
+    value,
+    onChange,
+    placeholder,
+    required,
+    inputMode,
+    hint,
+    error,
+}: FieldProps) {
     return (
         <div>
             <label className="block text-sm font-semibold text-slate-700 mb-2">
@@ -389,8 +436,14 @@ function Field({ label, value, onChange, placeholder, required, inputMode }: Fie
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
                 placeholder={placeholder}
-                className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent placeholder:text-slate-400 text-slate-900"
+                className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent placeholder:text-slate-400 text-slate-900 ${
+                    error ? "border-red-400" : "border-slate-300"
+                }`}
             />
+            {hint && !error && (
+                <p className="mt-1 text-xs text-slate-500">{hint}</p>
+            )}
+            {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
         </div>
     )
 }

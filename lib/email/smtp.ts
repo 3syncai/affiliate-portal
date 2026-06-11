@@ -6,6 +6,7 @@ type SendMailInput = {
   subject: string;
   html: string;
   text: string;
+  attachments?: Mail.Options["attachments"];
 };
 
 let cachedTransport: nodemailer.Transporter | null = null;
@@ -65,5 +66,6 @@ export async function sendMail(input: SendMailInput): Promise<void> {
     subject: input.subject,
     html: input.html,
     text: input.text,
+    attachments: input.attachments,
   });
 }

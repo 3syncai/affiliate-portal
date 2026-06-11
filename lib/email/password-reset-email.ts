@@ -1,4 +1,8 @@
-import { getAppBaseUrl, getLoginUrl, getResetPasswordUrl } from "@/lib/app-url"
+import { getLoginUrl, getResetPasswordUrl } from "@/lib/app-url"
+import {
+  getOwegLogoAttachments,
+  getOwegLogoImgHtml,
+} from "@/lib/email/oweg-logo"
 import { sendMail } from "@/lib/email/smtp"
 
 type PasswordResetEmailInput = {
@@ -18,16 +22,15 @@ function escapeHtml(value: string): string {
 export async function sendPasswordResetEmail(
   input: PasswordResetEmailInput,
 ): Promise<void> {
-  const baseUrl = getAppBaseUrl()
-  const logoUrl = `${baseUrl}/uploads/coin/Oweg3d-400.png`
   const resetUrl = getResetPasswordUrl(input.resetToken)
   const loginUrl = getLoginUrl()
   const safeName = escapeHtml(input.displayName)
+  const logoImg = getOwegLogoImgHtml(120, 120)
 
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 560px; margin: 0 auto; color: #111827;">
       <div style="text-align: center; padding: 24px 0;">
-        <img src="${logoUrl}" alt="OWEG" width="120" style="display: block; margin: 0 auto;" />
+        ${logoImg}
       </div>
       <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px;">
         <h1 style="font-size: 20px; margin: 0 0 12px;">Reset your password</h1>
@@ -71,5 +74,6 @@ export async function sendPasswordResetEmail(
     subject: "Reset your OWEG Partner Portal password",
     html,
     text,
+    attachments: getOwegLogoAttachments(),
   })
 }
