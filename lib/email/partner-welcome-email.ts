@@ -1,4 +1,8 @@
-import { getAppBaseUrl, getLoginUrl } from "@/lib/app-url";
+import { getLoginUrl } from "@/lib/app-url";
+import {
+  getOwegLogoAttachments,
+  getOwegLogoImgHtml,
+} from "@/lib/email/oweg-logo";
 import { sendMail } from "@/lib/email/smtp";
 
 export type PartnerWelcomeRole =
@@ -70,8 +74,8 @@ function buildTerritoryLines(territory?: PartnerWelcomeInput["territory"]) {
 function buildHtml(input: PartnerWelcomeInput): string {
   const labels = ROLE_LABELS[input.role];
   const fullName = `${input.firstName} ${input.lastName}`.trim();
-  const logoUrl = `${getAppBaseUrl()}/uploads/coin/Oweg3d-400.png`;
   const loginUrl = getLoginUrl();
+  const logoImg = getOwegLogoImgHtml();
 
   return `
 <!DOCTYPE html>
@@ -88,7 +92,7 @@ function buildHtml(input: PartnerWelcomeInput): string {
           <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:560px;background:#ffffff;border-radius:16px;border:1px solid #e2e8f0;overflow:hidden;">
             <tr>
               <td style="padding:32px 32px 24px;text-align:center;background:linear-gradient(180deg,#ecfdf5 0%,#ffffff 100%);">
-                <img src="${logoUrl}" alt="OWEG" width="88" height="88" style="display:block;margin:0 auto 16px;" />
+                ${logoImg}
                 <h1 style="margin:0;font-size:22px;line-height:1.3;color:#0f172a;">Welcome to OWEG Partner Portal</h1>
                 <p style="margin:8px 0 0;font-size:14px;color:#64748b;">${escapeHtml(labels.title)} account created</p>
               </td>
@@ -191,6 +195,7 @@ export async function sendPartnerWelcomeEmail(
       subject: labels.subject,
       html: buildHtml(input),
       text: buildText(input),
+      attachments: getOwegLogoAttachments(),
     });
     console.log(`[email] Partner welcome sent to ${input.email} (${input.role})`);
     return true;

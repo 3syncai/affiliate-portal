@@ -2,6 +2,11 @@ import type { Pool } from "pg"
 import { NextRequest, NextResponse } from "next/server"
 import { ensureInitialPasswordResetSchema } from "@/lib/auth/initial-password-reset"
 import {
+    normalizeAadhar,
+    normalizePan,
+    validateKycNumbers,
+} from "@/lib/kyc-validation"
+import {
     uploadSubAdminDocument,
     uploadSubAdminDocumentReplacement,
     deleteFromS3,
@@ -113,6 +118,20 @@ export async function handleCompleteSubAdminProfile(
                 )
             }
             values[field] = value
+        }
+
+        values.pan_card_no = normalizePan(values.pan_card_no)
+        values.aadhar_card_no = normalizeAadhar(values.aadhar_card_no)
+
+        const kycError = validateKycNumbers(
+            values.pan_card_no,
+            values.aadhar_card_no,
+        )
+        if (kycError) {
+            return NextResponse.json(
+                { success: false, message: kycError },
+                { status: 400 },
+            )
         }
 
         const panFile = formData.get("pan_card_photo")
@@ -305,8 +324,10 @@ export async function handleSubAdminKycEdit(
 
         const panNoRaw = formData.get("pan_card_no")
         const aadharNoRaw = formData.get("aadhar_card_no")
-        const panNo = typeof panNoRaw === "string" ? panNoRaw.trim() : ""
-        const aadharNo = typeof aadharNoRaw === "string" ? aadharNoRaw.trim() : ""
+        const panNo = normalizePan(typeof panNoRaw === "string" ? panNoRaw : "")
+        const aadharNo = normalizeAadhar(
+            typeof aadharNoRaw === "string" ? aadharNoRaw : "",
+        )
 
         if (!panNo) {
             return NextResponse.json(
@@ -317,6 +338,14 @@ export async function handleSubAdminKycEdit(
         if (!aadharNo) {
             return NextResponse.json(
                 { success: false, message: "Aadhar card number is required" },
+                { status: 400 }
+            )
+        }
+
+        const kycValidationError = validateKycNumbers(panNo, aadharNo)
+        if (kycValidationError) {
+            return NextResponse.json(
+                { success: false, message: kycValidationError },
                 { status: 400 }
             )
         }

@@ -18,6 +18,15 @@ import {
     ExternalLink,
     AlertCircle,
 } from "lucide-react"
+import {
+    formatAadharInput,
+    formatPanInput,
+    normalizeAadhar,
+    normalizePan,
+    validateAadharNumber,
+    validatePanNumber,
+    validateKycNumbers,
+} from "@/lib/kyc-validation"
 
 const MAX_KYC_FILE_BYTES = 5 * 1024 * 1024
 
@@ -304,14 +313,20 @@ export default function SubAdminKycBankSection({ apiBase, themePrimary }: SubAdm
         e.preventDefault()
         if (!data) return
 
-        const panNo = kycForm.pan_card_no.trim().toUpperCase()
-        const aadharNo = kycForm.aadhar_card_no.trim()
+        const panNo = normalizePan(kycForm.pan_card_no)
+        const aadharNo = normalizeAadhar(kycForm.aadhar_card_no)
         if (!panNo) {
             setKycError("PAN card number is required")
             return
         }
         if (!aadharNo) {
             setKycError("Aadhar card number is required")
+            return
+        }
+
+        const kycValidationError = validateKycNumbers(panNo, aadharNo)
+        if (kycValidationError) {
+            setKycError(kycValidationError)
             return
         }
 
@@ -561,7 +576,16 @@ export default function SubAdminKycBankSection({ apiBase, themePrimary }: SubAdm
                                 numberPlaceholder="ABCDE1234F"
                                 numberValue={kycForm.pan_card_no}
                                 onNumberChange={(v) =>
-                                    setKycForm((prev) => ({ ...prev, pan_card_no: v.toUpperCase() }))
+                                    setKycForm((prev) => ({
+                                        ...prev,
+                                        pan_card_no: formatPanInput(v),
+                                    }))
+                                }
+                                numberError={
+                                    kycForm.pan_card_no &&
+                                    !validatePanNumber(kycForm.pan_card_no).valid
+                                        ? validatePanNumber(kycForm.pan_card_no).message
+                                        : undefined
                                 }
                                 currentPhotoUrl={data.pan_card_photo}
                                 pickedFile={kycForm.panFile}
@@ -578,7 +602,16 @@ export default function SubAdminKycBankSection({ apiBase, themePrimary }: SubAdm
                                 numberPlaceholder="1234 5678 9012"
                                 numberValue={kycForm.aadhar_card_no}
                                 onNumberChange={(v) =>
-                                    setKycForm((prev) => ({ ...prev, aadhar_card_no: v }))
+                                    setKycForm((prev) => ({
+                                        ...prev,
+                                        aadhar_card_no: formatAadharInput(v),
+                                    }))
+                                }
+                                numberError={
+                                    kycForm.aadhar_card_no &&
+                                    !validateAadharNumber(kycForm.aadhar_card_no).valid
+                                        ? validateAadharNumber(kycForm.aadhar_card_no).message
+                                        : undefined
                                 }
                                 currentPhotoUrl={data.aadhar_card_photo}
                                 pickedFile={kycForm.aadharFile}
@@ -654,6 +687,7 @@ type KycEditBlockProps = {
     numberPlaceholder: string
     numberValue: string
     onNumberChange: (value: string) => void
+    numberError?: string
     currentPhotoUrl: string | null
     pickedFile: File | null
     onFilePick: (e: ChangeEvent<HTMLInputElement>) => void
@@ -668,6 +702,7 @@ function KycEditBlock({
     numberPlaceholder,
     numberValue,
     onNumberChange,
+    numberError,
     currentPhotoUrl,
     pickedFile,
     onFilePick,
@@ -693,12 +728,17 @@ function KycEditBlock({
                     placeholder={numberPlaceholder}
                     disabled={disabled}
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono bg-white focus:outline-none focus:ring-2 focus:ring-offset-1 disabled:bg-gray-100"
+                    className={`w-full px-3 py-2 border rounded-lg text-sm font-mono bg-white focus:outline-none focus:ring-2 focus:ring-offset-1 disabled:bg-gray-100 ${
+                        numberError ? "border-red-400" : "border-gray-300"
+                    }`}
                     style={{
                         // @ts-expect-error CSS var for ring color
                         "--tw-ring-color": accent,
                     }}
                 />
+                {numberError && (
+                    <p className="mt-1 text-xs text-red-600">{numberError}</p>
+                )}
             </div>
 
             <div>
