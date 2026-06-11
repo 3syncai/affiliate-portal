@@ -343,6 +343,15 @@ function LoginContent() {
                 </div>
               </div>
 
+              <div className="flex justify-end">
+                <a
+                  href="/forgot-password"
+                  className="text-sm font-semibold text-emerald-600 hover:text-emerald-700"
+                >
+                  Forgot password?
+                </a>
+              </div>
+
               <button
                 type="submit"
                 disabled={loading}
