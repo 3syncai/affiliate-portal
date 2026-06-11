@@ -1084,11 +1084,16 @@ export default function RegisterPage() {
             </form>
 
             {/* Already have account link */}
-            <div className="mt-6 text-center pt-6 border-t border-gray-200">
+            <div className="mt-6 text-center pt-6 border-t border-gray-200 space-y-2">
               <p className="text-gray-600 text-sm">
                 Already have an account?{" "}
                 <a href="/login" className="font-semibold text-emerald-600 hover:text-emerald-700 transition-colors">
                   Sign in here
+                </a>
+              </p>
+              <p className="text-gray-600 text-sm">
+                <a href="/forgot-password" className="font-semibold text-emerald-600 hover:text-emerald-700 transition-colors">
+                  Forgot password?
                 </a>
               </p>
             </div>

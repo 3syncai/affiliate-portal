@@ -14,6 +14,7 @@ const PUBLIC_ROUTES = [
     '/register',
     '/verification-pending',
     '/forgot-password',
+    '/reset-password',
     '/complete-profile',
     '/reset-initial-password',
 ]

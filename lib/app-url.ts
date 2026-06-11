@@ -19,3 +19,7 @@ export function getAppBaseUrl(): string {
 export function getLoginUrl(): string {
   return `${getAppBaseUrl()}/login`;
 }
+
+export function getResetPasswordUrl(token: string): string {
+  return `${getAppBaseUrl()}/reset-password?token=${encodeURIComponent(token)}`;
+}
