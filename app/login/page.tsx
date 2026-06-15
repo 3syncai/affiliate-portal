@@ -1,8 +1,8 @@
-"use client"
+"use client";
 
-import { useState, FormEvent, useEffect, Suspense } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
-import axios from "axios"
+import { useState, FormEvent, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import axios from "axios";
 import {
   Mail,
   Lock,
@@ -12,190 +12,188 @@ import {
   Eye,
   EyeOff,
   Smartphone,
-} from "lucide-react"
-import { BACKEND_URL } from "@/lib/config"
+} from "lucide-react";
+import { BACKEND_URL } from "@/lib/config";
 
 function LoginContent() {
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [showPassword, setShowPassword] = useState(false)
-  const [error, setError] = useState("")
-  const [success, setSuccess] = useState("")
-  const [loading, setLoading] = useState(false)
-  const [otpStep, setOtpStep] = useState(false)
-  const [challengeId, setChallengeId] = useState("")
-  const [maskedPhone, setMaskedPhone] = useState("")
-  const [otp, setOtp] = useState("")
-  const [resendCooldown, setResendCooldown] = useState(0)
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [otpStep, setOtpStep] = useState(false);
+  const [challengeId, setChallengeId] = useState("");
+  const [maskedPhone, setMaskedPhone] = useState("");
+  const [otp, setOtp] = useState("");
+  const [resendCooldown, setResendCooldown] = useState(0);
 
   useEffect(() => {
     if (searchParams.get("registered") === "true") {
-      setSuccess("Registration successful! Please login with your credentials.")
+      setSuccess(
+        "Registration successful! Please login with your credentials.",
+      );
     }
-  }, [searchParams])
+  }, [searchParams]);
 
   useEffect(() => {
-    if (resendCooldown <= 0) return
+    if (resendCooldown <= 0) return;
     const timer = window.setInterval(() => {
-      setResendCooldown((value) => (value > 0 ? value - 1 : 0))
-    }, 1000)
-    return () => window.clearInterval(timer)
-  }, [resendCooldown])
+      setResendCooldown((value) => (value > 0 ? value - 1 : 0));
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [resendCooldown]);
 
   const completeLogin = (data: {
-    token: string
-    user: Record<string, unknown>
-    role: string
-    redirectTo?: string | null
-    is_approved?: boolean
-    initial_password_reset_completed?: boolean
+    token: string;
+    user: Record<string, unknown>;
+    role: string;
+    redirectTo?: string | null;
+    is_approved?: boolean;
+    initial_password_reset_completed?: boolean;
   }) => {
-    localStorage.setItem("affiliate_token", data.token)
-    localStorage.setItem("affiliate_user", JSON.stringify(data.user))
-    localStorage.setItem("affiliate_role", data.role)
+    localStorage.setItem("affiliate_token", data.token);
+    localStorage.setItem("affiliate_user", JSON.stringify(data.user));
+    localStorage.setItem("affiliate_role", data.role);
 
     if (data.role === "admin") {
-      window.location.href = "/admin/dashboard"
-      return
+      window.location.href = "/admin/dashboard";
+      return;
     }
     if (data.role === "state") {
       window.location.href =
         data.redirectTo ||
         (data.initial_password_reset_completed === false
           ? "/reset-initial-password"
-          : "/state-admin/dashboard")
-      return
+          : "/state-admin/dashboard");
+      return;
     }
     if (data.role === "asm") {
       window.location.href =
         data.redirectTo ||
         (data.initial_password_reset_completed === false
           ? "/reset-initial-password"
-          : "/asm/dashboard")
-      return
+          : "/asm/dashboard");
+      return;
     }
     if (data.role === "branch") {
       window.location.href =
         data.redirectTo ||
         (data.initial_password_reset_completed === false
           ? "/reset-initial-password"
-          : "/branch/dashboard")
-      return
+          : "/branch/dashboard");
+      return;
     }
     if (data.redirectTo) {
-      window.location.href = data.redirectTo
-      return
+      window.location.href = data.redirectTo;
+      return;
     }
     if (!data.is_approved) {
-      window.location.href = "/verification-pending"
-      return
+      window.location.href = "/verification-pending";
+      return;
     }
-    window.location.href = "/dashboard"
-  }
+    window.location.href = "/dashboard";
+  };
 
   const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault()
-    setError("")
-    setSuccess("")
-    setLoading(true)
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+    setLoading(true);
 
     try {
-      const response = await axios.post("/api/auth/login", { email, password })
-      const data = response.data
+      const response = await axios.post("/api/auth/login", { email, password });
+      const data = response.data;
 
       if (data.requiresOtp) {
-        setOtpStep(true)
-        setChallengeId(data.challengeId)
-        setMaskedPhone(data.maskedPhone || "")
-        setOtp("")
-        setResendCooldown(data.resendCooldownSeconds || 30)
-        setSuccess(data.message || "OTP sent to your mobile number.")
-        return
+        setOtpStep(true);
+        setChallengeId(data.challengeId);
+        setMaskedPhone(data.maskedPhone || "");
+        setOtp("");
+        setResendCooldown(data.resendCooldownSeconds || 30);
+        setSuccess(data.message || "OTP sent to your mobile number.");
+        return;
       }
 
       if (data.success && data.token) {
-        completeLogin(data)
-        return
+        completeLogin(data);
+        return;
       }
 
-      setError(data.message || "Login failed. Please try again.")
+      setError(data.message || "Login failed. Please try again.");
     } catch (err: unknown) {
-      const message =
-        axios.isAxiosError(err)
-          ? err.response?.data?.message || err.message
-          : "An error occurred. Please try again."
-      setError(message)
+      const message = axios.isAxiosError(err)
+        ? err.response?.data?.message || err.message
+        : "An error occurred. Please try again.";
+      setError(message);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleVerifyOtp = async (e: FormEvent) => {
-    e.preventDefault()
-    setError("")
-    setSuccess("")
-    setLoading(true)
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+    setLoading(true);
 
     try {
       const response = await axios.post("/api/auth/verify-otp", {
         challengeId,
         otp,
-      })
-      const data = response.data
+      });
+      const data = response.data;
 
       if (data.success && data.token) {
-        completeLogin(data)
-        return
+        completeLogin(data);
+        return;
       }
 
-      setError(data.message || "Invalid OTP. Please try again.")
+      setError(data.message || "Invalid OTP. Please try again.");
     } catch (err: unknown) {
-      const message =
-        axios.isAxiosError(err)
-          ? err.response?.data?.message || err.message
-          : "OTP verification failed."
-      setError(message)
+      const message = axios.isAxiosError(err)
+        ? err.response?.data?.message || err.message
+        : "OTP verification failed.";
+      setError(message);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleResendOtp = async () => {
-    if (resendCooldown > 0) return
-    setError("")
-    setSuccess("")
-    setLoading(true)
+    if (resendCooldown > 0) return;
+    setError("");
+    setSuccess("");
+    setLoading(true);
 
     try {
-      const response = await axios.post("/api/auth/resend-otp", { challengeId })
-      const data = response.data
-      setSuccess(data.message || "OTP resent successfully.")
-      setResendCooldown(data.resendCooldownSeconds || 30)
+      const response = await axios.post("/api/auth/resend-otp", {
+        challengeId,
+      });
+      const data = response.data;
+      setSuccess(data.message || "OTP resent successfully.");
+      setResendCooldown(data.resendCooldownSeconds || 30);
     } catch (err: unknown) {
-      const message =
-        axios.isAxiosError(err)
-          ? err.response?.data?.message || err.message
-          : "Failed to resend OTP."
-      setError(message)
+      const message = axios.isAxiosError(err)
+        ? err.response?.data?.message || err.message
+        : "Failed to resend OTP.";
+      setError(message);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleBackToLogin = () => {
-    setOtpStep(false)
-    setChallengeId("")
-    setMaskedPhone("")
-    setOtp("")
-    setResendCooldown(0)
-    setError("")
-    setSuccess("")
-  }
-
-
-
+    setOtpStep(false);
+    setChallengeId("");
+    setMaskedPhone("");
+    setOtp("");
+    setResendCooldown(0);
+    setError("");
+    setSuccess("");
+  };
 
   return (
     <div className="min-h-screen flex">
@@ -225,10 +223,13 @@ function LoginContent() {
               className="h-20 mb-8"
             />
             <h1 className="text-5xl font-bold mb-6 leading-tight">
-              Welcome to<br />Oweg Partners
+              Welcome to
+              <br />
+              Oweg Partners
             </h1>
             <p className="text-xl text-emerald-100 leading-relaxed max-w-md">
-              Join our partner program and start earning commissions by promoting our products.
+              Join our partner program and start earning commissions by
+              promoting our products.
             </p>
           </div>
 
@@ -289,7 +290,10 @@ function LoginContent() {
           {!otpStep ? (
             <form onSubmit={handleSubmit} className="space-y-5">
               <div>
-                <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label
+                  htmlFor="email"
+                  className="block text-sm font-semibold text-gray-700 mb-2"
+                >
                   Email Address
                 </label>
                 <div className="relative">
@@ -311,7 +315,10 @@ function LoginContent() {
               </div>
 
               <div>
-                <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label
+                  htmlFor="password"
+                  className="block text-sm font-semibold text-gray-700 mb-2"
+                >
                   Password
                 </label>
                 <div className="relative">
@@ -373,13 +380,18 @@ function LoginContent() {
           ) : (
             <form onSubmit={handleVerifyOtp} className="space-y-5">
               <div className="rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
-                First-time verification for State Admin, Branch Manager, or Area
-                Sales Manager. Enter the 6-digit OTP sent to{" "}
-                <span className="font-semibold">{maskedPhone || "your mobile"}</span>.
+                Enter the 6-digit OTP sent to{" "}
+                <span className="font-semibold">
+                  {maskedPhone || "your mobile"}
+                </span>
+                .
               </div>
 
               <div>
-                <label htmlFor="otp" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label
+                  htmlFor="otp"
+                  className="block text-sm font-semibold text-gray-700 mb-2"
+                >
                   One-Time Password
                 </label>
                 <div className="relative">
@@ -398,7 +410,9 @@ function LoginContent() {
                     className="block w-full pl-11 pr-4 py-3 border border-gray-300 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all tracking-[0.35em] text-center text-lg font-semibold"
                     placeholder="000000"
                     value={otp}
-                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                    onChange={(e) =>
+                      setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))
+                    }
                   />
                 </div>
               </div>
@@ -463,17 +477,19 @@ function LoginContent() {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="w-8 h-8 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-white">
+          <div className="w-8 h-8 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      }
+    >
       <LoginContent />
     </Suspense>
-  )
+  );
 }
