@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import axios from "axios";
 import useSWR from "swr";
 import Link from "next/link";
@@ -20,10 +20,16 @@ import {
   Download,
   RotateCcw,
   UserCheck,
+  AlertTriangle,
 } from "lucide-react";
 import { useSSE } from "@/hooks/useSSE";
 import { Toast } from "@/components/Toast";
 import { STORE_URL } from "@/lib/config";
+import RecentActivityFeed from "@/components/dashboard/RecentActivityFeed";
+import {
+  mapActivityEventToFeedItem,
+  type ActivityEvent,
+} from "@/lib/recent-activity";
 
 type BranchManagerUser = {
   id?: string;
@@ -51,17 +57,6 @@ function readStoredUser(): BranchManagerUser | null {
     return null;
   }
 }
-
-type Order = {
-  id: string;
-  product_name: string;
-  commission_amount: number;
-  participant_earning?: number;
-  participant_name?: string;
-  your_earning?: number;
-  created_at: string;
-  first_name: string;
-};
 
 type AdditionalCampaign = {
   id: number;
@@ -180,6 +175,7 @@ export default function ASMDashboard() {
 
   const {
     data: statsData,
+    error: statsError,
     mutate: mutateStats,
     isLoading: statsLoading,
   } = useSWR(
@@ -189,13 +185,16 @@ export default function ASMDashboard() {
     fetcher,
   );
 
+  const statsLoadFailed =
+    Boolean(statsError) || (statsData != null && statsData.success === false);
+
   const {
-    data: earningsData,
-    mutate: mutateEarnings,
-    isLoading: earningsLoading,
+    data: activityData,
+    mutate: mutateActivities,
+    isLoading: activitiesLoading,
   } = useSWR(
     user?.city && user?.state
-      ? `/api/asm/earnings?city=${encodeURIComponent(user.city)}&state=${encodeURIComponent(user.state)}${user.id ? `&adminId=${user.id}` : ""}`
+      ? `/api/asm/activity?city=${encodeURIComponent(user.city)}&state=${encodeURIComponent(user.state)}${user.id ? `&adminId=${user.id}` : ""}&limit=5`
       : null,
     fetcher,
   );
@@ -219,15 +218,16 @@ export default function ASMDashboard() {
         overrideRate: 0,
       };
 
-  const stats = {
-    directRate: overview.directRate ?? 0,
-    overrideRate: overview.overrideRate ?? 0,
-    recentActivity: earningsData?.success
-      ? earningsData.recentOrders || []
-      : ([] as Order[]),
-  };
+  const activities: ActivityEvent[] = activityData?.success
+    ? activityData.activities || []
+    : [];
 
-  const loading = statsLoading || earningsLoading;
+  const activityFeedItems = useMemo(
+    () => activities.map(mapActivityEventToFeedItem),
+    [activities],
+  );
+
+  const loading = statsLoading || activitiesLoading;
 
   // Live updates
   const handleUpdate = useCallback(
@@ -239,10 +239,10 @@ export default function ASMDashboard() {
         });
         setShowToast(true);
         mutateStats();
-        mutateEarnings();
+        mutateActivities();
       }
     },
-    [mutateStats, mutateEarnings],
+    [mutateStats, mutateActivities],
   );
 
   const { isConnected } = useSSE({
@@ -320,6 +320,16 @@ export default function ASMDashboard() {
           </div>
         </div>
       </div>
+
+      {statsLoadFailed && (
+        <div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          <AlertTriangle className="h-4 w-4 shrink-0" />
+          <span>
+            Could not load dashboard stats. Refresh the page or try again
+            shortly.
+          </span>
+        </div>
+      )}
 
       {/* Branch Manager overview (/asm route) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -414,75 +424,12 @@ export default function ASMDashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column: Recent Activity */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-green-500"></div>
-            <h2 className="text-lg font-bold text-gray-900">Recent Activity</h2>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 divide-y divide-gray-50">
-            {stats.recentActivity.length === 0 ? (
-              <div className="p-8 text-center text-gray-500">
-                No recent activity found.
-              </div>
-            ) : (
-              stats.recentActivity
-                .slice(0, 5)
-                .map((activity: Order, i: number) => {
-                  const displayName =
-                    activity.participant_name?.trim() ||
-                    activity.first_name ||
-                    "Customer";
-                  const displayAmount =
-                    activity.participant_earning ??
-                    activity.commission_amount ??
-                    0;
-
-                  return (
-                  <div
-                    key={i}
-                    className="p-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center">
-                        <DollarSign className="w-5 h-5 text-blue-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">
-                          <span className="font-bold">
-                            {displayName}
-                          </span>{" "}
-                          generated commission
-                        </p>
-                        <p className="text-xs text-gray-500 line-clamp-1">
-                          {activity.product_name}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-bold text-green-600">
-                        +{formatCurrency(displayAmount)}
-                      </p>
-                      <p className="text-xs text-gray-400">
-                        {new Date(activity.created_at).toLocaleDateString(
-                          "en-IN",
-                          { day: "numeric", month: "short" },
-                        )}
-                      </p>
-                    </div>
-                  </div>
-                );
-                })
-            )}
-            <div className="p-3 text-center border-t border-gray-50">
-              <Link
-                href="/asm/earnings"
-                className="text-xs font-medium text-blue-600 hover:text-blue-700 uppercase tracking-wide"
-              >
-                View Full History
-              </Link>
-            </div>
-          </div>
+        <div className="lg:col-span-2">
+          <RecentActivityFeed
+            items={activityFeedItems}
+            loading={activitiesLoading}
+            viewAllHref="/asm/activity"
+          />
         </div>
 
         {/* Right Column: Referral Code & Quick Actions */}
@@ -520,7 +467,7 @@ export default function ASMDashboard() {
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-emerald-50 rounded-lg p-3 border border-emerald-100 text-center">
                 <p className="text-xl font-bold text-emerald-600">
-                  {stats.directRate}%
+                  {overview.directRate}%
                 </p>
                 <p className="text-[10px] font-bold text-emerald-800/60 uppercase tracking-wide">
                   Direct Sales
@@ -528,7 +475,7 @@ export default function ASMDashboard() {
               </div>
               <div className="bg-blue-50 rounded-lg p-3 border border-blue-100 text-center">
                 <p className="text-xl font-bold text-blue-600">
-                  {stats.overrideRate}%
+                  {overview.overrideRate}%
                 </p>
                 <p className="text-[10px] font-bold text-blue-800/60 uppercase tracking-wide">
                   Team Sales Commission

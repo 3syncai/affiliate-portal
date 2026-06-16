@@ -299,8 +299,8 @@ export async function GET(req: NextRequest) {
                               AND rr.deleted_at IS NULL
                               AND LOWER(COALESCE(rr.status, '')) NOT IN ('rejected','cancelled','canceled')
                         ) THEN 0
-                        ELSE ROUND((acl.commission_amount * $3::numeric) / 100, 2)
-                    END as commission_amount,
+                        ELSE acl.affiliate_commission
+                    END AS commission_amount,
                     acl.created_at,
                     acl.product_name,
                     acl.status,
@@ -312,93 +312,52 @@ export async function GET(req: NextRequest) {
                           AND rr.deleted_at IS NULL
                           AND LOWER(COALESCE(rr.status, '')) NOT IN ('rejected','cancelled','canceled')
                     ) AS has_return,
-                    u.first_name,
-                    u.last_name,
-                    u.refer_code,
-                    s.city,
-                    s.branch_name as branch,
-                    'Team Sales Commission' as type
-                FROM affiliate_commission_log acl
-                JOIN affiliate_user u ON acl.affiliate_code = u.refer_code
-                JOIN stores s ON u.branch ILIKE s.branch_name
-                WHERE s.state ILIKE $1
-                  AND acl.commission_source = 'affiliate'
-            )
-            UNION ALL
-            (
-                SELECT
-                    acl.id,
-                    acl.order_id,
-                    acl.order_amount,
+                    COALESCE(u.first_name, asm.first_name, ba.first_name, 'Customer') AS first_name,
+                    COALESCE(u.last_name, asm.last_name, ba.last_name, '') AS last_name,
+                    COALESCE(u.refer_code, asm.refer_code, ba.refer_code) AS refer_code,
+                    COALESCE(s.city, asm.city, ba.city) AS city,
+                    COALESCE(
+                        s.branch_name,
+                        u.branch,
+                        ba.branch,
+                        TRIM(CONCAT(asm.city, ', ', asm.state))
+                    ) AS branch,
+                    COALESCE(
+                        s.branch_name,
+                        u.branch,
+                        ba.branch,
+                        TRIM(CONCAT(asm.city, ', ', asm.state))
+                    ) AS participant_branch,
                     CASE
-                        WHEN acl.status = 'CANCELLED' THEN 0
-                        WHEN EXISTS (
-                            SELECT 1 FROM return_request rr
-                            WHERE rr.order_id = acl.order_id
-                              AND rr.deleted_at IS NULL
-                              AND LOWER(COALESCE(rr.status, '')) NOT IN ('rejected','cancelled','canceled')
-                        ) THEN 0
-                        ELSE ROUND((acl.commission_amount * $3::numeric) / 100, 2)
-                    END as commission_amount,
-                    acl.created_at,
-                    acl.product_name,
-                    acl.status,
-                    acl.unlock_at,
-                    acl.credited_at,
-                    EXISTS (
-                        SELECT 1 FROM return_request rr
-                        WHERE rr.order_id = acl.order_id
-                          AND rr.deleted_at IS NULL
-                          AND LOWER(COALESCE(rr.status, '')) NOT IN ('rejected','cancelled','canceled')
-                    ) AS has_return,
-                    ba.first_name,
-                    ba.last_name,
-                    ba.refer_code,
-                    ba.city,
-                    ba.branch,
-                    'Team Sales Commission' as type
+                        WHEN se.id IS NOT NULL THEN 'Sales Executive Sale'
+                        WHEN bm_sale.id IS NOT NULL THEN 'Branch Manager Sale'
+                        WHEN ba_row.id IS NOT NULL THEN 'ASM Sale'
+                        ELSE 'Sales Executive Sale'
+                    END AS type
                 FROM affiliate_commission_log acl
-                JOIN branch_admin ba ON acl.affiliate_code = ba.refer_code
-                WHERE ba.state ILIKE $1
-                  AND acl.commission_source = 'branch_admin'
-            )
-            UNION ALL
-            (
-                SELECT
-                    acl.id,
-                    acl.order_id,
-                    acl.order_amount,
-                    CASE
-                        WHEN acl.status = 'CANCELLED' THEN 0
-                        WHEN EXISTS (
-                            SELECT 1 FROM return_request rr
-                            WHERE rr.order_id = acl.order_id
-                              AND rr.deleted_at IS NULL
-                              AND LOWER(COALESCE(rr.status, '')) NOT IN ('rejected','cancelled','canceled')
-                        ) THEN 0
-                        ELSE ROUND((acl.commission_amount * $3::numeric) / 100, 2)
-                    END as commission_amount,
-                    acl.created_at,
-                    acl.product_name,
-                    acl.status,
-                    acl.unlock_at,
-                    acl.credited_at,
-                    EXISTS (
-                        SELECT 1 FROM return_request rr
-                        WHERE rr.order_id = acl.order_id
-                          AND rr.deleted_at IS NULL
-                          AND LOWER(COALESCE(rr.status, '')) NOT IN ('rejected','cancelled','canceled')
-                    ) AS has_return,
-                    asm.first_name,
-                    asm.last_name,
-                    asm.refer_code,
-                    asm.city,
-                    'ASM Direct' as branch,
-                    'Team Sales Commission' as type
-                FROM affiliate_commission_log acl
-                JOIN area_sales_manager asm ON acl.affiliate_code = asm.refer_code
-                WHERE asm.state ILIKE $1
-                  AND acl.commission_source = 'asm_direct'
+                JOIN state_admin sa ON LOWER(TRIM(acl.customer_email)) = LOWER(TRIM(sa.email))
+                LEFT JOIN affiliate_commission_log se
+                    ON se.order_id = acl.order_id
+                    AND se.commission_source = 'affiliate'
+                LEFT JOIN affiliate_user u ON u.refer_code = se.affiliate_code
+                LEFT JOIN stores s ON u.branch ILIKE s.branch_name
+                LEFT JOIN affiliate_commission_log bm_sale
+                    ON bm_sale.order_id = acl.order_id
+                    AND bm_sale.commission_source = 'asm_direct'
+                    AND se.id IS NULL
+                LEFT JOIN area_sales_manager asm
+                    ON LOWER(TRIM(bm_sale.affiliate_code)) = LOWER(TRIM(asm.refer_code))
+                LEFT JOIN affiliate_commission_log ba_row
+                    ON ba_row.order_id = acl.order_id
+                    AND ba_row.commission_source = 'branch_admin'
+                    AND se.id IS NULL
+                    AND bm_sale.id IS NULL
+                LEFT JOIN branch_admin ba ON (
+                    NULLIF(ba_row.affiliate_user_id, '') = ba.id::text
+                    OR LOWER(TRIM(ba_row.affiliate_code)) = LOWER(TRIM(ba.refer_code))
+                )
+                WHERE acl.commission_source = 'state_admin'
+                  AND sa.state ILIKE $1
             )
             UNION ALL
             (
@@ -415,7 +374,7 @@ export async function GET(req: NextRequest) {
                               AND LOWER(COALESCE(rr.status, '')) NOT IN ('rejected','cancelled','canceled')
                         ) THEN 0
                         ELSE acl.affiliate_commission
-                    END as commission_amount,
+                    END AS commission_amount,
                     acl.created_at,
                     acl.product_name,
                     acl.status,
@@ -427,19 +386,20 @@ export async function GET(req: NextRequest) {
                           AND rr.deleted_at IS NULL
                           AND LOWER(COALESCE(rr.status, '')) NOT IN ('rejected','cancelled','canceled')
                     ) AS has_return,
-                    'You' as first_name,
-                    '' as last_name,
-                    acl.affiliate_code as refer_code,
-                    'N/A' as city,
-                    'N/A' as branch,
-                    'Direct' as type
+                    'You' AS first_name,
+                    '' AS last_name,
+                    acl.affiliate_code AS refer_code,
+                    'N/A' AS city,
+                    'Direct' AS branch,
+                    'Direct' AS participant_branch,
+                    'Direct Sale' AS type
                 FROM affiliate_commission_log acl
                 WHERE acl.commission_source = 'state_admin_direct'
                   AND acl.affiliate_code = $2
             )
             ORDER BY created_at DESC
             LIMIT 20
-        `, [state, referCode || "INVALID", commissionRate]);
+        `, [state, referCode || "INVALID"]);
 
         return NextResponse.json({
             success: true,

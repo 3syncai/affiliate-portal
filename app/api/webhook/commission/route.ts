@@ -3,6 +3,7 @@ import pool from "@/lib/db";
 import { sendNotification } from "@/lib/sse";
 import { normalizeCommissionStatus } from "@/lib/commission-status";
 import { applyAdditionalCommissionForOrder } from "@/lib/additional-commission";
+import { resolveBranchAdminForSale } from "@/lib/repair-branch-admin-commissions";
 
 export const dynamic = "force-dynamic";
 
@@ -226,6 +227,15 @@ export async function POST(request: NextRequest) {
                 ]);
                 console.log(`[Hierarchy] Logged Level 1 (Branch Admin) Commission: ₹${affiliateCommission}`);
 
+                if (shouldCreditCommission) {
+                    await pool.query(`
+                        INSERT INTO customer_wallet (customer_id, coins_balance)
+                        SELECT id, $2 FROM branch_admin WHERE id = $1
+                        ON CONFLICT (customer_id)
+                        DO UPDATE SET coins_balance = customer_wallet.coins_balance + $2
+                    `, [branchAdmin.id, affiliateCommission]);
+                }
+
                 // NOTIFY Branch Admin
                 sendNotification(payload.affiliate_code, {
                     type: 'stats_update',
@@ -251,10 +261,10 @@ export async function POST(request: NextRequest) {
                     // Credit Wallet logic
                     await pool.query(`
                         INSERT INTO customer_wallet (customer_id, coins_balance)
-                        SELECT id, $2 FROM affiliate_user WHERE refer_code = $1
-                        ON CONFLICT (customer_id) 
+                        SELECT id, $2 FROM branch_admin WHERE id = $1
+                        ON CONFLICT (customer_id)
                         DO UPDATE SET coins_balance = customer_wallet.coins_balance + $2
-                    `, [payload.affiliate_code, affiliateCommission]);
+                    `, [branchAdmin.id, affiliateCommission]);
 
                     console.log(`[Hierarchy] Updated Level 1 Commission to CREDITED.`);
 
@@ -586,7 +596,7 @@ export async function POST(request: NextRequest) {
 
                 // 1. Fetch Affiliate Details to find their location/branch
                 const affiliateUserRes = await pool.query(`
-                    SELECT id, branch, area, city, state 
+                    SELECT id, branch, area, city, state, approved_by, entry_sponsor
                     FROM affiliate_user 
                     WHERE refer_code = $1
                 `, [payload.affiliate_code]);
@@ -649,21 +659,23 @@ export async function POST(request: NextRequest) {
 
                 // --- B) Pay Branch Admin Override (15%) ---
                 if (affiliateUser && affiliateUser.branch) {
-                    const branchAdminRes = await pool.query(`
-                        SELECT id, refer_code, first_name, last_name, email, city, state FROM branch_admin
-                        WHERE branch = $1
-                    `, [affiliateUser.branch]);
+                    const branchAdmin = await resolveBranchAdminForSale(
+                        pool,
+                        affiliateUser.branch,
+                        affiliateUser.approved_by,
+                        affiliateUser.entry_sponsor,
+                    );
 
-                    if (branchAdminRes.rows.length > 0) {
-                        const branchAdmin = branchAdminRes.rows[0];
+                    if (branchAdmin) {
                         const brRateRes = await pool.query(`SELECT commission_percentage FROM commission_rates WHERE role_type = 'branch'`);
                         const brRate = parseFloat(brRateRes.rows[0]?.commission_percentage || '0');
                         const brCommission = commissionAmount * (brRate / 100);
 
                         const brCheck = await pool.query(`
                             SELECT id, status FROM affiliate_commission_log 
-                            WHERE order_id = $1 AND product_name = $2 AND customer_email = $3 AND commission_source = 'branch_admin'
-                        `, [payload.order_id, payload.product_name, branchAdmin.email]);
+                            WHERE order_id = $1 AND commission_source = 'branch_admin'
+                              AND NULLIF(affiliate_user_id, '') = $2::text
+                        `, [payload.order_id, branchAdmin.id]);
 
                         if (brCheck.rows.length === 0) {
                             await pool.query(`
@@ -684,6 +696,15 @@ export async function POST(request: NextRequest) {
                                 payload.product_id, payload.category_id || null, payload.collection_id || null
                             ]);
                             console.log(`[Hierarchy] Logged Branch Override: ₹${brCommission}`);
+
+                            if (shouldCreditCommission) {
+                                await pool.query(`
+                                    INSERT INTO customer_wallet (customer_id, coins_balance)
+                                    SELECT id, $2 FROM branch_admin WHERE id = $1
+                                    ON CONFLICT (customer_id)
+                                    DO UPDATE SET coins_balance = customer_wallet.coins_balance + $2
+                                `, [branchAdmin.id, brCommission]);
+                            }
 
                             // NOTIFY Branch Admin (Override)
                             sendNotification(branchAdmin.refer_code, {

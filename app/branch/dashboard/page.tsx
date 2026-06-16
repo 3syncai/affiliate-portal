@@ -1,52 +1,35 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import Link from "next/link";
 import {
   Users,
   DollarSign,
   ShoppingBag,
-  CheckCircle,
-  UserPlus,
-  CreditCard,
   Clock,
   ArrowUpRight,
-  MapPin,
   Copy,
   Check,
-  Link2,
-  TrendingDown,
   Share2,
   Wifi,
   WifiOff,
   Download,
   RotateCcw,
   UserCheck,
+  CreditCard,
 } from "lucide-react";
 import axios from "axios";
 import useSWR from "swr";
 import QRCode from "qrcode";
-import { useTheme } from "@/contexts/ThemeContext";
 import { useSSE } from "@/hooks/useSSE";
 import { Toast } from "@/components/Toast";
 import { STORE_URL } from "@/lib/config";
-import { parseServerDate, formatIST } from "@/lib/datetime";
-
-type Activity = {
-  id: string;
-  type: "affiliate_request" | "order" | "approval" | "withdrawal" | "payment";
-  timestamp: string;
-  data: {
-    name: string;
-    action: string;
-    amount?: number;
-    order_id?: string;
-    product_name?: string;
-    commission_amount?: number;
-    status?: string;
-    transaction_id?: string;
-  };
-};
+import { formatIST } from "@/lib/datetime";
+import RecentActivityFeed from "@/components/dashboard/RecentActivityFeed";
+import {
+  mapActivityEventToFeedItem,
+  type ActivityEvent,
+} from "@/lib/recent-activity";
 
 type AdditionalCampaign = {
   id: number;
@@ -61,9 +44,34 @@ type AdditionalCampaign = {
 
 const fetcher = (url: string) => axios.get(url).then((res) => res.data);
 
+type BranchAdminUser = {
+  id?: string;
+  first_name?: string;
+  last_name?: string;
+  email?: string;
+  refer_code?: string;
+  branch?: string;
+};
+
+type SseUpdateMessage = {
+  type?: string;
+  message?: string;
+  amount?: number;
+};
+
+function readStoredUser(): BranchAdminUser | null {
+  if (typeof window === "undefined") return null;
+  const userData = localStorage.getItem("affiliate_user");
+  if (!userData) return null;
+  try {
+    return JSON.parse(userData) as BranchAdminUser;
+  } catch {
+    return null;
+  }
+}
+
 export default function BranchDashboard() {
-  const { theme } = useTheme();
-  const [user, setUser] = useState<any>(null);
+  const [user] = useState<BranchAdminUser | null>(readStoredUser);
   const [copied, setCopied] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState("");
 
@@ -74,13 +82,6 @@ export default function BranchDashboard() {
     amount?: number;
   }>({ message: "" });
 
-  useEffect(() => {
-    const userData = localStorage.getItem("affiliate_user");
-    if (userData) {
-      setUser(JSON.parse(userData));
-    }
-  }, []);
-
   const loadImage = (src: string) =>
     new Promise<HTMLImageElement>((resolve, reject) => {
       const img = new Image();
@@ -89,65 +90,64 @@ export default function BranchDashboard() {
       img.src = src;
     });
 
-  const generateBrandedQr = async (
-    referCode: string,
-    name: string,
-    role: string,
-  ) => {
-    const signupUrl = `${STORE_URL}/signup?ref=${referCode}`;
-    const qrSize = 300;
-    const qrPadding = 20;
-    const canvasWidth = qrSize + qrPadding * 2;
-    const canvasHeight = qrSize + qrPadding * 2 + 68;
-    const canvas = document.createElement("canvas");
-    canvas.width = canvasWidth;
-    canvas.height = canvasHeight;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+  const generateBrandedQr = useCallback(
+    async (referCode: string, name: string, role: string) => {
+      const signupUrl = `${STORE_URL}/signup?ref=${referCode}`;
+      const qrSize = 300;
+      const qrPadding = 20;
+      const canvasWidth = qrSize + qrPadding * 2;
+      const canvasHeight = qrSize + qrPadding * 2 + 68;
+      const canvas = document.createElement("canvas");
+      canvas.width = canvasWidth;
+      canvas.height = canvasHeight;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return null;
 
-    ctx.fillStyle = "#FFFFFF";
-    ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-
-    const qrCanvas = document.createElement("canvas");
-    await QRCode.toCanvas(qrCanvas, signupUrl, {
-      width: qrSize,
-      margin: 2,
-      errorCorrectionLevel: "H",
-      color: { dark: "#000000", light: "#FFFFFF" },
-    });
-    const qrX = qrPadding;
-    const qrY = qrPadding;
-    ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
-
-    try {
-      const logo = await loadImage("/uploads/coin/Oweg3d-400.png");
-      const logoSize = 56;
-      const logoX = qrX + (qrSize - logoSize) / 2;
-      const logoY = qrY + (qrSize - logoSize) / 2;
-      ctx.beginPath();
-      ctx.arc(
-        logoX + logoSize / 2,
-        logoY + logoSize / 2,
-        logoSize / 2 + 8,
-        0,
-        Math.PI * 2,
-      );
       ctx.fillStyle = "#FFFFFF";
-      ctx.fill();
-      ctx.drawImage(logo, logoX, logoY, logoSize, logoSize);
-    } catch (error) {
-      console.error("ASM logo overlay failed:", error);
-    }
+      ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
-    ctx.textAlign = "center";
-    ctx.fillStyle = "#111827";
-    ctx.font = "600 16px Arial";
-    ctx.fillText(name || "ASM User", canvasWidth / 2, qrY + qrSize + 30);
-    ctx.fillStyle = "#4B5563";
-    ctx.font = "500 14px Arial";
-    ctx.fillText(role || "ASM", canvasWidth / 2, qrY + qrSize + 52);
-    setQrDataUrl(canvas.toDataURL("image/png"));
-  };
+      const qrCanvas = document.createElement("canvas");
+      await QRCode.toCanvas(qrCanvas, signupUrl, {
+        width: qrSize,
+        margin: 2,
+        errorCorrectionLevel: "H",
+        color: { dark: "#000000", light: "#FFFFFF" },
+      });
+      const qrX = qrPadding;
+      const qrY = qrPadding;
+      ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
+
+      try {
+        const logo = await loadImage("/uploads/coin/Oweg3d-400.png");
+        const logoSize = 56;
+        const logoX = qrX + (qrSize - logoSize) / 2;
+        const logoY = qrY + (qrSize - logoSize) / 2;
+        ctx.beginPath();
+        ctx.arc(
+          logoX + logoSize / 2,
+          logoY + logoSize / 2,
+          logoSize / 2 + 8,
+          0,
+          Math.PI * 2,
+        );
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fill();
+        ctx.drawImage(logo, logoX, logoY, logoSize, logoSize);
+      } catch (error) {
+        console.error("ASM logo overlay failed:", error);
+      }
+
+      ctx.textAlign = "center";
+      ctx.fillStyle = "#111827";
+      ctx.font = "600 16px Arial";
+      ctx.fillText(name || "ASM User", canvasWidth / 2, qrY + qrSize + 30);
+      ctx.fillStyle = "#4B5563";
+      ctx.font = "500 14px Arial";
+      ctx.fillText(role || "ASM", canvasWidth / 2, qrY + qrSize + 52);
+      return canvas.toDataURL("image/png");
+    },
+    [],
+  );
 
   // SWR Hooks
   const {
@@ -167,7 +167,7 @@ export default function BranchDashboard() {
     isLoading: activitiesLoading,
   } = useSWR(
     user?.branch
-      ? `/api/branch/activity?branch=${encodeURIComponent(user.branch)}`
+      ? `/api/branch/activity?branch=${encodeURIComponent(user.branch)}${user.id ? `&adminId=${user.id}` : ""}&limit=5`
       : null,
     fetcher,
   );
@@ -189,15 +189,20 @@ export default function BranchDashboard() {
         overrideRate: 0,
       };
 
-  const activities: Activity[] = activityData?.success
+  const activities: ActivityEvent[] = activityData?.success
     ? activityData.activities || []
     : [];
+
+  const activityFeedItems = useMemo(
+    () => activities.map(mapActivityEventToFeedItem),
+    [activities],
+  );
 
   const loading = statsLoading || activitiesLoading;
 
   // Real-time updates handler
   const handleUpdate = useCallback(
-    (data: any) => {
+    (data: SseUpdateMessage) => {
       console.log("Live update received:", data);
       if (data.type === "stats_update" || data.type === "payment_received") {
         setToastData({
@@ -220,96 +225,24 @@ export default function BranchDashboard() {
   });
 
   useEffect(() => {
-    const userData = localStorage.getItem("affiliate_user");
-    if (userData) {
-      setUser(JSON.parse(userData));
-    }
-  }, []);
-
-  useEffect(() => {
     if (!user?.refer_code) return;
+
+    let cancelled = false;
     const name =
-      user?.first_name && user?.last_name
+      user.first_name && user.last_name
         ? `${user.first_name} ${user.last_name}`
-        : user?.email || "ASM User";
-    generateBrandedQr(user.refer_code, name, "ASM").catch(console.error);
-  }, [user]);
+        : user.email || "ASM User";
 
-  const formatTimeAgo = (timestamp: string) => {
-    const date = parseServerDate(timestamp);
-    if (!date) return "";
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / (1000 * 60));
-    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    void generateBrandedQr(user.refer_code, name, "ASM")
+      .then((url) => {
+        if (!cancelled && url) setQrDataUrl(url);
+      })
+      .catch(console.error);
 
-    if (diffMins < 1) return "Just now";
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-
-    // Format the date in IST (Asia/Kolkata) so the day boundary is correct
-    // for users regardless of the browser's timezone.
-    const sameYear =
-      now.getFullYear() ===
-      Number(
-        date.toLocaleDateString("en-IN", {
-          year: "numeric",
-          timeZone: "Asia/Kolkata",
-        }),
-      );
-    return date.toLocaleDateString(
-      "en-IN",
-      sameYear
-        ? { month: "short", day: "numeric", timeZone: "Asia/Kolkata" }
-        : {
-            month: "short",
-            day: "numeric",
-            year: "numeric",
-            timeZone: "Asia/Kolkata",
-          },
-    );
-  };
-
-  const getActivityIcon = (type: string) => {
-    switch (type) {
-      case "approval":
-        return {
-          icon: CheckCircle,
-          bgColor: "bg-green-100",
-          iconColor: "text-green-600",
-        };
-      case "affiliate_request":
-        return {
-          icon: UserPlus,
-          bgColor: "bg-orange-100",
-          iconColor: "text-orange-600",
-        };
-      case "order":
-        return {
-          icon: DollarSign,
-          bgColor: "bg-blue-100",
-          iconColor: "text-blue-600",
-        };
-      case "withdrawal":
-        return {
-          icon: CreditCard,
-          bgColor: "bg-purple-100",
-          iconColor: "text-purple-600",
-        };
-      case "payment":
-        return {
-          icon: CreditCard,
-          bgColor: "bg-emerald-100",
-          iconColor: "text-emerald-600",
-        };
-      default:
-        return {
-          icon: Clock,
-          bgColor: "bg-gray-100",
-          iconColor: "text-gray-600",
-        };
-    }
-  };
+    return () => {
+      cancelled = true;
+    };
+  }, [user, generateBrandedQr]);
 
   const copyReferralCode = async () => {
     if (user?.refer_code) {
@@ -468,80 +401,12 @@ export default function BranchDashboard() {
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column: Activity Feed */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Activity Section */}
-          <div>
-            <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2 mb-4">
-              Recent Activity
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 bg-green-500"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-              </span>
-            </h2>
-
-            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
-              <div className="p-0">
-                {activitiesLoading ? (
-                  <div className="flex items-center justify-center py-12">
-                    <div className="w-6 h-6 border-2 border-t-transparent border-gray-300 rounded-full animate-spin"></div>
-                  </div>
-                ) : activities.length === 0 ? (
-                  <div className="text-center py-16">
-                    <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-gray-50 flex items-center justify-center">
-                      <Clock className="w-6 h-6 text-gray-400" />
-                    </div>
-                    <p className="text-gray-500 text-sm">
-                      No recent activity found.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="divide-y divide-gray-100">
-                    {activities.map((activity, idx) => {
-                      const {
-                        icon: ActivityIcon,
-                        bgColor,
-                        iconColor,
-                      } = getActivityIcon(activity.type);
-                      return (
-                        <div
-                          key={activity.id}
-                          className="p-4 hover:bg-gray-50 transition-colors flex items-start gap-4"
-                        >
-                          <div
-                            className={`mt-1 p-2 rounded-full flex-shrink-0 ${bgColor}`}
-                          >
-                            <ActivityIcon className={`w-4 h-4 ${iconColor}`} />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex justify-between items-start">
-                              <p className="text-sm font-medium text-gray-900 truncate">
-                                {activity.data.name}{" "}
-                                <span className="font-normal text-gray-500">
-                                  {activity.data.action}
-                                </span>
-                              </p>
-                              <span className="text-xs text-gray-400 whitespace-nowrap ml-2">
-                                {formatTimeAgo(activity.timestamp)}
-                              </span>
-                            </div>
-                            {activity.type === "order" &&
-                              activity.data.product_name && (
-                                <p className="text-xs text-gray-500 mt-0.5 truncate bg-gray-50 px-2 py-1 rounded w-fit border border-gray-100">
-                                  {activity.data.product_name} •{" "}
-                                  <span className="font-medium">
-                                    #{activity.data.order_id?.slice(-6)}
-                                  </span>
-                                </p>
-                              )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
+        <div className="lg:col-span-2">
+          <RecentActivityFeed
+            items={activityFeedItems}
+            loading={activitiesLoading}
+            viewAllHref="/branch/activity"
+          />
         </div>
 
         {/* Right Column: Referral & Actions */}

@@ -14,6 +14,84 @@ type SyncOptions = {
 // while the row is in this "awaiting credit" state.
 export const COMMISSION_UNLOCK_MINUTES = 5;
 
+type PromotedCommissionRow = {
+    commission_source: string;
+    affiliate_user_id: string | null;
+    affiliate_commission: string | number | null;
+};
+
+async function creditAdminWalletsForPromotedRows(
+    db: Queryable,
+    rows: PromotedCommissionRow[],
+    logPrefix: string,
+) {
+    const branchTotals = new Map<string, number>();
+    const asmTotals = new Map<string, number>();
+    const stateTotals = new Map<string, number>();
+
+    for (const row of rows) {
+        const userId = String(row.affiliate_user_id ?? "").trim();
+        const amount = Number.parseFloat(String(row.affiliate_commission ?? 0)) || 0;
+        if (!userId || amount <= 0) continue;
+
+        if (row.commission_source === "branch_admin") {
+            branchTotals.set(userId, (branchTotals.get(userId) ?? 0) + amount);
+        } else if (
+            row.commission_source === "area_manager" ||
+            row.commission_source === "asm_direct"
+        ) {
+            asmTotals.set(userId, (asmTotals.get(userId) ?? 0) + amount);
+        } else if (
+            row.commission_source === "state_admin" ||
+            row.commission_source === "state_admin_direct"
+        ) {
+            stateTotals.set(userId, (stateTotals.get(userId) ?? 0) + amount);
+        }
+    }
+
+    for (const [userId, amount] of branchTotals) {
+        await db.query(
+            `
+            INSERT INTO customer_wallet (customer_id, coins_balance)
+            VALUES ($1::text, $2)
+            ON CONFLICT (customer_id)
+            DO UPDATE SET coins_balance = customer_wallet.coins_balance + $2
+            `,
+            [userId, amount],
+        );
+    }
+
+    for (const [userId, amount] of asmTotals) {
+        await db.query(
+            `
+            INSERT INTO customer_wallet (customer_id, coins_balance)
+            VALUES ($1::text, $2)
+            ON CONFLICT (customer_id)
+            DO UPDATE SET coins_balance = customer_wallet.coins_balance + $2
+            `,
+            [userId, amount],
+        );
+    }
+
+    for (const [userId, amount] of stateTotals) {
+        await db.query(
+            `
+            INSERT INTO customer_wallet (customer_id, coins_balance)
+            VALUES ($1::text, $2)
+            ON CONFLICT (customer_id)
+            DO UPDATE SET coins_balance = customer_wallet.coins_balance + $2
+            `,
+            [userId, amount],
+        );
+    }
+
+    const credited =
+        branchTotals.size + asmTotals.size + stateTotals.size;
+    if (credited > 0) {
+        console.log(`${logPrefix} credited ${credited} admin wallet(s) after unlock promotion`);
+    }
+}
+
 export async function syncAffiliateCommissionStatuses(db: Queryable, options: SyncOptions) {
     const { affiliateCode, logPrefix } = options;
     try {
@@ -204,14 +282,8 @@ export async function syncAffiliateCommissionStatuses(db: Queryable, options: Sy
             );
         }
 
-        // 3) Promote any PENDING row whose unlock timer has elapsed into
-        //    CREDITED. This is what actually moves the amount into the
-        //    affiliate's wallet balance shown in the dashboard (which is
-        //    derived from `affiliate_commission_log.status='CREDITED'`).
-        //    The customer_wallet table is updated inline by the existing
-        //    webhooks at delivery time, so we deliberately don't touch it
-        //    here to avoid double-crediting.
-        await db.query(
+        // 3) Promote PENDING rows whose unlock timer elapsed, then credit admin wallets.
+        const promotedResult = await db.query(
             `
             UPDATE affiliate_commission_log acl
             SET status = 'CREDITED',
@@ -220,9 +292,18 @@ export async function syncAffiliateCommissionStatuses(db: Queryable, options: Sy
               AND acl.unlock_at IS NOT NULL
               AND acl.unlock_at <= NOW()
               ${affiliateCode ? "AND acl.affiliate_code = $1" : ""}
+            RETURNING acl.commission_source, acl.affiliate_user_id, acl.affiliate_commission
         `,
             params
         );
+
+        if (promotedResult.rows?.length) {
+            await creditAdminWalletsForPromotedRows(
+                db,
+                promotedResult.rows as PromotedCommissionRow[],
+                logPrefix,
+            );
+        }
     } catch (error) {
         console.error(`${logPrefix} status sync failed:`, error);
     }

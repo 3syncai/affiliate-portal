@@ -98,19 +98,15 @@ export async function GET(req: NextRequest) {
         let allOrders: Record<string, unknown>[] = [];
 
         if (adminId) {
-            const recentAffiliateOrdersResult = await pool.query(`
+            const recentOverrideOrdersResult = await pool.query(`
                 SELECT
                     acl.id,
                     acl.order_id,
                     acl.order_amount,
                     CASE
                         WHEN ${RETURN_VOID_SQL} THEN 0
-                        ELSE COALESCE(bm_row.affiliate_commission, 0)
-                    END AS your_earning,
-                    CASE
-                        WHEN ${RETURN_VOID_SQL} THEN 0
                         ELSE acl.affiliate_commission
-                    END AS participant_earning,
+                    END AS your_earning,
                     acl.created_at,
                     acl.product_name,
                     acl.status,
@@ -118,71 +114,43 @@ export async function GET(req: NextRequest) {
                     acl.credited_at,
                     (${COMMISSION_HAS_RETURN_SQL}) AS has_return,
                     acl.commission_source,
-                    u.first_name,
-                    u.last_name,
-                    TRIM(CONCAT(u.first_name, ' ', COALESCE(u.last_name, ''))) AS participant_name,
-                    u.refer_code,
-                    s.city,
-                    u.branch
+                    COALESCE(u.first_name, ba.first_name, 'Customer') AS first_name,
+                    COALESCE(u.last_name, ba.last_name, '') AS last_name,
+                    TRIM(CONCAT(
+                        COALESCE(u.first_name, ba.first_name, 'Customer'),
+                        ' ',
+                        COALESCE(u.last_name, ba.last_name, '')
+                    )) AS participant_name,
+                    COALESCE(u.refer_code, ba.refer_code) AS refer_code,
+                    COALESCE(s.city, ba.city, $2) AS city,
+                    COALESCE(u.branch, ba.branch) AS branch,
+                    COALESCE(u.branch, ba.branch) AS participant_branch,
+                    CASE
+                        WHEN se.id IS NOT NULL THEN 'Sales Executive Sale'
+                        WHEN ba.id IS NOT NULL THEN 'ASM Sale'
+                        ELSE 'Sales Executive Sale'
+                    END AS type
                 FROM affiliate_commission_log acl
-                JOIN affiliate_user u ON acl.affiliate_code = u.refer_code
-                JOIN stores s ON u.branch ILIKE s.branch_name
-                LEFT JOIN affiliate_commission_log bm_row
-                    ON bm_row.order_id = acl.order_id
-                    AND bm_row.commission_source = 'area_manager'
-                    AND NULLIF(bm_row.affiliate_user_id, '') = $3::text
-                WHERE s.city ILIKE $1
-                  AND s.state ILIKE $2
-                  AND acl.commission_source = 'affiliate'
+                LEFT JOIN affiliate_commission_log se
+                    ON se.order_id = acl.order_id
+                    AND se.commission_source = 'affiliate'
+                LEFT JOIN affiliate_user u ON u.refer_code = se.affiliate_code
+                LEFT JOIN stores s ON u.branch ILIKE s.branch_name
+                LEFT JOIN affiliate_commission_log ba_row
+                    ON ba_row.order_id = acl.order_id
+                    AND ba_row.commission_source = 'branch_admin'
+                    AND se.id IS NULL
+                LEFT JOIN branch_admin ba ON NULLIF(ba_row.affiliate_user_id, '') = ba.id::text
+                WHERE acl.commission_source = 'area_manager'
+                  AND NULLIF(acl.affiliate_user_id, '') = $1::text
                 ORDER BY acl.created_at DESC
                 LIMIT 20
-            `, [city, state, adminId]);
+            `, [adminId, city]);
 
-            allOrders = recentAffiliateOrdersResult.rows.map((row) => ({
+            allOrders = recentOverrideOrdersResult.rows.map((row) => ({
                 ...row,
                 commission_amount: row.your_earning,
             }));
-
-            const asmOverrideOrdersResult = await pool.query(`
-                SELECT
-                    acl.id,
-                    acl.order_id,
-                    acl.order_amount,
-                    0 AS your_earning,
-                    CASE
-                        WHEN ${RETURN_VOID_SQL} THEN 0
-                        ELSE acl.affiliate_commission
-                    END AS participant_earning,
-                    acl.created_at,
-                    acl.product_name,
-                    acl.status,
-                    acl.unlock_at,
-                    acl.credited_at,
-                    (${COMMISSION_HAS_RETURN_SQL}) AS has_return,
-                    acl.commission_source,
-                    ba.first_name,
-                    ba.last_name,
-                    TRIM(CONCAT(ba.first_name, ' ', COALESCE(ba.last_name, ''))) AS participant_name,
-                    ba.refer_code,
-                    ba.city,
-                    ba.branch
-                FROM affiliate_commission_log acl
-                JOIN branch_admin ba ON NULLIF(acl.affiliate_user_id, '') = ba.id::text
-                WHERE acl.commission_source = 'branch_admin'
-                  AND ba.city ILIKE $1
-                  AND ba.state ILIKE $2
-                  AND LOWER(TRIM(COALESCE(acl.affiliate_code, ''))) <> LOWER(TRIM(ba.refer_code))
-                ORDER BY acl.created_at DESC
-                LIMIT 20
-            `, [city, state]);
-
-            allOrders = [
-                ...allOrders,
-                ...asmOverrideOrdersResult.rows.map((row) => ({
-                    ...row,
-                    commission_amount: row.your_earning,
-                })),
-            ];
         }
 
         if (adminId && asmReferCode) {
@@ -211,7 +179,8 @@ export async function GET(req: NextRequest) {
                     COALESCE(acl.customer_name, 'Customer') AS participant_name,
                     acl.affiliate_code AS refer_code,
                     $2 AS city,
-                    'BM Direct' AS branch
+                    'BM Direct' AS branch,
+                    'Direct' AS participant_branch
                 FROM affiliate_commission_log acl
                 WHERE acl.commission_source = 'asm_direct'
                   AND (
@@ -236,7 +205,27 @@ export async function GET(req: NextRequest) {
                 new Date(String(b.created_at)).getTime() -
                 new Date(String(a.created_at)).getTime(),
         );
-        allOrders = allOrders.slice(0, 50);
+        allOrders = allOrders.slice(0, 20).map((row) => {
+            const commissionSource = String(row.commission_source ?? "");
+            const isDirect =
+                commissionSource === "asm_direct" || row.branch === "BM Direct";
+            const type =
+                isDirect
+                    ? "Direct Sale"
+                    : String(row.type ?? "") ||
+                      (commissionSource === "area_manager"
+                          ? "Sales Executive Sale"
+                          : "Sales Executive Sale");
+
+            return {
+                ...row,
+                type,
+                participant_branch:
+                    String(row.participant_branch ?? row.branch ?? "").trim() ||
+                    (isDirect ? "Direct" : ""),
+                commission_amount: row.commission_amount ?? row.your_earning,
+            };
+        });
 
         return NextResponse.json({
             success: true,

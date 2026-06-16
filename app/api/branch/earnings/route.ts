@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Pool } from "pg";
 import { fetchCommissionRates } from "@/lib/commission-rates";
 import { syncAffiliateCommissionStatuses } from "@/lib/affiliate-commission-sync";
+import { repairMissingBranchAdminCommissions } from "@/lib/repair-branch-admin-commissions";
 import { COMMISSION_HAS_RETURN_SQL } from "@/lib/dashboard-return-sql";
 import {
     getBranchAdminPersonalEarnings,
@@ -30,10 +31,14 @@ export async function GET(req: NextRequest) {
         }
 
         await syncAffiliateCommissionStatuses(pool, { logPrefix: "[Branch Earnings]" });
+        await repairMissingBranchAdminCommissions(pool, {
+            logPrefix: "[Branch Earnings]",
+            branchFilter: branch || undefined,
+        });
 
         const commissionRates = await fetchCommissionRates(pool);
         const adminDetailsRef = await pool.query(`
-            SELECT ba.refer_code, cr.commission_percentage
+            SELECT ba.refer_code, ba.branch, cr.commission_percentage
             FROM branch_admin ba
             LEFT JOIN commission_rates cr ON cr.role_type = 'branch'
             WHERE ba.id::text = $1::text
@@ -42,30 +47,37 @@ export async function GET(req: NextRequest) {
         let commissionRate = commissionRates.summary.branch.overrideRate;
         const directRate = commissionRates.summary.branch.directRate;
         let referCode = "";
+        let branchTerritory = branch || "";
 
         if (adminDetailsRef.rows.length > 0) {
             commissionRate = Number.parseFloat(
                 String(adminDetailsRef.rows[0].commission_percentage ?? commissionRate),
             ) || commissionRate;
             referCode = adminDetailsRef.rows[0].refer_code || "";
+            branchTerritory = adminDetailsRef.rows[0].branch || branchTerritory;
         }
 
-        const personalEarnings = await getBranchAdminPersonalEarnings(pool, adminId, referCode);
+        const personalEarnings = await getBranchAdminPersonalEarnings(
+            pool,
+            adminId,
+            referCode,
+            branchTerritory,
+        );
 
         const creditedOverrideEarnings = personalEarnings.override.credited;
-        const creditedDirectEarnings = personalEarnings.direct.credited;
         const pendingOverrideEarnings = personalEarnings.override.pending;
+        const creditedDirectEarnings = personalEarnings.direct.credited;
         const pendingDirectEarnings = personalEarnings.direct.pending;
 
         const creditedOverrideOrders = personalEarnings.override.creditedOrders;
-        const creditedDirectOrders = personalEarnings.direct.creditedOrders;
         const pendingOverrideOrders = personalEarnings.override.pendingOrders;
+        const creditedDirectOrders = personalEarnings.direct.creditedOrders;
         const pendingDirectOrders = personalEarnings.direct.pendingOrders;
 
-        const creditedLifetimeEarnings = creditedOverrideEarnings + creditedDirectEarnings;
         const pendingEarnings = pendingOverrideEarnings + pendingDirectEarnings;
-        const totalEarnings = creditedLifetimeEarnings + pendingEarnings;
-
+        const totalEarnings = creditedOverrideEarnings + pendingOverrideEarnings + creditedDirectEarnings + pendingDirectEarnings;
+        const creditedLifetimeEarnings =
+            creditedOverrideEarnings + creditedDirectEarnings;
         const totalOrders =
             creditedOverrideOrders +
             creditedDirectOrders +
@@ -115,6 +127,15 @@ export async function GET(req: NextRequest) {
                 COALESCE(au.last_name, ba.last_name, '') AS last_name,
                 acl.affiliate_code AS refer_code,
                 acl.affiliate_rate,
+                COALESCE(
+                    au.branch,
+                    CASE
+                        WHEN acl.commission_source = 'branch_admin'
+                          AND LOWER(TRIM(COALESCE(acl.affiliate_code, ''))) = LOWER(TRIM($2))
+                        THEN $3
+                        ELSE NULL
+                    END
+                ) AS participant_branch,
                 CASE
                     WHEN acl.commission_source = 'branch_admin'
                       AND LOWER(TRIM(COALESCE(acl.affiliate_code, ''))) = LOWER(TRIM($2))
@@ -130,9 +151,21 @@ export async function GET(req: NextRequest) {
             LEFT JOIN branch_admin ba ON LOWER(TRIM(ba.refer_code)) = LOWER(TRIM(acl.affiliate_code))
             WHERE NULLIF(acl.affiliate_user_id, '') = $1::text
                OR LOWER(TRIM(COALESCE(acl.affiliate_code, ''))) = LOWER(TRIM($2))
+               OR (
+                    acl.commission_source = 'branch_admin'
+                    AND LOWER(TRIM(COALESCE(acl.affiliate_code, ''))) <> LOWER(TRIM($2))
+                    AND EXISTS (
+                        SELECT 1
+                        FROM affiliate_commission_log se
+                        JOIN affiliate_user au2 ON au2.refer_code = se.affiliate_code
+                        WHERE se.order_id = acl.order_id
+                          AND se.commission_source = 'affiliate'
+                          AND au2.branch ILIKE $3
+                    )
+               )
             ORDER BY acl.created_at DESC
             LIMIT 20
-        `, [adminId, referCode]);
+        `, [adminId, referCode, branchTerritory]);
 
         return NextResponse.json({
             success: true,
