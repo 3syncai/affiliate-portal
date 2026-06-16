@@ -10,10 +10,6 @@ import {
   DollarSign,
   ShoppingBag,
   Building2,
-  Wallet,
-  ChevronRight,
-  UserPlus,
-  BarChart3,
   Copy,
   Check,
   Share2,
@@ -25,15 +21,44 @@ import {
   RotateCcw,
   UserCheck,
 } from "lucide-react";
-import { useTheme } from "@/hooks/useTheme";
 import { useSSE } from "@/hooks/useSSE";
 import { Toast } from "@/components/Toast";
 import { STORE_URL } from "@/lib/config";
+
+type BranchManagerUser = {
+  id?: string;
+  first_name?: string;
+  last_name?: string;
+  email?: string;
+  refer_code?: string;
+  city?: string;
+  state?: string;
+};
+
+type SseUpdateMessage = {
+  type?: string;
+  message?: string;
+  amount?: number;
+};
+
+function readStoredUser(): BranchManagerUser | null {
+  if (typeof window === "undefined") return null;
+  const userData = localStorage.getItem("affiliate_user");
+  if (!userData) return null;
+  try {
+    return JSON.parse(userData) as BranchManagerUser;
+  } catch {
+    return null;
+  }
+}
 
 type Order = {
   id: string;
   product_name: string;
   commission_amount: number;
+  participant_earning?: number;
+  participant_name?: string;
+  your_earning?: number;
   created_at: string;
   first_name: string;
 };
@@ -52,8 +77,7 @@ type AdditionalCampaign = {
 const fetcher = (url: string) => axios.get(url).then((res) => res.data);
 
 export default function ASMDashboard() {
-  const { theme } = useTheme();
-  const [user, setUser] = useState<any>(null);
+  const [user] = useState<BranchManagerUser | null>(readStoredUser);
   const [copied, setCopied] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState("");
 
@@ -64,13 +88,6 @@ export default function ASMDashboard() {
     amount?: number;
   }>({ message: "" });
 
-  useEffect(() => {
-    const userData = localStorage.getItem("affiliate_user");
-    if (userData) {
-      setUser(JSON.parse(userData));
-    }
-  }, []);
-
   const loadImage = (src: string) =>
     new Promise<HTMLImageElement>((resolve, reject) => {
       const img = new Image();
@@ -79,77 +96,87 @@ export default function ASMDashboard() {
       img.src = src;
     });
 
-  const generateBrandedQr = async (
-    referCode: string,
-    name: string,
-    role: string,
-  ) => {
-    const signupUrl = `${STORE_URL}/signup?ref=${referCode}`;
-    const qrSize = 300;
-    const qrPadding = 20;
-    const canvasWidth = qrSize + qrPadding * 2;
-    const canvasHeight = qrSize + qrPadding * 2 + 68;
+  const generateBrandedQr = useCallback(
+    async (referCode: string, name: string, role: string) => {
+      const signupUrl = `${STORE_URL}/signup?ref=${referCode}`;
+      const qrSize = 300;
+      const qrPadding = 20;
+      const canvasWidth = qrSize + qrPadding * 2;
+      const canvasHeight = qrSize + qrPadding * 2 + 68;
 
-    const canvas = document.createElement("canvas");
-    canvas.width = canvasWidth;
-    canvas.height = canvasHeight;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+      const canvas = document.createElement("canvas");
+      canvas.width = canvasWidth;
+      canvas.height = canvasHeight;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return null;
 
-    ctx.fillStyle = "#FFFFFF";
-    ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-
-    const qrCanvas = document.createElement("canvas");
-    await QRCode.toCanvas(qrCanvas, signupUrl, {
-      width: qrSize,
-      margin: 2,
-      errorCorrectionLevel: "H",
-      color: { dark: "#000000", light: "#FFFFFF" },
-    });
-
-    const qrX = qrPadding;
-    const qrY = qrPadding;
-    ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
-
-    try {
-      const logo = await loadImage("/uploads/coin/Oweg3d-400.png");
-      const logoSize = 56;
-      const logoX = qrX + (qrSize - logoSize) / 2;
-      const logoY = qrY + (qrSize - logoSize) / 2;
-
-      ctx.beginPath();
-      ctx.arc(
-        logoX + logoSize / 2,
-        logoY + logoSize / 2,
-        logoSize / 2 + 8,
-        0,
-        Math.PI * 2,
-      );
       ctx.fillStyle = "#FFFFFF";
-      ctx.fill();
-      ctx.drawImage(logo, logoX, logoY, logoSize, logoSize);
-    } catch (error) {
-      console.error("Branch logo overlay failed:", error);
-    }
+      ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
-    ctx.textAlign = "center";
-    ctx.fillStyle = "#111827";
-    ctx.font = "600 16px Arial";
-    ctx.fillText(name || "Branch User", canvasWidth / 2, qrY + qrSize + 30);
-    ctx.fillStyle = "#4B5563";
-    ctx.font = "500 14px Arial";
-    ctx.fillText(role || "Branch", canvasWidth / 2, qrY + qrSize + 52);
-    setQrDataUrl(canvas.toDataURL("image/png"));
-  };
+      const qrCanvas = document.createElement("canvas");
+      await QRCode.toCanvas(qrCanvas, signupUrl, {
+        width: qrSize,
+        margin: 2,
+        errorCorrectionLevel: "H",
+        color: { dark: "#000000", light: "#FFFFFF" },
+      });
+
+      const qrX = qrPadding;
+      const qrY = qrPadding;
+      ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
+
+      try {
+        const logo = await loadImage("/uploads/coin/Oweg3d-400.png");
+        const logoSize = 56;
+        const logoX = qrX + (qrSize - logoSize) / 2;
+        const logoY = qrY + (qrSize - logoSize) / 2;
+
+        ctx.beginPath();
+        ctx.arc(
+          logoX + logoSize / 2,
+          logoY + logoSize / 2,
+          logoSize / 2 + 8,
+          0,
+          Math.PI * 2,
+        );
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fill();
+        ctx.drawImage(logo, logoX, logoY, logoSize, logoSize);
+      } catch (error) {
+        console.error("Branch logo overlay failed:", error);
+      }
+
+      ctx.textAlign = "center";
+      ctx.fillStyle = "#111827";
+      ctx.font = "600 16px Arial";
+      ctx.fillText(name || "Branch User", canvasWidth / 2, qrY + qrSize + 30);
+      ctx.fillStyle = "#4B5563";
+      ctx.font = "500 14px Arial";
+      ctx.fillText(role || "Branch", canvasWidth / 2, qrY + qrSize + 52);
+      return canvas.toDataURL("image/png");
+    },
+    [],
+  );
 
   useEffect(() => {
     if (!user?.refer_code) return;
+
+    let cancelled = false;
     const name =
-      user?.first_name && user?.last_name
+      user.first_name && user.last_name
         ? `${user.first_name} ${user.last_name}`
-        : user?.email || "Branch User";
-    generateBrandedQr(user.refer_code, name, "Branch").catch(console.error);
-  }, [user]);
+        : user.email || "Branch User";
+
+    void generateBrandedQr(user.refer_code, name, "Branch")
+      .then((url) => {
+        if (!cancelled && url) setQrDataUrl(url);
+      })
+      .catch(console.error);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user, generateBrandedQr]);
 
   const {
     data: statsData,
@@ -204,7 +231,7 @@ export default function ASMDashboard() {
 
   // Live updates
   const handleUpdate = useCallback(
-    (data: any) => {
+    (data: SseUpdateMessage) => {
       if (data.type === "stats_update" || data.type === "payment_received") {
         setToastData({
           message: data.message || "New activity received!",
@@ -401,7 +428,17 @@ export default function ASMDashboard() {
             ) : (
               stats.recentActivity
                 .slice(0, 5)
-                .map((activity: Order, i: number) => (
+                .map((activity: Order, i: number) => {
+                  const displayName =
+                    activity.participant_name?.trim() ||
+                    activity.first_name ||
+                    "Customer";
+                  const displayAmount =
+                    activity.participant_earning ??
+                    activity.commission_amount ??
+                    0;
+
+                  return (
                   <div
                     key={i}
                     className="p-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
@@ -413,7 +450,7 @@ export default function ASMDashboard() {
                       <div>
                         <p className="text-sm font-medium text-gray-900">
                           <span className="font-bold">
-                            {activity.first_name || "Customer"}
+                            {displayName}
                           </span>{" "}
                           generated commission
                         </p>
@@ -424,7 +461,7 @@ export default function ASMDashboard() {
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-bold text-green-600">
-                        +{formatCurrency(activity.commission_amount || 0)}
+                        +{formatCurrency(displayAmount)}
                       </p>
                       <p className="text-xs text-gray-400">
                         {new Date(activity.created_at).toLocaleDateString(
@@ -434,7 +471,8 @@ export default function ASMDashboard() {
                       </p>
                     </div>
                   </div>
-                ))
+                );
+                })
             )}
             <div className="p-3 text-center border-t border-gray-50">
               <Link

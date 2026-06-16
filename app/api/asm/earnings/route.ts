@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { Pool } from "pg";
 import { fetchCommissionRates } from "@/lib/commission-rates";
 import { syncAffiliateCommissionStatuses } from "@/lib/affiliate-commission-sync";
+import { COMMISSION_HAS_RETURN_SQL } from "@/lib/dashboard-return-sql";
+import { getBmPersonalEarnings } from "@/lib/personal-commission-earnings";
 
 export const dynamic = "force-dynamic";
 
@@ -9,9 +11,10 @@ const toAmount = (value: string | number | null | undefined) => {
     return Number.parseFloat(String(value ?? 0)) || 0;
 };
 
-const toCount = (value: string | number | null | undefined) => {
-    return Number.parseInt(String(value ?? 0), 10) || 0;
-};
+const RETURN_VOID_SQL = `
+    acl.status = 'CANCELLED'
+    OR (${COMMISSION_HAS_RETURN_SQL})
+`;
 
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
@@ -22,8 +25,6 @@ export async function GET(req: NextRequest) {
     if (!city || !state) {
         return NextResponse.json({ success: false, error: "City and State parameters are required" }, { status: 400 });
     }
-
-    console.log(`[ASM API] Fetching earnings for City: ${city}, State: ${state}, AdminID: ${adminId}`);
 
     const pool = new Pool({
         connectionString: process.env.DATABASE_URL || process.env.NEXT_PUBLIC_DATABASE_URL,
@@ -52,72 +53,25 @@ export async function GET(req: NextRequest) {
             }
         }
 
-        const baseStatsResult = await pool.query(`
-            SELECT
-                COALESCE(SUM(CASE WHEN acl.status = 'CREDITED' THEN acl.commission_amount ELSE 0 END), 0) as credited_commission_base,
-                COALESCE(SUM(CASE WHEN acl.status = 'PENDING' THEN acl.commission_amount ELSE 0 END), 0) as pending_commission_base,
-                COUNT(CASE WHEN acl.status = 'CREDITED' THEN 1 END) as credited_orders,
-                COUNT(CASE WHEN acl.status = 'PENDING' THEN 1 END) as pending_orders
-            FROM affiliate_commission_log acl
-            JOIN affiliate_user u ON acl.affiliate_code = u.refer_code
-            JOIN stores s ON u.branch ILIKE s.branch_name
-            WHERE s.city ILIKE $1 AND s.state ILIKE $2
-        `, [city, state]);
-
-        const baseStats = baseStatsResult.rows[0] || {};
-        const creditedAffiliateCommissions = toAmount(baseStats.credited_commission_base);
-        const pendingAffiliateCommissions = toAmount(baseStats.pending_commission_base);
-        const creditedLegacyEarnings = creditedAffiliateCommissions * (commissionRate / 100);
-        const pendingLegacyEarnings = pendingAffiliateCommissions * (commissionRate / 100);
-        const baseCreditedOrders = toCount(baseStats.credited_orders);
-        const basePendingOrders = toCount(baseStats.pending_orders);
-
-        let creditedBranchOverrideEarnings = 0;
-        let pendingBranchOverrideEarnings = 0;
-        let branchOverrideCreditedOrders = 0;
-        let branchOverridePendingOrders = 0;
-
-        if (adminId) {
-            const branchOverrideStatsResult = await pool.query(`
-                SELECT
-                    COALESCE(SUM(CASE WHEN status = 'CREDITED' THEN affiliate_commission ELSE 0 END), 0) as credited_total,
-                    COALESCE(SUM(CASE WHEN status = 'PENDING' THEN affiliate_commission ELSE 0 END), 0) as pending_total,
-                    COUNT(CASE WHEN status = 'CREDITED' THEN 1 END) as credited_count,
-                    COUNT(CASE WHEN status = 'PENDING' THEN 1 END) as pending_count
-                FROM affiliate_commission_log
-                WHERE commission_source = 'area_manager'
-                  AND affiliate_user_id = $1
-            `, [adminId]);
-
-            const branchOverrideStats = branchOverrideStatsResult.rows[0] || {};
-            creditedBranchOverrideEarnings = toAmount(branchOverrideStats.credited_total);
-            pendingBranchOverrideEarnings = toAmount(branchOverrideStats.pending_total);
-            branchOverrideCreditedOrders = toCount(branchOverrideStats.credited_count);
-            branchOverridePendingOrders = toCount(branchOverrideStats.pending_count);
-        }
-
+        let creditedOverrideEarnings = 0;
+        let pendingOverrideEarnings = 0;
+        let overrideCreditedOrders = 0;
+        let overridePendingOrders = 0;
         let creditedDirectEarnings = 0;
         let pendingDirectEarnings = 0;
         let directCreditedOrders = 0;
         let directPendingOrders = 0;
 
-        if (adminId && asmReferCode) {
-            const directStatsResult = await pool.query(`
-                SELECT
-                    COALESCE(SUM(CASE WHEN status = 'CREDITED' THEN affiliate_commission ELSE 0 END), 0) as credited_total,
-                    COALESCE(SUM(CASE WHEN status = 'PENDING' THEN affiliate_commission ELSE 0 END), 0) as pending_total,
-                    COUNT(CASE WHEN status = 'CREDITED' THEN 1 END) as credited_count,
-                    COUNT(CASE WHEN status = 'PENDING' THEN 1 END) as pending_count
-                FROM affiliate_commission_log
-                WHERE commission_source = 'asm_direct'
-                  AND (affiliate_user_id = $1 OR affiliate_code = $2)
-            `, [adminId, asmReferCode]);
-
-            const directStats = directStatsResult.rows[0] || {};
-            creditedDirectEarnings = toAmount(directStats.credited_total);
-            pendingDirectEarnings = toAmount(directStats.pending_total);
-            directCreditedOrders = toCount(directStats.credited_count);
-            directPendingOrders = toCount(directStats.pending_count);
+        if (adminId) {
+            const bmEarnings = await getBmPersonalEarnings(pool, adminId, asmReferCode);
+            creditedOverrideEarnings = bmEarnings.override.credited;
+            pendingOverrideEarnings = bmEarnings.override.pending;
+            overrideCreditedOrders = bmEarnings.override.creditedOrders;
+            overridePendingOrders = bmEarnings.override.pendingOrders;
+            creditedDirectEarnings = bmEarnings.direct.credited;
+            pendingDirectEarnings = bmEarnings.direct.pending;
+            directCreditedOrders = bmEarnings.direct.creditedOrders;
+            directPendingOrders = bmEarnings.direct.pendingOrders;
         }
 
         let paidAmount = 0;
@@ -130,105 +84,105 @@ export async function GET(req: NextRequest) {
             paidAmount = toAmount(paidResult.rows[0]?.total_paid);
         }
 
-        const creditedFromBranch = creditedLegacyEarnings + creditedBranchOverrideEarnings;
-        const pendingFromBranch = pendingLegacyEarnings + pendingBranchOverrideEarnings;
+        const creditedFromBranch = creditedOverrideEarnings;
+        const pendingFromBranch = pendingOverrideEarnings;
         const creditedLifetimeEarnings = creditedFromBranch + creditedDirectEarnings;
         const pendingEarnings = pendingFromBranch + pendingDirectEarnings;
         const totalLifetimeEarnings = creditedLifetimeEarnings + pendingEarnings;
 
-        const ordersFromBranch = baseCreditedOrders + basePendingOrders + branchOverrideCreditedOrders + branchOverridePendingOrders;
+        const ordersFromBranch = overrideCreditedOrders + overridePendingOrders;
         const ordersFromDirect = directCreditedOrders + directPendingOrders;
         const totalOrders = ordersFromBranch + ordersFromDirect;
         const currentEarnings = creditedLifetimeEarnings - paidAmount;
 
-        const recentAffiliateOrdersResult = await pool.query(`
-            SELECT
-                acl.id,
-                acl.order_id,
-                acl.order_amount,
-                CASE
-                    WHEN acl.status = 'CANCELLED' THEN 0
-                    WHEN EXISTS (
-                        SELECT 1 FROM return_request rr
-                        WHERE rr.order_id = acl.order_id
-                          AND rr.deleted_at IS NULL
-                          AND LOWER(COALESCE(rr.status, '')) NOT IN ('rejected','cancelled','canceled')
-                    ) THEN 0
-                    ELSE ROUND((acl.commission_amount * $3::numeric) / 100, 2)
-                END as commission_amount,
-                acl.created_at,
-                acl.product_name,
-                acl.status,
-                acl.unlock_at,
-                acl.credited_at,
-                EXISTS (
-                    SELECT 1 FROM return_request rr
-                    WHERE rr.order_id = acl.order_id
-                      AND rr.deleted_at IS NULL
-                      AND LOWER(COALESCE(rr.status, '')) NOT IN ('rejected','cancelled','canceled')
-                ) AS has_return,
-                acl.commission_source,
-                u.first_name,
-                u.last_name,
-                u.refer_code,
-                s.city,
-                u.branch
-            FROM affiliate_commission_log acl
-            JOIN affiliate_user u ON acl.affiliate_code = u.refer_code
-            JOIN stores s ON u.branch ILIKE s.branch_name
-            WHERE s.city ILIKE $1 AND s.state ILIKE $2
-            ORDER BY acl.created_at DESC
-            LIMIT 20
-        `, [city, state, commissionRate]);
-
-        let allOrders = recentAffiliateOrdersResult.rows;
+        let allOrders: Record<string, unknown>[] = [];
 
         if (adminId) {
-            const branchOverrideOrdersResult = await pool.query(`
+            const recentAffiliateOrdersResult = await pool.query(`
                 SELECT
-                    acl_asm.id,
-                    acl_asm.order_id,
-                    acl_asm.order_amount,
+                    acl.id,
+                    acl.order_id,
+                    acl.order_amount,
                     CASE
-                        WHEN acl_asm.status = 'CANCELLED' THEN 0
-                        WHEN EXISTS (
-                            SELECT 1 FROM return_request rr
-                            WHERE rr.order_id = acl_asm.order_id
-                              AND rr.deleted_at IS NULL
-                              AND LOWER(COALESCE(rr.status, '')) NOT IN ('rejected','cancelled','canceled')
-                        ) THEN 0
-                        ELSE acl_asm.affiliate_commission
-                    END as commission_amount,
-                    acl_asm.created_at,
-                    acl_asm.product_name,
-                    acl_asm.status,
-                    acl_asm.unlock_at,
-                    acl_asm.credited_at,
-                    EXISTS (
-                        SELECT 1 FROM return_request rr
-                        WHERE rr.order_id = acl_asm.order_id
-                          AND rr.deleted_at IS NULL
-                          AND LOWER(COALESCE(rr.status, '')) NOT IN ('rejected','cancelled','canceled')
-                    ) AS has_return,
-                    acl_asm.commission_source,
-                    COALESCE(ba.first_name, 'Unknown') as first_name,
-                    COALESCE(ba.last_name, 'Branch Admin') as last_name,
-                    COALESCE(ba.refer_code, 'DIRECT') as refer_code,
-                    COALESCE(ba.city, $2) as city,
-                    COALESCE(ba.branch, 'Direct Assigned') as branch
-                FROM affiliate_commission_log acl_asm
-                LEFT JOIN affiliate_commission_log acl_branch
-                    ON acl_asm.order_id = acl_branch.order_id
-                    AND acl_branch.commission_source = 'branch_admin'
-                LEFT JOIN branch_admin ba
-                    ON acl_branch.affiliate_user_id = ba.id::text
-                WHERE acl_asm.commission_source = 'area_manager'
-                  AND acl_asm.affiliate_user_id = $1
-                ORDER BY acl_asm.created_at DESC
+                        WHEN ${RETURN_VOID_SQL} THEN 0
+                        ELSE COALESCE(bm_row.affiliate_commission, 0)
+                    END AS your_earning,
+                    CASE
+                        WHEN ${RETURN_VOID_SQL} THEN 0
+                        ELSE acl.affiliate_commission
+                    END AS participant_earning,
+                    acl.created_at,
+                    acl.product_name,
+                    acl.status,
+                    acl.unlock_at,
+                    acl.credited_at,
+                    (${COMMISSION_HAS_RETURN_SQL}) AS has_return,
+                    acl.commission_source,
+                    u.first_name,
+                    u.last_name,
+                    TRIM(CONCAT(u.first_name, ' ', COALESCE(u.last_name, ''))) AS participant_name,
+                    u.refer_code,
+                    s.city,
+                    u.branch
+                FROM affiliate_commission_log acl
+                JOIN affiliate_user u ON acl.affiliate_code = u.refer_code
+                JOIN stores s ON u.branch ILIKE s.branch_name
+                LEFT JOIN affiliate_commission_log bm_row
+                    ON bm_row.order_id = acl.order_id
+                    AND bm_row.commission_source = 'area_manager'
+                    AND NULLIF(bm_row.affiliate_user_id, '') = $3::text
+                WHERE s.city ILIKE $1
+                  AND s.state ILIKE $2
+                  AND acl.commission_source = 'affiliate'
+                ORDER BY acl.created_at DESC
                 LIMIT 20
-            `, [adminId, city]);
+            `, [city, state, adminId]);
 
-            allOrders = [...allOrders, ...branchOverrideOrdersResult.rows];
+            allOrders = recentAffiliateOrdersResult.rows.map((row) => ({
+                ...row,
+                commission_amount: row.your_earning,
+            }));
+
+            const asmOverrideOrdersResult = await pool.query(`
+                SELECT
+                    acl.id,
+                    acl.order_id,
+                    acl.order_amount,
+                    0 AS your_earning,
+                    CASE
+                        WHEN ${RETURN_VOID_SQL} THEN 0
+                        ELSE acl.affiliate_commission
+                    END AS participant_earning,
+                    acl.created_at,
+                    acl.product_name,
+                    acl.status,
+                    acl.unlock_at,
+                    acl.credited_at,
+                    (${COMMISSION_HAS_RETURN_SQL}) AS has_return,
+                    acl.commission_source,
+                    ba.first_name,
+                    ba.last_name,
+                    TRIM(CONCAT(ba.first_name, ' ', COALESCE(ba.last_name, ''))) AS participant_name,
+                    ba.refer_code,
+                    ba.city,
+                    ba.branch
+                FROM affiliate_commission_log acl
+                JOIN branch_admin ba ON NULLIF(acl.affiliate_user_id, '') = ba.id::text
+                WHERE acl.commission_source = 'branch_admin'
+                  AND ba.city ILIKE $1
+                  AND ba.state ILIKE $2
+                  AND LOWER(TRIM(COALESCE(acl.affiliate_code, ''))) <> LOWER(TRIM(ba.refer_code))
+                ORDER BY acl.created_at DESC
+                LIMIT 20
+            `, [city, state]);
+
+            allOrders = [
+                ...allOrders,
+                ...asmOverrideOrdersResult.rows.map((row) => ({
+                    ...row,
+                    commission_amount: row.your_earning,
+                })),
+            ];
         }
 
         if (adminId && asmReferCode) {
@@ -238,49 +192,55 @@ export async function GET(req: NextRequest) {
                     acl.order_id,
                     acl.order_amount,
                     CASE
-                        WHEN acl.status = 'CANCELLED' THEN 0
-                        WHEN EXISTS (
-                            SELECT 1 FROM return_request rr
-                            WHERE rr.order_id = acl.order_id
-                              AND rr.deleted_at IS NULL
-                              AND LOWER(COALESCE(rr.status, '')) NOT IN ('rejected','cancelled','canceled')
-                        ) THEN 0
+                        WHEN ${RETURN_VOID_SQL} THEN 0
                         ELSE acl.affiliate_commission
-                    END as commission_amount,
+                    END AS your_earning,
+                    CASE
+                        WHEN ${RETURN_VOID_SQL} THEN 0
+                        ELSE acl.affiliate_commission
+                    END AS participant_earning,
                     acl.created_at,
                     acl.product_name,
                     acl.status,
                     acl.unlock_at,
                     acl.credited_at,
-                    EXISTS (
-                        SELECT 1 FROM return_request rr
-                        WHERE rr.order_id = acl.order_id
-                          AND rr.deleted_at IS NULL
-                          AND LOWER(COALESCE(rr.status, '')) NOT IN ('rejected','cancelled','canceled')
-                    ) AS has_return,
+                    (${COMMISSION_HAS_RETURN_SQL}) AS has_return,
                     acl.commission_source,
-                    acl.customer_name as first_name,
-                    '' as last_name,
-                    acl.affiliate_code as refer_code,
-                    $2 as city,
-                    'ASM Direct' as branch
+                    acl.customer_name AS first_name,
+                    '' AS last_name,
+                    COALESCE(acl.customer_name, 'Customer') AS participant_name,
+                    acl.affiliate_code AS refer_code,
+                    $2 AS city,
+                    'BM Direct' AS branch
                 FROM affiliate_commission_log acl
                 WHERE acl.commission_source = 'asm_direct'
-                  AND (acl.affiliate_user_id = $1 OR acl.affiliate_code = $3)
+                  AND (
+                    NULLIF(acl.affiliate_user_id, '') = $1::text
+                    OR LOWER(TRIM(COALESCE(acl.affiliate_code, ''))) = LOWER(TRIM($3))
+                  )
                 ORDER BY acl.created_at DESC
                 LIMIT 20
             `, [adminId, city, asmReferCode]);
 
-            allOrders = [...allOrders, ...asmDirectOrdersResult.rows];
+            allOrders = [
+                ...allOrders,
+                ...asmDirectOrdersResult.rows.map((row) => ({
+                    ...row,
+                    commission_amount: row.your_earning,
+                })),
+            ];
         }
 
-        allOrders.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        allOrders.sort(
+            (a, b) =>
+                new Date(String(b.created_at)).getTime() -
+                new Date(String(a.created_at)).getTime(),
+        );
         allOrders = allOrders.slice(0, 50);
 
         return NextResponse.json({
             success: true,
             stats: {
-                totalAffiliateCommissions: creditedAffiliateCommissions + pendingAffiliateCommissions,
                 totalOrders,
                 commissionRate,
                 overrideRate: commissionRate,
@@ -296,15 +256,15 @@ export async function GET(req: NextRequest) {
                 pendingFromBranch,
                 pendingFromDirect: pendingDirectEarnings,
                 ordersFromBranch,
-                ordersFromDirect
+                ordersFromDirect,
             },
-            recentOrders: allOrders
+            recentOrders: allOrders,
         });
     } catch (error: unknown) {
         console.error("Failed to fetch ASM earnings:", error);
         return NextResponse.json({
             success: false,
-            error: error instanceof Error ? error.message : "Unknown error"
+            error: error instanceof Error ? error.message : "Unknown error",
         }, { status: 500 });
     } finally {
         await pool.end();

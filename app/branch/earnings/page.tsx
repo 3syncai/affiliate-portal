@@ -71,7 +71,9 @@ export default function EarningsPage() {
     const [toastData, setToastData] = useState<{ message: string; amount?: number }>({ message: "" })
 
     const { data, mutate, isLoading } = useSWR(
-        user?.branch ? `/api/branch/earnings?branch=${encodeURIComponent(user.branch)}${user.id ? `&adminId=${user.id}` : ''}` : null,
+        user?.branch && user?.id
+            ? `/api/branch/earnings?branch=${encodeURIComponent(user.branch)}&adminId=${encodeURIComponent(user.id)}`
+            : null,
         fetcher,
         { refreshInterval: 5000, revalidateOnFocus: true, keepPreviousData: true }
     )

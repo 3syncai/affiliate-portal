@@ -36,6 +36,9 @@ type Order = {
     branch: string
     commission_source?: string
     commission_amount?: number
+    your_earning?: number
+    participant_earning?: number
+    participant_name?: string
     status?: string
     unlock_at?: string | null
     credited_at?: string | null
@@ -358,7 +361,7 @@ export default function ASMEarningsPage() {
                                             </td>
                                             <td className="px-6 py-4 text-right">
                                                 <span className={`text-sm font-bold ${cancelledOrReturned ? 'text-gray-400 line-through' : 'text-gray-900'}`}>
-                                                    {formatCurrency(Number(order.commission_amount) || 0)}
+                                                    {formatCurrency(Number(order.your_earning ?? order.commission_amount) || 0)}
                                                 </span>
                                             </td>
                                         </tr>

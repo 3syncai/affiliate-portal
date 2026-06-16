@@ -130,8 +130,8 @@ export default function BranchLayout({
         swrOpts
     )
     const { data: earningsData } = useSWR(
-        user?.branch
-            ? `/api/branch/earnings?branch=${encodeURIComponent(user.branch)}${user.id ? `&adminId=${user.id}` : ""}`
+        user?.branch && user?.id
+            ? `/api/branch/earnings?branch=${encodeURIComponent(user.branch)}&adminId=${encodeURIComponent(user.id)}`
             : null,
         fetcher,
         swrOpts

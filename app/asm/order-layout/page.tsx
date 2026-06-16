@@ -100,7 +100,7 @@ export default function OrderLayoutPage() {
     const headers = [
       "Order ID", "Date", "Sale By Name", "Sale By Code",
       "Product", "Quantity", "Item Price", "Order Amount",
-      "Partner Earned", "Branch Earned", "ASM Earned", "Status"
+      "Partner Earned", "ASM Earned", "Branch Manager Earned", "Status"
     ]
     const rows = filteredOrders.map(o => [
       o.order_id,
@@ -411,8 +411,8 @@ export default function OrderLayoutPage() {
                     <th className="px-3 py-2.5 text-right text-[10px] font-bold text-gray-500 uppercase tracking-wider">Qty</th>
                     <th className="px-3 py-2.5 text-right text-[10px] font-bold text-gray-500 uppercase tracking-wider">Amount</th>
                     <th className="px-3 py-2.5 text-right text-[10px] font-bold text-gray-500 uppercase tracking-wider">Partner</th>
-                    <th className="px-3 py-2.5 text-right text-[10px] font-bold text-gray-500 uppercase tracking-wider">Branch</th>
-                    <th className="px-3 py-2.5 text-right text-[10px] font-bold text-emerald-600 uppercase tracking-wider">ASM</th>
+                    <th className="px-3 py-2.5 text-right text-[10px] font-bold text-gray-500 uppercase tracking-wider">ASM</th>
+                    <th className="px-3 py-2.5 text-right text-[10px] font-bold text-emerald-600 uppercase tracking-wider">BM</th>
                     <th className="px-3 py-2.5 text-center text-[10px] font-bold text-gray-500 uppercase tracking-wider">Status</th>
                     <th className="px-3 py-2.5 text-right text-[10px] font-bold text-gray-500 uppercase tracking-wider">Action</th>
                   </tr>
@@ -492,7 +492,7 @@ export default function OrderLayoutPage() {
                     <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Order Amount</th>
                     <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Sales Executive Earned</th>
                     <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">ASM Earned</th>
-                    <th className="px-4 py-3 text-right text-xs font-bold text-blue-600 uppercase tracking-wider">Branch Earned</th>
+                    <th className="px-4 py-3 text-right text-xs font-bold text-blue-600 uppercase tracking-wider">Branch Manager Earned</th>
                     <th className="px-4 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
                     <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Actions</th>
                   </tr>
@@ -648,11 +648,11 @@ export default function OrderLayoutPage() {
                     <p className="text-xl md:text-2xl font-bold text-gray-700 tabular-nums">{selectedOrder.affiliate_earned > 0 ? formatCurrency(selectedOrder.affiliate_earned) : "-"}</p>
                   </div>
                   <div className="bg-gray-50 border border-gray-200 p-4 rounded-xl">
-                    <p className="text-xs text-gray-600 font-bold uppercase mb-2">Branch Earning</p>
+                    <p className="text-xs text-gray-600 font-bold uppercase mb-2">ASM Earning</p>
                     <p className="text-xl md:text-2xl font-bold text-gray-700 tabular-nums">{selectedOrder.branch_earned > 0 ? formatCurrency(selectedOrder.branch_earned) : "-"}</p>
                   </div>
                   <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-xl">
-                    <p className="text-xs text-emerald-700 font-bold uppercase mb-2">ASM Earning</p>
+                    <p className="text-xs text-emerald-700 font-bold uppercase mb-2">Branch Manager Earning</p>
                     <p className="text-xl md:text-2xl font-bold text-emerald-600 tabular-nums">
                       {selectedOrder.asm_earned > 0
                         ? formatCurrency(selectedOrder.asm_earned)
