@@ -8,7 +8,8 @@ import useSWR from 'swr'
 import { DollarSign, User, Users, ShoppingBag, Wallet, CheckCircle2, AlertCircle, Wifi, WifiOff } from "lucide-react"
 import { useSSE } from "@/hooks/useSSE"
 import { Toast } from "@/components/Toast"
-import CommissionStatusBadge from "@/app/components/CommissionStatusBadge"
+import RecentTransactionsTable from "@/components/earnings/RecentTransactionsTable"
+import { mapBmEarningsOrder } from "@/lib/transaction-display"
 
 type DashboardUser = {
     id?: string
@@ -34,8 +35,13 @@ type Order = {
     refer_code: string
     city: string
     branch: string
+    participant_branch?: string
     commission_source?: string
+    type?: string
     commission_amount?: number
+    your_earning?: number
+    participant_earning?: number
+    participant_name?: string
     status?: string
     unlock_at?: string | null
     credited_at?: string | null
@@ -114,6 +120,11 @@ export default function ASMEarningsPage() {
             : listFilter === "pending"
               ? "Pending commission only"
               : null
+
+    const transactionRows = useMemo(
+        () => displayedOrders.map(mapBmEarningsOrder),
+        [displayedOrders],
+    )
 
     const loading = isLoading
 
@@ -295,80 +306,11 @@ export default function ASMEarningsPage() {
                 </div>
             </div>
 
-            {/* Transaction Table */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
-                    <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider">Recent Transactions</h2>
-                    <span className="text-xs font-medium text-gray-500 border border-gray-200 px-2 py-1 rounded">Last 10 records</span>
-                </div>
-
-                <div className="overflow-x-auto">
-                    <table className="min-w-full">
-                        <thead className="bg-gray-50/50">
-                            <tr>
-                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider w-32">Date</th>
-                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider w-40">Type</th>
-                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Details</th>
-                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Customer/Branch</th>
-                                <th className="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Your Earning</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100">
-                            {displayedOrders.length === 0 ? (
-                                <tr>
-                                    <td colSpan={5} className="px-6 py-12 text-center text-gray-500 text-sm">
-                                        {filterLabel
-                                            ? `No transactions match this filter (${filterLabel.toLowerCase()}).`
-                                            : "No transactions found."}
-                                    </td>
-                                </tr>
-                            ) : (
-                                displayedOrders.map((order) => {
-                                    const isDirect = order.commission_source === 'asm_direct' || order.branch === 'ASM Direct'
-                                    const typeLabel = isDirect ? 'Direct Sale' : 'Team Sales Commission'
-                                    const typeColor = isDirect
-                                        ? 'bg-emerald-100 text-emerald-700'
-                                        : 'bg-gray-100 text-gray-700'
-                                    const cancelledOrReturned = order.has_return || order.status === 'CANCELLED'
-
-                                    return (
-                                        <tr key={order.id} className="hover:bg-gray-50/30 transition-colors">
-                                            <td className="px-6 py-4 text-sm text-gray-500">
-                                                {new Date(order.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <span className={`text-[11px] uppercase font-bold px-2.5 py-1 rounded-md ${typeColor}`}>
-                                                    {typeLabel}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <div className="text-sm font-medium text-gray-900 line-clamp-1">{order.product_name}</div>
-                                                <div className="flex items-center gap-2 mt-1">
-                                                    <div className="text-xs text-gray-400">#{order.order_id}</div>
-                                                    <CommissionStatusBadge
-                                                        status={order.status || ''}
-                                                        unlockAt={order.unlock_at}
-                                                        hasReturn={order.has_return}
-                                                    />
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <div className="text-sm text-gray-900">{order.first_name || 'Customer'}</div>
-                                                <div className="text-xs text-gray-400 mt-0.5 uppercase">{isDirect ? order.refer_code : order.branch}</div>
-                                            </td>
-                                            <td className="px-6 py-4 text-right">
-                                                <span className={`text-sm font-bold ${cancelledOrReturned ? 'text-gray-400 line-through' : 'text-gray-900'}`}>
-                                                    {formatCurrency(Number(order.commission_amount) || 0)}
-                                                </span>
-                                            </td>
-                                        </tr>
-                                    )
-                                })
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+            <RecentTransactionsTable
+                orders={transactionRows}
+                emptyMessage="No transactions found."
+                filterLabel={filterLabel}
+            />
         </div>
     )
 }

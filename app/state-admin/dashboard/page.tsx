@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, type ComponentType } from "react";
+import { useEffect, useState, useCallback, useMemo, type ComponentType } from "react";
 import axios from "axios";
 import useSWR from "swr";
 import Link from "next/link";
@@ -11,36 +11,26 @@ import {
   ShoppingBag,
   Building2,
   Briefcase,
-  ChevronRight,
-  UserPlus,
-  BarChart3,
   Clock,
   ArrowUpRight,
-  TrendingUp,
   Share2,
   Copy,
   Check,
-  Sparkles,
-  Wallet,
-  MoreHorizontal,
   Wifi,
   WifiOff,
   Download,
   RotateCcw,
   UserCheck,
+  AlertTriangle,
 } from "lucide-react";
 import { useSSE } from "@/hooks/useSSE";
 import { Toast } from "@/components/Toast";
 import { STORE_URL } from "@/lib/config";
-
-type Activity = {
-  id: string;
-  type: string;
-  message: string;
-  branch_name: string;
-  amount?: number;
-  created_at: string;
-};
+import RecentActivityFeed from "@/components/dashboard/RecentActivityFeed";
+import {
+  mapActivityEventToFeedItem,
+  type ActivityEvent,
+} from "@/lib/recent-activity";
 
 type AdditionalCampaign = {
   id: number;
@@ -55,8 +45,44 @@ type AdditionalCampaign = {
 
 const fetcher = (url: string) => axios.get(url).then((res) => res.data);
 
+type StateAdminUser = {
+  id?: string;
+  first_name?: string;
+  last_name?: string;
+  email?: string;
+  refer_code?: string;
+  state?: string;
+};
+
+type SseUpdateMessage = {
+  type?: string;
+  message?: string;
+  amount?: number;
+};
+
+type StatCardColor =
+  | "orange"
+  | "purple"
+  | "green"
+  | "yellow"
+  | "blue"
+  | "indigo"
+  | "rose"
+  | "amber";
+
+function readStoredUser(): StateAdminUser | null {
+  if (typeof window === "undefined") return null;
+  const userData = localStorage.getItem("affiliate_user");
+  if (!userData) return null;
+  try {
+    return JSON.parse(userData) as StateAdminUser;
+  } catch {
+    return null;
+  }
+}
+
 export default function StateAdminDashboard() {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<StateAdminUser | null>(readStoredUser);
   const [copied, setCopied] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState("");
 
@@ -68,16 +94,31 @@ export default function StateAdminDashboard() {
   }>({ message: "" });
 
   useEffect(() => {
-    const userData = localStorage.getItem("affiliate_user");
-    if (userData) {
-      const parsed = JSON.parse(userData);
-      setUser(parsed);
+    if (user?.refer_code) return;
 
-      if (!parsed.refer_code) {
-        refreshUserProfile();
+    let cancelled = false;
+
+    void (async () => {
+      try {
+        const token = localStorage.getItem("affiliate_token");
+        if (!token) return;
+        const response = await axios.get("/api/state-admin/me", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!cancelled && response.data.success) {
+          const updatedUser = response.data.user as StateAdminUser;
+          setUser(updatedUser);
+          localStorage.setItem("affiliate_user", JSON.stringify(updatedUser));
+        }
+      } catch (error) {
+        console.error("Failed to refresh user profile:", error);
       }
-    }
-  }, []);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.refer_code]);
 
   const loadImage = (src: string) =>
     new Promise<HTMLImageElement>((resolve, reject) => {
@@ -87,88 +128,100 @@ export default function StateAdminDashboard() {
       img.src = src;
     });
 
-  const generateBrandedQr = async (
-    referCode: string,
-    name: string,
-    role: string,
-  ) => {
-    const signupUrl = `${STORE_URL}/signup?ref=${referCode}`;
-    const qrSize = 300;
-    const qrPadding = 20;
-    const canvasWidth = qrSize + qrPadding * 2;
-    const canvasHeight = qrSize + qrPadding * 2 + 68;
-    const canvas = document.createElement("canvas");
-    canvas.width = canvasWidth;
-    canvas.height = canvasHeight;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+  const generateBrandedQr = useCallback(
+    async (referCode: string, name: string, role: string) => {
+      const signupUrl = `${STORE_URL}/signup?ref=${referCode}`;
+      const qrSize = 300;
+      const qrPadding = 20;
+      const canvasWidth = qrSize + qrPadding * 2;
+      const canvasHeight = qrSize + qrPadding * 2 + 68;
+      const canvas = document.createElement("canvas");
+      canvas.width = canvasWidth;
+      canvas.height = canvasHeight;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return null;
 
-    ctx.fillStyle = "#FFFFFF";
-    ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-
-    const qrCanvas = document.createElement("canvas");
-    await QRCode.toCanvas(qrCanvas, signupUrl, {
-      width: qrSize,
-      margin: 2,
-      errorCorrectionLevel: "H",
-      color: { dark: "#000000", light: "#FFFFFF" },
-    });
-    const qrX = qrPadding;
-    const qrY = qrPadding;
-    ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
-
-    try {
-      const logo = await loadImage("/uploads/coin/Oweg3d-400.png");
-      const logoSize = 56;
-      const logoX = qrX + (qrSize - logoSize) / 2;
-      const logoY = qrY + (qrSize - logoSize) / 2;
-      ctx.beginPath();
-      ctx.arc(
-        logoX + logoSize / 2,
-        logoY + logoSize / 2,
-        logoSize / 2 + 8,
-        0,
-        Math.PI * 2,
-      );
       ctx.fillStyle = "#FFFFFF";
-      ctx.fill();
-      ctx.drawImage(logo, logoX, logoY, logoSize, logoSize);
-    } catch (error) {
-      console.error("State-admin logo overlay failed:", error);
-    }
+      ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
-    ctx.textAlign = "center";
-    ctx.fillStyle = "#111827";
-    ctx.font = "600 16px Arial";
-    ctx.fillText(name || "State Admin", canvasWidth / 2, qrY + qrSize + 30);
-    ctx.fillStyle = "#4B5563";
-    ctx.font = "500 14px Arial";
-    ctx.fillText(role || "State Admin", canvasWidth / 2, qrY + qrSize + 52);
-    setQrDataUrl(canvas.toDataURL("image/png"));
-  };
+      const qrCanvas = document.createElement("canvas");
+      await QRCode.toCanvas(qrCanvas, signupUrl, {
+        width: qrSize,
+        margin: 2,
+        errorCorrectionLevel: "H",
+        color: { dark: "#000000", light: "#FFFFFF" },
+      });
+      const qrX = qrPadding;
+      const qrY = qrPadding;
+      ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
+
+      try {
+        const logo = await loadImage("/uploads/coin/Oweg3d-400.png");
+        const logoSize = 56;
+        const logoX = qrX + (qrSize - logoSize) / 2;
+        const logoY = qrY + (qrSize - logoSize) / 2;
+        ctx.beginPath();
+        ctx.arc(
+          logoX + logoSize / 2,
+          logoY + logoSize / 2,
+          logoSize / 2 + 8,
+          0,
+          Math.PI * 2,
+        );
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fill();
+        ctx.drawImage(logo, logoX, logoY, logoSize, logoSize);
+      } catch (error) {
+        console.error("State-admin logo overlay failed:", error);
+      }
+
+      ctx.textAlign = "center";
+      ctx.fillStyle = "#111827";
+      ctx.font = "600 16px Arial";
+      ctx.fillText(name || "State Admin", canvasWidth / 2, qrY + qrSize + 30);
+      ctx.fillStyle = "#4B5563";
+      ctx.font = "500 14px Arial";
+      ctx.fillText(role || "State Admin", canvasWidth / 2, qrY + qrSize + 52);
+      return canvas.toDataURL("image/png");
+    },
+    [],
+  );
 
   useEffect(() => {
     if (!user?.refer_code) return;
+
+    let cancelled = false;
     const name =
-      user?.first_name && user?.last_name
+      user.first_name && user.last_name
         ? `${user.first_name} ${user.last_name}`
-        : user?.email || "State Admin";
-    generateBrandedQr(user.refer_code, name, "State Admin").catch(
-      console.error,
-    );
-  }, [user]);
+        : user.email || "State Admin";
+
+    void generateBrandedQr(user.refer_code, name, "State Admin")
+      .then((url) => {
+        if (!cancelled && url) setQrDataUrl(url);
+      })
+      .catch(console.error);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user, generateBrandedQr]);
 
   // SWR Data Fetching
   const {
     data: statsData,
+    error: statsError,
     mutate: mutateStats,
     isLoading: statsLoading,
   } = useSWR(
     user?.state
-      ? `/api/state-admin/dashboard/stats?state=${encodeURIComponent(user.state)}`
+      ? `/api/state-admin/dashboard/stats?state=${encodeURIComponent(user.state)}${user.id ? `&adminId=${user.id}` : ""}`
       : null,
     fetcher,
   );
+
+  const statsLoadFailed =
+    Boolean(statsError) || (statsData != null && statsData.success === false);
 
   const {
     data: activitiesData,
@@ -176,7 +229,7 @@ export default function StateAdminDashboard() {
     isLoading: activitiesLoading,
   } = useSWR(
     user?.state
-      ? `/api/state-admin/dashboard/activities?state=${encodeURIComponent(user.state)}`
+      ? `/api/state-admin/dashboard/activities?state=${encodeURIComponent(user.state)}${user.id ? `&adminId=${user.id}` : ""}&limit=5`
       : null,
     fetcher,
   );
@@ -203,14 +256,20 @@ export default function StateAdminDashboard() {
         overrideRate: 0,
       };
 
-  const activities: Activity[] = activitiesData?.success
+  const activities: ActivityEvent[] = activitiesData?.success
     ? activitiesData.activities
     : [];
+
+  const activityFeedItems = useMemo(
+    () => activities.map(mapActivityEventToFeedItem),
+    [activities],
+  );
+
   const loading = statsLoading || activitiesLoading;
 
   // Live updates
   const handleUpdate = useCallback(
-    (data: any) => {
+    (data: SseUpdateMessage) => {
       if (
         data.type === "commission_update" ||
         data.type === "new_agent" ||
@@ -232,23 +291,6 @@ export default function StateAdminDashboard() {
     affiliateCode: user?.refer_code || "",
     onMessage: handleUpdate,
   });
-
-  const refreshUserProfile = async () => {
-    try {
-      const token = localStorage.getItem("affiliate_token");
-      if (!token) return;
-      const response = await axios.get("/api/state-admin/me", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (response.data.success) {
-        const updatedUser = response.data.user;
-        setUser(updatedUser);
-        localStorage.setItem("affiliate_user", JSON.stringify(updatedUser));
-      }
-    } catch (error) {
-      console.error("Failed to refresh user profile:", error);
-    }
-  };
 
   const copyReferralCode = async () => {
     if (user?.refer_code) {
@@ -323,6 +365,16 @@ export default function StateAdminDashboard() {
         </div>
       </div>
 
+      {statsLoadFailed && (
+        <div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          <AlertTriangle className="h-4 w-4 shrink-0" />
+          <span>
+            Could not load dashboard stats. Refresh the page or try again
+            shortly.
+          </span>
+        </div>
+      )}
+
       {/* Dashboard overview — UI labels match client hierarchy (ASM = /branch, Branch = /asm) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <StatCard
@@ -395,40 +447,13 @@ export default function StateAdminDashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column: Recent Activity */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-              Recent Activity
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-            </h2>
-          </div>
-
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-            {activities.length === 0 ? (
-              <div className="p-12 text-center">
-                <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Clock className="w-8 h-8 text-slate-300" />
-                </div>
-                <h3 className="text-lg font-medium text-slate-900">
-                  No recent activity
-                </h3>
-                <p className="text-slate-500 mt-1">
-                  Activities will appear here instantly.
-                </p>
-              </div>
-            ) : (
-              <div className="divide-y divide-slate-50">
-                {activities.slice(0, 5).map((activity: Activity, i: number) => (
-                  <ActivityItem key={i} activity={activity} />
-                ))}
-              </div>
-            )}
-            <div className="p-3 bg-slate-50/50 border-t border-slate-100 text-center">
-              <button className="text-xs font-semibold text-slate-500 hover:text-indigo-600 transition-colors uppercase tracking-wider">
-                View Full History
-              </button>
-            </div>
-          </div>
+        <div className="lg:col-span-2">
+          <RecentActivityFeed
+            items={activityFeedItems}
+            loading={activitiesLoading}
+            emptyMessage="No recent activity found."
+            viewAllHref="/state-admin/activity"
+          />
         </div>
 
         {/* Right Column: Referral & Attributes */}
@@ -610,12 +635,15 @@ function StatCard({
   label: string;
   value: string | number;
   icon: ComponentType<{ className?: string }>;
-  color: string;
+  color: StatCardColor;
   sublabel?: string;
   isCurrency?: boolean;
   href?: string;
 }) {
-  const styles = {
+  const styles: Record<
+    StatCardColor,
+    { bg: string; text: string; iconBg: string }
+  > = {
     orange: { bg: "bg-orange-50", text: "text-orange-600", iconBg: "bg-white" },
     purple: { bg: "bg-purple-50", text: "text-purple-600", iconBg: "bg-white" },
     green: {
@@ -630,8 +658,7 @@ function StatCard({
     amber: { bg: "bg-amber-50", text: "text-amber-600", iconBg: "bg-white" },
   };
 
-  // @ts-ignore
-  const currentStyle = styles[color] || styles.orange;
+  const currentStyle = styles[color];
 
   const cardContent = (
     <>
@@ -681,74 +708,27 @@ function StatCard({
   return <div className={className}>{cardContent}</div>;
 }
 
-function ActivityItem({ activity }: { activity: Activity }) {
-  const isCommission = activity.type === "commission";
-  const isApproval = activity.type === "approval";
-
-  return (
-    <div className="p-5 flex items-start gap-4 group hover:bg-slate-50/80 transition-colors">
-      <div
-        className={`mt-1 w-10 h-10 rounded-full flex items-center justify-center shrink-0 border 
-                 ${
-                   isCommission
-                     ? "bg-indigo-50 border-indigo-100 text-indigo-600"
-                     : isApproval
-                       ? "bg-emerald-50 border-emerald-100 text-emerald-600"
-                       : "bg-slate-50 border-slate-200 text-slate-500"
-                 }`}
-      >
-        {isCommission ? (
-          <DollarSign className="w-5 h-5" />
-        ) : isApproval ? (
-          <Check className="w-5 h-5" />
-        ) : (
-          <MoreHorizontal className="w-5 h-5" />
-        )}
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center justify-between mb-0.5">
-          <p className="text-sm font-bold text-slate-800 truncate pr-2">
-            {activity.message.split(" earned")[0]}{" "}
-            {/* Simple parse to highlight name if possible */}
-            <span className="font-normal text-slate-600">
-              {activity.message.includes("earned")
-                ? " earned commission"
-                : activity.message.includes("approved")
-                  ? " was approved"
-                  : ""}
-            </span>
-          </p>
-          <span className="text-[10px] font-medium text-slate-400 whitespace-nowrap">
-            {new Date(activity.created_at).toLocaleDateString("en-IN", {
-              day: "numeric",
-              month: "short",
-            })}
-          </span>
-        </div>
-        {isCommission && (
-          <div className="p-2 bg-slate-50 rounded-lg border border-slate-100 mt-1">
-            <p className="text-xs text-slate-500 line-clamp-1 italic">
-              Product commission from {activity.branch_name}
-            </p>
-          </div>
-        )}
-        {!isCommission && (
-          <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-1">
-            <Building2 className="w-3 h-3" /> {activity.branch_name} Branch
-          </p>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function QuickAttrItem({ icon: Icon, label, value, color, href }: any) {
-  const styles = {
+function QuickAttrItem({
+  icon: Icon,
+  label,
+  value,
+  color,
+  href,
+}: {
+  icon: ComponentType<{ className?: string }>;
+  label: string;
+  value: string | number;
+  color: "orange" | "yellow";
+  href: string;
+}) {
+  const styles: Record<
+    "orange" | "yellow",
+    { bg: string; text: string }
+  > = {
     orange: { bg: "bg-orange-50", text: "text-orange-600" },
     yellow: { bg: "bg-amber-50", text: "text-amber-600" },
   };
-  // @ts-ignore
-  const s = styles[color] || styles.orange;
+  const s = styles[color];
 
   return (
     <Link

@@ -1,35 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Pool } from "pg";
+import pool from "@/lib/db";
 import { fetchCommissionRates } from "@/lib/commission-rates";
 import { syncAffiliateCommissionStatuses } from "@/lib/affiliate-commission-sync";
 import { COMMISSION_IS_RETURN_OR_CANCELLED_SQL } from "@/lib/dashboard-return-sql";
 import { getStateTerritoryGross } from "@/lib/territory-gross-commission";
+import { normalizeStateParam } from "@/lib/territory-params";
 
 export const dynamic = "force-dynamic";
+
+const toCount = (value: string | number | null | undefined) =>
+  Number.parseInt(String(value ?? 0), 10) || 0;
 
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const state = searchParams.get("state");
+    const rawState = searchParams.get("state");
     const adminId = searchParams.get("adminId");
 
-    if (!state) {
+    if (!rawState) {
       return NextResponse.json(
         { success: false, error: "State parameter is required" },
         { status: 400 },
       );
     }
 
-    const pool = new Pool({
-      connectionString:
-        process.env.DATABASE_URL || process.env.NEXT_PUBLIC_DATABASE_URL,
-      ssl: { rejectUnauthorized: false },
-    });
-
-    await syncAffiliateCommissionStatuses(pool, {
-      logPrefix: "[State Admin Dashboard Stats]",
-    });
-    const commissionRates = await fetchCommissionRates(pool);
+    const state = normalizeStateParam(rawState);
 
     const activeBranchesResult = await pool.query(
       `SELECT COUNT(*)::int AS count
@@ -60,19 +55,34 @@ export async function GET(req: NextRequest) {
       [state],
     );
 
+    let commissionRates = {
+      summary: {
+        state: { directRate: 0, overrideRate: 0 },
+      },
+    };
+    try {
+      commissionRates = await fetchCommissionRates(pool);
+    } catch (err) {
+      console.warn("[State Admin Dashboard Stats] commission rates failed:", err);
+    }
+
     let stateReferCode = "";
-    if (adminId) {
-      const adminRow = await pool.query(
-        `SELECT refer_code FROM state_admin WHERE id = $1`,
-        [adminId],
-      );
-      stateReferCode = adminRow.rows[0]?.refer_code || "";
-    } else {
-      const adminRow = await pool.query(
-        `SELECT refer_code FROM state_admin WHERE state ILIKE $1 LIMIT 1`,
-        [state],
-      );
-      stateReferCode = adminRow.rows[0]?.refer_code || "";
+    try {
+      if (adminId) {
+        const adminRow = await pool.query(
+          `SELECT refer_code FROM state_admin WHERE id = $1`,
+          [adminId],
+        );
+        stateReferCode = adminRow.rows[0]?.refer_code || "";
+      } else {
+        const adminRow = await pool.query(
+          `SELECT refer_code FROM state_admin WHERE state ILIKE $1 LIMIT 1`,
+          [state],
+        );
+        stateReferCode = adminRow.rows[0]?.refer_code || "";
+      }
+    } catch (err) {
+      console.warn("[State Admin Dashboard Stats] refer code lookup failed:", err);
     }
 
     let totalOrders = 0;
@@ -80,6 +90,14 @@ export async function GET(req: NextRequest) {
     let totalCommission = 0;
     let pendingCommission = 0;
     let creditedCommission = 0;
+
+    try {
+      await syncAffiliateCommissionStatuses(pool, {
+        logPrefix: "[State Admin Dashboard Stats]",
+      });
+    } catch (err) {
+      console.warn("[State Admin Dashboard Stats] status sync failed:", err);
+    }
 
     try {
       const ordersResult = await pool.query(
@@ -95,8 +113,8 @@ export async function GET(req: NextRequest) {
            AND acl.commission_source = 'affiliate'`,
         [state],
       );
-      totalOrders = parseInt(ordersResult.rows[0]?.total_orders || "0", 10);
-      totalReturns = parseInt(ordersResult.rows[0]?.total_returns || "0", 10);
+      totalOrders = toCount(ordersResult.rows[0]?.total_orders);
+      totalReturns = toCount(ordersResult.rows[0]?.total_returns);
 
       const territoryGross = await getStateTerritoryGross(
         pool,
@@ -107,18 +125,16 @@ export async function GET(req: NextRequest) {
       pendingCommission = territoryGross.pending;
       creditedCommission = territoryGross.credited;
     } catch (err) {
-      console.error("Failed to get state order stats:", err);
+      console.error("[State Admin Dashboard Stats] order/commission stats failed:", err);
     }
 
-    await pool.end();
-
-    const salesExecutives = parseInt(agentsResult.rows[0]?.count || "0", 10);
+    const salesExecutives = toCount(agentsResult.rows[0]?.count);
 
     const stats = {
-      activeBranches: parseInt(activeBranchesResult.rows[0]?.count || "0", 10),
-      branchHeads: parseInt(branchHeadsResult.rows[0]?.count || "0", 10),
-      totalASMs: parseInt(asmsResult.rows[0]?.count || "0", 10),
-      totalBranches: parseInt(activeBranchesResult.rows[0]?.count || "0", 10),
+      activeBranches: toCount(activeBranchesResult.rows[0]?.count),
+      branchHeads: toCount(branchHeadsResult.rows[0]?.count),
+      totalASMs: toCount(asmsResult.rows[0]?.count),
+      totalBranches: toCount(activeBranchesResult.rows[0]?.count),
       totalAgents: salesExecutives,
       salesExecutives,
       totalOrders,

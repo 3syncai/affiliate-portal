@@ -8,7 +8,8 @@ import useSWR from 'swr'
 import { DollarSign, ShoppingBag, AlertCircle, Wallet, ArrowUpCircle, Users, Package, Info, Wifi, WifiOff } from "lucide-react"
 import { useSSE } from "@/hooks/useSSE"
 import { Toast } from "@/components/Toast"
-import CommissionStatusBadge from "@/app/components/CommissionStatusBadge"
+import RecentTransactionsTable from "@/components/earnings/RecentTransactionsTable"
+import { mapBranchEarningsOrder } from "@/lib/transaction-display"
 
 type DashboardUser = {
     id?: string
@@ -32,14 +33,11 @@ type Order = {
     last_name: string
     refer_code: string
     type: string
+    participant_branch?: string
     status?: string
     unlock_at?: string | null
     credited_at?: string | null
     has_return?: boolean
-}
-
-const getOrderTypeLabel = (type: string) => {
-    return type === "Affiliate Override" ? "Sales Executive Sale" : type
 }
 
 const fetcher = (url: string) => axios.get(url).then(res => res.data)
@@ -71,7 +69,9 @@ export default function EarningsPage() {
     const [toastData, setToastData] = useState<{ message: string; amount?: number }>({ message: "" })
 
     const { data, mutate, isLoading } = useSWR(
-        user?.branch ? `/api/branch/earnings?branch=${encodeURIComponent(user.branch)}${user.id ? `&adminId=${user.id}` : ''}` : null,
+        user?.branch && user?.id
+            ? `/api/branch/earnings?branch=${encodeURIComponent(user.branch)}&adminId=${encodeURIComponent(user.id)}`
+            : null,
         fetcher,
         { refreshInterval: 5000, revalidateOnFocus: true, keepPreviousData: true }
     )
@@ -112,6 +112,11 @@ export default function EarningsPage() {
             : listFilter === "pending"
               ? "Pending commission only"
               : null
+
+    const transactionRows = useMemo(
+        () => displayedOrders.map(mapBranchEarningsOrder),
+        [displayedOrders],
+    )
 
     const loading = isLoading
 
@@ -287,72 +292,10 @@ export default function EarningsPage() {
                 </div>
             </div>
 
-            {/* Recent Table */}
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-                <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-gray-50/50">
-                    <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">Recent Transactions</h2>
-                    <div className="text-xs text-gray-500 font-medium bg-white px-2 py-1 rounded border border-gray-200">
-                        Last {displayedOrders.length} records
-                    </div>
-                </div>
-
-                {displayedOrders.length === 0 ? (
-                    <div className="p-12 text-center text-gray-500 text-sm">
-                        {filterLabel
-                            ? `No transactions match this filter (${filterLabel.toLowerCase()}).`
-                            : "No earnings recorded yet."}
-                    </div>
-                ) : (
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
-                                <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Details</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer/Partner</th>
-                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Your Earning</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-200 bg-white">
-                                {displayedOrders.map((order) => (
-                                    <tr key={order.id} className="hover:bg-gray-50 transition-colors">
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {new Date(order.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${order.type === 'Direct Sale'
-                                                ? 'bg-emerald-100 text-emerald-800'
-                                                : 'bg-blue-100 text-blue-800'
-                                                }`}>
-                                                {getOrderTypeLabel(order.type)}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 text-sm text-gray-600">
-                                            <div className="font-medium text-gray-900">{order.product_name}</div>
-                                            <div className="flex items-center gap-2 mt-1">
-                                                <div className="text-xs text-gray-500">#{order.order_id}</div>
-                                                <CommissionStatusBadge
-                                                    status={order.status || ''}
-                                                    unlockAt={order.unlock_at}
-                                                    hasReturn={order.has_return}
-                                                />
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {order.first_name} {order.last_name}
-                                            {order.refer_code && <span className="block text-xs text-gray-400">{order.refer_code}</span>}
-                                        </td>
-                                        <td className={`px-6 py-4 whitespace-nowrap text-sm text-right font-bold ${order.has_return || order.status === 'CANCELLED' ? 'text-gray-400 line-through' : 'text-gray-900'}`}>
-                                            {formatCurrency(order.commission_amount)}
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
-            </div>
+            <RecentTransactionsTable
+                orders={transactionRows}
+                filterLabel={filterLabel}
+            />
         </div>
     )
 }

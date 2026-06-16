@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import axios from "axios"
 import {
@@ -9,8 +9,6 @@ import {
   DollarSign,
   Clock,
   ShoppingBag,
-  UserPlus,
-  CheckCircle,
   MapPin,
   Building2,
   Percent,
@@ -19,13 +17,11 @@ import {
   RotateCcw,
   LucideIcon,
 } from "lucide-react"
-
-type Activity = {
-  id: string
-  type: 'affiliate_request' | 'order' | 'approval'
-  timestamp: string
-  data: any
-}
+import RecentActivityFeed from "@/components/dashboard/RecentActivityFeed"
+import {
+  mapActivityEventToFeedItem,
+  type ActivityEvent,
+} from "@/lib/recent-activity"
 
 type CommissionRate = {
   role_type: string
@@ -60,7 +56,7 @@ export default function AdminDashboardPage() {
     branchAdmins: 0,
   })
   const [commissionRates, setCommissionRates] = useState<CommissionRate[]>([])
-  const [activities, setActivities] = useState<Activity[]>([])
+  const [activities, setActivities] = useState<ActivityEvent[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -99,7 +95,7 @@ export default function AdminDashboardPage() {
       }
 
       // Fetch recent activity  
-      const activityResponse = await axios.get("/api/affiliate/admin/activity")
+      const activityResponse = await axios.get("/api/affiliate/admin/activity?limit=5")
       const activityData = activityResponse.data
       if (activityData.success) {
         setActivities(activityData.activities || [])
@@ -115,65 +111,10 @@ export default function AdminDashboardPage() {
     return `₹${amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
   }
 
-  const formatTimeAgo = (dateString: string) => {
-    const date = new Date(dateString)
-    const now = new Date()
-    const seconds = Math.floor((now.getTime() - date.getTime()) / 1000)
-
-    if (seconds < 60) return 'just now'
-    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`
-    if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`
-    if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`
-    return date.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })
-  }
-
-  const getActivityIcon = (type: string) => {
-    switch (type) {
-      case 'affiliate_request':
-        return { icon: UserPlus, bg: 'bg-orange-100', text: 'text-orange-600' }
-      case 'approval':
-        return { icon: CheckCircle, bg: 'bg-green-100', text: 'text-green-600' }
-      case 'order':
-        return { icon: ShoppingBag, bg: 'bg-purple-100', text: 'text-purple-600' }
-      default:
-        return { icon: Clock, bg: 'bg-gray-100', text: 'text-gray-600' }
-    }
-  }
-
-  const getActivityText = (activity: Activity) => {
-    switch (activity.type) {
-      case 'affiliate_request':
-        return (
-          <div>
-            <span className="font-semibold text-gray-900">{activity.data.name}</span>
-            <span className="text-gray-600"> submitted an Partner request</span>
-          </div>
-        )
-      case 'approval':
-        return (
-          <div>
-            <span className="font-semibold text-gray-900">{activity.data.name}</span>
-            <span className="text-green-600"> was approved as an Partner</span>
-          </div>
-        )
-      case 'order':
-        const totalCommission = activity.data.total_commission_amount ?? activity.data.commission_amount ?? 0
-        const additionalCommission = activity.data.additional_commission_amount ?? 0
-        return (
-          <div>
-            <span className="font-semibold text-gray-900">{activity.data.affiliate_name}</span>
-            <span className="text-gray-600"> earned </span>
-            <span className="font-semibold text-green-600">{formatCurrency(totalCommission)}</span>
-            {additionalCommission > 0 && (
-              <span className="text-emerald-600"> ({formatCurrency(additionalCommission)} additional)</span>
-            )}
-            <span className="text-gray-600"> commission</span>
-          </div>
-        )
-      default:
-        return <span className="text-gray-600">Unknown activity</span>
-    }
-  }
+  const activityFeedItems = useMemo(
+    () => activities.map(mapActivityEventToFeedItem),
+    [activities],
+  )
 
   const getRoleLabel = (roleType: string) => {
     switch (roleType) {
@@ -325,56 +266,11 @@ export default function AdminDashboardPage() {
             })}
           </div>
 
-          {/* Recent Activity - Enhanced */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div className="px-6 py-5 border-b border-gray-200 bg-gray-50">
-              <h2 className="text-xl font-semibold text-gray-900">Recent Activity</h2>
-              <p className="text-sm text-gray-600 mt-1">Latest updates from your platform</p>
-            </div>
-            <div className="p-6">
-              {activities.length === 0 ? (
-                <div className="text-center py-12">
-                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Clock className="w-8 h-8 text-gray-400" />
-                  </div>
-                  <p className="text-gray-500 font-medium">No recent activity to display</p>
-                  <p className="text-sm text-gray-400 mt-1">Activity will appear here as it happens</p>
-                </div>
-              ) : (
-                <div className="space-y-1">
-                  {activities.slice(0, 6).map((activity) => {
-                    const activityData = getActivityIcon(activity.type)
-                    const IconComponent = activityData.icon
-                    return (
-                      <div
-                        key={activity.id}
-                        className="flex items-start gap-4 p-4 rounded-lg hover:bg-gray-50 transition-colors"
-                      >
-                        <div className={`flex-shrink-0 p-2 ${activityData.bg} rounded-lg`}>
-                          <IconComponent className={`w-5 h-5 ${activityData.text}`} />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-sm leading-relaxed">
-                            {getActivityText(activity)}
-                          </div>
-                          {activity.type === 'order' && (
-                            <div className="mt-1 text-xs text-gray-500">
-                              Order #{activity.data.order_id} • {activity.data.product_name}
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex-shrink-0">
-                          <span className="text-xs text-gray-500 font-medium">
-                            {formatTimeAgo(activity.timestamp)}
-                          </span>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
-            </div>
-          </div>
+          <RecentActivityFeed
+            items={activityFeedItems}
+            loading={false}
+            viewAllHref="/admin/activity"
+          />
         </div>
 
         {/* Right Side - Sidebar Widgets */}

@@ -2,25 +2,19 @@ import { NextRequest, NextResponse } from "next/server";
 import { Pool } from "pg";
 import { fetchCommissionRates } from "@/lib/commission-rates";
 import { syncAffiliateCommissionStatuses } from "@/lib/affiliate-commission-sync";
+import { repairMissingBranchAdminCommissions } from "@/lib/repair-branch-admin-commissions";
 import { COMMISSION_HAS_RETURN_SQL } from "@/lib/dashboard-return-sql";
+import {
+    getBranchAdminPersonalEarnings,
+    resolveBranchAdminId,
+} from "@/lib/personal-commission-earnings";
 
 export const dynamic = "force-dynamic";
 
-const toAmount = (value: string | number | null | undefined) => {
-    return Number.parseFloat(String(value ?? 0)) || 0;
-};
-
-const toCount = (value: string | number | null | undefined) => {
-    return Number.parseInt(String(value ?? 0), 10) || 0;
-};
-
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
-    const adminId = searchParams.get("adminId");
-
-    if (!adminId) {
-        return NextResponse.json({ success: false, error: "Admin ID is required" }, { status: 400 });
-    }
+    let adminId = searchParams.get("adminId");
+    const branch = searchParams.get("branch");
 
     const pool = new Pool({
         connectionString: process.env.DATABASE_URL || process.env.NEXT_PUBLIC_DATABASE_URL,
@@ -28,64 +22,62 @@ export async function GET(req: NextRequest) {
     });
 
     try {
+        if (!adminId && branch) {
+            adminId = await resolveBranchAdminId(pool, branch);
+        }
+
+        if (!adminId) {
+            return NextResponse.json({ success: false, error: "Admin ID is required" }, { status: 400 });
+        }
+
         await syncAffiliateCommissionStatuses(pool, { logPrefix: "[Branch Earnings]" });
+        await repairMissingBranchAdminCommissions(pool, {
+            logPrefix: "[Branch Earnings]",
+            branchFilter: branch || undefined,
+        });
 
         const commissionRates = await fetchCommissionRates(pool);
         const adminDetailsRef = await pool.query(`
-            SELECT ba.refer_code, cr.commission_percentage
+            SELECT ba.refer_code, ba.branch, cr.commission_percentage
             FROM branch_admin ba
             LEFT JOIN commission_rates cr ON cr.role_type = 'branch'
-            WHERE ba.id = $1
+            WHERE ba.id::text = $1::text
         `, [adminId]);
 
         let commissionRate = commissionRates.summary.branch.overrideRate;
         const directRate = commissionRates.summary.branch.directRate;
         let referCode = "";
+        let branchTerritory = branch || "";
 
         if (adminDetailsRef.rows.length > 0) {
-            commissionRate = toAmount(adminDetailsRef.rows[0].commission_percentage ?? commissionRate);
+            commissionRate = Number.parseFloat(
+                String(adminDetailsRef.rows[0].commission_percentage ?? commissionRate),
+            ) || commissionRate;
             referCode = adminDetailsRef.rows[0].refer_code || "";
+            branchTerritory = adminDetailsRef.rows[0].branch || branchTerritory;
         }
 
-        const overrideStatsResult = await pool.query(`
-            SELECT
-                COALESCE(SUM(CASE WHEN status = 'CREDITED' THEN affiliate_commission ELSE 0 END), 0) as credited_override_earnings,
-                COUNT(CASE WHEN status = 'CREDITED' THEN 1 END) as credited_override_orders,
-                COALESCE(SUM(CASE WHEN status = 'PENDING' THEN affiliate_commission ELSE 0 END), 0) as pending_override_earnings,
-                COUNT(CASE WHEN status = 'PENDING' THEN 1 END) as pending_override_orders
-            FROM affiliate_commission_log
-            WHERE commission_source = 'branch_admin'
-              AND affiliate_user_id = $1
-              AND LOWER(TRIM(COALESCE(affiliate_code, ''))) <> LOWER(TRIM($2))
-        `, [adminId, referCode]);
+        const personalEarnings = await getBranchAdminPersonalEarnings(
+            pool,
+            adminId,
+            referCode,
+            branchTerritory,
+        );
 
-        const directStatsResult = await pool.query(`
-            SELECT
-                COALESCE(SUM(CASE WHEN status = 'CREDITED' THEN affiliate_commission ELSE 0 END), 0) as credited_direct_earnings,
-                COUNT(CASE WHEN status = 'CREDITED' THEN 1 END) as credited_direct_orders,
-                COALESCE(SUM(CASE WHEN status = 'PENDING' THEN affiliate_commission ELSE 0 END), 0) as pending_direct_earnings,
-                COUNT(CASE WHEN status = 'PENDING' THEN 1 END) as pending_direct_orders
-            FROM affiliate_commission_log
-            WHERE commission_source = 'branch_admin'
-              AND LOWER(TRIM(COALESCE(affiliate_code, ''))) = LOWER(TRIM($1))
-        `, [referCode]);
+        const creditedOverrideEarnings = personalEarnings.override.credited;
+        const pendingOverrideEarnings = personalEarnings.override.pending;
+        const creditedDirectEarnings = personalEarnings.direct.credited;
+        const pendingDirectEarnings = personalEarnings.direct.pending;
 
-        const overrideStats = overrideStatsResult.rows[0] || {};
-        const directStats = directStatsResult.rows[0] || {};
-        const creditedOverrideEarnings = toAmount(overrideStats.credited_override_earnings);
-        const creditedDirectEarnings = toAmount(directStats.credited_direct_earnings);
-        const pendingOverrideEarnings = toAmount(overrideStats.pending_override_earnings);
-        const pendingDirectEarnings = toAmount(directStats.pending_direct_earnings);
+        const creditedOverrideOrders = personalEarnings.override.creditedOrders;
+        const pendingOverrideOrders = personalEarnings.override.pendingOrders;
+        const creditedDirectOrders = personalEarnings.direct.creditedOrders;
+        const pendingDirectOrders = personalEarnings.direct.pendingOrders;
 
-        const creditedOverrideOrders = toCount(overrideStats.credited_override_orders);
-        const creditedDirectOrders = toCount(directStats.credited_direct_orders);
-        const pendingOverrideOrders = toCount(overrideStats.pending_override_orders);
-        const pendingDirectOrders = toCount(directStats.pending_direct_orders);
-
-        const creditedLifetimeEarnings = creditedOverrideEarnings + creditedDirectEarnings;
         const pendingEarnings = pendingOverrideEarnings + pendingDirectEarnings;
-        const totalEarnings = creditedLifetimeEarnings + pendingEarnings;
-
+        const totalEarnings = creditedOverrideEarnings + pendingOverrideEarnings + creditedDirectEarnings + pendingDirectEarnings;
+        const creditedLifetimeEarnings =
+            creditedOverrideEarnings + creditedDirectEarnings;
         const totalOrders =
             creditedOverrideOrders +
             creditedDirectOrders +
@@ -100,7 +92,7 @@ export async function GET(req: NextRequest) {
             FROM admin_payments
             WHERE recipient_id = $1 AND recipient_type = 'branch' AND status = 'completed'
         `, [adminId]);
-        const paidAmount = toAmount(paidResult.rows[0]?.total_paid);
+        const paidAmount = Number.parseFloat(String(paidResult.rows[0]?.total_paid ?? 0)) || 0;
 
         const availableBalance = creditedLifetimeEarnings - paidAmount;
 
@@ -114,31 +106,66 @@ export async function GET(req: NextRequest) {
                     WHEN acl.status = 'CANCELLED' THEN 0
                     WHEN (${COMMISSION_HAS_RETURN_SQL}) THEN 0
                     ELSE acl.affiliate_commission
-                END as commission_amount,
+                END AS commission_amount,
                 acl.created_at,
                 acl.product_name,
                 acl.status,
                 acl.unlock_at,
                 acl.credited_at,
                 (${COMMISSION_HAS_RETURN_SQL}) AS has_return,
-                COALESCE(au.first_name, acl.customer_name, ba.first_name, 'Customer') as first_name,
-                COALESCE(au.last_name, ba.last_name, '') as last_name,
-                acl.affiliate_code as refer_code,
+                COALESCE(
+                    au.first_name,
+                    CASE
+                        WHEN acl.commission_source = 'branch_admin'
+                          AND LOWER(TRIM(COALESCE(acl.affiliate_code, ''))) <> LOWER(TRIM($2))
+                        THEN NULL
+                        ELSE acl.customer_name
+                    END,
+                    ba.first_name,
+                    'Customer'
+                ) AS first_name,
+                COALESCE(au.last_name, ba.last_name, '') AS last_name,
+                acl.affiliate_code AS refer_code,
                 acl.affiliate_rate,
+                COALESCE(
+                    au.branch,
+                    CASE
+                        WHEN acl.commission_source = 'branch_admin'
+                          AND LOWER(TRIM(COALESCE(acl.affiliate_code, ''))) = LOWER(TRIM($2))
+                        THEN $3
+                        ELSE NULL
+                    END
+                ) AS participant_branch,
                 CASE
                     WHEN acl.commission_source = 'branch_admin'
                       AND LOWER(TRIM(COALESCE(acl.affiliate_code, ''))) = LOWER(TRIM($2))
                     THEN 'Direct Sale'
                     WHEN acl.commission_source = 'branch_admin' THEN 'Sales Executive Sale'
                     ELSE 'Direct Sale'
-                END as type
+                END AS type
             FROM affiliate_commission_log acl
-            LEFT JOIN affiliate_user au ON LOWER(TRIM(au.refer_code)) = LOWER(TRIM(acl.affiliate_code))
+            LEFT JOIN affiliate_commission_log se
+                ON se.order_id = acl.order_id
+                AND se.commission_source = 'affiliate'
+            LEFT JOIN affiliate_user au ON au.refer_code = se.affiliate_code
             LEFT JOIN branch_admin ba ON LOWER(TRIM(ba.refer_code)) = LOWER(TRIM(acl.affiliate_code))
-            WHERE acl.affiliate_user_id = $1 OR acl.affiliate_code = $2
+            WHERE NULLIF(acl.affiliate_user_id, '') = $1::text
+               OR LOWER(TRIM(COALESCE(acl.affiliate_code, ''))) = LOWER(TRIM($2))
+               OR (
+                    acl.commission_source = 'branch_admin'
+                    AND LOWER(TRIM(COALESCE(acl.affiliate_code, ''))) <> LOWER(TRIM($2))
+                    AND EXISTS (
+                        SELECT 1
+                        FROM affiliate_commission_log se
+                        JOIN affiliate_user au2 ON au2.refer_code = se.affiliate_code
+                        WHERE se.order_id = acl.order_id
+                          AND se.commission_source = 'affiliate'
+                          AND au2.branch ILIKE $3
+                    )
+               )
             ORDER BY acl.created_at DESC
             LIMIT 20
-        `, [adminId, referCode]);
+        `, [adminId, referCode, branchTerritory]);
 
         return NextResponse.json({
             success: true,

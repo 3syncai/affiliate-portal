@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Pool } from "pg";
 import { syncAffiliateCommissionStatuses } from "@/lib/affiliate-commission-sync";
-import { buildStateAdminActivities } from "@/lib/recent-activity";
+import { buildBmActivities } from "@/lib/recent-activity";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
     try {
         const { searchParams } = new URL(req.url);
+        const city = searchParams.get("city");
         const state = searchParams.get("state");
         const adminId = searchParams.get("adminId");
         const limit = Math.min(
@@ -15,9 +16,9 @@ export async function GET(req: NextRequest) {
             100,
         );
 
-        if (!state) {
+        if (!city || !state) {
             return NextResponse.json(
-                { success: false, error: "State parameter is required" },
+                { success: false, error: "City and State parameters are required" },
                 { status: 400 },
             );
         }
@@ -29,12 +30,12 @@ export async function GET(req: NextRequest) {
         });
 
         await syncAffiliateCommissionStatuses(pool, {
-            logPrefix: "[State Admin Dashboard Activities]",
+            logPrefix: "[BM Activity]",
         });
 
-        const activities = await buildStateAdminActivities(
+        const activities = await buildBmActivities(
             pool,
-            { state, adminId: adminId || undefined },
+            { city, state, adminId: adminId || undefined },
             limit,
         );
 
@@ -45,13 +46,13 @@ export async function GET(req: NextRequest) {
             activities,
             count: activities.length,
         });
-    } catch (error: unknown) {
-        console.error("Failed to fetch recent activities:", error);
+    } catch (error) {
+        console.error("Failed to fetch BM activity:", error);
         return NextResponse.json(
             {
                 success: false,
-                error: error instanceof Error ? error.message : "Unknown error",
                 activities: [],
+                error: error instanceof Error ? error.message : "Unknown error",
             },
             { status: 500 },
         );
