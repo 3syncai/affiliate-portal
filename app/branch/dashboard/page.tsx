@@ -358,6 +358,7 @@ export default function BranchDashboard() {
     {
       title: "Total Commission",
       value: formatCurrency(stats.totalCommission ?? 0),
+      subtitle: "Gross commission from your territory sales",
       icon: DollarSign,
       color: "text-green-600",
       bg: "bg-green-50",
@@ -443,6 +444,9 @@ export default function BranchDashboard() {
                   <h3 className="text-2xl font-bold text-gray-900 mt-1 tracking-tight">
                     {loading ? "..." : stat.value}
                   </h3>
+                  {"subtitle" in stat && stat.subtitle ? (
+                    <p className="text-xs text-gray-400 mt-1">{stat.subtitle}</p>
+                  ) : null}
                 </div>
                 <div className={`p-2.5 rounded-lg ${stat.bg}`}>
                   <Icon className={`w-5 h-5 ${stat.color}`} />
