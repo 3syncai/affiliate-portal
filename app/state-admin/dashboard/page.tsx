@@ -379,7 +379,7 @@ export default function StateAdminDashboard() {
           icon={DollarSign}
           color="green"
           isCurrency
-          sublabel={`Credited: ${formatCurrency(stats.credited_commission || 0)}`}
+          sublabel="Gross commission from your territory sales"
           href="/state-admin/earnings"
         />
         <StatCard

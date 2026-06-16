@@ -3,6 +3,7 @@ import { Pool } from "pg";
 import { fetchCommissionRates } from "@/lib/commission-rates";
 import { syncAffiliateCommissionStatuses } from "@/lib/affiliate-commission-sync";
 import { COMMISSION_IS_RETURN_OR_CANCELLED_SQL } from "@/lib/dashboard-return-sql";
+import { getStateTerritoryGross } from "@/lib/territory-gross-commission";
 
 export const dynamic = "force-dynamic";
 
@@ -10,6 +11,7 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const state = searchParams.get("state");
+    const adminId = searchParams.get("adminId");
 
     if (!state) {
       return NextResponse.json(
@@ -58,6 +60,21 @@ export async function GET(req: NextRequest) {
       [state],
     );
 
+    let stateReferCode = "";
+    if (adminId) {
+      const adminRow = await pool.query(
+        `SELECT refer_code FROM state_admin WHERE id = $1`,
+        [adminId],
+      );
+      stateReferCode = adminRow.rows[0]?.refer_code || "";
+    } else {
+      const adminRow = await pool.query(
+        `SELECT refer_code FROM state_admin WHERE state ILIKE $1 LIMIT 1`,
+        [state],
+      );
+      stateReferCode = adminRow.rows[0]?.refer_code || "";
+    }
+
     let totalOrders = 0;
     let totalReturns = 0;
     let totalCommission = 0;
@@ -70,27 +87,25 @@ export async function GET(req: NextRequest) {
            COUNT(*)::int AS total_orders,
            COUNT(DISTINCT acl.order_id) FILTER (
              WHERE ${COMMISSION_IS_RETURN_OR_CANCELLED_SQL}
-           )::int AS total_returns,
-           COALESCE(SUM(acl.affiliate_commission), 0) AS total_commission,
-           COALESCE(SUM(CASE WHEN acl.status = 'PENDING' THEN acl.affiliate_commission ELSE 0 END), 0) AS pending_commission,
-           COALESCE(SUM(CASE WHEN acl.status = 'CREDITED' THEN acl.affiliate_commission ELSE 0 END), 0) AS credited_commission
+           )::int AS total_returns
          FROM affiliate_commission_log acl
          JOIN affiliate_user u ON acl.affiliate_code = u.refer_code
          JOIN stores s ON u.branch ILIKE s.branch_name
-         WHERE s.state ILIKE $1`,
+         WHERE s.state ILIKE $1
+           AND acl.commission_source = 'affiliate'`,
         [state],
       );
       totalOrders = parseInt(ordersResult.rows[0]?.total_orders || "0", 10);
       totalReturns = parseInt(ordersResult.rows[0]?.total_returns || "0", 10);
-      totalCommission = parseFloat(
-        ordersResult.rows[0]?.total_commission || "0",
+
+      const territoryGross = await getStateTerritoryGross(
+        pool,
+        state,
+        stateReferCode || undefined,
       );
-      pendingCommission = parseFloat(
-        ordersResult.rows[0]?.pending_commission || "0",
-      );
-      creditedCommission = parseFloat(
-        ordersResult.rows[0]?.credited_commission || "0",
-      );
+      totalCommission = territoryGross.total;
+      pendingCommission = territoryGross.pending;
+      creditedCommission = territoryGross.credited;
     } catch (err) {
       console.error("Failed to get state order stats:", err);
     }

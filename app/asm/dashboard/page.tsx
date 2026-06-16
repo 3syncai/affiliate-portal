@@ -332,6 +332,7 @@ export default function ASMDashboard() {
           {
             title: "Total Commission",
             value: formatCurrency(overview.totalCommission ?? 0),
+            subtitle: "Gross commission from your territory sales",
             icon: DollarSign,
             bg: "bg-green-50",
             color: "text-green-600",
@@ -363,6 +364,9 @@ export default function ASMDashboard() {
                   <h3 className="text-2xl font-bold text-gray-900 mt-2">
                     {card.value}
                   </h3>
+                  {"subtitle" in card && card.subtitle ? (
+                    <p className="text-xs text-gray-400 mt-1">{card.subtitle}</p>
+                  ) : null}
                 </div>
                 <div className={`p-3 rounded-xl ${card.bg}`}>
                   <Icon className={`w-5 h-5 ${card.color}`} />

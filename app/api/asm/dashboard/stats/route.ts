@@ -3,6 +3,7 @@ import { Pool } from "pg";
 import { syncAffiliateCommissionStatuses } from "@/lib/affiliate-commission-sync";
 import { fetchCommissionRates } from "@/lib/commission-rates";
 import { COMMISSION_IS_RETURN_OR_CANCELLED_SQL } from "@/lib/dashboard-return-sql";
+import { getBmTerritoryGross } from "@/lib/territory-gross-commission";
 
 export const dynamic = "force-dynamic";
 
@@ -39,7 +40,7 @@ export async function GET(req: NextRequest) {
 
     const commissionRates = await fetchCommissionRates(pool);
     let commissionRate = commissionRates.summary.asm.overrideRate;
-    let asmReferCode = "";
+    let bmReferCode = "";
 
     if (adminId) {
       const asmRow = await pool.query(
@@ -50,7 +51,7 @@ export async function GET(req: NextRequest) {
         [adminId],
       );
       if (asmRow.rows[0]) {
-        asmReferCode = asmRow.rows[0].refer_code || "";
+        bmReferCode = asmRow.rows[0].refer_code || "";
         commissionRate = toAmount(
           asmRow.rows[0].commission_percentage ?? commissionRate,
         );
@@ -86,58 +87,14 @@ export async function GET(req: NextRequest) {
       [city, state],
     );
 
-    const baseStatsResult = await pool.query(
-      `SELECT
-         COALESCE(SUM(CASE WHEN acl.status = 'CREDITED' THEN acl.commission_amount ELSE 0 END), 0) AS credited_base,
-         COALESCE(SUM(CASE WHEN acl.status = 'PENDING' THEN acl.commission_amount ELSE 0 END), 0) AS pending_base
-       FROM affiliate_commission_log acl
-       JOIN affiliate_user u ON acl.affiliate_code = u.refer_code
-       JOIN stores s ON u.branch ILIKE s.branch_name
-       WHERE s.city ILIKE $1 AND s.state ILIKE $2`,
-      [city, state],
+    const territoryGross = await getBmTerritoryGross(
+      pool,
+      city,
+      state,
+      bmReferCode || undefined,
     );
-
-    let creditedBranchOverride = 0;
-    let pendingBranchOverride = 0;
-    let creditedDirect = 0;
-    let pendingDirect = 0;
-
-    if (adminId) {
-      const overrideResult = await pool.query(
-        `SELECT
-           COALESCE(SUM(CASE WHEN status = 'CREDITED' THEN affiliate_commission ELSE 0 END), 0) AS credited,
-           COALESCE(SUM(CASE WHEN status = 'PENDING' THEN affiliate_commission ELSE 0 END), 0) AS pending
-         FROM affiliate_commission_log
-         WHERE commission_source = 'area_manager' AND affiliate_user_id = $1`,
-        [adminId],
-      );
-      creditedBranchOverride = toAmount(overrideResult.rows[0]?.credited);
-      pendingBranchOverride = toAmount(overrideResult.rows[0]?.pending);
-
-      if (asmReferCode) {
-        const directResult = await pool.query(
-          `SELECT
-             COALESCE(SUM(CASE WHEN status = 'CREDITED' THEN affiliate_commission ELSE 0 END), 0) AS credited,
-             COALESCE(SUM(CASE WHEN status = 'PENDING' THEN affiliate_commission ELSE 0 END), 0) AS pending
-           FROM affiliate_commission_log
-           WHERE commission_source = 'asm_direct'
-             AND (affiliate_user_id = $1 OR affiliate_code = $2)`,
-          [adminId, asmReferCode],
-        );
-        creditedDirect = toAmount(directResult.rows[0]?.credited);
-        pendingDirect = toAmount(directResult.rows[0]?.pending);
-      }
-    }
-
-    const creditedLegacy =
-      toAmount(baseStatsResult.rows[0]?.credited_base) *
-      (commissionRate / 100);
-    const pendingLegacy =
-      toAmount(baseStatsResult.rows[0]?.pending_base) * (commissionRate / 100);
-    const creditedCommission =
-      creditedLegacy + creditedBranchOverride + creditedDirect;
-    const pendingCommission =
-      pendingLegacy + pendingBranchOverride + pendingDirect;
+    const creditedCommission = territoryGross.credited;
+    const pendingCommission = territoryGross.pending;
 
     return NextResponse.json({
       success: true,
@@ -146,7 +103,7 @@ export async function GET(req: NextRequest) {
         salesExecutives: toCount(agentsResult.rows[0]?.count),
         totalOrders: toCount(territoryResult.rows[0]?.total_orders),
         totalReturns: toCount(territoryResult.rows[0]?.total_returns),
-        totalCommission: creditedCommission + pendingCommission,
+        totalCommission: territoryGross.total,
         credited_commission: creditedCommission,
         pending_commission: pendingCommission,
         directRate: commissionRates.summary.asm.directRate,

@@ -3,11 +3,9 @@ import pool from "@/lib/db";
 import { fetchCommissionRates } from "@/lib/commission-rates";
 import { syncAffiliateCommissionStatuses } from "@/lib/affiliate-commission-sync";
 import { COMMISSION_IS_RETURN_OR_CANCELLED_SQL } from "@/lib/dashboard-return-sql";
+import { getBranchTerritoryGross } from "@/lib/territory-gross-commission";
 
 export const dynamic = "force-dynamic";
-
-const toAmount = (value: string | number | null | undefined) =>
-  Number.parseFloat(String(value ?? 0)) || 0;
 
 const toCount = (value: string | number | null | undefined) =>
   Number.parseInt(String(value ?? 0), 10) || 0;
@@ -56,44 +54,22 @@ export async function GET(req: NextRequest) {
       [branch],
     );
 
-    let creditedCommission = 0;
-    let pendingCommission = 0;
-
+    let asmReferCode = "";
     if (adminId) {
       const adminRow = await pool.query(
         `SELECT refer_code FROM branch_admin WHERE id = $1`,
         [adminId],
       );
-      const referCode = adminRow.rows[0]?.refer_code || "";
-
-      const overrideResult = await pool.query(
-        `SELECT
-           COALESCE(SUM(CASE WHEN status = 'CREDITED' THEN affiliate_commission ELSE 0 END), 0) AS credited,
-           COALESCE(SUM(CASE WHEN status = 'PENDING' THEN affiliate_commission ELSE 0 END), 0) AS pending
-         FROM affiliate_commission_log
-         WHERE commission_source = 'branch_admin'
-           AND affiliate_user_id = $1
-           AND LOWER(TRIM(COALESCE(affiliate_code, ''))) <> LOWER(TRIM($2))`,
-        [adminId, referCode],
-      );
-
-      const directResult = await pool.query(
-        `SELECT
-           COALESCE(SUM(CASE WHEN status = 'CREDITED' THEN affiliate_commission ELSE 0 END), 0) AS credited,
-           COALESCE(SUM(CASE WHEN status = 'PENDING' THEN affiliate_commission ELSE 0 END), 0) AS pending
-         FROM affiliate_commission_log
-         WHERE commission_source = 'branch_admin'
-           AND LOWER(TRIM(COALESCE(affiliate_code, ''))) = LOWER(TRIM($1))`,
-        [referCode],
-      );
-
-      creditedCommission =
-        toAmount(overrideResult.rows[0]?.credited) +
-        toAmount(directResult.rows[0]?.credited);
-      pendingCommission =
-        toAmount(overrideResult.rows[0]?.pending) +
-        toAmount(directResult.rows[0]?.pending);
+      asmReferCode = adminRow.rows[0]?.refer_code || "";
     }
+
+    const territoryGross = await getBranchTerritoryGross(
+      pool,
+      branch,
+      asmReferCode || undefined,
+    );
+    const creditedCommission = territoryGross.credited;
+    const pendingCommission = territoryGross.pending;
 
     const salesExecutives = toCount(totalAgentsResult.rows[0]?.count);
     const stats = {
@@ -102,7 +78,7 @@ export async function GET(req: NextRequest) {
       pendingApproval: toCount(pendingResult.rows[0]?.count),
       totalOrders: toCount(territoryResult.rows[0]?.total_orders),
       totalReturns: toCount(territoryResult.rows[0]?.total_returns),
-      totalCommission: creditedCommission + pendingCommission,
+      totalCommission: territoryGross.total,
       credited_commission: creditedCommission,
       pending_commission: pendingCommission,
       directRate: commissionRates.summary.branch.directRate,
