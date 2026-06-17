@@ -147,6 +147,30 @@ export async function POST(req: NextRequest) {
             }
         }
 
+        const normalizedDesignation =
+            !designation || ["agent", "affiliate"].includes(designation.trim().toLowerCase())
+                ? "Sales Executive"
+                : designation.trim()
+
+        let resolvedState = state?.trim() || ""
+        let resolvedAddressState = address_state?.trim() || ""
+
+        if (branch?.trim()) {
+            if (!resolvedState) {
+                const storeRow = await pool.query(
+                    `SELECT state FROM stores
+                     WHERE branch_name ILIKE $1 AND COALESCE(is_active, true) = true
+                     ORDER BY created_at DESC
+                     LIMIT 1`,
+                    [branch.trim()]
+                )
+                resolvedState = storeRow.rows[0]?.state?.trim() || ""
+            }
+            if (!resolvedAddressState && resolvedState) {
+                resolvedAddressState = resolvedState
+            }
+        }
+
         // Insert affiliate user (columns match database schema exactly)
         // Normalize branch, area, state, city names (First letter caps)
         const userId = crypto.randomUUID()
@@ -189,11 +213,11 @@ export async function POST(req: NextRequest) {
             pan_card_no || null,
             aadhar_photo_path,
             pan_photo_path,
-            designation || null,
+            normalizedDesignation,
             sales_target || null,
             branch || null,
             area || null,
-            state || null,
+            resolvedState || null,
             payment_method || "Bank Transfer",
             bank_name || null,
             bank_branch || null,
@@ -205,7 +229,7 @@ export async function POST(req: NextRequest) {
             city || null,
             pin_code || null,
             country || null,
-            address_state || null,
+            resolvedAddressState || null,
             upi_id || null
         ])
 

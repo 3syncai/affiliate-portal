@@ -18,6 +18,13 @@ type AffiliateUser = {
   [key: string]: any
 }
 
+function formatDesignation(designation?: string | null) {
+  const d = (designation || "").trim().toLowerCase()
+  if (!d) return "-"
+  if (d === "agent" || d === "affiliate") return "Sales Executive"
+  return designation || "-"
+}
+
 export default function AffiliateRequestPage() {
   const router = useRouter()
   const [users, setUsers] = useState<AffiliateUser[]>([])
@@ -209,7 +216,7 @@ export default function AffiliateRequestPage() {
               <div>
                 <h3 className="text-sm font-semibold text-gray-700 mb-3">Work Information</h3>
                 <div className="space-y-2 text-sm text-black">
-                  <p><strong>Designation:</strong> {selectedUser.designation || "-"}</p>
+                  <p><strong>Designation:</strong> {formatDesignation(selectedUser.designation)}</p>
                   <p><strong>Branch:</strong> {selectedUser.branch || "-"}</p>
                   <p><strong>Area:</strong> {selectedUser.area || "-"}</p>
                   <p><strong>State:</strong> {selectedUser.state || "-"}</p>
@@ -290,7 +297,7 @@ export default function AffiliateRequestPage() {
                   <p><strong>Address:</strong> {selectedUser.address_1 || "-"}</p>
                   <p><strong>City:</strong> {selectedUser.city || "-"}</p>
                   <p><strong>Pin Code:</strong> {selectedUser.pin_code || "-"}</p>
-                  <p><strong>State:</strong> {selectedUser.address_state || "-"}</p>
+                  <p><strong>State:</strong> {selectedUser.address_state || selectedUser.state || "-"}</p>
                 </div>
               </div>
             </div>
