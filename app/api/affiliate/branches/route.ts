@@ -8,13 +8,20 @@ const pool = new Pool({
 export async function GET() {
     try {
         const result = await pool.query(
-            `SELECT DISTINCT branch_name 
-             FROM stores 
-             WHERE is_active = true 
-             ORDER BY branch_name ASC`
+            `SELECT DISTINCT ON (branch_name)
+                branch_name,
+                state,
+                city
+             FROM stores
+             WHERE COALESCE(is_active, true) = true
+             ORDER BY branch_name ASC, created_at DESC`
         )
 
-        const branches = result.rows.map(row => row.branch_name)
+        const branches = result.rows.map((row) => ({
+            branch_name: row.branch_name,
+            state: row.state,
+            city: row.city,
+        }))
 
         return NextResponse.json({
             success: true,

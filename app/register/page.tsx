@@ -68,7 +68,7 @@ export default function RegisterPage() {
     emergency_person_mobile: "",
     aadhar_card_no: "",
     pan_card_no: "",
-    designation: "agent",
+    designation: "Sales Executive",
     sales_target: "",
     branch: "",
     area: "",
@@ -110,7 +110,9 @@ export default function RegisterPage() {
     pan_card_photo?: string
   }>({})
 
-  const [availableBranches, setAvailableBranches] = useState<string[]>([])
+  const [availableBranches, setAvailableBranches] = useState<
+    { branch_name: string; state: string; city?: string }[]
+  >([])
   const [loadingBranches, setLoadingBranches] = useState(false)
 
   const [error, setError] = useState<string>("")
@@ -134,6 +136,26 @@ export default function RegisterPage() {
     }
     fetchBranches()
   }, [])
+
+  const handleBranchChange = (branchName: string) => {
+    const selected = availableBranches.find((b) => b.branch_name === branchName)
+    if (!branchName || !selected) {
+      setFormData((prev) => ({
+        ...prev,
+        branch: branchName,
+        state: "",
+        address_state: "",
+      }))
+      return
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      branch: branchName,
+      state: selected.state || "",
+      address_state: selected.state || "",
+    }))
+  }
 
   // Helper functions for formatting
   const formatPhone = (value: string) => {
@@ -264,6 +286,14 @@ export default function RegisterPage() {
         setError("Please select your designation")
         return false
       }
+      if (!formData.branch) {
+        setError("Please select your branch")
+        return false
+      }
+      if (!formData.state) {
+        setError("State could not be determined for the selected branch")
+        return false
+      }
     }
     if (step === 4) {
       if (formData.payment_method === "Bank Transfer") {
@@ -303,7 +333,7 @@ export default function RegisterPage() {
     }
 
     if (!formData.agree_to_policy) {
-      setError("You must agree to the Agent Policy")
+      setError("You must agree to the Sales Executive Policy")
       return
     }
 
@@ -352,7 +382,7 @@ export default function RegisterPage() {
             className="h-16 mx-auto mb-4"
           />
           <h1 className="text-4xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent mb-2">
-            Agent Registration
+            Sales Executive Registration
           </h1>
           <p className="text-gray-600">Join our network and start your journey with us</p>
         </div>
@@ -788,9 +818,9 @@ export default function RegisterPage() {
                         type="text"
                         readOnly
                         className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-50 text-gray-700 cursor-not-allowed"
-                        value="Agent"
+                        value={formData.designation}
                       />
-                      <p className="mt-1 text-xs text-gray-500">All registrants join as agents</p>
+                      <p className="mt-1 text-xs text-gray-500">All registrants join as Sales Executives</p>
                     </div>
 
                     <div>
@@ -809,13 +839,13 @@ export default function RegisterPage() {
                       <select
                         className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent placeholder:text-gray-500 text-black"
                         value={formData.branch}
-                        onChange={(e) => setFormData({ ...formData, branch: e.target.value })}
+                        onChange={(e) => handleBranchChange(e.target.value)}
                         disabled={loadingBranches}
                       >
                         <option value="">{loadingBranches ? "Loading branches..." : "Select branch"}</option>
                         {availableBranches.map((branch) => (
-                          <option key={branch} value={branch}>
-                            {branch}
+                          <option key={branch.branch_name} value={branch.branch_name}>
+                            {branch.branch_name}
                           </option>
                         ))}
                       </select>
@@ -841,10 +871,15 @@ export default function RegisterPage() {
                       <label className="block text-sm font-semibold text-gray-700 mb-2">State</label>
                       <input
                         type="text"
-                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent placeholder:text-gray-500 text-black"
-                        placeholder="State"
+                        readOnly={Boolean(formData.branch)}
+                        className={`w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent placeholder:text-gray-500 text-black ${
+                          formData.branch ? "bg-gray-50 text-gray-700 cursor-not-allowed" : ""
+                        }`}
+                        placeholder={formData.branch ? "Auto-filled from branch" : "Select a branch first"}
                         value={formData.state}
-                        onChange={(e) => setFormData({ ...formData, state: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({ ...formData, state: e.target.value, address_state: e.target.value })
+                        }
                       />
                     </div>
 
@@ -1028,7 +1063,7 @@ export default function RegisterPage() {
                         className="mt-1 w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
                       />
                       <label htmlFor="agree" className="text-sm text-gray-700">
-                        I agree to the <span className="font-semibold text-emerald-700">Agent Policy</span> and confirm that all information provided is accurate
+                        I agree to the <span className="font-semibold text-emerald-700">Sales Executive Policy</span> and confirm that all information provided is accurate
                       </label>
                     </div>
                   </div>
