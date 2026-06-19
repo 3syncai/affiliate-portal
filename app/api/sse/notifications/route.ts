@@ -72,7 +72,7 @@ async function checkNotifications(affiliateCode: string, controller: ReadableStr
         for (const row of result.rows) {
             const notificationData = {
                 type: "payment_received",
-                amount: row.net_payable,
+                amount: parseFloat(row.net_payable),
                 transactionId: row.transaction_id,
                 timestamp: row.paid_at,
                 message: `Payment of ₹${parseFloat(row.net_payable).toFixed(2)} received!`

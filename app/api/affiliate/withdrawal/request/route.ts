@@ -36,18 +36,21 @@ export async function POST(request: Request) {
     );
     const affiliateRateDecimal = parseFloat(affiliateRateRes.rows[0]?.commission_percentage || '0') / 100;
 
-    const balanceRes = await pool.query(
-      `SELECT
-        COALESCE(SUM(COALESCE(affiliate_amount, commission_amount * $1)), 0) as total_earned,
-        COALESCE(SUM(CASE WHEN status = 'PAID' THEN withdrawal_amount ELSE 0 END), 0) as total_deducted
-       FROM affiliate_commission_log acl
-       LEFT JOIN withdrawal_request wr ON wr.affiliate_code = $2 AND wr.status = 'PAID'
-       WHERE acl.affiliate_code = $2 AND acl.status = 'CREDITED'`,
+    const earnedRes = await pool.query(
+      `SELECT COALESCE(SUM(COALESCE(affiliate_amount, commission_amount * $1)), 0) as total_earned
+       FROM affiliate_commission_log
+       WHERE affiliate_code = $2 AND status = 'CREDITED'`,
       [affiliateRateDecimal, referCode]
     );
+    const deductedRes = await pool.query(
+      `SELECT COALESCE(SUM(CASE WHEN status = 'PAID' THEN withdrawal_amount ELSE 0 END), 0) as total_deducted
+       FROM withdrawal_request
+       WHERE affiliate_code = $1`,
+      [referCode]
+    );
     const serverBalance =
-      parseFloat(balanceRes.rows[0]?.total_earned || '0') -
-      parseFloat(balanceRes.rows[0]?.total_deducted || '0');
+      parseFloat(earnedRes.rows[0]?.total_earned || '0') -
+      parseFloat(deductedRes.rows[0]?.total_deducted || '0');
 
     if (withdrawalAmount > serverBalance) {
       return NextResponse.json(
