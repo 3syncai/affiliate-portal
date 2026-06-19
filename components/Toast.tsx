@@ -8,7 +8,13 @@ interface ToastProps {
     type?: "success" | "error" | "info" | "payment";
     duration?: number;
     onClose?: () => void;
-    amount?: number;
+    amount?: number | string;
+}
+
+function formatToastAmount(amount: number | string | undefined): string | null {
+    if (amount == null || amount === "") return null;
+    const value = Number(amount);
+    return Number.isFinite(value) ? value.toFixed(2) : null;
 }
 
 export function Toast({ message, type = "success", duration = 5000, onClose, amount }: ToastProps) {
@@ -28,6 +34,8 @@ export function Toast({ message, type = "success", duration = 5000, onClose, amo
     }, [duration, onClose]);
 
     if (!isVisible) return null;
+
+    const formattedAmount = formatToastAmount(amount);
 
     const icons = {
         success: <CheckCircle className="w-6 h-6 text-emerald-500" />,
@@ -59,8 +67,8 @@ export function Toast({ message, type = "success", duration = 5000, onClose, amo
             </div>
             <div className="flex-1">
                 <p className="font-medium text-gray-900">{message}</p>
-                {amount && (
-                    <p className="text-lg font-bold text-emerald-600">₹{amount.toFixed(2)}</p>
+                {formattedAmount && (
+                    <p className="text-lg font-bold text-emerald-600">₹{formattedAmount}</p>
                 )}
             </div>
             <button
@@ -85,7 +93,7 @@ interface ToastContainerProps {
         id: string;
         message: string;
         type?: "success" | "error" | "info" | "payment";
-        amount?: number;
+        amount?: number | string;
     }>;
     onRemove: (id: string) => void;
 }
