@@ -97,6 +97,9 @@ export default function RecentTransactionsTable({
                                                     status={order.status || ""}
                                                     unlockAt={order.unlock_at}
                                                     hasReturn={order.has_return}
+                                                    returnRequestPending={
+                                                        order.has_return_request && !order.has_return
+                                                    }
                                                 />
                                             </div>
                                         </td>

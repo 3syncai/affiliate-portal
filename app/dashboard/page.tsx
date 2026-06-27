@@ -72,6 +72,7 @@ interface AffiliateStats {
     unlock_at: string | null
     credited_at: string | null
     has_return: boolean
+    has_return_request?: boolean
     created_at: string
   }>
 }
@@ -745,6 +746,7 @@ export default function DashboardPage() {
                               status={comm.status}
                               unlockAt={comm.unlock_at}
                               hasReturn={comm.has_return}
+                              returnRequestPending={comm.has_return_request && !comm.has_return}
                             />
                           </div>
                         </div>

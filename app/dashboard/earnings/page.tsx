@@ -22,6 +22,7 @@ type Transaction = {
   unlock_at: string | null
   credited_at: string | null
   has_return: boolean
+  has_return_request?: boolean
   created_at: string
 }
 
@@ -189,7 +190,7 @@ function EarningsContent() {
         <div className="bg-blue-50/50 rounded-lg p-4 border border-blue-100 flex items-start gap-4">
           <AlertCircle className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
           <p className="text-sm text-blue-800">
-            Commission is calculated from orders placed by customers you referred. Pending amounts unlock after the return window.
+            Commission is calculated from orders placed by customers you referred. Pending amounts unlock after delivery, then a 7-day return window before crediting.
           </p>
         </div>
 
@@ -258,6 +259,7 @@ function EarningsContent() {
                           status={tx.status}
                           unlockAt={tx.unlock_at}
                           hasReturn={tx.has_return}
+                          returnRequestPending={tx.has_return_request && !tx.has_return}
                         />
                       </td>
                     </tr>

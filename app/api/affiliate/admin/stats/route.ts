@@ -34,11 +34,11 @@ export async function GET() {
         const totalCommissionResult = await pool.query(totalCommissionQuery);
         const totalCommission = parseFloat(totalCommissionResult.rows[0]?.total) || 0;
 
-        // Get pending payout (sum of wallet balances)
+        // Get pending payout (unpaid withdrawal requests awaiting review or payment)
         const pendingPayoutQuery = `
-      SELECT COALESCE(SUM(w.coins_balance), 0) as total 
-      FROM customer_wallet w
-      INNER JOIN affiliate_user u ON u.id = w.customer_id
+      SELECT COALESCE(SUM(net_payable), 0) as total
+      FROM withdrawal_request
+      WHERE status IN ('PENDING', 'APPROVED')
     `;
         const pendingPayoutResult = await pool.query(pendingPayoutQuery);
         const pendingPayout = parseFloat(pendingPayoutResult.rows[0]?.total) || 0;

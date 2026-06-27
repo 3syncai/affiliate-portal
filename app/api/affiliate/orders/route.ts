@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { syncAffiliateCommissionStatuses } from '@/lib/affiliate-commission-sync';
-import { COMMISSION_HAS_RETURN_SQL } from '@/lib/dashboard-return-sql';
+import { COMMISSION_HAS_RETURN_SQL, COMMISSION_HAS_PENDING_RETURN_REQUEST_SQL } from '@/lib/dashboard-return-sql';
 
 export const dynamic = 'force-dynamic';
 
@@ -52,7 +52,8 @@ export async function GET(request: NextRequest) {
           acl.unlock_at,
           acl.credited_at,
           acl.created_at,
-          (${COMMISSION_HAS_RETURN_SQL}) AS has_return
+          (${COMMISSION_HAS_RETURN_SQL}) AS has_return,
+          (${COMMISSION_HAS_PENDING_RETURN_REQUEST_SQL}) AS has_return_request
         FROM affiliate_commission_log acl
         WHERE acl.affiliate_code = $1
         ORDER BY acl.created_at DESC
@@ -77,6 +78,7 @@ export async function GET(request: NextRequest) {
       unlock_at: row.unlock_at,
       credited_at: row.credited_at,
       has_return: !!row.has_return,
+      has_return_request: !!row.has_return_request,
       created_at: row.created_at
     }));
 

@@ -38,6 +38,7 @@ type Order = {
     unlock_at?: string | null
     credited_at?: string | null
     has_return?: boolean
+    has_return_request?: boolean
 }
 
 const fetcher = (url: string) => axios.get(url).then(res => res.data)
@@ -254,7 +255,7 @@ export default function EarningsPage() {
 
                         {stats.pendingEarnings > 0 && (
                             <p className="text-xs text-amber-300 mt-3">
-                                Pending until delivery: {formatCurrency(stats.pendingEarnings)}
+                                Pending (until delivery or 7-day return window): {formatCurrency(stats.pendingEarnings)}
                             </p>
                         )}
                     </div>

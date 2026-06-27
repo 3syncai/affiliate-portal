@@ -21,6 +21,7 @@ interface OrderItem {
   unlock_at: string | null
   credited_at: string | null
   has_return: boolean
+  has_return_request?: boolean
   created_at: string
 }
 
@@ -204,6 +205,7 @@ export default function AllOrdersPage() {
                           status={order.status}
                           unlockAt={order.unlock_at}
                           hasReturn={order.has_return}
+                          returnRequestPending={order.has_return_request && !order.has_return}
                         />
                       </div>
                     </div>

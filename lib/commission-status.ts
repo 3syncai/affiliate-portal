@@ -1,17 +1,17 @@
 export type CommissionStatus = "PENDING" | "CREDITED";
 
-const CREDITED_ORDER_STATUSES = new Set([
-    "CREDITED",
-    "COMPLETED",
-    "DELIVERED",
-    "DELIVERED_TO_CUSTOMER",
-    "FULFILLED",
-]);
+/** Only explicit CREDITED from manual/admin paths maps to ledger CREDITED. */
+const LEDGER_CREDITED_STATUSES = new Set(["CREDITED"]);
 
+/**
+ * Normalize external order/commission status for affiliate_commission_log.
+ * Delivery states (DELIVERED, COMPLETED, FULFILLED) stay PENDING until the
+ * post-delivery unlock window elapses via syncAffiliateCommissionStatuses.
+ */
 export function normalizeCommissionStatus(status?: string | null): CommissionStatus {
     const normalizedStatus = status?.trim().toUpperCase();
 
-    if (normalizedStatus && CREDITED_ORDER_STATUSES.has(normalizedStatus)) {
+    if (normalizedStatus && LEDGER_CREDITED_STATUSES.has(normalizedStatus)) {
         return "CREDITED";
     }
 
@@ -20,4 +20,16 @@ export function normalizeCommissionStatus(status?: string | null): CommissionSta
 
 export function isCommissionCreditedStatus(status?: string | null): boolean {
     return normalizeCommissionStatus(status) === "CREDITED";
+}
+
+/** True when the payload indicates the order was delivered (starts unlock window). */
+export function isOrderDeliveredStatus(status?: string | null): boolean {
+    const normalizedStatus = status?.trim().toUpperCase();
+    if (!normalizedStatus) return false;
+    return [
+        "DELIVERED",
+        "DELIVERED_TO_CUSTOMER",
+        "COMPLETED",
+        "FULFILLED",
+    ].includes(normalizedStatus);
 }
