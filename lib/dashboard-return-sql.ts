@@ -27,6 +27,17 @@ export const COMMISSION_HAS_ANY_RETURN_REQUEST_SQL = `
   )
 `;
 
+/** Customer filed return/refund; admin has not yet approved or rejected. */
+export const COMMISSION_HAS_PENDING_RETURN_REQUEST_SQL = `
+  EXISTS (
+    SELECT 1 FROM return_request rr
+    WHERE rr.order_id = acl.order_id
+      AND rr.deleted_at IS NULL
+      AND LOWER(COALESCE(rr.status, '')) NOT IN (${REJECTED_SQL})
+      AND LOWER(COALESCE(rr.status, '')) NOT IN (${APPROVED_SQL})
+  )
+`;
+
 /** Cancelled commission row or any active customer return request. */
 export const COMMISSION_IS_RETURN_OR_CANCELLED_SQL = `
   acl.status = 'CANCELLED' OR ${COMMISSION_HAS_ANY_RETURN_REQUEST_SQL}

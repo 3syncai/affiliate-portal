@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import pool from "@/lib/db";
 import { sendNotification } from "@/lib/sse";
-import { normalizeCommissionStatus } from "@/lib/commission-status";
 import { applyAdditionalCommissionForOrder } from "@/lib/additional-commission";
+import { syncAffiliateCommissionStatuses } from "@/lib/affiliate-commission-sync";
 import { resolveBranchAdminForSale } from "@/lib/repair-branch-admin-commissions";
 
 export const dynamic = "force-dynamic";
@@ -163,9 +163,10 @@ export async function POST(request: NextRequest) {
         const commissionAmount = payload.order_amount * (commissionPercentage / 100);
         console.log(`[Commission Calculation] ${payload.order_amount} * ${commissionPercentage}% = ${commissionAmount}`);
 
-        const commissionStatus = normalizeCommissionStatus(payload.status);
-        const shouldCreditCommission = commissionStatus === "CREDITED";
-        console.log(`[Commission Status] Incoming status "${payload.status || "PENDING"}" normalized to ${commissionStatus}`);
+        const commissionStatus = "PENDING" as const;
+        console.log(
+            `[Commission Status] Incoming status "${payload.status || "PENDING"}" -> ledger PENDING (7-day unlock via sync)`,
+        );
 
         // STEP 3: Check Branch Admin
         const branchAdminResult = await pool.query(`
@@ -227,54 +228,16 @@ export async function POST(request: NextRequest) {
                 ]);
                 console.log(`[Hierarchy] Logged Level 1 (Branch Admin) Commission: ₹${affiliateCommission}`);
 
-                if (shouldCreditCommission) {
-                    await pool.query(`
-                        INSERT INTO customer_wallet (customer_id, coins_balance)
-                        SELECT id, $2 FROM branch_admin WHERE id = $1
-                        ON CONFLICT (customer_id)
-                        DO UPDATE SET coins_balance = customer_wallet.coins_balance + $2
-                    `, [branchAdmin.id, affiliateCommission]);
-                }
-
                 // NOTIFY Branch Admin
                 sendNotification(payload.affiliate_code, {
                     type: 'stats_update',
-                    message: commissionStatus === "CREDITED"
-                        ? `Commission Credited: ₹${affiliateCommission.toFixed(2)}`
-                        : `Commission Pending: ₹${affiliateCommission.toFixed(2)}`,
+                    message: `Commission Pending: ₹${affiliateCommission.toFixed(2)}`,
                     amount: affiliateCommission
                 });
 
 
             } else {
-                console.log(`[Hierarchy] Level 1 Commission already exists, checking for status update.`);
-
-                // UPDATE STATUS if changing from PENDING to CREDITED
-                const currentStatus = existingCheck.rows[0]?.status; // Need to select status in check query
-                if (currentStatus !== 'CREDITED' && shouldCreditCommission) {
-                    await pool.query(`
-                        UPDATE affiliate_commission_log 
-                        SET status = 'CREDITED', credited_at = NOW()
-                        WHERE id = $1
-                    `, [existingCheck.rows[0].id]);
-
-                    // Credit Wallet logic
-                    await pool.query(`
-                        INSERT INTO customer_wallet (customer_id, coins_balance)
-                        SELECT id, $2 FROM branch_admin WHERE id = $1
-                        ON CONFLICT (customer_id)
-                        DO UPDATE SET coins_balance = customer_wallet.coins_balance + $2
-                    `, [branchAdmin.id, affiliateCommission]);
-
-                    console.log(`[Hierarchy] Updated Level 1 Commission to CREDITED.`);
-
-                    // NOTIFY Branch Admin
-                    sendNotification(payload.affiliate_code, {
-                        type: 'stats_update',
-                        message: `Commission Credited: ₹${affiliateCommission.toFixed(2)}`,
-                        amount: affiliateCommission
-                    });
-                }
+                console.log(`[Hierarchy] Level 1 Commission already exists; sync handles unlock.`);
             }
 
             // --- B) Process Area Manager Commission (Level 2) ---
@@ -333,15 +296,6 @@ export async function POST(request: NextRequest) {
                                 END
                             WHERE id = $1
                         `, [areaCheck.rows[0].id, areaManager.id, areaManager.refer_code || 'AREA']);
-
-                        const currentStatus = areaCheck.rows[0]?.status;
-                        if (currentStatus !== 'CREDITED' && shouldCreditCommission) {
-                            await pool.query(`
-                                UPDATE affiliate_commission_log
-                                SET status = 'CREDITED', credited_at = NOW()
-                                WHERE id = $1
-                            `, [areaCheck.rows[0].id]);
-                        }
                     }
                 }
             }
@@ -401,15 +355,6 @@ export async function POST(request: NextRequest) {
                                 END
                             WHERE id = $1
                         `, [stateCheck.rows[0].id, stateAdmin.id, stateAdmin.refer_code || 'STATE']);
-
-                        const currentStatus = stateCheck.rows[0]?.status;
-                        if (currentStatus !== 'CREDITED' && shouldCreditCommission) {
-                            await pool.query(`
-                                UPDATE affiliate_commission_log
-                                SET status = 'CREDITED', credited_at = NOW()
-                                WHERE id = $1
-                            `, [stateCheck.rows[0].id]);
-                        }
                     }
                 }
             }
@@ -450,17 +395,6 @@ export async function POST(request: NextRequest) {
                     payload.customer_id || null, payload.customer_name || null, payload.customer_email || null,
                     payload.product_id, payload.category_id || null, payload.collection_id || null
                 ]);
-            } else {
-                // UPDATE STATUS for ASM
-                const currentStatus = existingCheck.rows[0]?.status;
-                if (currentStatus !== 'CREDITED' && shouldCreditCommission) {
-                    await pool.query(`
-                        UPDATE affiliate_commission_log 
-                        SET status = 'CREDITED', credited_at = NOW()
-                        WHERE id = $1
-                    `, [existingCheck.rows[0].id]);
-                    console.log(`[ASM Direct] Updated to CREDITED.`);
-                }
             }
 
             // --- State Admin Commission for ASM Direct Referral (5%) ---
@@ -503,15 +437,6 @@ export async function POST(request: NextRequest) {
                             payload.product_id, payload.category_id || null, payload.collection_id || null
                         ]);
                         console.log(`[State Admin] Logged Commission: ₹${stateCommission} for ${stateAdmin.first_name} (ASM referral)`);
-                    } else {
-                        const currentStatus = stateCheck.rows[0]?.status;
-                        if (currentStatus !== 'CREDITED' && shouldCreditCommission) {
-                            await pool.query(`
-                                UPDATE affiliate_commission_log
-                                SET status = 'CREDITED', credited_at = NOW()
-                                WHERE id = $1
-                            `, [stateCheck.rows[0].id]);
-                        }
                     }
                 }
             }
@@ -555,18 +480,7 @@ export async function POST(request: NextRequest) {
 
                 // UPDATE STATUS for State Admin Direct
                 if (existingCheck.rows.length > 0) {
-                    const currentStatus = existingCheck.rows[0]?.status;
-                    if (currentStatus !== 'CREDITED' && shouldCreditCommission) {
-                        await pool.query(`
-                            UPDATE affiliate_commission_log 
-                            SET status = 'CREDITED', credited_at = NOW()
-                            WHERE id = $1
-                        `, [existingCheck.rows[0].id]);
-
-                        console.log(`[State Admin Direct] Updated to CREDITED.`);
-
-
-                    }
+                    console.log(`[State Admin Direct] Commission already exists; sync handles unlock.`);
                 }
 
                 if (existingCheck.rows.length === 0) {
@@ -633,28 +547,6 @@ export async function POST(request: NextRequest) {
 
 
                     console.log(`[Affiliate] Logged Base Commission: ₹${affiliateCommission}`);
-
-
-                    console.log(`[Affiliate] Logged Base Commission: ₹${affiliateCommission}`);
-                } else {
-                    // UPDATE STATUS
-                    const currentStatus = existingCheck.rows[0]?.status;
-                    if (currentStatus !== 'CREDITED' && shouldCreditCommission) {
-                        await pool.query(`
-                            UPDATE affiliate_commission_log 
-                            SET status = 'CREDITED', credited_at = NOW()
-                            WHERE id = $1
-                        `, [existingCheck.rows[0].id]);
-
-                        await pool.query(`
-                            INSERT INTO customer_wallet (customer_id, coins_balance)
-                            SELECT id, $2 FROM affiliate_user WHERE refer_code = $1
-                            ON CONFLICT (customer_id) 
-                            DO UPDATE SET coins_balance = customer_wallet.coins_balance + $2
-                        `, [payload.affiliate_code, affiliateCommission]);
-
-                        console.log(`[Affiliate] Updated to CREDITED.`);
-                    }
                 }
 
                 // --- B) Pay Branch Admin Override (15%) ---
@@ -697,53 +589,16 @@ export async function POST(request: NextRequest) {
                             ]);
                             console.log(`[Hierarchy] Logged Branch Override: ₹${brCommission}`);
 
-                            if (shouldCreditCommission) {
-                                await pool.query(`
-                                    INSERT INTO customer_wallet (customer_id, coins_balance)
-                                    SELECT id, $2 FROM branch_admin WHERE id = $1
-                                    ON CONFLICT (customer_id)
-                                    DO UPDATE SET coins_balance = customer_wallet.coins_balance + $2
-                                `, [branchAdmin.id, brCommission]);
-                            }
-
                             // NOTIFY Branch Admin (Override)
                             sendNotification(branchAdmin.refer_code, {
                                 type: 'stats_update',
-                                message: commissionStatus === "CREDITED"
-                                    ? `Override Commission Credited: ₹${brCommission.toFixed(2)}`
-                                    : `Override Commission Pending: ₹${brCommission.toFixed(2)}`,
+                                message: `Override Commission Pending: ₹${brCommission.toFixed(2)}`,
                                 amount: brCommission
                             });
 
 
                         } else {
-                            // ... existing update logic
-                            // UPDATE STATUS for Branch Admin
-                            const currentStatus = brCheck.rows[0]?.status;
-                            if (currentStatus !== 'CREDITED' && shouldCreditCommission) {
-                                await pool.query(`
-                                    UPDATE affiliate_commission_log 
-                                    SET status = 'CREDITED', credited_at = NOW()
-                                    WHERE id = $1
-                                `, [brCheck.rows[0].id]);
-
-                                // ... existing wallet logic
-                                await pool.query(`
-                                    INSERT INTO customer_wallet (customer_id, coins_balance)
-                                    SELECT id, $2 FROM branch_admin WHERE email = $1
-                                    ON CONFLICT (customer_id) 
-                                    DO UPDATE SET coins_balance = customer_wallet.coins_balance + $2
-                                `, [branchAdmin.email, brCommission]);
-
-                                console.log(`[Hierarchy] Updated Branch Admin to CREDITED.`);
-
-                                // NOTIFY Branch Admin (Override Credited)
-                                sendNotification(branchAdmin.refer_code, {
-                                    type: 'stats_update',
-                                    message: `Override Commission Credited: ₹${brCommission.toFixed(2)}`,
-                                    amount: brCommission
-                                });
-                            }
+                            console.log(`[Hierarchy] Branch override already exists; sync handles unlock.`);
                         }
                     }
                 }
@@ -789,27 +644,6 @@ export async function POST(request: NextRequest) {
                                 payload.product_id, payload.category_id || null, payload.collection_id || null
                             ]);
                             console.log(`[Hierarchy] Logged ASM Override: ₹${areaCommission}`);
-
-
-                        } else {
-                            // ... update logic ...
-                            const currentStatus = areaCheck.rows[0]?.status;
-                            if (currentStatus !== 'CREDITED' && shouldCreditCommission) {
-                                await pool.query(`
-                                    UPDATE affiliate_commission_log 
-                                    SET status = 'CREDITED', credited_at = NOW()
-                                    WHERE id = $1
-                                `, [areaCheck.rows[0].id]);
-
-                                await pool.query(`
-                                    INSERT INTO customer_wallet (customer_id, coins_balance)
-                                    SELECT id, $2 FROM area_sales_manager WHERE email = $1
-                                    ON CONFLICT (customer_id) 
-                                    DO UPDATE SET coins_balance = customer_wallet.coins_balance + $2
-                                `, [asm.email, areaCommission]);
-
-                                console.log(`[Hierarchy] Updated ASM to CREDITED.`);
-                            }
                         }
                     }
                 }
@@ -851,27 +685,6 @@ export async function POST(request: NextRequest) {
                                 payload.product_id, payload.category_id || null, payload.collection_id || null
                             ]);
                             console.log(`[Hierarchy] Logged State Override: ₹${stateCommission}`);
-
-
-                        } else {
-                            // ... update logic ...
-                            const currentStatus = stateCheck.rows[0]?.status;
-                            if (currentStatus !== 'CREDITED' && shouldCreditCommission) {
-                                await pool.query(`
-                                    UPDATE affiliate_commission_log 
-                                    SET status = 'CREDITED', credited_at = NOW()
-                                    WHERE id = $1
-                                `, [stateCheck.rows[0].id]);
-
-                                await pool.query(`
-                                    INSERT INTO customer_wallet (customer_id, coins_balance)
-                                    SELECT id, $2 FROM state_admin WHERE email = $1
-                                    ON CONFLICT (customer_id) 
-                                    DO UPDATE SET coins_balance = customer_wallet.coins_balance + $2
-                                `, [stateAdmin.email, stateCommission]);
-
-                                console.log(`[Hierarchy] Updated State Admin to CREDITED.`);
-                            }
                         }
                     }
                 }
@@ -883,6 +696,10 @@ export async function POST(request: NextRequest) {
         } catch (additionalError) {
             console.error("[Additional Commission] Failed to apply additional commission:", additionalError);
         }
+
+        await syncAffiliateCommissionStatuses(pool, {
+            logPrefix: "[Commission Webhook]",
+        });
 
         return NextResponse.json({
             success: true,

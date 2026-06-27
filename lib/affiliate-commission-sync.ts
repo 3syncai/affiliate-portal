@@ -1,3 +1,4 @@
+import { COMMISSION_HAS_ANY_RETURN_REQUEST_SQL } from "@/lib/dashboard-return-sql";
 import { voidCommissionsForApprovedReturns } from "@/lib/void-return-commission";
 
 type Queryable = {
@@ -9,18 +10,41 @@ type SyncOptions = {
     logPrefix: string;
 };
 
-// Number of minutes between an order being delivered and the commission
-// becoming spendable in the affiliate's wallet. The UI shows a live countdown
-// while the row is in this "awaiting credit" state.
-export const COMMISSION_UNLOCK_MINUTES = 5;
+/** Default post-delivery return window before commission credits (ecomm policy). */
+export const COMMISSION_UNLOCK_DAYS = 7;
+
+/** @deprecated Use COMMISSION_UNLOCK_DAYS; kept for dev smoke tests via env override. */
+export const COMMISSION_UNLOCK_MINUTES = parsePositiveInt(
+    process.env.COMMISSION_UNLOCK_MINUTES,
+    0,
+);
+
+function parsePositiveInt(value: string | undefined, fallback: number): number {
+    const parsed = Number.parseInt(String(value ?? ""), 10);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+/** SQL interval for the unlock window (env: COMMISSION_UNLOCK_MINUTES for dev, else days). */
+export function getCommissionUnlockIntervalSql(): string {
+    const minutesOverride = parsePositiveInt(process.env.COMMISSION_UNLOCK_MINUTES, 0);
+    if (minutesOverride > 0) {
+        return `INTERVAL '${minutesOverride} minutes'`;
+    }
+    const days = parsePositiveInt(
+        process.env.COMMISSION_UNLOCK_DAYS,
+        COMMISSION_UNLOCK_DAYS,
+    );
+    return `INTERVAL '${days} days'`;
+}
 
 type PromotedCommissionRow = {
     commission_source: string;
     affiliate_user_id: string | null;
+    affiliate_code: string | null;
     affiliate_commission: string | number | null;
 };
 
-async function creditAdminWalletsForPromotedRows(
+async function creditWalletsForPromotedRows(
     db: Queryable,
     rows: PromotedCommissionRow[],
     logPrefix: string,
@@ -28,11 +52,22 @@ async function creditAdminWalletsForPromotedRows(
     const branchTotals = new Map<string, number>();
     const asmTotals = new Map<string, number>();
     const stateTotals = new Map<string, number>();
+    const affiliateTotals = new Map<string, number>();
 
     for (const row of rows) {
-        const userId = String(row.affiliate_user_id ?? "").trim();
         const amount = Number.parseFloat(String(row.affiliate_commission ?? 0)) || 0;
-        if (!userId || amount <= 0) continue;
+        if (amount <= 0) continue;
+
+        if (row.commission_source === "affiliate") {
+            const referCode = String(row.affiliate_code ?? "").trim();
+            if (referCode) {
+                affiliateTotals.set(referCode, (affiliateTotals.get(referCode) ?? 0) + amount);
+            }
+            continue;
+        }
+
+        const userId = String(row.affiliate_user_id ?? "").trim();
+        if (!userId) continue;
 
         if (row.commission_source === "branch_admin") {
             branchTotals.set(userId, (branchTotals.get(userId) ?? 0) + amount);
@@ -85,15 +120,32 @@ async function creditAdminWalletsForPromotedRows(
         );
     }
 
+    for (const [referCode, amount] of affiliateTotals) {
+        await db.query(
+            `
+            INSERT INTO customer_wallet (customer_id, coins_balance)
+            SELECT id::text, $2 FROM affiliate_user WHERE refer_code = $1
+            ON CONFLICT (customer_id)
+            DO UPDATE SET coins_balance = customer_wallet.coins_balance + $2
+            `,
+            [referCode, amount],
+        );
+    }
+
     const credited =
-        branchTotals.size + asmTotals.size + stateTotals.size;
+        branchTotals.size +
+        asmTotals.size +
+        stateTotals.size +
+        affiliateTotals.size;
     if (credited > 0) {
-        console.log(`${logPrefix} credited ${credited} admin wallet(s) after unlock promotion`);
+        console.log(`${logPrefix} credited ${credited} wallet(s) after unlock promotion`);
     }
 }
 
 export async function syncAffiliateCommissionStatuses(db: Queryable, options: SyncOptions) {
     const { affiliateCode, logPrefix } = options;
+    const unlockInterval = getCommissionUnlockIntervalSql();
+
     try {
         const orderTableRes = await db.query(
             `
@@ -122,8 +174,6 @@ export async function syncAffiliateCommissionStatuses(db: Queryable, options: Sy
         );
         const orderCols = new Set(orderColsRes.rows.map((row: { column_name: string }) => row.column_name));
 
-        // Admin-approved returns are voided first (stops timer, zeros pending).
-        // Customer requests still awaiting approval keep the countdown running.
         await voidCommissionsForApprovedReturns(db, {
             affiliateCode,
             logPrefix: `${logPrefix} approved-return`,
@@ -156,11 +206,10 @@ export async function syncAffiliateCommissionStatuses(db: Queryable, options: Sy
             cancelledConditions.push("LOWER(COALESCE(o.status::text, '')) IN ('canceled','cancelled','cancellation_requested')");
         }
         if (orderCols.has("fulfillment_status")) {
-            deliveredConditions.push("LOWER(COALESCE(o.fulfillment_status::text, '')) IN ('delivered','fulfilled','shipped')");
+            deliveredConditions.push("LOWER(COALESCE(o.fulfillment_status::text, '')) IN ('delivered','fulfilled')");
             cancelledConditions.push("LOWER(COALESCE(o.fulfillment_status::text, '')) IN ('canceled','cancelled')");
         }
         if (orderCols.has("payment_status")) {
-            deliveredConditions.push("LOWER(COALESCE(o.payment_status::text, '')) IN ('captured','partially_captured')");
             cancelledConditions.push("LOWER(COALESCE(o.payment_status::text, '')) IN ('canceled','cancelled','refunded','partially_refunded')");
         }
         if (orderCols.has("canceled_at")) {
@@ -176,6 +225,7 @@ export async function syncAffiliateCommissionStatuses(db: Queryable, options: Sy
         }
 
         let joinClause = "";
+        let hasFulfillmentDeliveredAt = false;
         const fulfillmentTableRes = await db.query(
             `
             SELECT table_name
@@ -222,13 +272,11 @@ export async function syncAffiliateCommissionStatuses(db: Queryable, options: Sy
 
             if (joinClause) {
                 if (fulfillmentCols.has("delivered_at")) {
+                    hasFulfillmentDeliveredAt = true;
                     deliveredConditions.push("f.delivered_at IS NOT NULL");
                 }
-                if (fulfillmentCols.has("shipped_at")) {
-                    deliveredConditions.push("f.shipped_at IS NOT NULL");
-                }
                 if (fulfillmentCols.has("status")) {
-                    deliveredConditions.push("LOWER(COALESCE(f.status::text, '')) IN ('delivered','fulfilled','shipped')");
+                    deliveredConditions.push("LOWER(COALESCE(f.status::text, '')) IN ('delivered','fulfilled')");
                     cancelledConditions.push("LOWER(COALESCE(f.status::text, '')) IN ('canceled','cancelled')");
                 }
                 if (fulfillmentCols.has("canceled_at")) {
@@ -240,9 +288,17 @@ export async function syncAffiliateCommissionStatuses(db: Queryable, options: Sy
         const affiliateFilterClause = affiliateCode ? "AND acl.affiliate_code = $1" : "";
         const params = affiliateCode ? [affiliateCode] : [];
 
-        // 1) Cancellations and returns always win — clear any unlock timer
-        //    and zero out the commission so a cancelled / returned order
-        //    doesn't drip into the wallet (even mid-countdown).
+        const deliveryAnchorSql = hasFulfillmentDeliveredAt
+            ? `COALESCE(
+                f.delivered_at,
+                NULLIF(o.metadata->>'shiprocket_delivered_at', '')::timestamptz,
+                NOW()
+              )`
+            : `COALESCE(
+                NULLIF(o.metadata->>'shiprocket_delivered_at', '')::timestamptz,
+                NOW()
+              )`;
+
         if (cancelledConditions.length > 0) {
             await db.query(
                 `
@@ -263,26 +319,24 @@ export async function syncAffiliateCommissionStatuses(db: Queryable, options: Sy
             );
         }
 
-        // 2) Mark delivered-but-not-yet-credited rows with an unlock timer.
-        //    Status stays PENDING so the UI can show a countdown badge.
         if (deliveredConditions.length > 0) {
             await db.query(
                 `
                 UPDATE affiliate_commission_log acl
-                SET unlock_at = NOW() + INTERVAL '${COMMISSION_UNLOCK_MINUTES} minutes'
+                SET unlock_at = ${deliveryAnchorSql} + ${unlockInterval}
                 FROM "${orderTable}" o
                 ${joinClause}
                 WHERE o.id = acl.order_id
                   ${affiliateFilterClause}
                   AND acl.status = 'PENDING'
                   AND acl.unlock_at IS NULL
+                  AND NOT (${COMMISSION_HAS_ANY_RETURN_REQUEST_SQL})
                   AND (${deliveredConditions.join(" OR ")})
             `,
                 params
             );
         }
 
-        // 3) Promote PENDING rows whose unlock timer elapsed, then credit admin wallets.
         const promotedResult = await db.query(
             `
             UPDATE affiliate_commission_log acl
@@ -291,14 +345,15 @@ export async function syncAffiliateCommissionStatuses(db: Queryable, options: Sy
             WHERE acl.status = 'PENDING'
               AND acl.unlock_at IS NOT NULL
               AND acl.unlock_at <= NOW()
+              AND NOT (${COMMISSION_HAS_ANY_RETURN_REQUEST_SQL})
               ${affiliateCode ? "AND acl.affiliate_code = $1" : ""}
-            RETURNING acl.commission_source, acl.affiliate_user_id, acl.affiliate_commission
+            RETURNING acl.commission_source, acl.affiliate_user_id, acl.affiliate_code, acl.affiliate_commission
         `,
             params
         );
 
         if (promotedResult.rows?.length) {
-            await creditAdminWalletsForPromotedRows(
+            await creditWalletsForPromotedRows(
                 db,
                 promotedResult.rows as PromotedCommissionRow[],
                 logPrefix,

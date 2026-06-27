@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { Pool } from "pg";
 import { fetchCommissionRates } from "@/lib/commission-rates";
 import { syncAffiliateCommissionStatuses } from "@/lib/affiliate-commission-sync";
+import {
+    COMMISSION_HAS_RETURN_SQL,
+    COMMISSION_HAS_PENDING_RETURN_REQUEST_SQL,
+} from "@/lib/dashboard-return-sql";
 
 export const dynamic = "force-dynamic";
 
@@ -14,8 +18,8 @@ const toCount = (value: string | number | null | undefined) => {
 };
 
 // Legacy delivered-commission sync. The canonical sync now lives in
-// `syncAffiliateCommissionStatuses` and applies the 5-minute unlock window
-// plus return-voiding. This function used to flip rows straight to CREDITED
+// `syncAffiliateCommissionStatuses` and applies the 7-day post-delivery unlock
+// window plus return-voiding. This function used to flip rows straight to CREDITED
 // without any delay, which would skip the timer entirely, so it is no longer
 // invoked from the route below.
 async function syncDeliveredCommissions(pool: Pool, logPrefix: string) {
@@ -293,12 +297,7 @@ export async function GET(req: NextRequest) {
                     acl.order_amount,
                     CASE
                         WHEN acl.status = 'CANCELLED' THEN 0
-                        WHEN EXISTS (
-                            SELECT 1 FROM return_request rr
-                            WHERE rr.order_id = acl.order_id
-                              AND rr.deleted_at IS NULL
-                              AND LOWER(COALESCE(rr.status, '')) NOT IN ('rejected','cancelled','canceled')
-                        ) THEN 0
+                        WHEN (${COMMISSION_HAS_RETURN_SQL}) THEN 0
                         ELSE acl.affiliate_commission
                     END AS commission_amount,
                     acl.created_at,
@@ -306,12 +305,8 @@ export async function GET(req: NextRequest) {
                     acl.status,
                     acl.unlock_at,
                     acl.credited_at,
-                    EXISTS (
-                        SELECT 1 FROM return_request rr
-                        WHERE rr.order_id = acl.order_id
-                          AND rr.deleted_at IS NULL
-                          AND LOWER(COALESCE(rr.status, '')) NOT IN ('rejected','cancelled','canceled')
-                    ) AS has_return,
+                    (${COMMISSION_HAS_RETURN_SQL}) AS has_return,
+                    (${COMMISSION_HAS_PENDING_RETURN_REQUEST_SQL}) AS has_return_request,
                     COALESCE(u.first_name, asm.first_name, ba.first_name, 'Customer') AS first_name,
                     COALESCE(u.last_name, asm.last_name, ba.last_name, '') AS last_name,
                     COALESCE(u.refer_code, asm.refer_code, ba.refer_code) AS refer_code,
@@ -367,12 +362,7 @@ export async function GET(req: NextRequest) {
                     acl.order_amount,
                     CASE
                         WHEN acl.status = 'CANCELLED' THEN 0
-                        WHEN EXISTS (
-                            SELECT 1 FROM return_request rr
-                            WHERE rr.order_id = acl.order_id
-                              AND rr.deleted_at IS NULL
-                              AND LOWER(COALESCE(rr.status, '')) NOT IN ('rejected','cancelled','canceled')
-                        ) THEN 0
+                        WHEN (${COMMISSION_HAS_RETURN_SQL}) THEN 0
                         ELSE acl.affiliate_commission
                     END AS commission_amount,
                     acl.created_at,
@@ -380,12 +370,8 @@ export async function GET(req: NextRequest) {
                     acl.status,
                     acl.unlock_at,
                     acl.credited_at,
-                    EXISTS (
-                        SELECT 1 FROM return_request rr
-                        WHERE rr.order_id = acl.order_id
-                          AND rr.deleted_at IS NULL
-                          AND LOWER(COALESCE(rr.status, '')) NOT IN ('rejected','cancelled','canceled')
-                    ) AS has_return,
+                    (${COMMISSION_HAS_RETURN_SQL}) AS has_return,
+                    (${COMMISSION_HAS_PENDING_RETURN_REQUEST_SQL}) AS has_return_request,
                     'You' AS first_name,
                     '' AS last_name,
                     acl.affiliate_code AS refer_code,

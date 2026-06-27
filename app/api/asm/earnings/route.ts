@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Pool } from "pg";
 import { fetchCommissionRates } from "@/lib/commission-rates";
 import { syncAffiliateCommissionStatuses } from "@/lib/affiliate-commission-sync";
-import { COMMISSION_HAS_RETURN_SQL } from "@/lib/dashboard-return-sql";
+import { COMMISSION_HAS_RETURN_SQL, COMMISSION_HAS_PENDING_RETURN_REQUEST_SQL } from "@/lib/dashboard-return-sql";
 import { getBmPersonalEarnings } from "@/lib/personal-commission-earnings";
 
 export const dynamic = "force-dynamic";
@@ -113,6 +113,7 @@ export async function GET(req: NextRequest) {
                     acl.unlock_at,
                     acl.credited_at,
                     (${COMMISSION_HAS_RETURN_SQL}) AS has_return,
+                    (${COMMISSION_HAS_PENDING_RETURN_REQUEST_SQL}) AS has_return_request,
                     acl.commission_source,
                     COALESCE(u.first_name, ba.first_name, 'Customer') AS first_name,
                     COALESCE(u.last_name, ba.last_name, '') AS last_name,
@@ -173,6 +174,7 @@ export async function GET(req: NextRequest) {
                     acl.unlock_at,
                     acl.credited_at,
                     (${COMMISSION_HAS_RETURN_SQL}) AS has_return,
+                    (${COMMISSION_HAS_PENDING_RETURN_REQUEST_SQL}) AS has_return_request,
                     acl.commission_source,
                     acl.customer_name AS first_name,
                     '' AS last_name,

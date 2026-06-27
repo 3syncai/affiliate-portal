@@ -3,7 +3,7 @@ import { Pool } from "pg";
 import { fetchCommissionRates } from "@/lib/commission-rates";
 import { syncAffiliateCommissionStatuses } from "@/lib/affiliate-commission-sync";
 import { repairMissingBranchAdminCommissions } from "@/lib/repair-branch-admin-commissions";
-import { COMMISSION_HAS_RETURN_SQL } from "@/lib/dashboard-return-sql";
+import { COMMISSION_HAS_RETURN_SQL, COMMISSION_HAS_PENDING_RETURN_REQUEST_SQL } from "@/lib/dashboard-return-sql";
 import {
     getBranchAdminPersonalEarnings,
     resolveBranchAdminId,
@@ -113,6 +113,7 @@ export async function GET(req: NextRequest) {
                 acl.unlock_at,
                 acl.credited_at,
                 (${COMMISSION_HAS_RETURN_SQL}) AS has_return,
+                (${COMMISSION_HAS_PENDING_RETURN_REQUEST_SQL}) AS has_return_request,
                 COALESCE(
                     au.first_name,
                     CASE

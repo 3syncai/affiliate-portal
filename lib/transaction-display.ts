@@ -14,6 +14,7 @@ export type RecentTransactionRow = {
     unlock_at?: string | null;
     credited_at?: string | null;
     has_return?: boolean;
+    has_return_request?: boolean;
     participant_name: string;
     participant_branch: string;
     commission_amount: number;
@@ -124,6 +125,7 @@ type BranchOrderInput = {
     unlock_at?: string | null;
     credited_at?: string | null;
     has_return?: boolean;
+    has_return_request?: boolean;
 };
 
 export function mapBranchEarningsOrder(order: BranchOrderInput): RecentTransactionRow {
@@ -139,6 +141,7 @@ export function mapBranchEarningsOrder(order: BranchOrderInput): RecentTransacti
         unlock_at: order.unlock_at,
         credited_at: order.credited_at,
         has_return: order.has_return,
+        has_return_request: order.has_return_request,
         participant_name: formatParticipantName(order.first_name, order.last_name),
         participant_branch: order.participant_branch?.trim() || (isDirect ? "Direct" : ""),
         commission_amount: Number.parseFloat(String(order.commission_amount ?? 0)) || 0,
@@ -163,6 +166,7 @@ type BmOrderInput = {
     unlock_at?: string | null;
     credited_at?: string | null;
     has_return?: boolean;
+    has_return_request?: boolean;
 };
 
 export function mapBmEarningsOrder(order: BmOrderInput): RecentTransactionRow {
@@ -181,6 +185,7 @@ export function mapBmEarningsOrder(order: BmOrderInput): RecentTransactionRow {
         unlock_at: order.unlock_at,
         credited_at: order.credited_at,
         has_return: order.has_return,
+        has_return_request: order.has_return_request,
         participant_name:
             order.participant_name?.trim() ||
             formatParticipantName(order.first_name, order.last_name),
@@ -209,6 +214,7 @@ type StateOrderInput = {
     unlock_at?: string | null;
     credited_at?: string | null;
     has_return?: boolean;
+    has_return_request?: boolean;
 };
 
 export function mapStateAdminEarningsOrder(order: StateOrderInput): RecentTransactionRow {
@@ -222,6 +228,7 @@ export function mapStateAdminEarningsOrder(order: StateOrderInput): RecentTransa
         unlock_at: order.unlock_at,
         credited_at: order.credited_at,
         has_return: order.has_return,
+        has_return_request: order.has_return_request,
         participant_name: formatParticipantName(order.first_name, order.last_name, "You"),
         participant_branch:
             order.participant_branch?.trim() ||

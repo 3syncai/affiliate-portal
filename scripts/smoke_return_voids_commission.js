@@ -15,8 +15,6 @@ const TEST_CODE = process.env.SMOKE_REFER_CODE || 'OWEGVISHAL65215';
 const TEST_RR_ID = '__sim_return_req__';
 
 async function cleanup() {
-    // Only clean rows we created (cust_sim) so we don't nuke real commissions
-    // that already belong to TEST_CODE.
     await pool.query(
         `DELETE FROM affiliate_commission_log
          WHERE affiliate_code = $1 AND customer_id = 'cust_sim'`,
@@ -58,9 +56,35 @@ async function main() {
         `INSERT INTO return_request
             (id, order_id, customer_id, type, status, payment_type, refund_method,
              created_at, updated_at)
-         VALUES ($1, $2, 'cust_sim', 'REFUND', 'approved',
+         VALUES ($1, $2, 'cust_sim', 'REFUND', 'pending_approval',
                  'PREPAID', 'wallet', NOW(), NOW())`,
         [TEST_RR_ID, orderId]
+    );
+
+    let rPending = await pool.query(
+        `SELECT status, unlock_at, affiliate_commission
+         FROM affiliate_commission_log
+         WHERE affiliate_code = $1 AND customer_id = 'cust_sim'`,
+        [TEST_CODE]
+    );
+    console.log('With pending return (before sync):', rPending.rows[0]);
+
+    const resPending = await fetch('http://localhost:3001/api/affiliate/orders', {
+        headers: { 'x-affiliate-code': TEST_CODE }
+    });
+    const dataPending = await resPending.json().catch(() => null);
+    const rowPending = dataPending?.orders?.find((o) => o.order_id === orderId);
+    if (rowPending) {
+        console.log('Pending return API flags:', {
+            has_return: rowPending.has_return,
+            has_return_request: rowPending.has_return_request,
+            status: rowPending.status
+        });
+    }
+
+    await pool.query(
+        `UPDATE return_request SET status = 'approved', updated_at = NOW() WHERE id = $1`,
+        [TEST_RR_ID]
     );
 
     const res = await fetch('http://localhost:3001/api/affiliate/orders', {
@@ -83,7 +107,8 @@ async function main() {
             status: row.status,
             unlock_at: row.unlock_at,
             commission_amount: row.commission_amount,
-            has_return: row.has_return
+            has_return: row.has_return,
+            has_return_request: row.has_return_request
         });
     }
 
