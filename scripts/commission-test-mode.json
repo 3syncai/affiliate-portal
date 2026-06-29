@@ -1,0 +1,11 @@
+{
+  "mode": "base-only",
+  "description": "Option A (default): pick a product with no active additional_commissions campaign so base hierarchy math (₹70+₹20+₹10 etc.) applies exactly.",
+  "optionB": {
+    "mode": "with-additional",
+    "description": "Option B: use --require-additional-campaign or COMMISSION_TEST_MODE=with-additional to test direct-seller bonus on top of base splits.",
+    "env": "COMMISSION_TEST_MODE=with-additional"
+  },
+  "defaultOrderAmount": 1000,
+  "defaultProductCommissionPct": 10
+}
