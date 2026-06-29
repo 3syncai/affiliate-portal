@@ -54,7 +54,7 @@ export default function AdminLayout({
   const pathname = usePathname()
   const { theme } = useTheme()
   const [user, setUser] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
+  const [authChecked, setAuthChecked] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
@@ -82,24 +82,23 @@ export default function AdminLayout({
     const role = localStorage.getItem("affiliate_role")
 
     if (!token || !userData) {
-      router.push("/login")
+      router.replace("/login")
       return
     }
 
     if (role !== "admin") {
-      router.push("/dashboard")
+      router.replace("/dashboard")
       return
     }
 
     try {
       setUser(JSON.parse(userData))
+      setAuthChecked(true)
+      void loadAdminProfile()
     } catch (e) {
       console.error("Error parsing user data:", e)
-      router.push("/login")
-      return
+      router.replace("/login")
     }
-
-    void loadAdminProfile().finally(() => setLoading(false))
   }, [router, loadAdminProfile])
 
   const performLogout = () => {
@@ -109,7 +108,7 @@ export default function AdminLayout({
     router.push("/login")
   }
 
-  if (loading) {
+  if (!authChecked) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-lg">Loading...</div>
