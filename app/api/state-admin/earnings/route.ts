@@ -6,6 +6,7 @@ import {
     COMMISSION_HAS_RETURN_SQL,
     COMMISSION_HAS_PENDING_RETURN_REQUEST_SQL,
 } from "@/lib/dashboard-return-sql";
+import { ledgerDisplayCommissionSql } from "@/lib/ledger-commission-display";
 
 export const dynamic = "force-dynamic";
 
@@ -286,20 +287,18 @@ export async function GET(req: NextRequest) {
         const availableBalance = currentEarnings - paidAmount;
         const totalOrders = creditedOverrideOrders + pendingOverrideOrders + creditedDirectOrders + pendingDirectOrders;
 
+        const displayCommission = ledgerDisplayCommissionSql();
+
         // Each sub-select carries the same shape: status, unlock_at,
-        // credited_at, has_return + a commission_amount that drops to 0 if
-        // the order is cancelled or the customer has filed a return.
+        // credited_at, has_return + a commission_amount that is negative when
+        // the order is cancelled or returned so lost earnings are visible.
         const recentOrdersResult = await pool.query(`
             (
                 SELECT
                     acl.id,
                     acl.order_id,
                     acl.order_amount,
-                    CASE
-                        WHEN acl.status = 'CANCELLED' THEN 0
-                        WHEN (${COMMISSION_HAS_RETURN_SQL}) THEN 0
-                        ELSE acl.affiliate_commission
-                    END AS commission_amount,
+                    ${displayCommission} AS commission_amount,
                     acl.created_at,
                     acl.product_name,
                     acl.status,
@@ -360,11 +359,7 @@ export async function GET(req: NextRequest) {
                     acl.id,
                     acl.order_id,
                     acl.order_amount,
-                    CASE
-                        WHEN acl.status = 'CANCELLED' THEN 0
-                        WHEN (${COMMISSION_HAS_RETURN_SQL}) THEN 0
-                        ELSE acl.affiliate_commission
-                    END AS commission_amount,
+                    ${displayCommission} AS commission_amount,
                     acl.created_at,
                     acl.product_name,
                     acl.status,

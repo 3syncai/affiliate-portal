@@ -4,6 +4,7 @@ import { fetchCommissionRates } from "@/lib/commission-rates";
 import { syncAffiliateCommissionStatuses } from "@/lib/affiliate-commission-sync";
 import { COMMISSION_HAS_RETURN_SQL, COMMISSION_HAS_PENDING_RETURN_REQUEST_SQL } from "@/lib/dashboard-return-sql";
 import { getBmPersonalEarnings } from "@/lib/personal-commission-earnings";
+import { ledgerDisplayCommissionSql } from "@/lib/ledger-commission-display";
 
 export const dynamic = "force-dynamic";
 
@@ -11,10 +12,6 @@ const toAmount = (value: string | number | null | undefined) => {
     return Number.parseFloat(String(value ?? 0)) || 0;
 };
 
-const RETURN_VOID_SQL = `
-    acl.status = 'CANCELLED'
-    OR (${COMMISSION_HAS_RETURN_SQL})
-`;
 
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
@@ -96,6 +93,7 @@ export async function GET(req: NextRequest) {
         const currentEarnings = creditedLifetimeEarnings - paidAmount;
 
         let allOrders: Record<string, unknown>[] = [];
+        const displayCommission = ledgerDisplayCommissionSql();
 
         if (adminId) {
             const recentOverrideOrdersResult = await pool.query(`
@@ -103,10 +101,7 @@ export async function GET(req: NextRequest) {
                     acl.id,
                     acl.order_id,
                     acl.order_amount,
-                    CASE
-                        WHEN ${RETURN_VOID_SQL} THEN 0
-                        ELSE acl.affiliate_commission
-                    END AS your_earning,
+                    ${displayCommission} AS your_earning,
                     acl.created_at,
                     acl.product_name,
                     acl.status,
@@ -160,14 +155,8 @@ export async function GET(req: NextRequest) {
                     acl.id,
                     acl.order_id,
                     acl.order_amount,
-                    CASE
-                        WHEN ${RETURN_VOID_SQL} THEN 0
-                        ELSE acl.affiliate_commission
-                    END AS your_earning,
-                    CASE
-                        WHEN ${RETURN_VOID_SQL} THEN 0
-                        ELSE acl.affiliate_commission
-                    END AS participant_earning,
+                    ${displayCommission} AS your_earning,
+                    ${displayCommission} AS participant_earning,
                     acl.created_at,
                     acl.product_name,
                     acl.status,

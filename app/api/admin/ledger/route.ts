@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Pool } from "pg";
+import pool from "@/lib/db";
 import { COMMISSION_HAS_RETURN_SQL } from "@/lib/dashboard-return-sql";
-
-const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false },
-});
+import {
+  ledgerDisplayCommissionSql,
+  ledgerOriginalCommissionSql,
+} from "@/lib/ledger-commission-display";
 
 export const dynamic = "force-dynamic";
 
@@ -18,20 +17,13 @@ export async function GET(req: NextRequest) {
         const status = searchParams.get("status") || "ALL";
         const offset = (page - 1) * limit;
 
-        // Get affiliate rate
         const rateRes = await pool.query(`SELECT commission_percentage FROM commission_rates WHERE role_type = 'affiliate'`);
         const affiliateRateRaw = parseFloat(rateRes.rows[0]?.commission_percentage || '0');
         const affiliateRateDecimal = affiliateRateRaw / 100;
 
+        const displayCommission = ledgerDisplayCommissionSql(affiliateRateDecimal);
+        const originalCommission = ledgerOriginalCommissionSql(affiliateRateDecimal);
 
-        // NOTE: For non-affiliate sources (state_admin / area_manager /
-        // branch_admin) the `affiliate_code` column on the log is a generic
-        // role tag like 'STATE' / 'AREA' / 'BRANCH', so we cannot match the
-        // admin tables by refer_code. The actual link is `affiliate_user_id`
-        // which holds the admin's UUID. We also wrap each CONCAT with
-        // NULLIF(TRIM(...), '') because PostgreSQL's CONCAT returns a single
-        // space (not NULL) when both name parts are NULL, which would
-        // otherwise short-circuit the COALESCE chain.
         let query = `
       SELECT 
         acl.id,
@@ -41,10 +33,8 @@ export async function GET(req: NextRequest) {
         acl.quantity,
         acl.order_amount,
         acl.commission_amount,
-        CASE
-          WHEN (${COMMISSION_HAS_RETURN_SQL}) THEN 0
-          ELSE COALESCE(acl.affiliate_commission, acl.commission_amount * ${affiliateRateDecimal})
-        END AS affiliate_commission,
+        ${displayCommission} AS affiliate_commission,
+        ${originalCommission} AS original_commission,
         acl.branch_admin_bonus,
         acl.status,
         acl.commission_source,
@@ -118,26 +108,21 @@ export async function GET(req: NextRequest) {
         }
 
         // Execute queries
-        const client = await pool.connect();
-        try {
-            const countResult = await client.query(countQuery, params.slice(0, paramIndex - 1));
-            const total = parseInt(countResult.rows[0].total);
+        const countResult = await pool.query(countQuery, params.slice(0, paramIndex - 1));
+        const total = parseInt(countResult.rows[0].total);
 
-            const result = await client.query(query, params);
+        const result = await pool.query(query, params);
 
-            return NextResponse.json({
-                success: true,
-                data: result.rows,
-                pagination: {
-                    total,
-                    page,
-                    limit: limit === -1 ? total : limit,
-                    totalPages: limit === -1 ? 1 : Math.ceil(total / limit)
-                }
-            });
-        } finally {
-            client.release();
-        }
+        return NextResponse.json({
+            success: true,
+            data: result.rows,
+            pagination: {
+                total,
+                page,
+                limit: limit === -1 ? total : limit,
+                totalPages: limit === -1 ? 1 : Math.ceil(total / limit)
+            }
+        });
 
     } catch (error: any) {
         console.error("Error fetching ledger:", error);

@@ -7,6 +7,11 @@ import axios from "axios"
 import useSWR from "swr"
 import { DollarSign, AlertCircle } from "lucide-react"
 import CommissionStatusBadge from "@/app/components/CommissionStatusBadge"
+import {
+  formatSignedCommission,
+  isVoidedLedgerEntry,
+  ledgerCommissionClass,
+} from "@/lib/ledger-commission-display"
 
 type Transaction = {
   id: string
@@ -251,8 +256,13 @@ function EarningsContent() {
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         ₹{tx.order_amount.toFixed(2)}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-emerald-600">
-                        +₹{(tx.has_return ? 0 : tx.commission_amount).toFixed(2)}
+                      <td
+                        className={`px-6 py-4 whitespace-nowrap text-sm font-semibold ${ledgerCommissionClass(
+                          tx.commission_amount,
+                          isVoidedLedgerEntry(tx),
+                        )}`}
+                      >
+                        {formatSignedCommission(tx.commission_amount)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <CommissionStatusBadge
