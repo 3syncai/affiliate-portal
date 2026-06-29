@@ -1,8 +1,8 @@
 "use client"
 
-import { useEffect, useState, useMemo } from "react"
-import { useRouter } from "next/navigation"
+import { useMemo } from "react"
 import axios from "axios"
+import useSWR from "swr"
 import {
   Users,
   UserCheck,
@@ -40,75 +40,73 @@ type DashboardCard = {
   linkText?: string
 }
 
-export default function AdminDashboardPage() {
-  const router = useRouter()
-  const [stats, setStats] = useState({
-    totalAgents: 0,
-    pendingRequests: 0,
-    totalCommission: 0,
-    pendingPayout: 0,
-    totalOrders: 0,
-    totalReturns: 0,
-  })
-  const [adminStats, setAdminStats] = useState({
-    stateAdmins: 0,
-    areaManagers: 0,
-    branchAdmins: 0,
-  })
-  const [commissionRates, setCommissionRates] = useState<CommissionRate[]>([])
-  const [activities, setActivities] = useState<ActivityEvent[]>([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    fetchDashboardData()
-  }, [])
-
-  const fetchDashboardData = async () => {
-    setLoading(true)
-    try {
-      // Fetch affiliate stats
-      const statsResponse = await axios.get("/api/affiliate/admin/stats")
-      const statsData = statsResponse.data
-      if (statsData.success && statsData.stats) {
-        setStats({
-          totalAgents: statsData.stats.totalAgents || 0,
-          pendingRequests: statsData.stats.pendingRequests || 0,
-          totalCommission: statsData.stats.totalCommission || 0,
-          pendingPayout: statsData.stats.pendingPayout || 0,
-          totalOrders: statsData.stats.totalOrders || 0,
-          totalReturns: statsData.stats.totalReturns || 0,
-        })
-      }
-
-      // Fetch admin stats
-      const adminStatsResponse = await axios.get("/api/admin/stats")
-      const adminStatsData = adminStatsResponse.data
-      if (adminStatsData.success) {
-        setAdminStats(adminStatsData.stats)
-      }
-
-      // Fetch commission rates
-      const ratesResponse = await axios.get("/api/admin/commission-rates")
-      const ratesData = ratesResponse.data
-      if (ratesData.success) {
-        setCommissionRates(ratesData.rates)
-      }
-
-      // Fetch recent activity  
-      const activityResponse = await axios.get("/api/affiliate/admin/activity?limit=5")
-      const activityData = activityResponse.data
-      if (activityData.success) {
-        setActivities(activityData.activities || [])
-      }
-    } catch (error) {
-      console.error("Failed to fetch dashboard data:", error)
-    } finally {
-      setLoading(false)
-    }
+type DashboardResponse = {
+  success: boolean
+  stats?: {
+    totalAgents: number
+    pendingRequests: number
+    totalCommission: number
+    pendingPayout: number
+    totalOrders: number
+    totalReturns: number
   }
+  adminStats?: {
+    stateAdmins: number
+    areaManagers: number
+    branchAdmins: number
+  }
+  rates?: CommissionRate[]
+  activities?: ActivityEvent[]
+}
+
+const fetcher = (url: string) => axios.get(url).then((res) => res.data)
+
+const defaultStats = {
+  totalAgents: 0,
+  pendingRequests: 0,
+  totalCommission: 0,
+  pendingPayout: 0,
+  totalOrders: 0,
+  totalReturns: 0,
+}
+
+const defaultAdminStats = {
+  stateAdmins: 0,
+  areaManagers: 0,
+  branchAdmins: 0,
+}
+
+function StatCardSkeleton() {
+  return (
+    <div className="bg-white p-6 rounded-xl border-2 border-gray-100 animate-pulse">
+      <div className="flex items-center justify-center mb-4">
+        <div className="w-14 h-14 bg-gray-200 rounded-xl" />
+      </div>
+      <div className="h-4 bg-gray-200 rounded w-3/4 mx-auto mb-2" />
+      <div className="h-8 bg-gray-200 rounded w-1/2 mx-auto" />
+    </div>
+  )
+}
+
+export default function AdminDashboardPage() {
+  const { data, error, isLoading, mutate, isValidating } = useSWR<DashboardResponse>(
+    "/api/admin/dashboard?activityLimit=5",
+    fetcher,
+    {
+      revalidateOnFocus: true,
+      keepPreviousData: true,
+    },
+  )
+
+  const stats = data?.stats ?? defaultStats
+  const adminStats = data?.adminStats ?? defaultAdminStats
+  const commissionRates = data?.rates ?? []
+  const activities = data?.activities ?? []
+  const loadFailed = Boolean(error) || (data != null && data.success === false)
+  const showSkeleton = isLoading && !data
 
   const formatCurrency = (amount: number) => {
-    return `₹${amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+    return `₹${amount.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
   }
 
   const activityFeedItems = useMemo(
@@ -131,17 +129,6 @@ export default function AdminDashboardPage() {
       default:
         return roleType
     }
-  }
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-lg font-medium text-gray-600">Loading dashboard...</p>
-        </div>
-      </div>
-    )
   }
 
   const dashboardCards: DashboardCard[] = [
@@ -222,60 +209,68 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="space-y-8 p-4 sm:p-6 lg:p-8">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Dashboard</h1>
           <p className="text-gray-600 mt-1">Overview of your Partner program</p>
         </div>
         <button
-          onClick={fetchDashboardData}
-          className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium shadow-sm hover:shadow-md"
+          onClick={() => void mutate()}
+          disabled={isValidating}
+          className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium shadow-sm hover:shadow-md disabled:opacity-60"
         >
-          <TrendingUp className="w-4 h-4 mr-2" />
-          Refresh Data
+          <TrendingUp className={`w-4 h-4 mr-2 ${isValidating ? "animate-spin" : ""}`} />
+          {isValidating ? "Refreshing..." : "Refresh Data"}
         </button>
       </div>
 
-      {/* Main Grid Layout */}
+      {loadFailed && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          Some dashboard data could not be loaded. Try refreshing.
+        </div>
+      )}
+
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
-        {/* Left Side - Stats (3 columns on large screens) */}
         <div className="xl:col-span-3 space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {dashboardCards.map((card) => {
-              const Icon = card.icon
-              return (
-                <a
-                  key={card.label}
-                  href={card.href}
-                  className={`group bg-white p-6 rounded-xl border-2 ${card.borderColor} ${card.hoverBorderColor} transition-all cursor-pointer`}
-                >
-                  <div className="flex items-center justify-center mb-4">
-                    <div className={`p-3 ${card.iconBg} rounded-xl transition-colors`}>
-                      <Icon className={`w-8 h-8 ${card.iconColor}`} />
-                    </div>
-                  </div>
-                  <p className="text-sm text-gray-600 text-center">{card.label}</p>
-                  <p className="text-3xl font-bold text-gray-900 text-center mt-1">{card.value}</p>
-                  <div className="mt-2 flex items-center justify-center text-xs text-gray-500">
-                    <span>{card.linkText ?? "View all"}</span>
-                    <ArrowUpRight className="w-3 h-3 ml-1 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-                  </div>
-                </a>
-              )
-            })}
+            {showSkeleton
+              ? Array.from({ length: 7 }).map((_, index) => (
+                  <StatCardSkeleton key={index} />
+                ))
+              : dashboardCards.map((card) => {
+                  const Icon = card.icon
+                  return (
+                    <a
+                      key={card.label}
+                      href={card.href}
+                      className={`group bg-white p-6 rounded-xl border-2 ${card.borderColor} ${card.hoverBorderColor} transition-all cursor-pointer`}
+                    >
+                      <div className="flex items-center justify-center mb-4">
+                        <div className={`p-3 ${card.iconBg} rounded-xl transition-colors`}>
+                          <Icon className={`w-8 h-8 ${card.iconColor}`} />
+                        </div>
+                      </div>
+                      <p className="text-sm text-gray-600 text-center">{card.label}</p>
+                      <p className="text-3xl font-bold text-gray-900 text-center mt-1">
+                        {card.value}
+                      </p>
+                      <div className="mt-2 flex items-center justify-center text-xs text-gray-500">
+                        <span>{card.linkText ?? "View all"}</span>
+                        <ArrowUpRight className="w-3 h-3 ml-1 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                      </div>
+                    </a>
+                  )
+                })}
           </div>
 
           <RecentActivityFeed
             items={activityFeedItems}
-            loading={false}
+            loading={showSkeleton || (isValidating && activities.length === 0)}
             viewAllHref="/admin/activity"
           />
         </div>
 
-        {/* Right Side - Sidebar Widgets */}
         <div className="xl:col-span-1 space-y-6">
-          {/* Commission Rates - Sticky on Desktop */}
           <div className="bg-gradient-to-br from-indigo-50 to-white rounded-xl shadow-sm border border-indigo-200 p-6 xl:sticky xl:top-6">
             <div className="flex items-center gap-2 mb-5">
               <div className="p-2 bg-indigo-100 rounded-lg">
@@ -284,17 +279,36 @@ export default function AdminDashboardPage() {
               <h2 className="text-lg font-semibold text-gray-900">Commission Rates</h2>
             </div>
             <div className="space-y-4">
-              {commissionRates.filter(rate => rate.role_type !== 'branch_direct').map((rate) => (
-                <div key={rate.role_type} className="bg-white rounded-lg p-4 border border-gray-200">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium text-gray-700">{getRoleLabel(rate.role_type)}</p>
-                    <div className="flex items-center gap-1">
-                      <p className="text-2xl font-bold text-indigo-600">{rate.commission_percentage}</p>
-                      <span className="text-sm text-indigo-600 font-medium">%</span>
+              {showSkeleton
+                ? Array.from({ length: 4 }).map((_, index) => (
+                    <div
+                      key={index}
+                      className="bg-white rounded-lg p-4 border border-gray-200 animate-pulse"
+                    >
+                      <div className="h-4 bg-gray-200 rounded w-2/3 mb-2" />
+                      <div className="h-7 bg-gray-200 rounded w-1/4 ml-auto" />
                     </div>
-                  </div>
-                </div>
-              ))}
+                  ))
+                : commissionRates
+                    .filter((rate) => rate.role_type !== "branch_direct")
+                    .map((rate) => (
+                      <div
+                        key={rate.role_type}
+                        className="bg-white rounded-lg p-4 border border-gray-200"
+                      >
+                        <div className="flex items-center justify-between">
+                          <p className="text-sm font-medium text-gray-700">
+                            {getRoleLabel(rate.role_type)}
+                          </p>
+                          <div className="flex items-center gap-1">
+                            <p className="text-2xl font-bold text-indigo-600">
+                              {rate.commission_percentage}
+                            </p>
+                            <span className="text-sm text-indigo-600 font-medium">%</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
             </div>
             <a
               href="/admin/commission-settings"
@@ -305,7 +319,6 @@ export default function AdminDashboardPage() {
             </a>
           </div>
 
-          {/* Quick Links - Enhanced */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Stats</h2>
             <div className="space-y-3">
@@ -319,7 +332,13 @@ export default function AdminDashboardPage() {
                   </div>
                   <div>
                     <p className="text-xs text-green-700 font-medium">Total Commission</p>
-                    <p className="text-sm font-bold text-green-900">{formatCurrency(stats.totalCommission)}</p>
+                    <p className="text-sm font-bold text-green-900">
+                      {showSkeleton ? (
+                        <span className="inline-block h-4 w-24 bg-green-200 rounded animate-pulse" />
+                      ) : (
+                        formatCurrency(stats.totalCommission)
+                      )}
+                    </p>
                   </div>
                 </div>
                 <ArrowUpRight className="w-4 h-4 text-green-600 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -335,7 +354,13 @@ export default function AdminDashboardPage() {
                   </div>
                   <div>
                     <p className="text-xs text-amber-700 font-medium">Pending Payout</p>
-                    <p className="text-sm font-bold text-amber-900">{formatCurrency(stats.pendingPayout)}</p>
+                    <p className="text-sm font-bold text-amber-900">
+                      {showSkeleton ? (
+                        <span className="inline-block h-4 w-24 bg-amber-200 rounded animate-pulse" />
+                      ) : (
+                        formatCurrency(stats.pendingPayout)
+                      )}
+                    </p>
                   </div>
                 </div>
                 <ArrowUpRight className="w-4 h-4 text-amber-600 opacity-0 group-hover:opacity-100 transition-opacity" />
