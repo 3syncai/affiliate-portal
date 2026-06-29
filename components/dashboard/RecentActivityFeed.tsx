@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import CommissionStatusBadge from "@/app/components/CommissionStatusBadge";
 import {
   DollarSign,
   CheckCircle,
@@ -21,6 +22,10 @@ export type RecentActivityFeedItem = {
   subtitle?: string;
   amount?: number | null;
   timestamp: string;
+  commissionStatus?: string;
+  unlockAt?: string | null;
+  hasReturn?: boolean;
+  hasReturnRequest?: boolean;
   variant?:
     | "commission"
     | "approval"
@@ -149,6 +154,7 @@ export default function RecentActivityFeed({
             const Icon = style.icon;
             const showAmount =
               activity.amount != null && Number(activity.amount) > 0;
+            const showCommissionStatus = Boolean(activity.commissionStatus);
 
             return (
               <div
@@ -179,9 +185,19 @@ export default function RecentActivityFeed({
                       +{formatCurrency(Number(activity.amount))}
                     </p>
                   ) : null}
-                  <p
-                    className={`text-xs text-gray-400 ${showAmount ? "" : "mt-1"}`}
-                  >
+                  {showCommissionStatus ? (
+                    <div className={`flex justify-end ${showAmount ? "mt-1" : ""}`}>
+                      <CommissionStatusBadge
+                        status={activity.commissionStatus!}
+                        unlockAt={activity.unlockAt}
+                        hasReturn={activity.hasReturn}
+                        returnRequestPending={
+                          activity.hasReturnRequest && !activity.hasReturn
+                        }
+                      />
+                    </div>
+                  ) : null}
+                  <p className="text-xs text-gray-400 mt-1">
                     {formatActivityDate(activity.timestamp)}
                   </p>
                 </div>

@@ -1,5 +1,9 @@
 import type { Pool } from "pg";
 import type { RecentActivityFeedItem } from "@/components/dashboard/RecentActivityFeed";
+import {
+    COMMISSION_HAS_PENDING_RETURN_REQUEST_SQL,
+    COMMISSION_HAS_RETURN_SQL,
+} from "@/lib/dashboard-return-sql";
 
 export type ActivityCategory =
     | "commission"
@@ -23,6 +27,10 @@ export type ActivityEvent = {
     amount?: number | null;
     saleLevel?: string;
     territory?: string;
+    commissionStatus?: string;
+    unlockAt?: string | null;
+    hasReturn?: boolean;
+    hasReturnRequest?: boolean;
 };
 
 const toAmount = (value: string | number | null | undefined) =>
@@ -87,6 +95,10 @@ export function mapActivityEventToFeedItem(event: ActivityEvent): RecentActivity
         amount: event.amount ?? null,
         timestamp: event.timestamp,
         variant: variantMap[event.category],
+        commissionStatus: event.commissionStatus,
+        unlockAt: event.unlockAt,
+        hasReturn: event.hasReturn,
+        hasReturnRequest: event.hasReturnRequest,
     };
 }
 
@@ -104,9 +116,12 @@ async function fetchCommissionEvents(
             acl.order_id,
             acl.product_name,
             acl.status,
+            acl.unlock_at,
             acl.commission_source,
             acl.created_at,
             COALESCE(acl.affiliate_commission, acl.commission_amount, 0) AS amount,
+            (${COMMISSION_HAS_RETURN_SQL}) AS has_return,
+            (${COMMISSION_HAS_PENDING_RETURN_REQUEST_SQL}) AS has_return_request,
             COALESCE(
                 u.first_name,
                 ba.first_name,
@@ -179,6 +194,10 @@ async function fetchCommissionEvents(
             amount: isCancelled ? null : amount,
             saleLevel,
             territory: row.territory || row[territoryKey],
+            commissionStatus: row.status,
+            unlockAt: row.unlock_at,
+            hasReturn: !!row.has_return,
+            hasReturnRequest: !!row.has_return_request,
         };
     });
 }
