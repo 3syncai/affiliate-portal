@@ -3,6 +3,9 @@ import pool from "@/lib/db";
 import { syncAffiliateCommissionStatuses } from "@/lib/affiliate-commission-sync";
 import { COMMISSION_HAS_RETURN_SQL } from "@/lib/dashboard-return-sql";
 import {
+  ledgerDisplayCommissionSql,
+} from "@/lib/ledger-commission-display";
+import {
   RETURN_REQUEST_APPROVED_STATUSES,
   RETURN_REQUEST_PENDING_STATUSES,
   RETURN_REQUEST_REJECTED_STATUSES,
@@ -39,6 +42,7 @@ export async function GET(req: NextRequest) {
       rateRes.rows[0]?.commission_percentage || "0",
     );
     const affiliateRateDecimal = affiliateRateRaw / 100;
+    const displayCommission = ledgerDisplayCommissionSql(affiliateRateDecimal);
 
     let query = `
       SELECT
@@ -49,10 +53,7 @@ export async function GET(req: NextRequest) {
         acl.quantity,
         acl.order_amount,
         acl.commission_amount,
-        CASE
-          WHEN acl.status = 'CANCELLED' OR (${COMMISSION_HAS_RETURN_SQL}) THEN 0
-          ELSE COALESCE(acl.affiliate_commission, acl.commission_amount * ${affiliateRateDecimal})
-        END AS affiliate_commission,
+        ${displayCommission} AS affiliate_commission,
         acl.branch_admin_bonus,
         acl.status,
         acl.commission_source,

@@ -10,6 +10,11 @@ import {
   Download,
   Filter,
 } from "lucide-react";
+import {
+  formatSignedCommission,
+  isVoidedLedgerEntry,
+  ledgerCommissionClass,
+} from "@/lib/ledger-commission-display";
 
 interface ReturnLedgerItem {
   id: string;
@@ -253,13 +258,12 @@ export default function AdminReturnsPage() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
                       <div className="flex flex-col items-end">
                         <span
-                          className={`font-bold ${
-                            item.has_return || item.affiliate_commission === 0
-                              ? "text-gray-400 line-through"
-                              : "text-emerald-600"
-                          }`}
+                          className={ledgerCommissionClass(
+                            item.affiliate_commission,
+                            isVoidedLedgerEntry(item),
+                          )}
                         >
-                          +{formatCurrency(item.affiliate_commission)}
+                          {formatSignedCommission(item.affiliate_commission)}
                         </span>
                       </div>
                     </td>

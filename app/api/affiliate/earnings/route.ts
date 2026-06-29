@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import pool from "@/lib/db";
 import { syncAffiliateCommissionStatuses } from "@/lib/affiliate-commission-sync";
 import { COMMISSION_IS_RETURN_OR_CANCELLED_SQL, COMMISSION_HAS_RETURN_SQL, COMMISSION_HAS_PENDING_RETURN_REQUEST_SQL } from "@/lib/dashboard-return-sql";
+import { ledgerDisplayCommissionSql } from "@/lib/ledger-commission-display";
 
 export const dynamic = "force-dynamic";
 
@@ -40,6 +41,7 @@ export async function GET(request: NextRequest) {
     );
     const affiliateRateRaw = parseFloat(rateRes.rows[0]?.commission_percentage || "0");
     const affiliateRateDecimal = affiliateRateRaw / 100;
+    const displayCommission = ledgerDisplayCommissionSql(affiliateRateDecimal);
 
     const statsResult = await pool.query(
       `SELECT
@@ -69,7 +71,7 @@ export async function GET(request: NextRequest) {
          acl.customer_email,
          acl.order_amount,
          acl.commission_rate,
-         COALESCE(acl.affiliate_commission, acl.commission_amount * ${affiliateRateDecimal}) AS affiliate_commission,
+         ${displayCommission} AS affiliate_commission,
          acl.commission_source,
          acl.status,
          acl.unlock_at,
@@ -91,8 +93,7 @@ export async function GET(request: NextRequest) {
       customer_email: row.customer_email,
       order_amount: parseFloat(row.order_amount || "0"),
       commission_rate: parseFloat(row.commission_rate || "0"),
-      commission_amount:
-        row.status === "CANCELLED" ? 0 : parseFloat(row.affiliate_commission || "0"),
+      commission_amount: parseFloat(row.affiliate_commission || "0"),
       commission_source: row.commission_source,
       status: row.status,
       unlock_at: row.unlock_at,

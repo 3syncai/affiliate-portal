@@ -8,6 +8,7 @@ import {
     getBranchAdminPersonalEarnings,
     resolveBranchAdminId,
 } from "@/lib/personal-commission-earnings";
+import { ledgerDisplayCommissionSql } from "@/lib/ledger-commission-display";
 
 export const dynamic = "force-dynamic";
 
@@ -96,17 +97,15 @@ export async function GET(req: NextRequest) {
 
         const availableBalance = creditedLifetimeEarnings - paidAmount;
 
+        const displayCommission = ledgerDisplayCommissionSql();
+
         const recentOrdersResult = await pool.query(`
             SELECT
                 acl.id,
                 acl.order_id,
                 acl.order_amount,
                 acl.commission_source,
-                CASE
-                    WHEN acl.status = 'CANCELLED' THEN 0
-                    WHEN (${COMMISSION_HAS_RETURN_SQL}) THEN 0
-                    ELSE acl.affiliate_commission
-                END AS commission_amount,
+                ${displayCommission} AS commission_amount,
                 acl.created_at,
                 acl.product_name,
                 acl.status,

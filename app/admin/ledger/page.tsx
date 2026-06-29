@@ -4,6 +4,11 @@ import { useState } from "react";
 import useSWR from "swr";
 import axios from "axios";
 import {
+  formatSignedCommission,
+  isVoidedLedgerEntry,
+  ledgerCommissionClass,
+} from "@/lib/ledger-commission-display";
+import {
     Search,
     ChevronLeft,
     ChevronRight,
@@ -248,13 +253,12 @@ export default function CommissionLedgerPage() {
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
                                             <div className="flex flex-col items-end">
                                                 <span
-                                                    className={`font-bold ${
-                                                        item.has_return || item.affiliate_commission === 0
-                                                            ? "text-gray-400 line-through"
-                                                            : "text-emerald-600"
-                                                    }`}
+                                                    className={ledgerCommissionClass(
+                                                        item.affiliate_commission,
+                                                        isVoidedLedgerEntry(item),
+                                                    )}
                                                 >
-                                                    +{formatCurrency(item.affiliate_commission)}
+                                                    {formatSignedCommission(item.affiliate_commission)}
                                                 </span>
                                                 {item.branch_admin_bonus > 0 && (
                                                     <span className="text-xs text-blue-600">Incl. Bonus: {formatCurrency(item.branch_admin_bonus)}</span>

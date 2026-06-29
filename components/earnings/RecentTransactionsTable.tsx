@@ -2,12 +2,16 @@
 
 import CommissionStatusBadge from "@/app/components/CommissionStatusBadge";
 import {
-    formatTransactionCurrency,
     formatTransactionDate,
     saleLevelBadgeClass,
     saleLevelLabel,
     type RecentTransactionRow,
 } from "@/lib/transaction-display";
+import {
+    formatSignedCommission,
+    isVoidedLedgerEntry,
+    ledgerCommissionClass,
+} from "@/lib/ledger-commission-display";
 
 type RecentTransactionsTableProps = {
     orders: RecentTransactionRow[];
@@ -67,8 +71,7 @@ export default function RecentTransactionsTable({
                         </thead>
                         <tbody className="divide-y divide-gray-200 bg-white">
                             {orders.map((order) => {
-                                const cancelledOrReturned =
-                                    order.has_return || order.status === "CANCELLED";
+                                const voided = isVoidedLedgerEntry(order);
 
                                 return (
                                     <tr
@@ -114,13 +117,12 @@ export default function RecentTransactionsTable({
                                             ) : null}
                                         </td>
                                         <td
-                                            className={`px-6 py-4 whitespace-nowrap text-sm text-right font-bold ${
-                                                cancelledOrReturned
-                                                    ? "text-gray-400 line-through"
-                                                    : "text-gray-900"
-                                            }`}
+                                            className={`px-6 py-4 whitespace-nowrap text-sm text-right ${ledgerCommissionClass(
+                                                order.commission_amount,
+                                                voided,
+                                            )}`}
                                         >
-                                            {formatTransactionCurrency(order.commission_amount)}
+                                            {formatSignedCommission(order.commission_amount)}
                                         </td>
                                     </tr>
                                 );
