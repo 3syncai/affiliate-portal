@@ -96,16 +96,26 @@ export default function OrderLayoutPage() {
 
   const exportToCSV = () => {
     const headers = [
-      "Order ID", "Date", "Sale By Name", "Sale By Code",
-      "Product", "Quantity", "Item Price", "Order Amount",
-      "Partner Earned", "Branch Earned", "ASM Earned", "My Earned", "Status"
+      "Date",
+      "Product",
+      "Order ID",
+      "Sale By",
+      "Sale By Code",
+      "Quantity",
+      "Item Price",
+      "Order Amount",
+      "Sales Executive Earned",
+      "Branch Manager Earned",
+      "ASM Commission",
+      "State Admin Earned",
+      "Status",
     ]
-    const rows = filteredOrders.map(o => [
-      o.order_id,
+    const rows = filteredOrders.map((o) => [
       formatDate(o.created_at),
+      o.product_name,
+      o.order_id,
       o.generator_name,
       o.generator_code,
-      o.product_name,
       o.quantity,
       o.item_price,
       o.order_amount,
@@ -113,7 +123,7 @@ export default function OrderLayoutPage() {
       o.branch_earned,
       o.asm_earned,
       o.my_earned,
-      o.status
+      o.status,
     ])
 
     const csvContent = [
