@@ -31,6 +31,7 @@ export async function GET(req: NextRequest) {
         acl.order_id,
         acl.product_name,
         acl.quantity,
+        acl.item_price,
         acl.order_amount,
         acl.commission_amount,
         ${displayCommission} AS affiliate_commission,
@@ -48,8 +49,39 @@ export async function GET(req: NextRequest) {
         '' as last_name,
         COALESCE(au.email, sa.email, asm.email, ba.email) as email,
         COALESCE(au.refer_code, sa.refer_code, asm.refer_code, ba.refer_code, acl.affiliate_code) as refer_code,
-        au.is_agent
+        au.is_agent,
+        COALESCE(
+          NULLIF(TRIM(CONCAT(
+            NULLIF(TRIM(ship.city), ''),
+            CASE
+              WHEN ship.province IS NOT NULL AND TRIM(ship.province) <> ''
+              THEN ', ' || TRIM(ship.province)
+              ELSE ''
+            END,
+            CASE
+              WHEN ship.postal_code IS NOT NULL AND TRIM(ship.postal_code) <> ''
+              THEN ' - ' || TRIM(ship.postal_code)
+              ELSE ''
+            END
+          )), ''),
+          NULLIF(TRIM(o.metadata->>'shipping_state'), '')
+        ) AS sale_location,
+        sale.sale_by_name,
+        sale.sale_by_code
       FROM affiliate_commission_log acl
+      LEFT JOIN "order" o ON o.id = acl.order_id
+      LEFT JOIN order_address ship ON ship.id = o.shipping_address_id
+      LEFT JOIN LATERAL (
+        SELECT
+          NULLIF(TRIM(CONCAT(se_au.first_name, ' ', se_au.last_name)), '') AS sale_by_name,
+          se_au.refer_code AS sale_by_code
+        FROM affiliate_commission_log se
+        LEFT JOIN affiliate_user se_au ON se_au.refer_code = se.affiliate_code
+        WHERE se.order_id = acl.order_id
+          AND se.commission_source = 'affiliate'
+        ORDER BY se.created_at ASC
+        LIMIT 1
+      ) sale ON TRUE
       LEFT JOIN affiliate_user au
         ON au.refer_code = acl.affiliate_code
         OR au.id::text = NULLIF(acl.affiliate_user_id, '')

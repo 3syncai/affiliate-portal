@@ -9,6 +9,13 @@ import {
   ledgerCommissionClass,
 } from "@/lib/ledger-commission-display";
 import {
+  LEDGER_CSV_HEADERS,
+  csvEscape,
+  formatCommissionSourceLabel,
+  formatLedgerExportDate,
+  formatLedgerRoleLabel,
+} from "@/lib/ledger-export";
+import {
     Search,
     ChevronLeft,
     ChevronRight,
@@ -24,6 +31,7 @@ interface LedgerItem {
     order_id: string;
     product_name: string;
     quantity: number;
+    item_price: number;
     order_amount: number;
     commission_amount: number;
     affiliate_commission: number;
@@ -36,6 +44,9 @@ interface LedgerItem {
     refer_code: string;
     is_agent: boolean;
     has_return?: boolean;
+    sale_location?: string;
+    sale_by_name?: string;
+    sale_by_code?: string;
 }
 
 const ledgerDisplayStatus = (item: LedgerItem) =>
@@ -114,36 +125,37 @@ export default function CommissionLedgerPage() {
             const response = await axios.get(`/api/admin/ledger?limit=-1&search=${searchTerm}&status=${statusFilter}`);
             if (response.data.success) {
                 const data = response.data.data;
-                const csvHeader = ["Date,Order ID,Product,Qty,Order Amount,Commission,Status,Source,Agent Name,Refer Code,Role"];
-                const csvRows = data.map((item: LedgerItem) => {
-                    const role = item.is_agent ? 'Sales Executive' :
-                        item.commission_source === 'state_admin' ? 'State Admin' :
-                            item.commission_source === 'area_manager' ? 'Area Sales Manager' :
-                                item.commission_source?.includes('branch') ? 'Branch Admin' : 'User';
-
-                    return [
-                        `"${new Date(item.created_at).toLocaleDateString('en-IN')}"`,
-                        `"${item.order_id}"`,
-                        `"${item.product_name}"`,
-                        item.quantity,
-                        item.order_amount,
-                        item.affiliate_commission,
+                const csvRows = data.map((item: LedgerItem) =>
+                    [
+                        csvEscape(formatLedgerExportDate(item.created_at)),
+                        csvEscape(item.product_name),
+                        csvEscape(item.order_id),
+                        csvEscape(item.sale_location || ""),
+                        csvEscape(item.sale_by_name || "Unknown"),
+                        csvEscape(item.sale_by_code || ""),
+                        item.quantity ?? 0,
+                        item.item_price ?? 0,
+                        item.order_amount ?? 0,
+                        item.affiliate_commission ?? 0,
                         ledgerDisplayStatus(item),
-                        item.commission_source,
-                        `"${item.first_name ? item.first_name + ' ' + item.last_name : 'Unknown'}"`,
-                        `"${item.refer_code}"`,
-                        role
-                    ].join(",");
-                });
+                        formatCommissionSourceLabel(item.commission_source),
+                        formatLedgerRoleLabel(item),
+                    ].join(","),
+                );
 
-                const csvContent = "data:text/csv;charset=utf-8," + [csvHeader, ...csvRows].join("\n");
-                const encodedUri = encodeURI(csvContent);
+                const csvContent = [LEDGER_CSV_HEADERS.join(","), ...csvRows].join("\n");
+                const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+                const url = window.URL.createObjectURL(blob);
                 const link = document.createElement("a");
-                link.setAttribute("href", encodedUri);
-                link.setAttribute("download", `commission_ledger_${new Date().toISOString().split('T')[0]}.csv`);
+                link.setAttribute("href", url);
+                link.setAttribute(
+                    "download",
+                    `partner-module-ledger-${new Date().toISOString().split("T")[0]}.csv`,
+                );
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
             }
         } catch (error) {
             console.error("Export failed:", error);

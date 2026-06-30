@@ -96,25 +96,37 @@ export default function OrderLayoutPage() {
     return statusColors[status] || "bg-gray-50 text-gray-700 border-gray-200 ring-gray-100"
   }
 
+  const branchManagerEarned = (order: AffiliateOrder) =>
+    order.asm_earned > 0 ? order.asm_earned : order.my_earned
+
   const exportToCSV = () => {
     const headers = [
-      "Order ID", "Date", "Sale By Name", "Sale By Code",
-      "Product", "Quantity", "Item Price", "Order Amount",
-      "Partner Earned", "ASM Earned", "Branch Manager Earned", "Status"
+      "Date",
+      "Product",
+      "Order ID",
+      "Sale By",
+      "Sale By Code",
+      "Quantity",
+      "Item Price",
+      "Order Amount",
+      "Sales Executive Earned",
+      "ASM Commission",
+      "Branch Manager Earned",
+      "Status",
     ]
-    const rows = filteredOrders.map(o => [
-      o.order_id,
+    const rows = filteredOrders.map((o) => [
       formatDate(o.created_at),
+      o.product_name,
+      o.order_id,
       o.generator_name,
       o.generator_code,
-      o.product_name,
       o.quantity,
       o.item_price,
       o.order_amount,
       o.affiliate_earned,
       o.branch_earned,
-      o.asm_earned,
-      o.status
+      branchManagerEarned(o),
+      o.status,
     ])
 
     const csvContent = [
