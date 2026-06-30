@@ -125,7 +125,7 @@ export default function OrderLayoutPage() {
     const url = window.URL.createObjectURL(blob)
     const a = document.createElement("a")
     a.href = url
-    a.download = `affiliate-orders-${new Date().toISOString().split('T')[0]}.csv`
+    a.download = `partner-module-orders-${new Date().toISOString().split('T')[0]}.csv`
     a.click()
     window.URL.revokeObjectURL(url)
   }
