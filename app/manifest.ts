@@ -2,9 +2,9 @@ import type { MetadataRoute } from 'next'
  
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'OWEG PWA',
-    short_name: 'OWEG',
-    description: 'Shop home appliances, kitchen utensils, and electronics at OWEG.',
+    name: 'Oweg - Partners',
+    short_name: 'Oweg Partners',
+    description: 'Oweg partner portal for sales executives and hierarchy management.',
     start_url: '/',
     display: 'standalone',
     background_color: '#ffffff',

@@ -9,7 +9,10 @@
  *   node scripts/reset_test_accounts_commission_math.js
  *   node scripts/reset_test_accounts_commission_math.js --confirm
  *   node scripts/reset_test_accounts_commission_math.js --confirm --include-orders
+ *   node scripts/reset_test_accounts_commission_math.js --confirm --include-referrals
  *
+ * affiliate_referrals are NOT deleted by default (use --include-referrals).
+ * Deleting them removes customers from SE "My Referrals" without clearing checkout attribution.
  * Commission math reference (₹1000 @ 10% pool = ₹100; rates 40/30/20/10):
  *   ASM direct (branch_admin code):     ₹70 + ₹20 + ₹10  (3 rows)
  *   Branch Head direct (area_sales_manager): ₹90 + ₹10 (2 rows)
@@ -46,6 +49,7 @@ function loadDatabaseUrl() {
 
 const dryRun = !process.argv.includes("--confirm");
 const includeOrders = process.argv.includes("--include-orders");
+const includeReferrals = process.argv.includes("--include-referrals");
 
 const pool = new Pool({
     connectionString: loadDatabaseUrl().replace("?sslmode=no-verify", ""),
@@ -349,7 +353,7 @@ async function executeCleanup(client, scope) {
             )
         ).rowCount;
 
-        if (seReferCodes.length > 0) {
+        if (includeReferrals && seReferCodes.length > 0) {
             deleted.affiliate_referrals = (
                 await client.query(
                     `DELETE FROM affiliate_referrals
@@ -387,6 +391,9 @@ async function main() {
 
         console.log(`Mode: ${dryRun ? "DRY RUN" : "CLEANUP"}`);
         if (includeOrders) console.log("Also deleting Medusa order rows (--include-orders)\n");
+        if (!includeReferrals) {
+            console.log("affiliate_referrals preserved (pass --include-referrals to delete SE referral rows)\n");
+        }
 
         console.log("=== Resolved test accounts ===");
         console.table(

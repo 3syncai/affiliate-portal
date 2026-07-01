@@ -14,9 +14,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "OWEG - Home Appliances & Electronics",
-  description: "Shop home appliances, kitchen utensils, and electronics at OWEG.",
-  applicationName: "OWEG",
+  title: "Oweg - Partners",
+  description: "Oweg partner portal for sales executives and hierarchy management.",
+  applicationName: "Oweg Partners",
   themeColor: "#7AC943",
   colorScheme: "light",
   manifest: "/manifest.webmanifest",
