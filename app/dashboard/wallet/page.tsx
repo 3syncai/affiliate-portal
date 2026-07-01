@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react"
 import axios from "axios"
-import { Wallet, CreditCard, Building2, Smartphone, Plus, Edit2, CheckCircle, TrendingUp, History, ArrowUpRight, Copy, Wifi, WifiOff } from "lucide-react"
+import { Wallet, CreditCard, Building2, Smartphone, Plus, Edit2, CheckCircle, TrendingUp, History, ArrowUpRight, Copy, Wifi, WifiOff, Receipt } from "lucide-react"
 import UserNavbar from "../../components/UserNavbar"
 import { useSSE } from "@/hooks/useSSE"
 import { Toast } from "@/components/Toast"
@@ -32,6 +32,7 @@ type WalletData = {
         current: number
         totalEarned: number
         withdrawn: number
+        tdsDeducted: number
     }
     paymentMethod: PaymentMethod | null
 }
@@ -395,10 +396,10 @@ export default function WalletPage() {
                                     {formatCurrency(walletData.balance.current)}
                                 </h2>
                                 <p className="text-sm sm:text-base text-emerald-100/95 mb-6 max-w-md leading-relaxed">
-                                    Your earnings are calculated net of TDS. Withdrawals are processed within 30 days.
+                                    Available balance is your credited earnings minus withdrawal requests already paid. TDS is deducted when payouts are processed.
                                 </p>
 
-                                <div className="grid grid-cols-2 gap-3 pt-4 border-t border-white/30">
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-4 border-t border-white/30">
                                     <div className="bg-white/15 backdrop-blur-md rounded-xl p-3 hover:bg-white/20 transition-all">
                                         <div className="flex items-center gap-1.5 mb-1">
                                             <TrendingUp className="w-3.5 h-3.5 text-emerald-100" />
@@ -413,7 +414,15 @@ export default function WalletPage() {
                                             <p className="text-xs text-emerald-100 font-medium">Withdrawn</p>
                                         </div>
                                         <p className="text-lg font-bold">{formatCurrency(walletData.balance.withdrawn)}</p>
-                                        <p className="text-xs text-emerald-200 mt-0.5">Paid out</p>
+                                        <p className="text-xs text-emerald-200 mt-0.5">Net paid</p>
+                                    </div>
+                                    <div className="bg-white/15 backdrop-blur-md rounded-xl p-3 hover:bg-white/20 transition-all">
+                                        <div className="flex items-center gap-1.5 mb-1">
+                                            <Receipt className="w-3.5 h-3.5 text-emerald-100" />
+                                            <p className="text-xs text-emerald-100 font-medium">TDS Deducted</p>
+                                        </div>
+                                        <p className="text-lg font-bold">{formatCurrency(walletData.balance.tdsDeducted ?? 0)}</p>
+                                        <p className="text-xs text-emerald-200 mt-0.5">At payout</p>
                                     </div>
                                 </div>
                             </div>
@@ -442,6 +451,17 @@ export default function WalletPage() {
                                         <div>
                                             <span className="text-xs font-medium text-gray-500 block">Paid Out</span>
                                             <span className="text-sm font-bold text-gray-900">{formatCurrency(walletData.balance.withdrawn)}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="flex items-center justify-between p-3 bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl hover:from-amber-100 hover:to-orange-100 transition-all cursor-pointer">
+                                    <div className="flex items-center gap-2">
+                                        <div className="bg-gradient-to-br from-amber-500 to-orange-600 p-2 rounded-lg shadow-lg">
+                                            <Receipt className="w-3.5 h-3.5 text-white" />
+                                        </div>
+                                        <div>
+                                            <span className="text-xs font-medium text-gray-500 block">TDS Deducted</span>
+                                            <span className="text-sm font-bold text-gray-900">{formatCurrency(walletData.balance.tdsDeducted ?? 0)}</span>
                                         </div>
                                     </div>
                                 </div>
