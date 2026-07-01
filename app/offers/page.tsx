@@ -4,9 +4,15 @@ import { useEffect, useState } from "react"
 import useSWR from "swr"
 import axios from "axios"
 import UserNavbar from "../components/UserNavbar"
-import { Box, IndianRupee, Percent, Share2 } from "lucide-react"
+import { Box, IndianRupee, Info, Share2 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { STORE_URL } from "@/lib/config"
+import {
+    formatCommissionInr,
+    formatCommissionRatePercent,
+    seEffectiveCommissionRate,
+    seTotalCommission,
+} from "@/lib/se-product-commission-display"
 
 type AdditionalCampaign = {
   id: number
@@ -178,8 +184,14 @@ function OfferProductCard({
   additionalCommissionRate: number
 }) {
   const [copied, setCopied] = useState(false)
-  const actualCommission = product.commissionAmount * (affiliateRate / 100)
+  const [showTooltip, setShowTooltip] = useState(false)
+  const regularCommission = product.commissionAmount * (affiliateRate / 100)
+  const effectiveCommissionRate = seEffectiveCommissionRate(
+    product.commissionRate ?? 0,
+    affiliateRate,
+  )
   const additionalCommissionAmount = product.price * (additionalCommissionRate / 100)
+  const totalCommission = seTotalCommission(regularCommission, additionalCommissionAmount)
 
   const handleShare = () => {
     const referralCode = user?.refer_code || ""
@@ -255,8 +267,7 @@ function OfferProductCard({
           </div>
           {product.commissionRate && (
             <div className="flex items-center gap-1.5 bg-gradient-to-r from-emerald-50 to-teal-50 px-3 py-1.5 rounded-full">
-              <Percent size={14} className="text-emerald-600" />
-              <span className="text-sm font-bold text-emerald-700">{product.commissionRate}%</span>
+              <span className="text-sm font-bold text-emerald-700">{formatCommissionRatePercent(effectiveCommissionRate)}%</span>
             </div>
           )}
         </div>
@@ -271,10 +282,42 @@ function OfferProductCard({
         <div className="relative bg-gradient-to-r from-emerald-500 to-teal-500 rounded-xl p-[2px] shadow-lg shadow-emerald-200">
           <div className="bg-white rounded-xl px-4 py-3">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-gray-600">Your commission:</span>
-              <span className="text-lg font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
-                ₹{actualCommission.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-gray-600">Your commission:</span>
+                <span className="text-lg font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
+                  ₹{formatCommissionInr(regularCommission)}
+                </span>
+              </div>
+              <div
+                className="relative"
+                onMouseEnter={() => setShowTooltip(true)}
+                onMouseLeave={() => setShowTooltip(false)}
+                onClick={() => setShowTooltip(!showTooltip)}
+              >
+                <Info size={18} className="text-emerald-600 cursor-help hover:text-emerald-700 transition-colors" />
+                {showTooltip && (
+                  <div className="absolute bottom-full right-0 mb-3 w-72 bg-gray-900 text-white text-xs rounded-xl p-4 shadow-2xl z-50">
+                    <div className="mb-3 font-bold text-sm">Commission Breakdown</div>
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-gray-300">Regular Commission:</span>
+                        <span className="font-semibold">₹{formatCommissionInr(regularCommission)}</span>
+                      </div>
+                      {additionalCommissionRate > 0 && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-300">Additional Commission:</span>
+                          <span className="font-semibold">₹{formatCommissionInr(additionalCommissionAmount)}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between pt-2 border-t border-gray-700 text-emerald-300 font-bold">
+                        <span>Total Commission:</span>
+                        <span>₹{formatCommissionInr(totalCommission)}</span>
+                      </div>
+                    </div>
+                    <div className="absolute bottom-0 right-6 transform translate-y-1/2 rotate-45 w-3 h-3 bg-gray-900"></div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -283,11 +326,15 @@ function OfferProductCard({
           <div className="text-xs uppercase tracking-wide font-semibold text-emerald-700">Additional Commission</div>
           <div className="text-sm font-semibold text-emerald-700 mt-1">
             +{additionalCommissionRate}% (₹
-            {additionalCommissionAmount.toLocaleString("en-IN", {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2,
-            })}
+            {formatCommissionInr(additionalCommissionAmount)}
             )
+          </div>
+        </div>
+
+        <div className="bg-white border-2 border-emerald-300 rounded-xl px-4 py-3">
+          <div className="flex justify-between items-center">
+            <span className="text-sm font-semibold text-gray-800">Total Commission</span>
+            <span className="text-lg font-bold text-emerald-700">₹{formatCommissionInr(totalCommission)}</span>
           </div>
         </div>
       </div>
