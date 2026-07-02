@@ -288,7 +288,10 @@ function ProductCard({ product, user, theme, commissionRate, additionalCommissio
                     </div>
                     <ProductRoleCommissionRateBadge
                         productCommissionRate={product.commissionRate}
+                        productCommissionAmount={product.commissionAmount}
+                        productPrice={product.price}
                         roleDirectRate={commissionRate}
+                        useStateAdminFallback
                         theme={theme}
                     />
                 </div>

@@ -5,6 +5,9 @@ import {
     seTotalCommission,
 } from "@/lib/se-product-commission-display"
 
+const roundToTwo = (value: number) =>
+    Math.round((value + Number.EPSILON) * 100) / 100
+
 interface ThemeColors {
     primary: string
     primaryLight: string
@@ -33,10 +36,17 @@ export function getProductRoleCommissionValues({
             ? productCommissionAmount * (roleDirectRate / 100)
             : productCommissionAmount
 
-    const effectiveCommissionRate = seEffectiveCommissionRate(
-        productCommissionRate ?? 0,
-        roleDirectRate,
-    )
+    let effectiveCommissionRate: number
+    if (productPrice > 0) {
+        effectiveCommissionRate = roundToTwo((regularCommission / productPrice) * 100)
+    } else if (useStateAdminFallback && roleDirectRate <= 0) {
+        effectiveCommissionRate = roundToTwo(productCommissionRate ?? 0)
+    } else {
+        effectiveCommissionRate = seEffectiveCommissionRate(
+            productCommissionRate ?? 0,
+            roleDirectRate,
+        )
+    }
 
     const additionalCommissionAmount = productPrice * (additionalCommissionRate / 100)
     const totalCommission = seTotalCommission(regularCommission, additionalCommissionAmount)
@@ -51,20 +61,27 @@ export function getProductRoleCommissionValues({
 
 export function ProductRoleCommissionRateBadge({
     productCommissionRate,
+    productCommissionAmount = 0,
+    productPrice = 0,
     roleDirectRate,
+    useStateAdminFallback = false,
     theme,
 }: {
     productCommissionRate: number | null
+    productCommissionAmount?: number
+    productPrice?: number
     roleDirectRate: number
+    useStateAdminFallback?: boolean
     theme: ThemeColors
 }) {
     if (!productCommissionRate) return null
 
     const { effectiveCommissionRate } = getProductRoleCommissionValues({
         productCommissionRate,
-        productCommissionAmount: 0,
-        productPrice: 0,
+        productCommissionAmount,
+        productPrice,
         roleDirectRate,
+        useStateAdminFallback,
     })
 
     return (
@@ -120,7 +137,7 @@ export function ProductRoleCommissionDisplay({
                     <div className="mt-2 rounded-lg px-3 py-2 space-y-1 bg-emerald-50 border border-emerald-200">
                         <div className="text-xs font-medium text-emerald-700">Additional Commission</div>
                         <div className="text-sm font-semibold text-emerald-700">
-                            +{additionalCommissionRate}% (₹
+                            +{formatCommissionRatePercent(additionalCommissionRate)}% (₹
                             {formatCommissionInr(additionalCommissionAmount)})
                         </div>
                     </div>
