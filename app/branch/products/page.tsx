@@ -5,6 +5,10 @@ import { Search, Package, IndianRupee, Box, Share2 } from "lucide-react"
 import axios from "axios"
 import { STORE_URL } from "@/lib/config"
 import { useTheme } from "@/contexts/ThemeContext"
+import {
+    ProductRoleCommissionDisplay,
+    ProductRoleCommissionRateBadge,
+} from "@/app/components/ProductRoleCommissionDisplay"
 
 interface Product {
     id: string
@@ -207,9 +211,6 @@ export default function BranchProductsPage() {
 function ProductCard({ product, user, theme, commissionRate, additionalCommissionRate }: { product: Product; user: any; theme: any; commissionRate: number; additionalCommissionRate: number }) {
     const [copied, setCopied] = useState(false)
 
-    const actualCommission = product.commissionAmount * (commissionRate / 100)
-    const additionalCommissionAmount = product.price * (additionalCommissionRate / 100)
-
     const handleShare = () => {
         const referralCode = user?.refer_code || ''
         const slug = product.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
@@ -282,11 +283,11 @@ function ProductCard({ product, user, theme, commissionRate, additionalCommissio
                             {product.price.toLocaleString("en-IN")}
                         </span>
                     </div>
-                    {product.commissionRate && (
-                        <span className="text-sm font-medium" style={{ color: theme.primary }}>
-                            {product.commissionRate}% commission
-                        </span>
-                    )}
+                    <ProductRoleCommissionRateBadge
+                        productCommissionRate={product.commissionRate}
+                        roleDirectRate={commissionRate}
+                        theme={theme}
+                    />
                 </div>
 
                 {product.inventoryQuantity > 0 && (
@@ -296,35 +297,14 @@ function ProductCard({ product, user, theme, commissionRate, additionalCommissio
                     </div>
                 )}
 
-                {product.commissionRate && (
-                    <div className="rounded-lg px-3 py-2 space-y-1" style={{ backgroundColor: theme.primaryLight, border: `1px solid ${theme.primary}20` }}>
-                        <div className="flex justify-between items-center">
-                            <span className="text-xs font-medium text-gray-600">Your Share ({commissionRate}%):</span>
-                            <span className="font-bold text-lg" style={{ color: theme.primary }}>
-                                ₹{actualCommission.toLocaleString("en-IN", {
-                                    minimumFractionDigits: 2,
-                                    maximumFractionDigits: 2
-                                })}
-                            </span>
-                        </div>
-                        <div className="flex justify-between items-center text-xs text-gray-500 border-t border-gray-200 pt-1 mt-1">
-                            <span>Total Commission:</span>
-                            <span>₹{product.commissionAmount.toLocaleString("en-IN", {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2
-                            })}</span>
-                        </div>
-                    </div>
-                )}
-
-                {additionalCommissionRate > 0 && (
-                    <div className="mt-2 rounded-lg px-3 py-2 space-y-1 bg-emerald-50 border border-emerald-200">
-                        <div className="text-xs font-medium text-emerald-700">Additional Commission</div>
-                        <div className="text-sm font-semibold text-emerald-700">
-                            +{additionalCommissionRate}% (₹{additionalCommissionAmount.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
-                        </div>
-                    </div>
-                )}
+                <ProductRoleCommissionDisplay
+                    productCommissionRate={product.commissionRate}
+                    productCommissionAmount={product.commissionAmount}
+                    productPrice={product.price}
+                    roleDirectRate={commissionRate}
+                    additionalCommissionRate={additionalCommissionRate}
+                    theme={theme}
+                />
             </div>
         </div>
     )
