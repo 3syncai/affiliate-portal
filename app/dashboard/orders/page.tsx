@@ -6,6 +6,7 @@ import axios from "axios"
 import useSWR from "swr"
 import { DollarSign, Download } from "lucide-react"
 import CommissionStatusBadge from "@/app/components/CommissionStatusBadge"
+import UserNavbar from "@/app/components/UserNavbar"
 
 interface OrderItem {
   id: string
@@ -138,45 +139,22 @@ export default function AllOrdersPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center gap-3">
-              <h1 className="text-xl font-semibold text-gray-900">Sales Executive</h1>
-              <a href="/dashboard" className="ml-4 inline-flex items-center gap-1.5 px-3 py-1 bg-white border border-gray-200 text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 rounded-md text-sm font-medium transition-colors">
-                Dashboard
-              </a>
-              <a href="/products" className="inline-flex items-center gap-1.5 px-3 py-1 bg-white border border-gray-200 text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 rounded-md text-sm font-medium transition-colors">
-                Products
-              </a>
-              <a href="/offers" className="inline-flex items-center gap-1.5 px-3 py-1 bg-white border border-gray-200 text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 rounded-md text-sm font-medium transition-colors">
-                Offers
-              </a>
-              <a href="/dashboard/profile" className="inline-flex items-center gap-1.5 px-3 py-1 bg-white border border-gray-200 text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 rounded-md text-sm font-medium transition-colors">
-                Profile
-              </a>
-            </div>
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-600">Welcome, <strong className="text-gray-900">{user?.first_name || user?.email}</strong></span>
-            </div>
-          </div>
-        </div>
-      </nav>
+    <div className="min-h-screen bg-gray-50 overflow-x-hidden">
+      <UserNavbar userName={user?.first_name || user?.email || undefined} />
 
-      <main className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <DollarSign className="w-6 h-6 text-emerald-600" />
+      <main className="max-w-7xl mx-auto py-6 sm:py-8 px-4 sm:px-6 lg:px-8">
+        <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-200">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-2 min-w-0">
+              <DollarSign className="w-6 h-6 text-emerald-600 shrink-0" />
               All Orders
             </h2>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <span className="text-sm text-gray-500">{data?.total || 0} total</span>
               <button
                 onClick={exportOrdersToExcel}
                 disabled={!orders.length}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-sm hover:from-emerald-700 hover:to-teal-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-sm hover:from-emerald-700 hover:to-teal-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all w-full sm:w-auto justify-center"
               >
                 <Download className="w-4 h-4" />
                 Export Excel

@@ -209,7 +209,7 @@ export default function ProductsPage() {
         : user?.email
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-emerald-50">
+        <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-emerald-50 overflow-x-hidden">
             <UserNavbar userName={userName} />
 
             <main className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
@@ -464,15 +464,15 @@ function ProductCard({
                 </div>
 
                 {/* Price and Commission Rate */}
-                <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-                    <div className="flex items-center gap-1">
-                        <IndianRupee size={18} className="text-gray-700" />
-                        <span className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-emerald-900 bg-clip-text text-transparent">
+                <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-gray-100">
+                    <div className="flex items-center gap-1 min-w-0">
+                        <IndianRupee size={18} className="text-gray-700 shrink-0" />
+                        <span className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-gray-900 to-emerald-900 bg-clip-text text-transparent">
                             {product.price.toLocaleString("en-IN")}
                         </span>
                     </div>
                     {product.commissionRate && (
-                        <div className="flex items-center gap-1.5 bg-gradient-to-r from-emerald-50 to-teal-50 px-3 py-1.5 rounded-full">
+                        <div className="flex items-center gap-1.5 bg-gradient-to-r from-emerald-50 to-teal-50 px-3 py-1.5 rounded-full shrink-0">
                             <span className="text-sm font-bold text-emerald-700">{formatCommissionRatePercent(effectiveCommissionRate)}%</span>
                         </div>
                     )}
@@ -511,22 +511,22 @@ function ProductCard({
                 {product.commissionRate && (
                     <div className="relative bg-gradient-to-r from-emerald-500 to-teal-500 rounded-xl p-[2px] shadow-lg shadow-emerald-200">
                         <div className="bg-white rounded-xl px-4 py-3">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                                <div className="flex flex-wrap items-center gap-2 min-w-0">
                                     <span className="text-sm font-medium text-gray-600">Your commission:</span>
                                     <span className="text-lg font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
                                         ₹{formatCommissionInr(regularCommission)}
                                     </span>
                                 </div>
                                 <div
-                                    className="relative"
+                                    className="relative shrink-0"
                                     onMouseEnter={() => setShowTooltip(true)}
                                     onMouseLeave={() => setShowTooltip(false)}
                                     onClick={() => setShowTooltip(!showTooltip)}
                                 >
                                     <Info size={18} className="text-emerald-600 cursor-help hover:text-emerald-700 transition-colors" />
                                     {showTooltip && (
-                                        <div className="absolute bottom-full right-0 mb-3 w-72 bg-gray-900 text-white text-xs rounded-xl p-4 shadow-2xl z-50">
+                                        <div className="absolute bottom-full right-0 mb-3 w-[min(18rem,calc(100vw-2.5rem))] max-w-[18rem] bg-gray-900 text-white text-xs rounded-xl p-4 shadow-2xl z-50">
                                             <div className="mb-3 font-bold text-sm">Commission Breakdown</div>
                                             <div className="space-y-2">
                                                 <div className="flex justify-between">

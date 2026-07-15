@@ -7,6 +7,7 @@ import axios from "axios"
 import useSWR from "swr"
 import { DollarSign, AlertCircle } from "lucide-react"
 import CommissionStatusBadge from "@/app/components/CommissionStatusBadge"
+import UserNavbar from "@/app/components/UserNavbar"
 import {
   formatSignedCommission,
   isVoidedLedgerEntry,
@@ -39,35 +40,6 @@ type EarningsResponse = {
     totalTransactions: number
   }
   recentTransactions: Transaction[]
-}
-
-function SalesExecutiveNav({ userName }: { userName: string }) {
-  return (
-    <nav className="bg-white border-b border-gray-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
-          <div className="flex items-center gap-3">
-            <h1 className="text-xl font-semibold text-gray-900">Sales Executive</h1>
-            <a href="/dashboard" className="ml-4 inline-flex items-center gap-1.5 px-3 py-1 bg-white border border-gray-200 text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 rounded-md text-sm font-medium transition-colors">
-              Dashboard
-            </a>
-            <a href="/products" className="inline-flex items-center gap-1.5 px-3 py-1 bg-white border border-gray-200 text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 rounded-md text-sm font-medium transition-colors">
-              Products
-            </a>
-            <a href="/offers" className="inline-flex items-center gap-1.5 px-3 py-1 bg-white border border-gray-200 text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 rounded-md text-sm font-medium transition-colors">
-              Offers
-            </a>
-            <a href="/dashboard/profile" className="inline-flex items-center gap-1.5 px-3 py-1 bg-white border border-gray-200 text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 rounded-md text-sm font-medium transition-colors">
-              Profile
-            </a>
-          </div>
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-gray-600">Welcome, <strong className="text-gray-900">{userName}</strong></span>
-          </div>
-        </div>
-      </div>
-    </nav>
-  )
 }
 
 function EarningsContent() {
@@ -150,16 +122,16 @@ function EarningsContent() {
   const userName = user?.first_name || user?.email || "Partner"
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <SalesExecutiveNav userName={userName} />
+    <div className="min-h-screen bg-gray-50 overflow-x-hidden">
+      <UserNavbar userName={userName} />
 
-      <main className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 space-y-6">
+      <main className="max-w-7xl mx-auto py-6 sm:py-8 px-4 sm:px-6 lg:px-8 space-y-6">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <DollarSign className="w-6 h-6 text-amber-600" />
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-2">
+            <DollarSign className="w-6 h-6 text-amber-600 shrink-0" />
             My Commission
           </h2>
-          <p className="text-gray-600 mt-1">Earnings from your referred customer orders</p>
+          <p className="text-gray-600 mt-1 text-sm sm:text-base">Earnings from your referred customer orders</p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -178,8 +150,8 @@ function EarningsContent() {
         </div>
 
         {filterLabel && (
-          <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 flex items-center justify-between gap-4">
-            <p className="text-sm text-amber-900">
+          <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
+            <p className="text-sm text-amber-900 min-w-0">
               Showing: <span className="font-semibold">{filterLabel}</span>
               {" "}({transactions.length} record{transactions.length === 1 ? "" : "s"})
             </p>
@@ -192,7 +164,7 @@ function EarningsContent() {
           </div>
         )}
 
-        <div className="bg-blue-50/50 rounded-lg p-4 border border-blue-100 flex items-start gap-4">
+        <div className="bg-blue-50/50 rounded-lg p-4 border border-blue-100 flex items-start gap-3 sm:gap-4">
           <AlertCircle className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
           <p className="text-sm text-blue-800">
             Commission is calculated from orders placed by customers you referred. Pending amounts unlock after delivery, then a 7-day return window before crediting.
@@ -200,9 +172,9 @@ function EarningsContent() {
         </div>
 
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-gray-50/50">
+          <div className="px-4 sm:px-6 py-4 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-gray-50/50">
             <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">Commission Ledger</h3>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Link
                 href="/dashboard/earnings?filter=pending"
                 className={`text-xs font-medium px-2 py-1 rounded border ${listFilter === "pending" ? "bg-amber-100 border-amber-300 text-amber-800" : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"}`}

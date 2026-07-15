@@ -36,7 +36,7 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-white overflow-hidden" ref={containerRef}>
+    <div className="min-h-screen bg-white overflow-x-hidden" ref={containerRef}>
       {/* Navigation */}
       <motion.nav
         initial={{ y: -100 }}
@@ -45,20 +45,20 @@ export default function Home() {
         className="fixed w-full bg-white/80 backdrop-blur-md z-50 border-b border-gray-100"
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-20">
+          <div className="flex justify-between items-center gap-3 h-16 sm:h-20 min-w-0">
             <motion.div
               whileHover={{ scale: 1.05 }}
-              className="flex-shrink-0 flex items-center cursor-pointer"
+              className="flex-shrink-0 flex items-center cursor-pointer min-w-0"
             >
               <Image
                 src="/uploads/coin/Oweg3d-400.png"
                 alt="Oweg Logo"
                 width={120}
                 height={48}
-                className="h-12 w-auto"
+                className="h-9 sm:h-12 w-auto"
               />
             </motion.div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
               <Link
                 href="/login"
                 className="hidden sm:block text-gray-600 hover:text-emerald-600 font-medium transition-colors"
@@ -68,7 +68,7 @@ export default function Home() {
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                 <Link
                   href="/register"
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-full font-medium transition-all shadow-lg shadow-emerald-200"
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 sm:px-6 py-2 sm:py-2.5 rounded-full text-sm sm:text-base font-medium transition-all shadow-lg shadow-emerald-200 whitespace-nowrap"
                 >
                   Become a Partner
                 </Link>
@@ -120,13 +120,14 @@ export default function Home() {
               >
                 Official Partner Portal
               </motion.span>
-              <h1 className="text-5xl md:text-7xl font-bold text-gray-900 mb-8 tracking-tight leading-tight">
-                Turn Your Network Into <br />
+              <h1 className="text-3xl sm:text-5xl md:text-7xl font-bold text-gray-900 mb-6 sm:mb-8 tracking-tight leading-tight">
+                Turn Your Network Into{" "}
+                <br className="hidden sm:block" />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-600">
                   Recurring Revenue
                 </span>
               </h1>
-              <p className="text-xl text-gray-600 mb-10 max-w-2xl mx-auto lg:mx-0 leading-relaxed">
+              <p className="text-base sm:text-xl text-gray-600 mb-8 sm:mb-10 max-w-2xl mx-auto lg:mx-0 leading-relaxed">
                 Join the Oweg Partners program to sell premium home appliances and earn competitive commissions.
                 Track sales, manage earnings, and grow your business with our professional tools.
               </p>
@@ -136,18 +137,18 @@ export default function Home() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 0.7 }}
                 transition={{ delay: 0.8 }}
-                className="mt-16 flex items-center justify-center lg:justify-start gap-8 text-gray-400 grayscale"
+                className="mt-10 sm:mt-16 flex flex-wrap items-center justify-center lg:justify-start gap-x-4 gap-y-3 sm:gap-x-8 text-gray-400 grayscale"
               >
                 <div className="flex items-center gap-2">
-                  <CheckCircle className="w-5 h-5 text-emerald-500" />
+                  <CheckCircle className="w-5 h-5 text-emerald-500 flex-shrink-0" />
                   <span className="text-sm font-medium text-gray-500">Fast Enrolment</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <CheckCircle className="w-5 h-5 text-emerald-500" />
+                  <CheckCircle className="w-5 h-5 text-emerald-500 flex-shrink-0" />
                   <span className="text-sm font-medium text-gray-500">Weekly Payouts</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <CheckCircle className="w-5 h-5 text-emerald-500" />
+                  <CheckCircle className="w-5 h-5 text-emerald-500 flex-shrink-0" />
                   <span className="text-sm font-medium text-gray-500">Zero Investment</span>
                 </div>
               </motion.div>
@@ -158,9 +159,9 @@ export default function Home() {
               initial={{ opacity: 0, scale: 0.8, x: 50 }}
               animate={{ opacity: 1, scale: 1, x: 0 }}
               transition={{ duration: 0.8 }}
-              className="relative flex justify-center items-center"
+              className="relative flex justify-center items-center w-full max-w-[400px] md:max-w-[500px] mx-auto"
             >
-              <div className="relative w-[400px] h-[400px] md:w-[500px] md:h-[500px]">
+              <div className="relative w-[220px] h-[220px] sm:w-[300px] sm:h-[300px] md:w-[400px] md:h-[400px] lg:w-[500px] lg:h-[500px] max-w-full">
                 {/* Floating Coin */}
                 <motion.div animate={floatingAnimation} className="absolute inset-0 z-20 flex items-center justify-center">
                   <Image
@@ -168,7 +169,7 @@ export default function Home() {
                     alt="Oweg Coin"
                     width={500}
                     height={500}
-                    className="object-contain drop-shadow-2xl"
+                    className="object-contain drop-shadow-2xl w-full h-full"
                     priority
                   />
                 </motion.div>
@@ -239,7 +240,7 @@ export default function Home() {
             />
             <span className="text-sm">© 2025 Oweg Partners. All rights reserved.</span>
           </div>
-          <div className="flex gap-8 text-sm">
+          <div className="flex flex-wrap justify-center gap-4 sm:gap-8 text-sm">
             <Link href="/terms" className="hover:text-white transition-colors">Terms</Link>
             <Link href="/privacy" className="hover:text-white transition-colors">Privacy</Link>
             <Link href="/contact" className="hover:text-white transition-colors">Contact</Link>

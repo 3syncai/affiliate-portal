@@ -41,11 +41,13 @@ export default function ForgotPasswordPage() {
     <div className="min-h-screen flex">
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-700 p-12 items-center justify-center">
         <div className="max-w-md text-white text-center">
-          <img
-            src="/uploads/coin/Oweg3d-400.png"
-            alt="Oweg Logo"
-            className="h-24 mx-auto mb-8"
-          />
+          <Link href="/" className="inline-block hover:opacity-90 transition-opacity" aria-label="Oweg Partners home">
+            <img
+              src="/uploads/coin/Oweg3d-400.png"
+              alt="Oweg Logo"
+              className="h-24 mx-auto mb-8"
+            />
+          </Link>
           <h1 className="text-3xl font-bold mb-4">Forgot your password?</h1>
           <p className="text-emerald-50 text-lg leading-relaxed">
             Enter your registered email. If an account exists, we will send a
@@ -57,11 +59,13 @@ export default function ForgotPasswordPage() {
       <div className="w-full lg:w-1/2 flex items-center justify-center px-6 sm:px-12 bg-white">
         <div className="w-full max-w-md">
           <div className="lg:hidden mb-8 text-center">
-            <img
-              src="/uploads/coin/Oweg3d-400.png"
-              alt="Oweg Logo"
-              className="h-16 mx-auto mb-4"
-            />
+            <Link href="/" className="inline-block hover:opacity-90 transition-opacity" aria-label="Oweg Partners home">
+              <img
+                src="/uploads/coin/Oweg3d-400.png"
+                alt="Oweg Logo"
+                className="h-16 mx-auto mb-4"
+              />
+            </Link>
           </div>
 
           <div className="mb-8">
