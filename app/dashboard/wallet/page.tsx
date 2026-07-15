@@ -740,13 +740,13 @@ export default function WalletPage() {
             {
                 showWithdrawModal && walletData && (
                     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                        <div className="bg-white rounded-xl max-w-lg w-full">
-                            <div className="p-6 border-b border-gray-200">
+                        <div className="bg-white rounded-xl max-w-lg w-full max-h-[90vh] flex flex-col overflow-hidden">
+                            <div className="p-6 border-b border-gray-200 shrink-0">
                                 <h3 className="text-2xl font-bold text-gray-900">Request Withdrawal</h3>
                                 <p className="text-sm text-gray-600 mt-1">Enter the amount you want to withdraw</p>
                             </div>
 
-                            <div className="p-6 space-y-4">
+                            <div className="p-6 space-y-4 overflow-y-auto min-h-0 flex-1">
                                 {/* Amount Input */}
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -811,7 +811,7 @@ export default function WalletPage() {
                                 </div>
                             </div>
 
-                            <div className="p-4 sm:p-6 border-t border-gray-200 flex flex-col-reverse sm:flex-row gap-3">
+                            <div className="p-4 sm:p-6 border-t border-gray-200 flex flex-col-reverse sm:flex-row gap-3 shrink-0">
                                 <button
                                     onClick={() => {
                                         setShowWithdrawModal(false)
