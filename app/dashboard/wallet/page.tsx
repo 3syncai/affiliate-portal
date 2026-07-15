@@ -376,104 +376,96 @@ export default function WalletPage() {
                     </div>
 
                     {/* Hero + Quick Stats */}
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 items-stretch min-w-0">
                         {/* Available Balance Card - HERO */}
-                        <div className="lg:col-span-2 bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600 rounded-3xl p-6 sm:p-8 text-white shadow-2xl relative overflow-hidden group hover:shadow-emerald-300/70 transition-shadow duration-300 border border-white/20">
+                        <div className="lg:col-span-2 bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600 rounded-2xl sm:rounded-3xl p-4 sm:p-6 lg:p-8 text-white shadow-2xl relative overflow-hidden group hover:shadow-emerald-300/70 transition-shadow duration-300 border border-white/20 min-w-0">
                             {/* Coin Background Decoration */}
-                            <div className="absolute inset-0 opacity-40">
-                                <div className="absolute right-2 sm:right-8 top-1/2 -translate-y-1/2 w-56 h-56 sm:w-72 sm:h-72">
+                            <div className="absolute inset-0 opacity-25 sm:opacity-40">
+                                <div className="absolute right-0 sm:right-8 top-1/2 -translate-y-1/2 w-36 h-36 sm:w-56 sm:h-56 lg:w-72 lg:h-72">
                                     <img
                                         src="/uploads/coin/coin.png"
                                         alt="Coin decoration"
-                                        className="w-full h-full object-contain opacity-80 group-hover:scale-110 group-hover:rotate-12 transition-all duration-700"
+                                        className="w-full h-full object-contain opacity-60 sm:opacity-80 group-hover:scale-110 group-hover:rotate-12 transition-all duration-700"
                                     />
                                 </div>
                             </div>
 
-                            <div className="relative z-10">
-                                <p className="text-emerald-100/90 font-medium mb-1 text-sm uppercase tracking-wider">Available Balance</p>
-                                <h2 className="text-4xl sm:text-5xl font-extrabold mb-5 tracking-tight">
+                            <div className="relative z-10 min-w-0">
+                                <p className="text-emerald-100/90 font-medium mb-0.5 sm:mb-1 text-[11px] sm:text-sm uppercase tracking-wider">Available Balance</p>
+                                <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold mb-3 sm:mb-5 tracking-tight truncate">
                                     {formatCurrency(walletData.balance.current)}
                                 </h2>
-                                <p className="text-sm sm:text-base text-emerald-100/95 mb-6 max-w-md leading-relaxed">
+                                <p className="text-xs sm:text-sm lg:text-base text-emerald-100/95 mb-4 sm:mb-6 max-w-md leading-relaxed line-clamp-2 sm:line-clamp-none">
                                     Available balance is your credited earnings minus withdrawal requests already paid. TDS is deducted when payouts are processed.
                                 </p>
 
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-4 border-t border-white/30">
-                                    <div className="bg-white/15 backdrop-blur-md rounded-xl p-3 hover:bg-white/20 transition-all">
-                                        <div className="flex items-center gap-1.5 mb-1">
-                                            <TrendingUp className="w-3.5 h-3.5 text-emerald-100" />
-                                            <p className="text-xs text-emerald-100 font-medium">Total Earned</p>
+                                <div className="grid grid-cols-3 gap-2 sm:gap-3 pt-3 sm:pt-4 border-t border-white/30">
+                                    <div className="bg-white/15 backdrop-blur-md rounded-lg sm:rounded-xl p-2 sm:p-3 hover:bg-white/20 transition-all min-w-0">
+                                        <div className="flex items-center gap-1 sm:gap-1.5 mb-0.5 sm:mb-1 min-w-0">
+                                            <TrendingUp className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-emerald-100 shrink-0" />
+                                            <p className="text-[10px] sm:text-xs text-emerald-100 font-medium truncate">Total Earned</p>
                                         </div>
-                                        <p className="text-lg font-bold">{formatCurrency(walletData.balance.totalEarned)}</p>
-                                        <p className="text-xs text-emerald-200 mt-0.5">Lifetime</p>
+                                        <p className="text-sm sm:text-lg font-bold truncate">{formatCurrency(walletData.balance.totalEarned)}</p>
+                                        <p className="text-[10px] sm:text-xs text-emerald-200 mt-0.5">Lifetime</p>
                                     </div>
-                                    <div className="bg-white/15 backdrop-blur-md rounded-xl p-3 hover:bg-white/20 transition-all">
-                                        <div className="flex items-center gap-1.5 mb-1">
-                                            <History className="w-3.5 h-3.5 text-emerald-100" />
-                                            <p className="text-xs text-emerald-100 font-medium">Withdrawn</p>
+                                    <div className="bg-white/15 backdrop-blur-md rounded-lg sm:rounded-xl p-2 sm:p-3 hover:bg-white/20 transition-all min-w-0">
+                                        <div className="flex items-center gap-1 sm:gap-1.5 mb-0.5 sm:mb-1 min-w-0">
+                                            <History className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-emerald-100 shrink-0" />
+                                            <p className="text-[10px] sm:text-xs text-emerald-100 font-medium truncate">Withdrawn</p>
                                         </div>
-                                        <p className="text-lg font-bold">{formatCurrency(walletData.balance.withdrawn)}</p>
-                                        <p className="text-xs text-emerald-200 mt-0.5">Net paid</p>
+                                        <p className="text-sm sm:text-lg font-bold truncate">{formatCurrency(walletData.balance.withdrawn)}</p>
+                                        <p className="text-[10px] sm:text-xs text-emerald-200 mt-0.5">Net paid</p>
                                     </div>
-                                    <div className="bg-white/15 backdrop-blur-md rounded-xl p-3 hover:bg-white/20 transition-all">
-                                        <div className="flex items-center gap-1.5 mb-1">
-                                            <Receipt className="w-3.5 h-3.5 text-emerald-100" />
-                                            <p className="text-xs text-emerald-100 font-medium">TDS Deducted</p>
+                                    <div className="bg-white/15 backdrop-blur-md rounded-lg sm:rounded-xl p-2 sm:p-3 hover:bg-white/20 transition-all min-w-0">
+                                        <div className="flex items-center gap-1 sm:gap-1.5 mb-0.5 sm:mb-1 min-w-0">
+                                            <Receipt className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-emerald-100 shrink-0" />
+                                            <p className="text-[10px] sm:text-xs text-emerald-100 font-medium truncate">TDS Deducted</p>
                                         </div>
-                                        <p className="text-lg font-bold">{formatCurrency(walletData.balance.tdsDeducted ?? 0)}</p>
-                                        <p className="text-xs text-emerald-200 mt-0.5">At payout</p>
+                                        <p className="text-sm sm:text-lg font-bold truncate">{formatCurrency(walletData.balance.tdsDeducted ?? 0)}</p>
+                                        <p className="text-[10px] sm:text-xs text-emerald-200 mt-0.5">At payout</p>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Quick Stats Card */}
-                        <div className="bg-white/90 backdrop-blur-md rounded-3xl p-5 shadow-xl border border-gray-100 hover:shadow-2xl transition-shadow duration-300">
-                            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-[0.18em] mb-4">Quick Stats</h3>
-                            <div className="space-y-3">
-                                <div className="flex items-center justify-between p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl hover:from-blue-100 hover:to-indigo-100 transition-all cursor-pointer">
-                                    <div className="flex items-center gap-2">
-                                        <div className="bg-gradient-to-br from-blue-500 to-indigo-600 p-2 rounded-lg shadow-lg">
-                                            <TrendingUp className="w-3.5 h-3.5 text-white" />
-                                        </div>
-                                        <div>
-                                            <span className="text-xs font-medium text-gray-500 block">Earnings</span>
-                                            <span className="text-sm font-bold text-gray-900">{formatCurrency(walletData.balance.totalEarned)}</span>
-                                        </div>
+                        {/* Quick Stats Card — 2x2 matrix on mobile/tablet */}
+                        <div className="bg-white/90 backdrop-blur-md rounded-2xl sm:rounded-3xl p-4 sm:p-5 shadow-xl border border-gray-100 hover:shadow-2xl transition-shadow duration-300 min-w-0">
+                            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-[0.18em] mb-3 sm:mb-4">Quick Stats</h3>
+                            <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
+                                <div className="flex items-center gap-2 p-2.5 sm:p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl hover:from-blue-100 hover:to-indigo-100 transition-all min-w-0">
+                                    <div className="bg-gradient-to-br from-blue-500 to-indigo-600 p-1.5 sm:p-2 rounded-lg shadow-lg shrink-0">
+                                        <TrendingUp className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-white" />
+                                    </div>
+                                    <div className="min-w-0">
+                                        <span className="text-[10px] sm:text-xs font-medium text-gray-500 block truncate">Earnings</span>
+                                        <span className="text-xs sm:text-sm font-bold text-gray-900 truncate block">{formatCurrency(walletData.balance.totalEarned)}</span>
                                     </div>
                                 </div>
-                                <div className="flex items-center justify-between p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl hover:from-purple-100 hover:to-pink-100 transition-all cursor-pointer">
-                                    <div className="flex items-center gap-2">
-                                        <div className="bg-gradient-to-br from-purple-500 to-pink-600 p-2 rounded-lg shadow-lg">
-                                            <History className="w-3.5 h-3.5 text-white" />
-                                        </div>
-                                        <div>
-                                            <span className="text-xs font-medium text-gray-500 block">Paid Out</span>
-                                            <span className="text-sm font-bold text-gray-900">{formatCurrency(walletData.balance.withdrawn)}</span>
-                                        </div>
+                                <div className="flex items-center gap-2 p-2.5 sm:p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl hover:from-purple-100 hover:to-pink-100 transition-all min-w-0">
+                                    <div className="bg-gradient-to-br from-purple-500 to-pink-600 p-1.5 sm:p-2 rounded-lg shadow-lg shrink-0">
+                                        <History className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-white" />
+                                    </div>
+                                    <div className="min-w-0">
+                                        <span className="text-[10px] sm:text-xs font-medium text-gray-500 block truncate">Paid Out</span>
+                                        <span className="text-xs sm:text-sm font-bold text-gray-900 truncate block">{formatCurrency(walletData.balance.withdrawn)}</span>
                                     </div>
                                 </div>
-                                <div className="flex items-center justify-between p-3 bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl hover:from-amber-100 hover:to-orange-100 transition-all cursor-pointer">
-                                    <div className="flex items-center gap-2">
-                                        <div className="bg-gradient-to-br from-amber-500 to-orange-600 p-2 rounded-lg shadow-lg">
-                                            <Receipt className="w-3.5 h-3.5 text-white" />
-                                        </div>
-                                        <div>
-                                            <span className="text-xs font-medium text-gray-500 block">TDS Deducted</span>
-                                            <span className="text-sm font-bold text-gray-900">{formatCurrency(walletData.balance.tdsDeducted ?? 0)}</span>
-                                        </div>
+                                <div className="flex items-center gap-2 p-2.5 sm:p-3 bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl hover:from-amber-100 hover:to-orange-100 transition-all min-w-0">
+                                    <div className="bg-gradient-to-br from-amber-500 to-orange-600 p-1.5 sm:p-2 rounded-lg shadow-lg shrink-0">
+                                        <Receipt className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-white" />
+                                    </div>
+                                    <div className="min-w-0">
+                                        <span className="text-[10px] sm:text-xs font-medium text-gray-500 block truncate">TDS Deducted</span>
+                                        <span className="text-xs sm:text-sm font-bold text-gray-900 truncate block">{formatCurrency(walletData.balance.tdsDeducted ?? 0)}</span>
                                     </div>
                                 </div>
-                                <div className="flex items-center justify-between p-3 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl hover:from-emerald-100 hover:to-teal-100 transition-all cursor-pointer">
-                                    <div className="flex items-center gap-2">
-                                        <div className="bg-gradient-to-br from-emerald-500 to-teal-600 p-2 rounded-lg shadow-lg">
-                                            <Wallet className="w-3.5 h-3.5 text-white" />
-                                        </div>
-                                        <div>
-                                            <span className="text-xs font-medium text-gray-500 block">Available</span>
-                                            <span className="text-sm font-bold text-emerald-600">{formatCurrency(walletData.balance.current)}</span>
-                                        </div>
+                                <div className="flex items-center gap-2 p-2.5 sm:p-3 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl hover:from-emerald-100 hover:to-teal-100 transition-all min-w-0">
+                                    <div className="bg-gradient-to-br from-emerald-500 to-teal-600 p-1.5 sm:p-2 rounded-lg shadow-lg shrink-0">
+                                        <Wallet className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-white" />
+                                    </div>
+                                    <div className="min-w-0">
+                                        <span className="text-[10px] sm:text-xs font-medium text-gray-500 block truncate">Available</span>
+                                        <span className="text-xs sm:text-sm font-bold text-emerald-600 truncate block">{formatCurrency(walletData.balance.current)}</span>
                                     </div>
                                 </div>
                             </div>

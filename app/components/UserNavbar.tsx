@@ -29,7 +29,8 @@ export default function UserNavbar({ userName }: UserNavbarProps) {
     const router = useRouter()
     const pathname = usePathname()
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
-    const [mobileOpen, setMobileOpen] = useState(false)
+    const [menuPath, setMenuPath] = useState<string | null>(null)
+    const mobileOpen = menuPath === pathname
 
     const performLogout = () => {
         localStorage.removeItem("affiliate_token")
@@ -37,6 +38,8 @@ export default function UserNavbar({ userName }: UserNavbarProps) {
         localStorage.removeItem("affiliate_role")
         router.push("/login")
     }
+
+    const closeMobileMenu = () => setMenuPath(null)
 
     const isActive = (path: string) => {
         if (path === "/dashboard") {
@@ -50,13 +53,9 @@ export default function UserNavbar({ userName }: UserNavbarProps) {
     }
 
     useEffect(() => {
-        setMobileOpen(false)
-    }, [pathname])
-
-    useEffect(() => {
         if (!mobileOpen) return
         const onKey = (e: KeyboardEvent) => {
-            if (e.key === "Escape") setMobileOpen(false)
+            if (e.key === "Escape") setMenuPath(null)
         }
         window.addEventListener("keydown", onKey)
         return () => window.removeEventListener("keydown", onKey)
@@ -126,7 +125,9 @@ export default function UserNavbar({ userName }: UserNavbarProps) {
                             className="md:hidden inline-flex items-center justify-center p-2 rounded-lg text-gray-700 hover:bg-slate-100 transition-colors"
                             aria-label={mobileOpen ? "Close menu" : "Open menu"}
                             aria-expanded={mobileOpen}
-                            onClick={() => setMobileOpen((o) => !o)}
+                            onClick={() =>
+                                setMenuPath((p) => (p === pathname ? null : pathname))
+                            }
                         >
                             {mobileOpen ? <X size={22} /> : <Menu size={22} />}
                         </button>
@@ -150,7 +151,7 @@ export default function UserNavbar({ userName }: UserNavbarProps) {
                                 key={href}
                                 href={href}
                                 className={mobileLinkClass(href)}
-                                onClick={() => setMobileOpen(false)}
+                                onClick={closeMobileMenu}
                             >
                                 <Icon size={20} />
                                 <span>{label}</span>
@@ -159,7 +160,7 @@ export default function UserNavbar({ userName }: UserNavbarProps) {
                         <button
                             type="button"
                             onClick={() => {
-                                setMobileOpen(false)
+                                closeMobileMenu()
                                 setShowLogoutConfirm(true)
                             }}
                             className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-red-600 hover:bg-red-50 transition-all"
