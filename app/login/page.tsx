@@ -2,6 +2,7 @@
 
 import { useState, FormEvent, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import axios from "axios";
 import {
   Mail,
@@ -196,7 +197,7 @@ function LoginContent() {
   };
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-[100dvh] min-h-screen flex">
       {/* Left Side - Brand Section */}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-700 relative overflow-hidden">
         {/* Decorative Background Elements */}
@@ -217,11 +218,13 @@ function LoginContent() {
         {/* Content */}
         <div className="relative z-10 flex flex-col justify-center px-16 text-white">
           <div className="mb-12">
-            <img
-              src="/uploads/coin/Oweg3d-400.png"
-              alt="Oweg Logo"
-              className="h-20 mb-8"
-            />
+            <Link href="/" className="inline-block hover:opacity-90 transition-opacity" aria-label="Oweg Partners home">
+              <img
+                src="/uploads/coin/Oweg3d-400.png"
+                alt="Oweg Logo"
+                className="h-20 mb-8"
+              />
+            </Link>
             <h1 className="text-5xl font-bold mb-6 leading-tight">
               Welcome to
               <br />
@@ -251,22 +254,24 @@ function LoginContent() {
       </div>
 
       {/* Right Side - Login Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center px-6 sm:px-12 bg-white">
+      <div className="w-full lg:w-1/2 flex items-center justify-center px-4 sm:px-12 py-8 sm:py-12 bg-white min-h-[100dvh] lg:min-h-0">
         <div className="w-full max-w-md">
           {/* Mobile Logo */}
-          <div className="lg:hidden mb-8 text-center">
-            <img
-              src="/uploads/coin/Oweg3d-400.png"
-              alt="Oweg Logo"
-              className="h-16 mx-auto mb-4"
-            />
+          <div className="lg:hidden mb-6 sm:mb-8 text-center">
+            <Link href="/" className="inline-block hover:opacity-90 transition-opacity" aria-label="Oweg Partners home">
+              <img
+                src="/uploads/coin/Oweg3d-400.png"
+                alt="Oweg Logo"
+                className="h-14 sm:h-16 mx-auto mb-4"
+              />
+            </Link>
           </div>
 
-          <div className="mb-8">
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">
+          <div className="mb-6 sm:mb-8">
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
               Sign in to your account
             </h2>
-            <p className="text-gray-600">
+            <p className="text-gray-600 text-sm sm:text-base">
               Enter your credentials to access your Partner dashboard
             </p>
           </div>
@@ -407,7 +412,7 @@ function LoginContent() {
                     required
                     maxLength={6}
                     pattern="[0-9]{6}"
-                    className="block w-full pl-11 pr-4 py-3 border border-gray-300 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all tracking-[0.35em] text-center text-lg font-semibold"
+                    className="block w-full pl-11 pr-4 py-3 border border-gray-300 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all tracking-[0.2em] sm:tracking-[0.35em] text-center text-base sm:text-lg font-semibold"
                     placeholder="000000"
                     value={otp}
                     onChange={(e) =>
@@ -435,11 +440,11 @@ function LoginContent() {
                 )}
               </button>
 
-              <div className="flex items-center justify-between gap-3 text-sm">
+              <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 text-sm">
                 <button
                   type="button"
                   onClick={handleBackToLogin}
-                  className="font-medium text-gray-600 hover:text-gray-900"
+                  className="font-medium text-gray-600 hover:text-gray-900 text-center sm:text-left py-2 sm:py-0"
                 >
                   Back to login
                 </button>
@@ -447,7 +452,7 @@ function LoginContent() {
                   type="button"
                   onClick={handleResendOtp}
                   disabled={loading || resendCooldown > 0}
-                  className="font-semibold text-emerald-600 hover:text-emerald-700 disabled:text-gray-400"
+                  className="font-semibold text-emerald-600 hover:text-emerald-700 disabled:text-gray-400 text-center sm:text-right py-2 sm:py-0"
                 >
                   {resendCooldown > 0
                     ? `Resend in ${resendCooldown}s`

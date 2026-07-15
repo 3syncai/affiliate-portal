@@ -15,7 +15,7 @@ import {
   ShieldCheck,
   User,
 } from "lucide-react";
-import ConfirmModal from "@/app/components/ConfirmModal";
+import UserNavbar from "@/app/components/UserNavbar";
 
 type AffiliateProfile = {
   id: string;
@@ -68,7 +68,6 @@ export default function DashboardProfilePage() {
   const [pwError, setPwError] = useState("");
   const [pwSuccess, setPwSuccess] = useState("");
 
-  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem("affiliate_token");
@@ -142,13 +141,6 @@ export default function DashboardProfilePage() {
       month: "short",
       year: "numeric",
     });
-  };
-
-  const performLogout = () => {
-    localStorage.removeItem("affiliate_token");
-    localStorage.removeItem("affiliate_user");
-    localStorage.removeItem("affiliate_role");
-    router.push("/login");
   };
 
   const startEdit = () => {
@@ -247,53 +239,13 @@ export default function DashboardProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center gap-3">
-              <h1 className="text-xl font-semibold text-gray-900">Sales Executive</h1>
-              <a
-                href="/dashboard"
-                className="ml-4 inline-flex items-center gap-1.5 px-3 py-1 bg-white border border-gray-200 text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 rounded-md text-sm font-medium transition-colors"
-              >
-                Dashboard
-              </a>
-              <a
-                href="/products"
-                className="inline-flex items-center gap-1.5 px-3 py-1 bg-white border border-gray-200 text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 rounded-md text-sm font-medium transition-colors"
-              >
-                Products
-              </a>
-              <a
-                href="/offers"
-                className="inline-flex items-center gap-1.5 px-3 py-1 bg-white border border-gray-200 text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 rounded-md text-sm font-medium transition-colors"
-              >
-                Offers
-              </a>
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-700 rounded-md text-sm font-medium border border-emerald-100">
-                Profile
-              </span>
-            </div>
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-600">
-                Welcome, <strong className="text-gray-900">{displayName}</strong>
-              </span>
-              <button
-                onClick={() => setShowLogoutConfirm(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-700 hover:text-gray-900 transition-colors"
-              >
-                Logout
-              </button>
-            </div>
-          </div>
-        </div>
-      </nav>
+    <div className="min-h-screen bg-gray-50 overflow-x-hidden">
+      <UserNavbar userName={displayName || undefined} />
 
-      <main className="max-w-5xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+      <main className="max-w-5xl mx-auto py-6 sm:py-8 px-4 sm:px-6 lg:px-8">
         <div className="space-y-6">
           <div>
-            <h2 className="text-3xl font-bold text-gray-900">My Profile</h2>
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">My Profile</h2>
             <p className="text-sm text-gray-500 mt-1">Your account details</p>
           </div>
           {profileError && (
@@ -326,8 +278,8 @@ export default function DashboardProfilePage() {
 
           {/* Personal details card (editable) */}
           <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
-            <div className="flex items-center justify-between mb-4">
-              <div>
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
+              <div className="min-w-0">
                 <h3 className="text-lg font-semibold text-gray-900">Personal Details</h3>
                 <p className="text-xs text-gray-500 mt-0.5">
                   Changes to name, email or phone will notify your branch admin.
@@ -336,12 +288,12 @@ export default function DashboardProfilePage() {
               {!editing ? (
                 <button
                   onClick={startEdit}
-                  className="px-4 py-2 text-sm font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg border border-emerald-200 transition-colors"
+                  className="px-4 py-2 text-sm font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg border border-emerald-200 transition-colors shrink-0 self-start"
                 >
                   Edit
                 </button>
               ) : (
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2 shrink-0">
                   <button
                     onClick={cancelEdit}
                     disabled={saving}
@@ -494,19 +446,6 @@ export default function DashboardProfilePage() {
           </div>
         </div>
       </main>
-
-      <ConfirmModal
-        open={showLogoutConfirm}
-        title="Do you want to logout?"
-        message="You will be returned to the login screen."
-        confirmLabel="Yes, logout"
-        cancelLabel="No"
-        onConfirm={() => {
-          setShowLogoutConfirm(false);
-          performLogout();
-        }}
-        onCancel={() => setShowLogoutConfirm(false)}
-      />
     </div>
   );
 }

@@ -354,12 +354,12 @@ export default function WalletPage() {
                 />
             )}
 
-            <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 px-4 py-6 sm:px-6 lg:px-8">
-                <div className="max-w-7xl mx-auto space-y-8">
+            <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 px-4 py-6 sm:px-6 lg:px-8 overflow-x-hidden">
+                <div className="max-w-7xl mx-auto space-y-6 sm:space-y-8">
                     {/* Header Section */}
-                    <div className="flex items-center justify-between flex-wrap gap-4">
-                        <div>
-                            <h1 className="text-3xl sm:text-4xl font-extrabold bg-gradient-to-r from-slate-900 via-cyan-900 to-emerald-900 bg-clip-text text-transparent mb-1 tracking-tight">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                        <div className="min-w-0">
+                            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold bg-gradient-to-r from-slate-900 via-cyan-900 to-emerald-900 bg-clip-text text-transparent mb-1 tracking-tight">
                                 Wallet & Earnings
                             </h1>
                             <p className="text-gray-600 text-sm sm:text-base">Manage your payouts and payment methods</p>
@@ -665,7 +665,7 @@ export default function WalletPage() {
                             {/* Method Selector */}
                             <div className="mb-6">
                                 <p className="text-sm font-medium text-gray-700 mb-3">Select Payment Method</p>
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                                     <button
                                         onClick={() => setSelectedMethod('bank')}
                                         className={`p-4 border-2 rounded-lg transition-all ${selectedMethod === 'bank'
@@ -728,14 +728,14 @@ export default function WalletPage() {
                             )}
                         </div>
 
-                        <div className="p-6 border-t border-gray-200 flex gap-3">
+                        <div className="p-4 sm:p-6 border-t border-gray-200 flex flex-col-reverse sm:flex-row gap-3">
                             <button
                                 onClick={() => setShowSetupModal(false)}
-                                className="flex-1 border border-gray-300 text-gray-700 px-6 py-3 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+                                className="w-full sm:flex-1 border border-gray-300 text-gray-700 px-6 py-3 rounded-lg font-medium hover:bg-gray-50 transition-colors"
                             >
                                 Cancel
                             </button>
-                            <button onClick={savePaymentMethod} disabled={saving} className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                            <button onClick={savePaymentMethod} disabled={saving} className="w-full sm:flex-1 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                                 {saving ? 'Saving...' : 'Save Payment Method'}
                             </button>
                         </div>
@@ -819,20 +819,20 @@ export default function WalletPage() {
                                 </div>
                             </div>
 
-                            <div className="p-6 border-t border-gray-200 flex gap-3">
+                            <div className="p-4 sm:p-6 border-t border-gray-200 flex flex-col-reverse sm:flex-row gap-3">
                                 <button
                                     onClick={() => {
                                         setShowWithdrawModal(false)
                                         setWithdrawAmount("")
                                     }}
-                                    className="flex-1 border border-gray-300 text-gray-700 px-6 py-3 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+                                    className="w-full sm:flex-1 border border-gray-300 text-gray-700 px-6 py-3 rounded-lg font-medium hover:bg-gray-50 transition-colors"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     onClick={submitWithdrawal}
                                     disabled={!withdrawAmount || parseFloat(withdrawAmount) < 20 || parseFloat(withdrawAmount) > walletData.balance.current || submittingWithdrawal}
-                                    className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="w-full sm:flex-1 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     {submittingWithdrawal ? "Submitting..." : "Confirm Withdrawal"}
                                 </button>

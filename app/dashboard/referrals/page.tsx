@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import axios from "axios"
 import useSWR from "swr"
 import { Download, Users } from "lucide-react"
+import UserNavbar from "@/app/components/UserNavbar"
 
 interface ReferralItem {
   id: string
@@ -111,45 +112,22 @@ export default function AllReferralsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center gap-3">
-              <h1 className="text-xl font-semibold text-gray-900">Sales Executive</h1>
-              <a href="/dashboard" className="ml-4 inline-flex items-center gap-1.5 px-3 py-1 bg-white border border-gray-200 text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 rounded-md text-sm font-medium transition-colors">
-                Dashboard
-              </a>
-              <a href="/products" className="inline-flex items-center gap-1.5 px-3 py-1 bg-white border border-gray-200 text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 rounded-md text-sm font-medium transition-colors">
-                Products
-              </a>
-              <a href="/offers" className="inline-flex items-center gap-1.5 px-3 py-1 bg-white border border-gray-200 text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 rounded-md text-sm font-medium transition-colors">
-                Offers
-              </a>
-              <a href="/dashboard/profile" className="inline-flex items-center gap-1.5 px-3 py-1 bg-white border border-gray-200 text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 rounded-md text-sm font-medium transition-colors">
-                Profile
-              </a>
-            </div>
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-600">Welcome, <strong className="text-gray-900">{user?.first_name || user?.email}</strong></span>
-            </div>
-          </div>
-        </div>
-      </nav>
+    <div className="min-h-screen bg-gray-50 overflow-x-hidden">
+      <UserNavbar userName={user?.first_name || user?.email || undefined} />
 
-      <main className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <Users className="w-6 h-6 text-blue-600" />
+      <main className="max-w-7xl mx-auto py-6 sm:py-8 px-4 sm:px-6 lg:px-8">
+        <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-200">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-2 min-w-0">
+              <Users className="w-6 h-6 text-blue-600 shrink-0" />
               All Referrals
             </h2>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <span className="text-sm text-gray-500">{data?.total || 0} total</span>
               <button
                 onClick={exportReferralsToExcel}
                 disabled={!referrals.length}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-sm hover:from-emerald-700 hover:to-teal-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-sm hover:from-emerald-700 hover:to-teal-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all w-full sm:w-auto justify-center"
               >
                 <Download className="w-4 h-4" />
                 Export Excel
@@ -160,8 +138,22 @@ export default function AllReferralsPage() {
           {referrals.length === 0 ? (
             <p className="text-sm text-gray-500">No referrals found yet.</p>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[700px]">
+            <>
+            <div className="md:hidden space-y-3">
+              {referrals.map((item) => (
+                <div key={item.id} className="rounded-xl border border-gray-200 p-4 space-y-2">
+                  <p className="text-sm font-semibold text-gray-900">{item.customer_name || "Customer"}</p>
+                  <p className="text-sm text-gray-600 break-all">{item.customer_email}</p>
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500 pt-1">
+                    <span>Referred {formatDate(item.referred_at)}</span>
+                    <span>{item.total_orders} orders</span>
+                    <span className="font-semibold text-emerald-700">₹{Number(item.total_commission || 0).toFixed(2)}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full min-w-[560px]">
                 <thead>
                   <tr className="text-left border-b border-gray-200">
                     <th className="py-3 px-2 text-xs font-semibold text-gray-500 uppercase">Customer</th>
@@ -184,6 +176,7 @@ export default function AllReferralsPage() {
                 </tbody>
               </table>
             </div>
+            </>
           )}
         </div>
       </main>
