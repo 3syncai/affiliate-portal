@@ -450,44 +450,44 @@ export default function WalletPage() {
                             </div>
                         </div>
 
-                        {/* Quick Stats Card — 2x2 matrix on mobile/tablet */}
-                        <div className="bg-white/90 backdrop-blur-md rounded-2xl sm:rounded-3xl p-4 sm:p-5 shadow-xl border border-gray-100 hover:shadow-2xl transition-shadow duration-300 min-w-0">
-                            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-[0.18em] mb-3 sm:mb-4">Quick Stats</h3>
-                            <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
-                                <div className="flex items-center gap-2 p-2.5 sm:p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl hover:from-blue-100 hover:to-indigo-100 transition-all min-w-0">
-                                    <div className="bg-gradient-to-br from-blue-500 to-indigo-600 p-1.5 sm:p-2 rounded-lg shadow-lg shrink-0">
-                                        <TrendingUp className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-white" />
+                        {/* Quick Stats — 2x2 mobile/tablet; stacked + height-matched on lg */}
+                        <div className="bg-white/90 backdrop-blur-md rounded-2xl sm:rounded-3xl p-4 sm:p-5 lg:p-6 shadow-xl border border-gray-100 hover:shadow-2xl transition-shadow duration-300 min-w-0 h-full flex flex-col">
+                            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-[0.18em] mb-3 sm:mb-4 lg:mb-5">Quick Stats</h3>
+                            <div className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid lg:grid-cols-1 lg:grid-rows-4 lg:flex-1 lg:gap-3 min-h-0">
+                                <div className="flex items-center gap-2 lg:gap-3 p-2.5 sm:p-3 lg:p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl hover:from-blue-100 hover:to-indigo-100 transition-all min-w-0">
+                                    <div className="bg-gradient-to-br from-blue-500 to-indigo-600 p-1.5 sm:p-2 lg:p-2.5 rounded-lg shadow-lg shrink-0">
+                                        <TrendingUp className="w-3 h-3 sm:w-3.5 sm:h-3.5 lg:w-4 lg:h-4 text-white" />
                                     </div>
                                     <div className="min-w-0">
-                                        <span className="text-[10px] sm:text-xs font-medium text-gray-500 block truncate">Earnings</span>
-                                        <span className="text-xs sm:text-sm font-bold text-gray-900 truncate block">{formatCurrency(walletData.balance.totalEarned)}</span>
+                                        <span className="text-[10px] sm:text-xs lg:text-sm font-medium text-gray-500 block truncate">Earnings</span>
+                                        <span className="text-xs sm:text-sm lg:text-base font-bold text-gray-900 truncate block">{formatCurrency(walletData.balance.totalEarned)}</span>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-2 p-2.5 sm:p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl hover:from-purple-100 hover:to-pink-100 transition-all min-w-0">
-                                    <div className="bg-gradient-to-br from-purple-500 to-pink-600 p-1.5 sm:p-2 rounded-lg shadow-lg shrink-0">
-                                        <History className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-white" />
+                                <div className="flex items-center gap-2 lg:gap-3 p-2.5 sm:p-3 lg:p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl hover:from-purple-100 hover:to-pink-100 transition-all min-w-0">
+                                    <div className="bg-gradient-to-br from-purple-500 to-pink-600 p-1.5 sm:p-2 lg:p-2.5 rounded-lg shadow-lg shrink-0">
+                                        <History className="w-3 h-3 sm:w-3.5 sm:h-3.5 lg:w-4 lg:h-4 text-white" />
                                     </div>
                                     <div className="min-w-0">
-                                        <span className="text-[10px] sm:text-xs font-medium text-gray-500 block truncate">Paid Out</span>
-                                        <span className="text-xs sm:text-sm font-bold text-gray-900 truncate block">{formatCurrency(walletData.balance.withdrawn)}</span>
+                                        <span className="text-[10px] sm:text-xs lg:text-sm font-medium text-gray-500 block truncate">Paid Out</span>
+                                        <span className="text-xs sm:text-sm lg:text-base font-bold text-gray-900 truncate block">{formatCurrency(walletData.balance.withdrawn)}</span>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-2 p-2.5 sm:p-3 bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl hover:from-amber-100 hover:to-orange-100 transition-all min-w-0">
-                                    <div className="bg-gradient-to-br from-amber-500 to-orange-600 p-1.5 sm:p-2 rounded-lg shadow-lg shrink-0">
-                                        <Receipt className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-white" />
+                                <div className="flex items-center gap-2 lg:gap-3 p-2.5 sm:p-3 lg:p-4 bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl hover:from-amber-100 hover:to-orange-100 transition-all min-w-0">
+                                    <div className="bg-gradient-to-br from-amber-500 to-orange-600 p-1.5 sm:p-2 lg:p-2.5 rounded-lg shadow-lg shrink-0">
+                                        <Receipt className="w-3 h-3 sm:w-3.5 sm:h-3.5 lg:w-4 lg:h-4 text-white" />
                                     </div>
                                     <div className="min-w-0">
-                                        <span className="text-[10px] sm:text-xs font-medium text-gray-500 block truncate">TDS Deducted</span>
-                                        <span className="text-xs sm:text-sm font-bold text-gray-900 truncate block">{formatCurrency(walletData.balance.tdsDeducted ?? 0)}</span>
+                                        <span className="text-[10px] sm:text-xs lg:text-sm font-medium text-gray-500 block truncate">TDS Deducted</span>
+                                        <span className="text-xs sm:text-sm lg:text-base font-bold text-gray-900 truncate block">{formatCurrency(walletData.balance.tdsDeducted ?? 0)}</span>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-2 p-2.5 sm:p-3 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl hover:from-emerald-100 hover:to-teal-100 transition-all min-w-0">
-                                    <div className="bg-gradient-to-br from-emerald-500 to-teal-600 p-1.5 sm:p-2 rounded-lg shadow-lg shrink-0">
-                                        <Wallet className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-white" />
+                                <div className="flex items-center gap-2 lg:gap-3 p-2.5 sm:p-3 lg:p-4 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl hover:from-emerald-100 hover:to-teal-100 transition-all min-w-0">
+                                    <div className="bg-gradient-to-br from-emerald-500 to-teal-600 p-1.5 sm:p-2 lg:p-2.5 rounded-lg shadow-lg shrink-0">
+                                        <Wallet className="w-3 h-3 sm:w-3.5 sm:h-3.5 lg:w-4 lg:h-4 text-white" />
                                     </div>
                                     <div className="min-w-0">
-                                        <span className="text-[10px] sm:text-xs font-medium text-gray-500 block truncate">Available</span>
-                                        <span className="text-xs sm:text-sm font-bold text-emerald-600 truncate block">{formatCurrency(walletData.balance.current)}</span>
+                                        <span className="text-[10px] sm:text-xs lg:text-sm font-medium text-gray-500 block truncate">Available</span>
+                                        <span className="text-xs sm:text-sm lg:text-lg font-bold text-emerald-600 truncate block">{formatCurrency(walletData.balance.current)}</span>
                                     </div>
                                 </div>
                             </div>
