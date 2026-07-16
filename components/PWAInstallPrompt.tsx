@@ -10,6 +10,7 @@ type BeforeInstallPromptEvent = Event & {
 };
 
 const DISMISS_KEY = "oweg-partners-pwa-install-dismissed";
+const DISMISS_COOLDOWN_MS = 30 * 24 * 60 * 60 * 1000;
 
 function isIosSafari(): boolean {
   if (typeof window === "undefined") return false;
@@ -28,7 +29,11 @@ function isIosSafari(): boolean {
 
 function wasDismissedRecently(): boolean {
   try {
-    return window.localStorage.getItem(DISMISS_KEY) === "1";
+    const raw = window.localStorage.getItem(DISMISS_KEY);
+    if (!raw) return false;
+    const dismissedAt = Number(raw);
+    if (!Number.isFinite(dismissedAt)) return false;
+    return Date.now() - dismissedAt < DISMISS_COOLDOWN_MS;
   } catch {
     return false;
   }
@@ -36,7 +41,7 @@ function wasDismissedRecently(): boolean {
 
 function rememberDismissal() {
   try {
-    window.localStorage.setItem(DISMISS_KEY, "1");
+    window.localStorage.setItem(DISMISS_KEY, String(Date.now()));
   } catch {
     // Ignore storage failures.
   }
@@ -145,7 +150,7 @@ export default function PWAInstallPrompt() {
             <button
               type="button"
               onClick={() => void handleInstall()}
-              className="rounded-md bg-[#7AC943] px-3 py-1.5 text-sm font-medium text-white hover:bg-[#6bb838]"
+              className="rounded-md bg-emerald-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-800"
             >
               Install
             </button>

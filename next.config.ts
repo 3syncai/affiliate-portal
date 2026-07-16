@@ -1,10 +1,12 @@
 import { spawnSync } from "node:child_process";
+import { randomUUID } from "node:crypto";
 import withSerwistInit from "@serwist/next";
 import type { NextConfig } from "next";
 
 const revision =
+  process.env.VERCEL_GIT_COMMIT_SHA ||
   spawnSync("git", ["rev-parse", "HEAD"], { encoding: "utf-8" }).stdout?.trim() ||
-  crypto.randomUUID();
+  randomUUID();
 
 const withSerwist = withSerwistInit({
   swSrc: "sw.ts",
