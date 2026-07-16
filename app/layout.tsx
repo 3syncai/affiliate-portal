@@ -1,7 +1,9 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Providers from "@/components/Providers";
+import ServiceWorkerRegister from "./sw-register";
+import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -14,17 +16,27 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Oweg - Partners",
-  description: "Oweg partner portal for sales executives and hierarchy management.",
-  applicationName: "Oweg Partners",
+  title: {
+    default: "OWEG Partners",
+    template: "%s | OWEG Partners",
+  },
+  description: "OWEG partner portal for sales executives and hierarchy management.",
+  applicationName: "OWEG Partners",
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "48x48", type: "image/x-icon" },
+      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/icon.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+    shortcut: ["/favicon.ico"],
+  },
+  other: { display: "standalone" },
+};
+
+export const viewport: Viewport = {
   themeColor: "#7AC943",
   colorScheme: "light",
-  manifest: "/manifest.webmanifest",
-  icons: {
-    shortcut: "/oweg_O.png",
-    icon: "/favicon.ico",
-    apple: "/oweg_O.png"
-  }
 };
 
 export default function RootLayout({
@@ -39,7 +51,9 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <Providers>
+          <ServiceWorkerRegister />
           {children}
+          <PWAInstallPrompt />
         </Providers>
       </body>
     </html>

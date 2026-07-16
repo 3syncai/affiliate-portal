@@ -1,7 +1,28 @@
+import { spawnSync } from "node:child_process";
+import withSerwistInit from "@serwist/next";
 import type { NextConfig } from "next";
 
+const revision =
+  spawnSync("git", ["rev-parse", "HEAD"], { encoding: "utf-8" }).stdout?.trim() ||
+  crypto.randomUUID();
+
+const withSerwist = withSerwistInit({
+  swSrc: "sw.ts",
+  swDest: "public/sw.js",
+  disable: process.env.NODE_ENV === "development",
+  additionalPrecacheEntries: [
+    { url: "/offline", revision },
+    { url: "/icon.png", revision },
+    { url: "/icon-192x192.png", revision },
+    { url: "/icon-512x512.png", revision },
+    { url: "/icon-512x512-maskable.png", revision },
+    { url: "/apple-touch-icon.png", revision },
+    { url: "/favicon.ico", revision },
+  ],
+});
+
 // Get store URL from environment variable
-const storeUrl = process.env.NEXT_PUBLIC_STORE_URL || 'http://localhost:3000';
+const storeUrl = process.env.NEXT_PUBLIC_STORE_URL || "http://localhost:3000";
 
 const nextConfig: NextConfig = {
   turbopack: {
@@ -13,7 +34,7 @@ const nextConfig: NextConfig = {
       afterFiles: [],
       fallback: [
         {
-          source: '/api/affiliate/:path*',
+          source: "/api/affiliate/:path*",
           destination: `${storeUrl}/api/affiliate/:path*`,
         },
       ],
@@ -21,4 +42,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withSerwist(nextConfig);
