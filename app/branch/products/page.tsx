@@ -124,19 +124,19 @@ export default function BranchProductsPage() {
     }
 
     return (
-        <div className="space-y-6">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                <div>
-                    <h1 className="text-3xl font-bold text-gray-900">Commission Overview</h1>
-                    <p className="text-gray-600 mt-1">Direct sales earn you maximum commission</p>
+        <div className="space-y-4 sm:space-y-6 min-w-0">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 sm:gap-4">
+                <div className="min-w-0">
+                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Commission Overview</h1>
+                    <p className="text-gray-600 mt-1 text-sm sm:text-base">Direct sales earn you maximum commission</p>
                 </div>
-                <div className="px-4 py-2 rounded-full text-sm font-medium" style={{ backgroundColor: theme.primaryLight, color: theme.primary }}>
+                <div className="self-start px-4 py-2 rounded-full text-sm font-medium shrink-0" style={{ backgroundColor: theme.primaryLight, color: theme.primary }}>
                     {filteredProducts.length} Products Available
                 </div>
             </div>
 
-            <div className="flex flex-col lg:flex-row gap-4">
-                <div className="flex-1 relative">
+            <div className="flex flex-col lg:flex-row gap-3 sm:gap-4">
+                <div className="flex-1 relative min-w-0">
                     <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
                     <input
                         type="text"
@@ -150,7 +150,7 @@ export default function BranchProductsPage() {
                 <div className="flex flex-wrap gap-2">
                     <button
                         onClick={() => setSelectedCategory("all")}
-                        className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${selectedCategory === "all"
+                        className={`px-3 sm:px-4 py-2 rounded-full text-sm font-medium transition-all ${selectedCategory === "all"
                             ? "text-white"
                             : "bg-white border border-gray-200 text-gray-700 hover:bg-gray-50"
                             }`}
@@ -162,7 +162,7 @@ export default function BranchProductsPage() {
                         <button
                             key={category}
                             onClick={() => setSelectedCategory(category)}
-                            className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${selectedCategory === category
+                            className={`px-3 sm:px-4 py-2 rounded-full text-sm font-medium transition-all ${selectedCategory === category
                                 ? "text-white"
                                 : "bg-white border border-gray-200 text-gray-700 hover:bg-gray-50"
                                 }`}
@@ -181,17 +181,17 @@ export default function BranchProductsPage() {
             )}
 
             {filteredProducts.length === 0 ? (
-                <div className="text-center py-16 bg-white rounded-lg shadow-sm border border-gray-200">
+                <div className="text-center py-12 sm:py-16 bg-white rounded-lg shadow-sm border border-gray-200 p-4">
                     <Package className="mx-auto text-gray-400 mb-4" size={48} />
                     <h3 className="text-lg font-medium text-gray-900 mb-2">No products found</h3>
-                    <p className="text-gray-600">
+                    <p className="text-gray-600 text-sm sm:text-base">
                         {searchQuery || selectedCategory !== "all"
                             ? "Try adjusting your search or filter criteria"
                             : "Products with commission will appear here once admin sets them up"}
                     </p>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                     {filteredProducts.map((product) => (
                         <ProductCard
                             key={product.id}
@@ -249,9 +249,9 @@ function ProductCard({ product, user, theme, commissionRate, additionalCommissio
                 )}
             </div>
 
-            <div className="p-5">
+            <div className="p-4 sm:p-5">
                 <div className="flex items-start justify-between gap-2 mb-2">
-                    <h3 className="font-semibold text-gray-900 text-lg leading-tight line-clamp-2">
+                    <h3 className="font-semibold text-gray-900 text-base sm:text-lg leading-tight line-clamp-2 min-w-0">
                         {product.title}
                     </h3>
                     <span className={`px-2 py-0.5 text-xs font-medium rounded-full whitespace-nowrap ${product.isInStock

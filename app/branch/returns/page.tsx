@@ -155,50 +155,50 @@ export default function BranchReturnsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Total Returns</h1>
-        <p className="text-gray-600 mt-1">
+    <div className="space-y-4 sm:space-y-6 min-w-0">
+      <div className="min-w-0">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Total Returns</h1>
+        <p className="text-gray-600 mt-1 text-sm sm:text-base break-words">
           Self-referral and team sales returns in {user?.branch}
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-          <p className="text-sm text-gray-500">Total Returns</p>
-          <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-4 min-w-0">
+          <p className="text-xs sm:text-sm text-gray-500">Total Returns</p>
+          <p className="text-xl sm:text-2xl font-bold text-gray-900">{stats.total}</p>
         </div>
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-          <p className="text-sm text-gray-500 flex items-center gap-1">
-            <User className="w-3.5 h-3.5" />
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-4 min-w-0">
+          <p className="text-xs sm:text-sm text-gray-500 flex items-center gap-1">
+            <User className="w-3.5 h-3.5 shrink-0" />
             Self Referral
           </p>
-          <p className="text-2xl font-bold text-emerald-600">
+          <p className="text-xl sm:text-2xl font-bold text-emerald-600">
             {stats.selfReturns ?? 0}
           </p>
         </div>
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-          <p className="text-sm text-gray-500 flex items-center gap-1">
-            <Users className="w-3.5 h-3.5" />
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-4 min-w-0">
+          <p className="text-xs sm:text-sm text-gray-500 flex items-center gap-1">
+            <Users className="w-3.5 h-3.5 shrink-0" />
             Team Sales
           </p>
-          <p className="text-2xl font-bold text-indigo-600">
+          <p className="text-xl sm:text-2xl font-bold text-indigo-600">
             {stats.teamReturns ?? 0}
           </p>
         </div>
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-          <p className="text-sm text-gray-500">Cancelled Orders</p>
-          <p className="text-2xl font-bold text-red-600">{stats.cancelled}</p>
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-4 min-w-0">
+          <p className="text-xs sm:text-sm text-gray-500">Cancelled Orders</p>
+          <p className="text-xl sm:text-2xl font-bold text-red-600">{stats.cancelled}</p>
         </div>
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-          <p className="text-sm text-gray-500">Return Requested</p>
-          <p className="text-2xl font-bold text-rose-600">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-4 min-w-0 col-span-2 sm:col-span-1">
+          <p className="text-xs sm:text-sm text-gray-500">Return Requested</p>
+          <p className="text-xl sm:text-2xl font-bold text-rose-600">
             {stats.returnRequested}
           </p>
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 space-y-4">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-4 space-y-3 sm:space-y-4">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
           <input
@@ -223,7 +223,7 @@ export default function BranchReturnsPage() {
               key={chip.key}
               type="button"
               onClick={() => setActiveFilter(chip.key)}
-              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+              className={`px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-colors ${
                 activeFilter === chip.key
                   ? "bg-emerald-600 text-white"
                   : "bg-gray-100 text-gray-700 hover:bg-gray-200"
@@ -236,12 +236,64 @@ export default function BranchReturnsPage() {
       </div>
 
       {filteredOrders.length === 0 ? (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 sm:p-12 text-center">
           <RotateCcw className="w-12 h-12 text-gray-300 mx-auto mb-4" />
           <p className="text-gray-500">No returns found for this filter.</p>
         </div>
       ) : (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <>
+          <div className="md:hidden space-y-3">
+            {filteredOrders.map((order) => (
+              <div key={order.order_id} className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 min-w-0">
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <p className="text-sm font-mono font-semibold text-gray-900">
+                    #{String(order.order_id).slice(-8)}
+                  </p>
+                  <span
+                    className={`shrink-0 inline-flex items-center gap-1 px-2 py-0.5 text-[10px] rounded-full ${
+                      order.issue_type === "cancelled"
+                        ? "bg-red-100 text-red-700"
+                        : order.issue_type === "return_requested"
+                          ? "bg-rose-100 text-rose-700"
+                          : "bg-orange-100 text-orange-700"
+                    }`}
+                  >
+                    {issueLabel(order.issue_type)}
+                  </span>
+                </div>
+                <p className="text-sm text-gray-900 truncate">{order.product_name || "-"}</p>
+                <p className="text-xs text-gray-500 mt-0.5 truncate">
+                  {order.customer_name || order.customer_email || "-"}
+                </p>
+                <div className="grid grid-cols-2 gap-2 mt-3 text-xs">
+                  <div>
+                    <p className="text-[10px] uppercase text-gray-400 font-semibold">Sale Type</p>
+                    <p className="font-medium text-gray-800">{order.sale_type || "Team Sales"}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase text-gray-400 font-semibold">Amount</p>
+                    <p className="font-bold text-gray-900">{formatCurrency(order.order_amount)}</p>
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[10px] uppercase text-gray-400 font-semibold">Referrer</p>
+                    <p className="truncate">{order.referrer_name || "—"}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase text-gray-400 font-semibold">Date</p>
+                    <p>{formatDate(order.return_requested_at || order.created_at)}</p>
+                  </div>
+                </div>
+                <div className="mt-3">
+                  <CommissionStatusBadge
+                    status={order.commission_status}
+                    hasReturn={order.has_return}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="hidden md:block bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
@@ -355,6 +407,7 @@ export default function BranchReturnsPage() {
             </table>
           </div>
         </div>
+        </>
       )}
     </div>
   );

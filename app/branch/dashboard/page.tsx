@@ -308,7 +308,7 @@ export default function BranchDashboard() {
   ];
 
   return (
-    <div className="space-y-8 max-w-[1600px] mx-auto p-2">
+    <div className="space-y-6 sm:space-y-8 max-w-[1600px] mx-auto p-0 sm:p-2 min-w-0">
       {/* Payment Received Toast */}
       {showToast && (
         <Toast
@@ -320,17 +320,17 @@ export default function BranchDashboard() {
       )}
 
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-gray-900">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4 min-w-0">
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-gray-900">
             Dashboard
           </h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="hidden lg:block text-sm text-gray-500 mt-1 break-words">
             ASM area overview for{" "}
             <span className="font-semibold text-gray-900">{user?.branch}</span>
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <div
             className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium ${isConnected ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}
           >
@@ -342,11 +342,11 @@ export default function BranchDashboard() {
             {isConnected ? "Live Updates On" : "Connecting..."}
           </div>
 
-          <span className="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10">
+          <span className="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10 max-w-[140px] truncate">
             {user?.branch} Area
           </span>
           <div className="flex items-center gap-2 text-sm text-gray-500 bg-white px-3 py-1.5 rounded-lg border border-gray-200 shadow-sm">
-            <Clock className="w-4 h-4" />
+            <Clock className="w-4 h-4 shrink-0" />
             <span>
               {new Date().toLocaleTimeString([], {
                 hour: "2-digit",
@@ -357,51 +357,65 @@ export default function BranchDashboard() {
         </div>
       </div>
 
-      {/* Stats Cards - Clean Style */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+      {/* Stats Cards - Compact 2-col on phones; desktop grids unchanged */}
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4 min-w-0">
         {statCards.map((stat, index) => {
           const Icon = stat.icon;
+          const isWideOnMobile =
+            stat.title === "Total Commission" ||
+            stat.title === "Pending Commission";
           const card = (
             <div
-              className={`bg-white rounded-xl border border-gray-200 p-6 shadow-sm transition-all duration-200 ${
+              className={`bg-white rounded-xl border border-gray-200 p-3 sm:p-6 shadow-sm transition-all duration-200 min-w-0 ${
                 stat.href
                   ? "hover:border-gray-200 cursor-pointer hover:shadow-md"
                   : "hover:border-gray-300"
               }`}
             >
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <p className="text-sm font-medium text-gray-500">
+              <div className="flex justify-between items-start gap-2 mb-2 sm:mb-4">
+                <div className="min-w-0">
+                  <p className="text-[11px] sm:text-sm font-medium text-gray-500 truncate">
                     {stat.title}
                   </p>
-                  <h3 className="text-2xl font-bold text-gray-900 mt-1 tracking-tight">
+                  <h3 className="text-lg sm:text-2xl font-bold text-gray-900 mt-1 tracking-tight truncate">
                     {loading ? "..." : stat.value}
                   </h3>
                   {"subtitle" in stat && stat.subtitle ? (
-                    <p className="text-xs text-gray-400 mt-1">{stat.subtitle}</p>
+                    <p className="text-[10px] sm:text-xs text-gray-400 mt-1 line-clamp-2 sm:line-clamp-none">
+                      {stat.subtitle}
+                    </p>
                   ) : null}
                 </div>
-                <div className={`p-2.5 rounded-lg ${stat.bg}`}>
-                  <Icon className={`w-5 h-5 ${stat.color}`} />
+                <div className={`p-2 sm:p-2.5 rounded-lg shrink-0 ${stat.bg}`}>
+                  <Icon className={`w-4 h-4 sm:w-5 sm:h-5 ${stat.color}`} />
                 </div>
               </div>
             </div>
           );
 
           return stat.href ? (
-            <Link key={index} href={stat.href} className="block">
+            <Link
+              key={index}
+              href={stat.href}
+              className={`block min-w-0 ${isWideOnMobile ? "col-span-2 sm:col-span-1 xl:col-span-1" : ""}`}
+            >
               {card}
             </Link>
           ) : (
-            <div key={index}>{card}</div>
+            <div
+              key={index}
+              className={`min-w-0 ${isWideOnMobile ? "col-span-2 sm:col-span-1" : ""}`}
+            >
+              {card}
+            </div>
           );
         })}
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 min-w-0">
         {/* Left Column: Activity Feed */}
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-2 min-w-0">
           <RecentActivityFeed
             items={activityFeedItems}
             loading={activitiesLoading}
@@ -410,16 +424,16 @@ export default function BranchDashboard() {
         </div>
 
         {/* Right Column: Referral & Actions */}
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6 min-w-0">
           {/* Referral Card - Professional & Clean */}
           {user?.refer_code && (
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-              <div className="p-6">
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden min-w-0">
+              <div className="p-4 sm:p-6">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="p-2 bg-blue-50 rounded-lg">
+                  <div className="p-2 bg-blue-50 rounded-lg shrink-0">
                     <Share2 className="w-5 h-5 text-blue-600" />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <h3 className="font-bold text-gray-900">
                       Your Referral Code
                     </h3>
@@ -429,13 +443,13 @@ export default function BranchDashboard() {
                   </div>
                 </div>
 
-                <div className="bg-gray-50 border border-gray-200 rounded-lg p-1 flex items-center gap-2 mb-4">
-                  <div className="flex-1 px-3 py-2 font-mono text-lg font-bold text-gray-800 tracking-wider text-center">
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-1 flex items-center gap-2 mb-4 min-w-0">
+                  <div className="flex-1 min-w-0 px-2 sm:px-3 py-2 font-mono text-base sm:text-lg font-bold text-gray-800 tracking-wider text-center truncate">
                     {user.refer_code}
                   </div>
                   <button
                     onClick={copyReferralCode}
-                    className="p-2 bg-white border border-gray-200 rounded-md hover:bg-gray-50 transition-all text-gray-600 hover:text-gray-900 shadow-sm"
+                    className="p-2 bg-white border border-gray-200 rounded-md hover:bg-gray-50 transition-all text-gray-600 hover:text-gray-900 shadow-sm shrink-0"
                     title="Copy Code"
                   >
                     {copied ? (
@@ -447,7 +461,7 @@ export default function BranchDashboard() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 text-center">
-                  <div className="p-3 rounded-lg bg-emerald-50 border border-emerald-100">
+                  <div className="p-3 rounded-lg bg-emerald-50 border border-emerald-100 min-w-0">
                     <p className="text-emerald-700 text-lg font-bold">
                       {stats.directRate}%
                     </p>
@@ -455,7 +469,7 @@ export default function BranchDashboard() {
                       Direct Sales
                     </p>
                   </div>
-                  <div className="p-3 rounded-lg bg-blue-50 border border-blue-100">
+                  <div className="p-3 rounded-lg bg-blue-50 border border-blue-100 min-w-0">
                     <p className="text-blue-700 text-lg font-bold">
                       {stats.overrideRate}%
                     </p>
@@ -470,7 +484,7 @@ export default function BranchDashboard() {
 
           {qrDataUrl && (
             <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-              <div className="p-6">
+              <div className="p-4 sm:p-6">
                 <div className="flex items-center gap-2 mb-3">
                   <Users className="w-5 h-5 text-emerald-600" />
                   <h3 className="font-semibold text-gray-900 text-sm">
@@ -500,7 +514,7 @@ export default function BranchDashboard() {
 
           {/* Quick Attributes */}
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-            <div className="px-5 py-4 border-b border-gray-50 bg-gray-50/50">
+            <div className="px-4 sm:px-5 py-3 sm:py-4 border-b border-gray-50 bg-gray-50/50">
               <h3 className="font-bold text-gray-900 text-sm uppercase tracking-wider">
                 Quick Attributes
               </h3>
@@ -537,22 +551,22 @@ export default function BranchDashboard() {
                   <a
                     key={i}
                     href={action.href}
-                    className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors group"
+                    className="flex items-center justify-between p-3 sm:p-4 hover:bg-gray-50 transition-colors group min-w-0"
                   >
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-3 sm:gap-4 min-w-0">
                       <div
-                        className={`w-10 h-10 rounded-lg flex items-center justify-center transition-transform group-hover:scale-105 ${action.bg}`}
+                        className={`w-9 h-9 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center transition-transform group-hover:scale-105 shrink-0 ${action.bg}`}
                       >
                         <Icon className={`w-5 h-5 ${action.color}`} />
                       </div>
-                      <div>
-                        <p className="text-sm font-semibold text-gray-900 group-hover:text-gray-700">
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-gray-900 group-hover:text-gray-700 truncate">
                           {action.name}
                         </p>
                         <p className="text-xs text-gray-500">{action.desc}</p>
                       </div>
                     </div>
-                    <ArrowUpRight className="w-4 h-4 text-gray-300 group-hover:text-gray-500 transition-colors" />
+                    <ArrowUpRight className="w-4 h-4 text-gray-300 group-hover:text-gray-500 transition-colors shrink-0" />
                   </a>
                 );
               })}
@@ -561,18 +575,18 @@ export default function BranchDashboard() {
 
           {/* Active Offers */}
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-            <div className="px-5 py-4 border-b border-gray-50 bg-gray-50/50 flex items-center justify-between">
+            <div className="px-4 sm:px-5 py-3 sm:py-4 border-b border-gray-50 bg-gray-50/50 flex items-center justify-between gap-2">
               <h3 className="font-bold text-gray-900 text-sm uppercase tracking-wider">
                 Active Offers
               </h3>
               <a
                 href="/branch/offers"
-                className="text-xs font-medium text-emerald-700 hover:text-emerald-800"
+                className="text-xs font-medium text-emerald-700 hover:text-emerald-800 shrink-0"
               >
                 View Offers
               </a>
             </div>
-            <div className="p-4 space-y-3">
+            <div className="p-3 sm:p-4 space-y-3">
               {additionalLoading ? (
                 <p className="text-xs text-gray-500">Loading offers...</p>
               ) : !additionalData?.campaigns?.length ? (
@@ -585,7 +599,7 @@ export default function BranchDashboard() {
                   .map((campaign) => (
                     <div
                       key={campaign.id}
-                      className="rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2"
+                      className="rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 min-w-0"
                     >
                       <div className="flex items-center justify-between gap-3">
                         <div className="flex items-center gap-2 min-w-0">

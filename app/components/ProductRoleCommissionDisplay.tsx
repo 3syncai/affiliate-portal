@@ -124,9 +124,9 @@ export function ProductRoleCommissionDisplay({
                     border: `1px solid ${theme.primary}20`,
                 }}
             >
-                <div className="flex justify-between items-center">
-                    <span className="text-xs font-medium text-gray-600">Your commission:</span>
-                    <span className="font-bold text-lg" style={{ color: theme.primary }}>
+                <div className="flex justify-between items-center gap-2">
+                    <span className="text-xs font-medium text-gray-600 min-w-0">Your commission:</span>
+                    <span className="font-bold text-base sm:text-lg shrink-0" style={{ color: theme.primary }}>
                         ₹{formatCommissionInr(regularCommission)}
                     </span>
                 </div>
@@ -145,9 +145,9 @@ export function ProductRoleCommissionDisplay({
                         className="mt-2 rounded-lg px-3 py-2 bg-white"
                         style={{ border: `2px solid ${theme.primary}40` }}
                     >
-                        <div className="flex justify-between items-center">
-                            <span className="text-sm font-semibold text-gray-800">Total Commission</span>
-                            <span className="text-lg font-bold" style={{ color: theme.primary }}>
+                        <div className="flex justify-between items-center gap-2">
+                            <span className="text-sm font-semibold text-gray-800 min-w-0">Total Commission</span>
+                            <span className="text-base sm:text-lg font-bold shrink-0" style={{ color: theme.primary }}>
                                 ₹{formatCommissionInr(totalCommission)}
                             </span>
                         </div>

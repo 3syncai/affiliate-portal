@@ -56,7 +56,7 @@ export default function BranchLayout({
     const { theme } = useTheme()
     const [user, setUser] = useState<any>(null)
     const [loading, setLoading] = useState(true)
-    const [sidebarOpen, setSidebarOpen] = useState(true)
+    const [sidebarOpen, setSidebarOpen] = useState(false)
     const [showUserMenu, setShowUserMenu] = useState(false)
     const [unreadCount, setUnreadCount] = useState(0)
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
@@ -247,26 +247,44 @@ export default function BranchLayout({
 
     return (
         <div className="min-h-screen flex overflow-x-hidden" style={{ backgroundColor: theme.background }}>
+            {sidebarOpen && (
+                <button
+                    type="button"
+                    aria-label="Close sidebar"
+                    onClick={() => setSidebarOpen(false)}
+                    className="fixed inset-0 bg-black/40 z-20 lg:hidden"
+                />
+            )}
             <aside
-                className={`${sidebarOpen ? "w-72" : "w-0"} transition-all duration-300 overflow-hidden flex flex-col fixed h-screen z-30 shadow-xl`}
+                className={`w-72 transition-transform duration-300 overflow-hidden flex flex-col fixed h-screen z-30 shadow-xl ${
+                    sidebarOpen ? "translate-x-0" : "-translate-x-full"
+                } lg:translate-x-0`}
                 style={{
                     background: theme.sidebar,
                     backgroundImage: `linear-gradient(to bottom, ${theme.sidebar}, ${theme.sidebar}dd)`
                 }}
             >
-                <div className="flex items-center justify-between p-6" style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                    <div className="flex items-center gap-3">
-                        <div className="bg-white/10 p-2 rounded-lg backdrop-blur-sm">
+                <div className="flex items-center justify-between p-4 sm:p-6" style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                    <div className="flex items-center gap-3 min-w-0">
+                        <div className="bg-white/10 p-2 rounded-lg backdrop-blur-sm shrink-0">
                             <Building className="w-6 h-6 text-indigo-200" />
                         </div>
-                        <div>
-                            <h1 className="text-lg font-bold text-white tracking-wide">Area Sales Manager</h1>
+                        {/* Mobile: Hello + ASM name */}
+                        <div className="min-w-0 lg:hidden">
+                            <p className="text-[10px] text-indigo-300 font-medium tracking-wider uppercase">Hello</p>
+                            <h1 className="text-base font-bold text-white tracking-wide truncate">
+                                {[user?.first_name, user?.last_name].filter(Boolean).join(" ") || "ASM"}
+                            </h1>
+                        </div>
+                        {/* Desktop: Area Sales Manager / Workspace */}
+                        <div className="min-w-0 hidden lg:block">
+                            <h1 className="text-base sm:text-lg font-bold text-white tracking-wide truncate">Area Sales Manager</h1>
                             <p className="text-[10px] text-indigo-300 font-medium tracking-wider uppercase">Workspace</p>
-                        </div>ˍ
+                        </div>
                     </div>
                     <button
                         onClick={() => setSidebarOpen(false)}
-                        className="lg:hidden text-white/50 hover:text-white transition-colors"
+                        className="lg:hidden shrink-0 text-white/50 hover:text-white transition-colors"
                     >
                         <X className="w-5 h-5" />
                     </button>
@@ -281,6 +299,11 @@ export default function BranchLayout({
                             <Link
                                 key={item.name}
                                 href={item.href}
+                                onClick={() => {
+                                    if (typeof window !== "undefined" && window.innerWidth < 1024) {
+                                        setSidebarOpen(false)
+                                    }
+                                }}
                                 className={`flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 group relative overflow-hidden ${isActive
                                     ? "text-white bg-white/10 shadow-lg backdrop-blur-sm border border-white/10"
                                     : "text-indigo-200/70 hover:text-white hover:bg-white/5"
@@ -289,8 +312,8 @@ export default function BranchLayout({
                                 {isActive && (
                                     <div className="absolute left-0 top-0 bottom-0 w-1 bg-indigo-400 rounded-r-full"></div>
                                 )}
-                                <Icon className="w-5 h-5 mr-3" />
-                                <span className="relative z-10 flex-1">{item.name}</span>
+                                <Icon className="w-5 h-5 mr-3 shrink-0" />
+                                <span className="relative z-10 flex-1 truncate">{item.name}</span>
                                 {badgeCount > 0 && (
                                     <span
                                         className="ml-2 inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 text-[10px] font-bold rounded-full bg-red-500 text-white shadow-md ring-2 ring-white/10 animate-in fade-in zoom-in duration-200"
@@ -305,8 +328,42 @@ export default function BranchLayout({
                 </nav>
 
                 <div className="p-4 relative" style={{ borderTopColor: 'rgba(255,255,255,0.2)', borderTopWidth: '1px' }}>
-                    <div className="flex items-center gap-3 px-4 py-2 mb-2">
-                        {/* Circular Profile Icon */}
+                    {/* Mobile: always-visible Profile / Theme / Logout */}
+                    <div className="lg:hidden space-y-1">
+                        <button
+                            onClick={() => {
+                                setSidebarOpen(false)
+                                router.push('/branch/profile')
+                            }}
+                            className="w-full flex items-center px-4 py-3 text-sm font-medium rounded-xl text-indigo-200/70 hover:text-white hover:bg-white/5 transition-all"
+                        >
+                            <User className="w-5 h-5 mr-3 shrink-0" />
+                            <span>Profile</span>
+                        </button>
+                        <button
+                            onClick={() => {
+                                setSidebarOpen(false)
+                                router.push('/branch/profile#theme')
+                            }}
+                            className="w-full flex items-center px-4 py-3 text-sm font-medium rounded-xl text-indigo-200/70 hover:text-white hover:bg-white/5 transition-all"
+                        >
+                            <Palette className="w-5 h-5 mr-3 shrink-0" />
+                            <span>Theme</span>
+                        </button>
+                        <button
+                            onClick={() => {
+                                setSidebarOpen(false)
+                                setShowLogoutConfirm(true)
+                            }}
+                            className="w-full flex items-center px-4 py-3 text-sm font-medium rounded-xl text-red-300 hover:text-red-200 hover:bg-white/5 transition-all"
+                        >
+                            <LogOut className="w-5 h-5 mr-3 shrink-0" />
+                            <span>Logout</span>
+                        </button>
+                    </div>
+
+                    {/* Desktop: avatar + name + three-dot menu */}
+                    <div className="hidden lg:flex items-center gap-3 px-2 sm:px-4 py-2 mb-2">
                         <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
                             {(user?.first_name || 'B').charAt(0).toUpperCase()}
                         </div>
@@ -324,7 +381,6 @@ export default function BranchLayout({
                         >
                             <MoreVertical className="w-5 h-5" />
                         </button>
-                        {/* Dropdown Menu */}
                         {showUserMenu && (
                             <div className="absolute bottom-full left-4 right-4 mb-2 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
                                 <button
@@ -364,33 +420,40 @@ export default function BranchLayout({
                 </div>
             </aside>
 
-            <div className={`flex-1 flex flex-col ${sidebarOpen ? "ml-72" : "ml-0"} transition-all duration-300 overflow-x-hidden min-w-0`}>
-                <header className="bg-white/80 backdrop-blur-xl border-b border-indigo-50 px-8 py-5 sticky top-0 z-20 flex items-center justify-between">
-                    <div className="flex items-center gap-4">
+            <div className="flex-1 flex flex-col ml-0 lg:ml-72 transition-all duration-300 overflow-x-hidden min-w-0">
+                <header className="bg-white/80 backdrop-blur-xl border-b border-indigo-50 px-4 sm:px-6 lg:px-8 py-3 sm:py-5 sticky top-0 z-20 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
                         <button
                             onClick={() => setSidebarOpen(!sidebarOpen)}
-                            className="text-gray-400 hover:text-indigo-600 transition-colors lg:hidden"
+                            className="text-gray-400 hover:text-indigo-600 transition-colors lg:hidden shrink-0"
+                            aria-label={sidebarOpen ? "Close menu" : "Open menu"}
                         >
                             <Menu className="w-6 h-6" />
                         </button>
+                        <Link
+                            href="/branch/dashboard"
+                            className="lg:hidden text-sm font-semibold text-gray-900 truncate min-w-0 hover:text-indigo-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-1 rounded"
+                        >
+                            ASM ({user?.branch || "Area"})
+                        </Link>
                     </div>
 
-                    <div className="flex items-center space-x-6">
+                    <div className="flex items-center gap-2 sm:gap-4 lg:gap-6 shrink-0">
                         {/* Notification Bell */}
                         {user?.id && (
                             <NotificationDropdown userId={user.id} userRole="branch" />
                         )}
 
-                        <div className="h-8 w-[1px] bg-gray-200 mx-2"></div>
+                        <div className="hidden sm:block h-8 w-[1px] bg-gray-200"></div>
 
-                        <span className="px-4 py-1.5 rounded-full text-sm font-semibold flex items-center gap-2 bg-indigo-50 text-indigo-700 border border-indigo-100 shadow-sm">
-                            <Building className="w-3.5 h-3.5" />
-                            {user?.branch || "Branch Admin"}
+                        <span className="hidden sm:inline-flex px-3 lg:px-4 py-1.5 rounded-full text-xs sm:text-sm font-semibold items-center gap-2 bg-indigo-50 text-indigo-700 border border-indigo-100 shadow-sm max-w-[160px] lg:max-w-none truncate">
+                            <Building className="w-3.5 h-3.5 shrink-0" />
+                            <span className="truncate">{user?.branch || "Branch Admin"}</span>
                         </span>
                     </div>
                 </header>
 
-                <main className="flex-1 overflow-y-auto overflow-x-hidden p-6 lg:p-8 scroll-smooth">
+                <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 lg:p-8 scroll-smooth min-w-0">
                     {children}
                 </main>
             </div>

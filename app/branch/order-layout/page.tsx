@@ -411,74 +411,49 @@ export default function OrderLayoutPage() {
           </div>
         ) : (
           <>
-            {/* Mobile View */}
-            <div className="md:hidden overflow-x-auto -mx-4 px-4">
-              <table className="min-w-[760px] w-full divide-y divide-gray-200">
-                <thead>
-                  <tr className="bg-gray-50">
-                    <th className="px-3 py-2.5 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Order ID</th>
-                    <th className="px-3 py-2.5 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Date</th>
-                    <th className="px-3 py-2.5 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Sale By</th>
-                    <th className="px-3 py-2.5 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wider">Product</th>
-                    <th className="px-3 py-2.5 text-right text-[10px] font-bold text-gray-500 uppercase tracking-wider">Qty</th>
-                    <th className="px-3 py-2.5 text-right text-[10px] font-bold text-gray-500 uppercase tracking-wider">Amount</th>
-                    <th className="px-3 py-2.5 text-right text-[10px] font-bold text-gray-500 uppercase tracking-wider">Sales Executive</th>
-                    <th className="px-3 py-2.5 text-right text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Mine</th>
-                    <th className="px-3 py-2.5 text-center text-[10px] font-bold text-gray-500 uppercase tracking-wider">Status</th>
-                    <th className="px-3 py-2.5 text-right text-[10px] font-bold text-gray-500 uppercase tracking-wider">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-100">
-                  {filteredOrders.map((order) => (
-                    <tr key={order.id} className="hover:bg-gray-50/50 transition-colors">
-                      <td className="px-3 py-3 whitespace-nowrap">
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-xs font-mono font-medium" style={{ color: theme.primary }} title={order.order_id}>
-                            {order.order_id.length > 14 ? `${order.order_id.slice(0, 8)}...${order.order_id.slice(-4)}` : order.order_id}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-3 py-3 whitespace-nowrap text-xs text-gray-600">
-                        {formatDate(order.created_at).split(",")[0]}
-                      </td>
-                      <td className="px-3 py-3">
-                        <div className="text-xs text-gray-900">{order.generator_name}</div>
-                        <div className="text-[10px] text-gray-500 font-mono">{order.generator_code}</div>
-                      </td>
-                      <td className="px-3 py-3">
-                        <div className="text-xs text-gray-900 max-w-[140px] truncate" title={order.product_name}>
-                          {order.product_name}
-                        </div>
-                      </td>
-                      <td className="px-3 py-3 whitespace-nowrap text-xs text-right text-gray-900 font-semibold tabular-nums">
-                        {order.quantity}
-                      </td>
-                      <td className="px-3 py-3 whitespace-nowrap text-xs text-right font-bold text-blue-600 tabular-nums">
-                        {formatCurrency(order.order_amount)}
-                      </td>
-                      <td className="px-3 py-3 whitespace-nowrap text-xs text-right text-gray-600 font-semibold tabular-nums">
-                        {order.affiliate_earned > 0 ? formatCurrency(order.affiliate_earned) : "-"}
-                      </td>
-                      <td className="px-3 py-3 whitespace-nowrap text-xs text-right">
-                        <div className="font-bold text-emerald-600 tabular-nums">{formatCurrency(order.my_earned)}</div>
-                      </td>
-                      <td className="px-3 py-3 whitespace-nowrap text-center">
-                        <span className={`px-2 py-0.5 inline-flex text-[10px] leading-4 font-bold rounded-md border ${getStatusBadge(order.status)}`}>
-                          {order.status}
-                        </span>
-                      </td>
-                      <td className="px-3 py-3 whitespace-nowrap text-right">
-                        <button
-                          onClick={() => setSelectedOrder(order)}
-                          className="inline-flex items-center gap-1 text-xs font-semibold text-gray-600 hover:text-gray-900 transition-colors"
-                        >
-                          <Eye className="w-3.5 h-3.5" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            {/* Mobile cards */}
+            <div className="md:hidden space-y-3">
+              {filteredOrders.map((order) => (
+                <div key={order.id} className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 min-w-0">
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div className="min-w-0">
+                      <p className="text-xs font-mono font-semibold truncate" style={{ color: theme.primary }} title={order.order_id}>
+                        {order.order_id.length > 18 ? `${order.order_id.slice(0, 10)}...${order.order_id.slice(-4)}` : order.order_id}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-0.5">{formatDate(order.created_at).split(",")[0]}</p>
+                    </div>
+                    <span className={`shrink-0 px-2 py-0.5 inline-flex text-[10px] font-bold rounded-md border ${getStatusBadge(order.status)}`}>
+                      {order.status}
+                    </span>
+                  </div>
+                  <p className="text-sm font-medium text-gray-900 truncate" title={order.product_name}>{order.product_name}</p>
+                  <p className="text-xs text-gray-500 mt-0.5 truncate">{order.generator_name} · {order.generator_code}</p>
+                  <div className="grid grid-cols-2 gap-2 mt-3 text-xs">
+                    <div>
+                      <p className="text-[10px] uppercase text-gray-400 font-semibold">Qty</p>
+                      <p className="font-semibold text-gray-900">{order.quantity}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] uppercase text-gray-400 font-semibold">Amount</p>
+                      <p className="font-bold text-blue-600">{formatCurrency(order.order_amount)}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] uppercase text-gray-400 font-semibold">SE Earned</p>
+                      <p className="font-semibold text-gray-700">{order.affiliate_earned > 0 ? formatCurrency(order.affiliate_earned) : "-"}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] uppercase text-gray-400 font-semibold">Mine</p>
+                      <p className="font-bold text-emerald-600">{formatCurrency(order.my_earned)}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setSelectedOrder(order)}
+                    className="mt-3 w-full inline-flex items-center justify-center gap-1.5 text-sm font-semibold text-gray-700 py-2 rounded-lg hover:bg-gray-50 border border-gray-200"
+                  >
+                    <Eye className="w-3.5 h-3.5" /> View
+                  </button>
+                </div>
+              ))}
             </div>
 
             {/* Desktop View */}

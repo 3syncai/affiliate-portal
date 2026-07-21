@@ -73,32 +73,32 @@ export default function ConfirmModal({
                     <X className="w-4 h-4" />
                 </button>
 
-                <div className="p-6">
+                <div className="p-4 sm:p-6">
                     <div className="flex items-start gap-4">
                         <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${iconClasses}`}>
                             <AlertTriangle className="w-5 h-5" />
                         </div>
-                        <div className="flex-1 pr-6">
+                        <div className="flex-1 pr-6 min-w-0">
                             <h3 id="confirm-modal-title" className="text-lg font-semibold text-gray-900">
                                 {title}
                             </h3>
                             {message && (
-                                <p className="mt-1 text-sm text-gray-600">{message}</p>
+                                <p className="mt-1 text-sm text-gray-600 break-words">{message}</p>
                             )}
                         </div>
                     </div>
 
-                    <div className="mt-6 flex items-center justify-end gap-2">
+                    <div className="mt-6 flex flex-col-reverse min-[360px]:flex-row items-stretch min-[360px]:items-center justify-end gap-2">
                         <button
                             onClick={onCancel}
-                            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 border border-gray-200 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-200"
+                            className="w-full min-[360px]:w-auto px-4 py-2 text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 border border-gray-200 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-200"
                         >
                             {cancelLabel}
                         </button>
                         <button
                             onClick={onConfirm}
                             autoFocus
-                            className={`px-4 py-2 text-sm font-semibold text-white rounded-lg transition-colors focus:outline-none focus-visible:ring-2 ${confirmClasses}`}
+                            className={`w-full min-[360px]:w-auto px-4 py-2 text-sm font-semibold text-white rounded-lg transition-colors focus:outline-none focus-visible:ring-2 ${confirmClasses}`}
                         >
                             {confirmLabel}
                         </button>

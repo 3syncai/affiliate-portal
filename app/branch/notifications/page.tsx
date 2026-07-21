@@ -126,15 +126,15 @@ export default function BranchNotificationsPage() {
     }
 
     return (
-        <div className="max-w-5xl mx-auto space-y-6">
-            <div className="flex items-start justify-between gap-4">
-                <div>
-                    <h1 className="text-3xl font-bold text-gray-900">Notifications</h1>
+        <div className="max-w-5xl mx-auto space-y-4 sm:space-y-6 min-w-0 px-0">
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                <div className="min-w-0">
+                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Notifications</h1>
                     <p className="text-sm text-gray-500 mt-1">
                         {notifications.length} total • {unreadCount} unread
                     </p>
                 </div>
-                <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium ${isValidating ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-gray-50 text-gray-500 border border-gray-200"}`}>
+                <div className={`self-start inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium shrink-0 ${isValidating ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-gray-50 text-gray-500 border border-gray-200"}`}>
                     <Wifi className={`w-3.5 h-3.5 ${isValidating ? "animate-pulse" : ""}`} />
                     Live
                 </div>
@@ -142,7 +142,7 @@ export default function BranchNotificationsPage() {
 
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
                 {notifications.length === 0 ? (
-                    <div className="p-12 text-center">
+                    <div className="p-8 sm:p-12 text-center">
                         <Bell className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                         <p className="text-gray-500 font-medium">No notifications yet</p>
                     </div>
@@ -152,7 +152,7 @@ export default function BranchNotificationsPage() {
                             <div key={notification.id} className={`${!notification.is_read ? "bg-blue-50/40" : "bg-white"}`}>
                                 <button
                                     onClick={() => toggleExpand(notification)}
-                                    className="w-full text-left p-4 hover:bg-gray-50 transition-colors"
+                                    className="w-full text-left p-3 sm:p-4 hover:bg-gray-50 transition-colors"
                                 >
                                     <div className="flex items-start gap-3">
                                         <div className="mt-1 flex-shrink-0">
@@ -160,7 +160,7 @@ export default function BranchNotificationsPage() {
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-start justify-between gap-3">
-                                                <p className={`text-sm ${!notification.is_read ? "font-semibold text-gray-900" : "font-medium text-gray-800"}`}>
+                                                <p className={`text-sm break-words ${!notification.is_read ? "font-semibold text-gray-900" : "font-medium text-gray-800"}`}>
                                                     {notification.message}
                                                 </p>
                                                 <div className="flex items-center gap-2 flex-shrink-0">
@@ -174,10 +174,10 @@ export default function BranchNotificationsPage() {
                                 </button>
 
                                 {expandedId === notification.id && (
-                                    <div className="px-4 pb-4 ml-8">
+                                    <div className="px-3 sm:px-4 pb-4 ml-0 sm:ml-8">
                                         <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
                                             <p className="text-xs uppercase tracking-wide text-gray-500 mb-1">Message</p>
-                                            <p className="text-sm text-gray-700">{notification.message}</p>
+                                            <p className="text-sm text-gray-700 break-words">{notification.message}</p>
                                         </div>
                                     </div>
                                 )}

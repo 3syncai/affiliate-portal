@@ -392,15 +392,15 @@ export default function SubAdminKycBankSection({ apiBase, themePrimary }: SubAdm
         <div className="space-y-6">
             {/* Bank Card */}
             <section className="rounded-lg border border-gray-200 bg-white">
-                <header className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-                    <div className="flex items-center gap-3">
+                <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 sm:px-6 py-4 border-b border-gray-200">
+                    <div className="flex items-center gap-3 min-w-0">
                         <div
-                            className="w-9 h-9 rounded-lg flex items-center justify-center text-white"
+                            className="w-9 h-9 rounded-lg flex items-center justify-center text-white shrink-0"
                             style={{ background: accent }}
                         >
                             <Building2 className="w-5 h-5" />
                         </div>
-                        <div>
+                        <div className="min-w-0">
                             <h3 className="text-base font-semibold text-gray-900">Bank Details</h3>
                             <p className="text-xs text-gray-500">
                                 Used for commission payouts. You can update these anytime.
@@ -428,13 +428,13 @@ export default function SubAdminKycBankSection({ apiBase, themePrimary }: SubAdm
                 </header>
 
                 {saveSuccess && !isEditing && (
-                    <div className="mx-6 mt-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-700">
+                    <div className="mx-4 sm:mx-6 mt-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-700">
                         {saveSuccess}
                     </div>
                 )}
 
                 {!isEditing ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 sm:p-6">
                         {BANK_FIELDS.map((field) => (
                             <ReadOnlyField
                                 key={field}
@@ -445,7 +445,7 @@ export default function SubAdminKycBankSection({ apiBase, themePrimary }: SubAdm
                         ))}
                     </div>
                 ) : (
-                    <form onSubmit={handleSave} className="p-6 space-y-4">
+                    <form onSubmit={handleSave} className="p-4 sm:p-6 space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {BANK_FIELDS.map((field) => {
                                 const Icon = BANK_ICONS[field]
@@ -482,19 +482,19 @@ export default function SubAdminKycBankSection({ apiBase, themePrimary }: SubAdm
                             </div>
                         )}
 
-                        <div className="flex justify-end gap-3 pt-2">
+                        <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-2">
                             <button
                                 type="button"
                                 onClick={cancelEdit}
                                 disabled={saving}
-                                className="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+                                className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50"
                             >
                                 Cancel
                             </button>
                             <button
                                 type="submit"
                                 disabled={saving}
-                                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-lg disabled:opacity-60"
+                                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-lg disabled:opacity-60"
                                 style={{ background: accent }}
                             >
                                 {saving ? (
@@ -511,15 +511,15 @@ export default function SubAdminKycBankSection({ apiBase, themePrimary }: SubAdm
 
             {/* KYC Card */}
             <section className="rounded-lg border border-gray-200 bg-white">
-                <header className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-                    <div className="flex items-center gap-3">
+                <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 sm:px-6 py-4 border-b border-gray-200">
+                    <div className="flex items-center gap-3 min-w-0">
                         <div
-                            className="w-9 h-9 rounded-lg flex items-center justify-center text-white"
+                            className="w-9 h-9 rounded-lg flex items-center justify-center text-white shrink-0"
                             style={{ background: accent }}
                         >
                             <ShieldCheck className="w-5 h-5" />
                         </div>
-                        <div>
+                        <div className="min-w-0">
                             <h3 className="text-base font-semibold text-gray-900">KYC Documents</h3>
                             <p className="text-xs text-gray-500">
                                 {isEditingKyc
@@ -549,13 +549,13 @@ export default function SubAdminKycBankSection({ apiBase, themePrimary }: SubAdm
                 </header>
 
                 {kycSuccess && !isEditingKyc && (
-                    <div className="mx-6 mt-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-700">
+                    <div className="mx-4 sm:mx-6 mt-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-700">
                         {kycSuccess}
                     </div>
                 )}
 
                 {!isEditingKyc ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 sm:p-6">
                         <DocumentBlock
                             label="PAN Card"
                             number={data.pan_card_no}
@@ -568,7 +568,7 @@ export default function SubAdminKycBankSection({ apiBase, themePrimary }: SubAdm
                         />
                     </div>
                 ) : (
-                    <form onSubmit={handleSaveKyc} className="p-6 space-y-6">
+                    <form onSubmit={handleSaveKyc} className="p-4 sm:p-6 space-y-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <KycEditBlock
                                 label="PAN Card"
@@ -631,19 +631,19 @@ export default function SubAdminKycBankSection({ apiBase, themePrimary }: SubAdm
                             </div>
                         )}
 
-                        <div className="flex justify-end gap-3 pt-2">
+                        <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-2">
                             <button
                                 type="button"
                                 onClick={cancelEditKyc}
                                 disabled={savingKyc}
-                                className="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+                                className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50"
                             >
                                 Cancel
                             </button>
                             <button
                                 type="submit"
                                 disabled={savingKyc}
-                                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-lg disabled:opacity-60"
+                                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-lg disabled:opacity-60"
                                 style={{ background: accent }}
                             >
                                 {savingKyc ? (
