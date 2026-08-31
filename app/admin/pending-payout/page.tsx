@@ -161,18 +161,20 @@ export default function PendingPayoutPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Withdrawal Requests</h1>
-        <p className="text-gray-600 mt-1">Manage affiliate withdrawal requests</p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between min-w-0">
+        <div className="min-w-0">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Withdrawal Requests</h1>
+          <p className="text-gray-600 mt-1 text-sm sm:text-base">Manage affiliate withdrawal requests</p>
+        </div>
       </div>
 
       {/* Filter Tabs */}
-      <div className="flex gap-2 border-b border-gray-200">
+      <div className="flex flex-nowrap gap-2 border-b border-gray-200 overflow-x-auto pb-px -mx-1 px-1">
         {['ALL', 'PENDING', 'APPROVED', 'PAID', 'REJECTED'].map((tab) => (
           <button
             key={tab}
             onClick={() => setFilter(tab)}
-            className={`px-4 py-2 font-medium border-b-2 transition-colors ${filter === tab
+            className={`px-4 py-2 font-medium border-b-2 transition-colors whitespace-nowrap shrink-0 ${filter === tab
               ? 'border-indigo-600 text-indigo-600'
               : 'border-transparent text-gray-600 hover:text-gray-900'
               }`}
@@ -192,19 +194,19 @@ export default function PendingPayoutPage() {
       ) : (
         <div className="space-y-4">
           {withdrawals.map((withdrawal) => (
-            <div key={withdrawal.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">{withdrawal.affiliate_name}</h3>
-                  <p className="text-sm text-gray-600">{withdrawal.affiliate_email}</p>
+            <div key={withdrawal.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between mb-4">
+                <div className="min-w-0">
+                  <h3 className="text-lg font-semibold text-gray-900 truncate">{withdrawal.affiliate_name}</h3>
+                  <p className="text-sm text-gray-600 truncate">{withdrawal.affiliate_email}</p>
                   <p className="text-xs text-gray-500 mt-1">Code: {withdrawal.affiliate_code}</p>
                 </div>
-                <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusBadge(withdrawal.status)}`}>
+                <span className={`self-start px-3 py-1 rounded-full text-sm font-medium shrink-0 ${getStatusBadge(withdrawal.status)}`}>
                   {withdrawal.status}
                 </span>
               </div>
 
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-4">
                 <div>
                   <p className="text-xs text-gray-500">Withdrawal Amount</p>
                   <p className="text-lg font-bold text-gray-900">{formatCurrency(withdrawal.withdrawal_amount)}</p>
@@ -228,35 +230,35 @@ export default function PendingPayoutPage() {
                 <p className="text-sm font-semibold text-gray-900 mb-2">Payment Method: {withdrawal.payment_method}</p>
 
                 {withdrawal.payment_method === 'Bank Transfer' && (
-                  <div className="grid grid-cols-2 gap-3 text-sm">
-                    <div className="flex items-center justify-between">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
                       <span className="text-gray-600">Account Holder:</span>
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">{withdrawal.account_name}</span>
-                        <button onClick={() => copyToClipboard(withdrawal.account_name!, 'Account name')} className="text-indigo-600 hover:text-indigo-700">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="font-medium truncate">{withdrawal.account_name}</span>
+                        <button onClick={() => copyToClipboard(withdrawal.account_name!, 'Account name')} className="text-indigo-600 hover:text-indigo-700 shrink-0">
                           <Copy className="w-4 h-4" />
                         </button>
                       </div>
                     </div>
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
                       <span className="text-gray-600">Account Number:</span>
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">{withdrawal.account_number}</span>
-                        <button onClick={() => copyToClipboard(withdrawal.account_number!, 'Account number')} className="text-indigo-600 hover:text-indigo-700">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="font-medium truncate">{withdrawal.account_number}</span>
+                        <button onClick={() => copyToClipboard(withdrawal.account_number!, 'Account number')} className="text-indigo-600 hover:text-indigo-700 shrink-0">
                           <Copy className="w-4 h-4" />
                         </button>
                       </div>
                     </div>
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
                       <span className="text-gray-600">IFSC Code:</span>
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">{withdrawal.ifsc_code}</span>
-                        <button onClick={() => copyToClipboard(withdrawal.ifsc_code!, 'IFSC code')} className="text-indigo-600 hover:text-indigo-700">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="font-medium truncate">{withdrawal.ifsc_code}</span>
+                        <button onClick={() => copyToClipboard(withdrawal.ifsc_code!, 'IFSC code')} className="text-indigo-600 hover:text-indigo-700 shrink-0">
                           <Copy className="w-4 h-4" />
                         </button>
                       </div>
                     </div>
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
                       <span className="text-gray-600">Bank Name:</span>
                       <span className="font-medium">{withdrawal.bank_name}</span>
                     </div>
@@ -264,12 +266,12 @@ export default function PendingPayoutPage() {
                 )}
 
                 {withdrawal.payment_method === 'UPI' && (
-                  <div className="flex items-center justify-between text-sm">
+                  <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
                     <span className="text-gray-600">UPI ID:</span>
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-gray-900 text-lg">{withdrawal.upi_id || 'Not available'}</span>
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="font-bold text-gray-900 text-base sm:text-lg truncate">{withdrawal.upi_id || 'Not available'}</span>
                       {withdrawal.upi_id && (
-                        <button onClick={() => copyToClipboard(withdrawal.upi_id!, 'UPI ID')} className="text-indigo-600 hover:text-indigo-700">
+                        <button onClick={() => copyToClipboard(withdrawal.upi_id!, 'UPI ID')} className="text-indigo-600 hover:text-indigo-700 shrink-0">
                           <Copy className="w-4 h-4" />
                         </button>
                       )}
@@ -281,10 +283,10 @@ export default function PendingPayoutPage() {
                 {withdrawal.status === 'PAID' && withdrawal.transaction_id && (
                   <div className="mt-4 pt-4 border-t border-gray-200">
                     <p className="text-sm font-semibold text-green-700 mb-2">✅ Payment Completed</p>
-                    <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
                       <div>
                         <span className="text-gray-600">Transaction ID:</span>
-                        <span className="font-medium ml-2">{withdrawal.transaction_id}</span>
+                        <span className="font-medium ml-2 break-all">{withdrawal.transaction_id}</span>
                       </div>
                       {withdrawal.payment_date && (
                         <div>
@@ -301,7 +303,7 @@ export default function PendingPayoutPage() {
               </div>
 
               {/* Actions */}
-              <div className="flex gap-3">
+              <div className="flex flex-col sm:flex-row flex-wrap gap-3">
                 {withdrawal.status === 'PENDING' && (
                   <>
                     <button
@@ -309,7 +311,7 @@ export default function PendingPayoutPage() {
                       disabled={processing}
                       className="flex-1 flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50"
                     >
-                      <Check className="w-4 h-4" />
+                      <Check className="w-4 h-4 shrink-0" />
                       Approve & Deduct from Wallet
                     </button>
                     <button
@@ -317,7 +319,7 @@ export default function PendingPayoutPage() {
                       disabled={processing}
                       className="flex-1 flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50"
                     >
-                      <X className="w-4 h-4" />
+                      <X className="w-4 h-4 shrink-0" />
                       Reject
                     </button>
                   </>
@@ -331,7 +333,7 @@ export default function PendingPayoutPage() {
                     }}
                     className="flex-1 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
                   >
-                    <CreditCard className="w-4 h-4" />
+                    <CreditCard className="w-4 h-4 shrink-0" />
                     Mark as Paid (Enter Transaction ID)
                   </button>
                 )}

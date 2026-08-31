@@ -203,16 +203,16 @@ export default function OrderLayoutPage() {
   }
 
   return (
-    <div className="space-y-8 bg-gray-50/50 -m-6 p-6">
+    <div className="space-y-6 sm:space-y-8 bg-gray-50/50 -m-4 p-4 sm:-m-6 sm:p-6 min-w-0">
       {/* Header */}
-      <div className="flex justify-between items-start">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-gray-900">Order Layout</h1>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-gray-900">Order Layout</h1>
           <p className="text-sm text-gray-500 mt-1">View and manage partner orders</p>
         </div>
         <button
           onClick={exportToCSV}
-          className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm font-semibold text-sm"
+          className="flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm font-semibold text-sm w-full sm:w-auto shrink-0"
         >
           <Download className="w-4 h-4" />
           Export CSV
@@ -221,60 +221,60 @@ export default function OrderLayoutPage() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-        <div className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between">
-            <div>
+        <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5 hover:shadow-md transition-shadow min-w-0">
+          <div className="flex items-center justify-between gap-2">
+            <div className="min-w-0">
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Total Orders</p>
-              <p className="text-3xl font-bold text-gray-900">{totalOrders}</p>
+              <p className="text-2xl sm:text-3xl font-bold text-gray-900 truncate">{totalOrders}</p>
             </div>
-            <div className="w-12 h-12 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${theme.primary}15` }}>
-              <Package className="w-6 h-6" style={{ color: theme.primary }} />
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: `${theme.primary}15` }}>
+              <Package className="w-5 h-5 sm:w-6 sm:h-6" style={{ color: theme.primary }} />
             </div>
           </div>
         </div>
 
-        <Link href="/branch/returns" className="block">
-          <div className="bg-white rounded-xl border border-gray-200 p-5 hover:border-rose-200 hover:shadow-md transition-all cursor-pointer h-full">
-            <div className="flex items-center justify-between">
-              <div>
+        <Link href="/branch/returns" className="block min-w-0">
+          <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5 hover:border-rose-200 hover:shadow-md transition-all cursor-pointer h-full">
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0">
                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Total Returns</p>
-                <p className="text-3xl font-bold text-rose-600">{totalReturns}</p>
+                <p className="text-2xl sm:text-3xl font-bold text-rose-600 truncate">{totalReturns}</p>
                 <p className="text-[10px] text-gray-400 mt-1">Cancelled + return requests</p>
               </div>
-              <div className="w-12 h-12 rounded-lg bg-rose-50 flex items-center justify-center">
-                <RotateCcw className="w-6 h-6 text-rose-600" />
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-rose-50 flex items-center justify-center shrink-0">
+                <RotateCcw className="w-5 h-5 sm:w-6 sm:h-6 text-rose-600" />
               </div>
             </div>
           </div>
         </Link>
 
-        <div className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between">
-            <div>
+        <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5 hover:shadow-md transition-shadow min-w-0">
+          <div className="flex items-center justify-between gap-2">
+            <div className="min-w-0">
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Total Amount</p>
-              <p className="text-3xl font-bold text-gray-900 tabular-nums">{formatCurrency(totalOrderAmount)}</p>
+              <p className="text-2xl sm:text-3xl font-bold text-gray-900 tabular-nums truncate">{formatCurrency(totalOrderAmount)}</p>
             </div>
-            <div className="w-12 h-12 rounded-lg bg-blue-50 flex items-center justify-center">
-              <DollarSign className="w-6 h-6 text-blue-600" />
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-blue-50 flex items-center justify-center shrink-0">
+              <DollarSign className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between">
-            <div>
+        <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5 hover:shadow-md transition-shadow min-w-0">
+          <div className="flex items-center justify-between gap-2">
+            <div className="min-w-0">
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Total Comm. Earned</p>
-              <p className="text-3xl font-bold text-emerald-600 tabular-nums">{formatCurrency(totalCommission)}</p>
+              <p className="text-2xl sm:text-3xl font-bold text-emerald-600 tabular-nums truncate">{formatCurrency(totalCommission)}</p>
             </div>
-            <div className="w-12 h-12 rounded-lg bg-emerald-50 flex items-center justify-center">
-              <TrendingUp className="w-6 h-6 text-emerald-600" />
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-emerald-50 flex items-center justify-center shrink-0">
+              <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-600" />
             </div>
           </div>
         </div>
       </div>
 
       {/* Filters and Search */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+      <div className="bg-white rounded-2xl border border-gray-200 p-4 sm:p-6 shadow-sm">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <div className="md:col-span-2 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />

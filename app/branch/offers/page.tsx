@@ -169,16 +169,16 @@ function OfferCard({
       </div>
 
       <div className="p-4 sm:p-5 space-y-3 sm:space-y-4">
-        <div className="flex items-start justify-between gap-3">
+        <div className="flex flex-col gap-2 min-[400px]:flex-row min-[400px]:items-start min-[400px]:justify-between">
           <h3 className="font-bold text-gray-900 text-base sm:text-lg leading-tight line-clamp-2 min-w-0">{product.title}</h3>
-          <span className={`px-3 py-1.5 text-xs font-bold rounded-full whitespace-nowrap ${product.isInStock ? "bg-emerald-500 text-white" : "bg-red-500 text-white"}`}>
+          <span className={`self-start px-3 py-1.5 text-xs font-bold rounded-full whitespace-nowrap ${product.isInStock ? "bg-emerald-500 text-white" : "bg-red-500 text-white"}`}>
             {product.isInStock ? "In Stock" : "Out of Stock"}
           </span>
         </div>
 
         <p className="text-gray-600 text-sm line-clamp-2">{product.description || "No description available"}</p>
 
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <span className="text-xs font-medium text-gray-500 bg-gray-100 px-3 py-1.5 rounded-full border border-gray-200">{product.category}</span>
           {product.commissionRate && (
             <span className="text-sm font-bold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-full">
@@ -187,7 +187,7 @@ function OfferCard({
           )}
         </div>
 
-        <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-gray-100">
           <div className="flex items-center gap-1">
             <IndianRupee size={18} className="text-gray-700" />
             <span className="text-2xl font-bold text-gray-900">{product.price.toLocaleString("en-IN")}</span>
@@ -196,9 +196,9 @@ function OfferCard({
         </div>
 
         <div className="rounded-xl border-2 border-emerald-500 px-4 py-3">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-gray-600">Your commission:</span>
-            <span className="text-lg font-bold text-emerald-600">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span className="text-sm font-medium text-gray-600 min-w-0">Your commission:</span>
+            <span className="text-base sm:text-lg font-bold text-emerald-600 shrink-0">
               ₹{actualCommission.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
           </div>

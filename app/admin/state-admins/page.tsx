@@ -80,14 +80,14 @@ export default function StateAdminsPage() {
 
     return (
         <div className="space-y-6">
-            <div className="flex justify-between items-start">
-                <div>
-                    <h1 className="text-3xl font-bold text-gray-900">State Admins</h1>
-                    <p className="text-gray-600 mt-1">View and manage all state branch administrators</p>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div className="min-w-0">
+                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">State Admins</h1>
+                    <p className="text-gray-600 mt-1 text-sm sm:text-base">View and manage all state branch administrators</p>
                 </div>
                 <a
                     href="/admin/create-state-user"
-                    className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                    className="flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors w-full sm:w-auto shrink-0"
                 >
                     <MapPin className="w-4 h-4" />
                     Create New
@@ -95,7 +95,7 @@ export default function StateAdminsPage() {
             </div>
 
             {/* Search */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-4">
                 <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <input
@@ -109,24 +109,24 @@ export default function StateAdminsPage() {
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-3 gap-4">
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                    <p className="text-sm text-gray-500">Total State Admins</p>
-                    <p className="text-2xl font-bold text-gray-900">{stateAdmins.length}</p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-4 min-w-0">
+                    <p className="text-xs sm:text-sm text-gray-500">Total State Admins</p>
+                    <p className="text-xl sm:text-2xl font-bold text-gray-900">{stateAdmins.length}</p>
                 </div>
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                    <p className="text-sm text-gray-500">Active</p>
-                    <p className="text-2xl font-bold text-green-600">{stateAdmins.filter(a => a.is_active).length}</p>
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-4 min-w-0">
+                    <p className="text-xs sm:text-sm text-gray-500">Active</p>
+                    <p className="text-xl sm:text-2xl font-bold text-green-600">{stateAdmins.filter(a => a.is_active).length}</p>
                 </div>
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                    <p className="text-sm text-gray-500">Inactive</p>
-                    <p className="text-2xl font-bold text-red-600">{stateAdmins.filter(a => !a.is_active).length}</p>
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-4 min-w-0">
+                    <p className="text-xs sm:text-sm text-gray-500">Inactive</p>
+                    <p className="text-xl sm:text-2xl font-bold text-red-600">{stateAdmins.filter(a => !a.is_active).length}</p>
                 </div>
             </div>
 
             {/* Table */}
             {filteredAdmins.length === 0 ? (
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 sm:p-12 text-center">
                     <MapPin className="w-12 h-12 text-gray-300 mx-auto mb-4" />
                     <p className="text-gray-500">No state admins found</p>
                     <a href="/admin/create-state-user" className="text-indigo-600 hover:underline mt-2 inline-block">
@@ -134,86 +134,169 @@ export default function StateAdminsPage() {
                     </a>
                 </div>
             ) : (
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
-                                <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Phone</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">State</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Created</th>
-                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
-                                {filteredAdmins.map((admin) => (
-                                    <tr key={admin.id} className="hover:bg-gray-50">
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="text-sm font-medium text-gray-900">
-                                                {admin.first_name} {admin.last_name}
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {admin.email}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {admin.phone || "-"}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <span className="inline-flex items-center gap-1 px-2 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs">
-                                                <MapPin className="w-3 h-3" />
-                                                {admin.state}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <span className={`px-2 py-1 text-xs rounded-full ${admin.is_active
-                                                    ? "bg-green-100 text-green-700"
-                                                    : "bg-red-100 text-red-700"
-                                                }`}>
-                                                {admin.is_active ? "Active" : "Inactive"}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {formatDate(admin.created_at)}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-right">
-                                            <div className="flex items-center justify-end gap-2">
-                                                <button
-                                                    onClick={() => setSelectedAdmin(admin)}
-                                                    className="text-indigo-600 hover:text-indigo-900 flex items-center gap-1"
-                                                >
-                                                    <Eye className="w-4 h-4" />
-                                                    View
-                                                </button>
-                                                <button
-                                                    onClick={() => toggleStatus(admin.id, admin.is_active)}
-                                                    className={`flex items-center gap-1 ${admin.is_active ? "text-red-600 hover:text-red-800" : "text-green-600 hover:text-green-800"
-                                                        }`}
-                                                >
-                                                    {admin.is_active ? <ToggleRight className="w-4 h-4" /> : <ToggleLeft className="w-4 h-4" />}
-                                                    {admin.is_active ? "Deactivate" : "Activate"}
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                <>
+                    {/* Mobile cards */}
+                    <div className="md:hidden space-y-3">
+                        {filteredAdmins.map((admin) => (
+                            <div
+                                key={admin.id}
+                                className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 min-w-0"
+                            >
+                                <div className="flex items-start justify-between gap-2 mb-2">
+                                    <div className="min-w-0">
+                                        <p className="font-semibold text-gray-900 truncate">
+                                            {admin.first_name} {admin.last_name}
+                                        </p>
+                                        <p className="text-xs text-gray-500 truncate">{admin.email}</p>
+                                    </div>
+                                    <span
+                                        className={`shrink-0 px-2 py-0.5 text-[10px] rounded-full ${
+                                            admin.is_active
+                                                ? "bg-green-100 text-green-700"
+                                                : "bg-red-100 text-red-700"
+                                        }`}
+                                    >
+                                        {admin.is_active ? "Active" : "Inactive"}
+                                    </span>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2 text-xs text-gray-600 mb-3">
+                                    <div className="min-w-0">
+                                        <p className="uppercase tracking-wide text-[10px] text-gray-400 font-semibold">
+                                            Phone
+                                        </p>
+                                        <p className="truncate">{admin.phone || "-"}</p>
+                                    </div>
+                                    <div className="min-w-0">
+                                        <p className="uppercase tracking-wide text-[10px] text-gray-400 font-semibold">
+                                            State
+                                        </p>
+                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full text-[10px]">
+                                            <MapPin className="w-3 h-3 shrink-0" />
+                                            <span className="truncate">{admin.state}</span>
+                                        </span>
+                                    </div>
+                                    <div className="min-w-0">
+                                        <p className="uppercase tracking-wide text-[10px] text-gray-400 font-semibold">
+                                            Role
+                                        </p>
+                                        <p className="truncate capitalize">{admin.role}</p>
+                                    </div>
+                                    <div className="min-w-0">
+                                        <p className="uppercase tracking-wide text-[10px] text-gray-400 font-semibold">
+                                            Created
+                                        </p>
+                                        <p className="truncate">{formatDate(admin.created_at)}</p>
+                                    </div>
+                                </div>
+                                <div className="flex flex-col gap-2">
+                                    <button
+                                        onClick={() => setSelectedAdmin(admin)}
+                                        className="w-full inline-flex items-center justify-center gap-1.5 text-sm font-semibold text-indigo-600 hover:text-indigo-900 py-2 rounded-lg hover:bg-indigo-50 transition-colors"
+                                    >
+                                        <Eye className="w-4 h-4" /> View
+                                    </button>
+                                    <button
+                                        onClick={() => toggleStatus(admin.id, admin.is_active)}
+                                        className={`w-full inline-flex items-center justify-center gap-1.5 text-sm font-semibold py-2 rounded-lg border transition-colors ${
+                                            admin.is_active
+                                                ? "text-red-600 border-red-200 hover:bg-red-50"
+                                                : "text-green-600 border-green-200 hover:bg-green-50"
+                                        }`}
+                                    >
+                                        {admin.is_active ? (
+                                            <ToggleRight className="w-4 h-4" />
+                                        ) : (
+                                            <ToggleLeft className="w-4 h-4" />
+                                        )}
+                                        {admin.is_active ? "Deactivate" : "Activate"}
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
                     </div>
-                </div>
+
+                    {/* Desktop table */}
+                    <div className="hidden md:block bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                        <div className="overflow-x-auto">
+                            <table className="min-w-full divide-y divide-gray-200">
+                                <thead className="bg-gray-50">
+                                    <tr>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Phone</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">State</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Created</th>
+                                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="bg-white divide-y divide-gray-200">
+                                    {filteredAdmins.map((admin) => (
+                                        <tr key={admin.id} className="hover:bg-gray-50">
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <div className="text-sm font-medium text-gray-900">
+                                                    {admin.first_name} {admin.last_name}
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                {admin.email}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                {admin.phone || "-"}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <span className="inline-flex items-center gap-1 px-2 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs">
+                                                    <MapPin className="w-3 h-3" />
+                                                    {admin.state}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <span className={`px-2 py-1 text-xs rounded-full ${admin.is_active
+                                                        ? "bg-green-100 text-green-700"
+                                                        : "bg-red-100 text-red-700"
+                                                    }`}>
+                                                    {admin.is_active ? "Active" : "Inactive"}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                {formatDate(admin.created_at)}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-right">
+                                                <div className="flex items-center justify-end gap-2">
+                                                    <button
+                                                        onClick={() => setSelectedAdmin(admin)}
+                                                        className="text-indigo-600 hover:text-indigo-900 flex items-center gap-1"
+                                                    >
+                                                        <Eye className="w-4 h-4" />
+                                                        View
+                                                    </button>
+                                                    <button
+                                                        onClick={() => toggleStatus(admin.id, admin.is_active)}
+                                                        className={`flex items-center gap-1 ${admin.is_active ? "text-red-600 hover:text-red-800" : "text-green-600 hover:text-green-800"
+                                                            }`}
+                                                    >
+                                                        {admin.is_active ? <ToggleRight className="w-4 h-4" /> : <ToggleLeft className="w-4 h-4" />}
+                                                        {admin.is_active ? "Deactivate" : "Activate"}
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </>
             )}
 
             {/* View Modal */}
             {selectedAdmin && (
                 <div
-                    className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200"
+                    className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4 animate-in fade-in duration-200"
                     onClick={() => setSelectedAdmin(null)}
                 >
                     <div
-                        className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden animate-in zoom-in-95 duration-200"
+                        className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl max-w-md w-full max-h-[90dvh] overflow-y-auto animate-in zoom-in-95 duration-200"
                         onClick={(e) => e.stopPropagation()}
                     >
                         {/* Header with gradient */}

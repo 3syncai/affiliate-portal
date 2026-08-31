@@ -128,12 +128,12 @@ export default function StateAdminProductsPage() {
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                <div>
-                    <h1 className="text-3xl font-bold text-gray-900">Commission Overview</h1>
-                    <p className="text-gray-600 mt-1">Direct sales earn you maximum commission</p>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4 min-w-0">
+                <div className="min-w-0">
+                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Commission Overview</h1>
+                    <p className="text-gray-600 mt-1 text-sm sm:text-base">Direct sales earn you maximum commission</p>
                 </div>
-                <div className="px-4 py-2 rounded-full text-sm font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+                <div className="self-start px-4 py-2 rounded-full text-sm font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0">
                     {filteredProducts.length} Products Available
                 </div>
             </div>

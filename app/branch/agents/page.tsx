@@ -412,10 +412,10 @@ function PartnerDetailsModal({ agent, onClose }: { agent: Agent; onClose: () => 
                 </div>
 
                 {/* Footer */}
-                <div className="border-t border-gray-100 px-6 py-4 bg-gray-50 flex justify-end">
+                <div className="border-t border-gray-100 px-4 sm:px-6 py-4 bg-gray-50 flex justify-end">
                     <button
                         onClick={onClose}
-                        className="px-5 py-2 bg-gray-900 hover:bg-gray-800 text-white rounded-lg text-sm font-medium transition-colors"
+                        className="w-full sm:w-auto px-5 py-2 bg-gray-900 hover:bg-gray-800 text-white rounded-lg text-sm font-medium transition-colors"
                     >
                         Close
                     </button>

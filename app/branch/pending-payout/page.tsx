@@ -282,7 +282,7 @@ export default function PendingPayoutPage() {
                 </div>
 
                 {/* Grid Layout for Details & Actions */}
-                <div className="grid md:grid-cols-2 gap-8">
+                <div className="grid md:grid-cols-2 gap-4 md:gap-8">
                   {/* Payment Details Column */}
                   <div>
                     <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wide mb-3 flex items-center gap-2">
@@ -293,45 +293,45 @@ export default function PendingPayoutPage() {
                     <div className="bg-white border border-gray-100 rounded-lg p-3 space-y-2 text-sm">
                       {withdrawal.payment_method === 'Bank Transfer' && (
                         <>
-                          <div className="flex justify-between items-center py-1 border-b border-gray-50 last:border-0">
-                            <span className="text-gray-500">Account Name</span>
-                            <div className="flex items-center gap-2 font-medium text-gray-900">
-                              {withdrawal.account_name}
-                              <button onClick={() => copyToClipboard(withdrawal.account_name!, 'Name')} className="text-gray-400 hover:text-indigo-600">
+                          <div className="flex justify-between items-start gap-3 py-1 border-b border-gray-50 last:border-0">
+                            <span className="text-gray-500 shrink-0">Account Name</span>
+                            <div className="flex items-center gap-2 font-medium text-gray-900 min-w-0">
+                              <span className="min-w-0 break-all text-right">{withdrawal.account_name}</span>
+                              <button onClick={() => copyToClipboard(withdrawal.account_name!, 'Name')} className="text-gray-400 hover:text-indigo-600 shrink-0">
                                 <Copy className="w-3.5 h-3.5" />
                               </button>
                             </div>
                           </div>
-                          <div className="flex justify-between items-center py-1 border-b border-gray-50 last:border-0">
-                            <span className="text-gray-500">Account No</span>
-                            <div className="flex items-center gap-2 font-medium text-gray-900">
-                              {withdrawal.account_number}
-                              <button onClick={() => copyToClipboard(withdrawal.account_number!, 'Account Number')} className="text-gray-400 hover:text-indigo-600">
+                          <div className="flex justify-between items-start gap-3 py-1 border-b border-gray-50 last:border-0">
+                            <span className="text-gray-500 shrink-0">Account No</span>
+                            <div className="flex items-center gap-2 font-medium text-gray-900 min-w-0">
+                              <span className="min-w-0 break-all text-right">{withdrawal.account_number}</span>
+                              <button onClick={() => copyToClipboard(withdrawal.account_number!, 'Account Number')} className="text-gray-400 hover:text-indigo-600 shrink-0">
                                 <Copy className="w-3.5 h-3.5" />
                               </button>
                             </div>
                           </div>
-                          <div className="flex justify-between items-center py-1 border-b border-gray-50 last:border-0">
-                            <span className="text-gray-500">IFSC Code</span>
-                            <div className="flex items-center gap-2 font-medium text-gray-900">
-                              {withdrawal.ifsc_code}
-                              <button onClick={() => copyToClipboard(withdrawal.ifsc_code!, 'IFSC')} className="text-gray-400 hover:text-indigo-600">
+                          <div className="flex justify-between items-start gap-3 py-1 border-b border-gray-50 last:border-0">
+                            <span className="text-gray-500 shrink-0">IFSC Code</span>
+                            <div className="flex items-center gap-2 font-medium text-gray-900 min-w-0">
+                              <span className="min-w-0 break-all text-right">{withdrawal.ifsc_code}</span>
+                              <button onClick={() => copyToClipboard(withdrawal.ifsc_code!, 'IFSC')} className="text-gray-400 hover:text-indigo-600 shrink-0">
                                 <Copy className="w-3.5 h-3.5" />
                               </button>
                             </div>
                           </div>
-                          <div className="flex justify-between items-center py-1 border-b border-gray-50 last:border-0">
-                            <span className="text-gray-500">Bank Name</span>
-                            <span className="font-medium text-gray-900">{withdrawal.bank_name}</span>
+                          <div className="flex justify-between items-start gap-3 py-1 border-b border-gray-50 last:border-0">
+                            <span className="text-gray-500 shrink-0">Bank Name</span>
+                            <span className="font-medium text-gray-900 min-w-0 break-words text-right">{withdrawal.bank_name}</span>
                           </div>
                         </>
                       )}
                       {withdrawal.payment_method === 'UPI' && (
-                        <div className="flex justify-between items-center py-2">
-                          <span className="text-gray-500">UPI ID</span>
-                          <div className="flex items-center gap-2 font-bold text-gray-900">
-                            {withdrawal.upi_id}
-                            <button onClick={() => copyToClipboard(withdrawal.upi_id!, 'UPI ID')} className="text-gray-400 hover:text-indigo-600">
+                        <div className="flex justify-between items-start gap-3 py-2">
+                          <span className="text-gray-500 shrink-0">UPI ID</span>
+                          <div className="flex items-center gap-2 font-bold text-gray-900 min-w-0">
+                            <span className="min-w-0 break-all text-right">{withdrawal.upi_id}</span>
+                            <button onClick={() => copyToClipboard(withdrawal.upi_id!, 'UPI ID')} className="text-gray-400 hover:text-indigo-600 shrink-0">
                               <Copy className="w-3.5 h-3.5" />
                             </button>
                           </div>

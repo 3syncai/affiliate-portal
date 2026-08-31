@@ -250,11 +250,11 @@ function ProductCard({ product, user, theme, commissionRate, additionalCommissio
             </div>
 
             <div className="p-4 sm:p-5">
-                <div className="flex items-start justify-between gap-2 mb-2">
+                <div className="flex flex-col gap-2 min-[400px]:flex-row min-[400px]:items-start min-[400px]:justify-between mb-2">
                     <h3 className="font-semibold text-gray-900 text-base sm:text-lg leading-tight line-clamp-2 min-w-0">
                         {product.title}
                     </h3>
-                    <span className={`px-2 py-0.5 text-xs font-medium rounded-full whitespace-nowrap ${product.isInStock
+                    <span className={`self-start px-2 py-0.5 text-xs font-medium rounded-full whitespace-nowrap ${product.isInStock
                         ? "bg-green-100 text-green-700"
                         : "bg-red-100 text-red-700"
                         }`}>
@@ -266,7 +266,7 @@ function ProductCard({ product, user, theme, commissionRate, additionalCommissio
                     {product.description || "No description available"}
                 </p>
 
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
                     <div className="flex items-center gap-1">
                         <span className="text-yellow-500">★</span>
                         <span className="text-sm text-gray-600">4.5</span>
@@ -276,7 +276,7 @@ function ProductCard({ product, user, theme, commissionRate, additionalCommissio
                     </span>
                 </div>
 
-                <div className="flex items-center justify-between mb-3">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-3">
                     <div className="flex items-center gap-1">
                         <IndianRupee size={16} className="text-gray-700" />
                         <span className="text-xl font-bold text-gray-900">

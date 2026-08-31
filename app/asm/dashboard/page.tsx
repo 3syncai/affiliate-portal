@@ -290,17 +290,17 @@ export default function ASMDashboard() {
       )}
 
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-500 mt-1">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4 min-w-0">
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight text-gray-900">Dashboard</h1>
+          <p className="hidden lg:block text-gray-500 mt-1">
             Branch overview for{" "}
             <span className="font-semibold text-gray-900">
               {user?.city}, {user?.state}
             </span>
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <div
             className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium ${isConnected ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}
           >
@@ -311,8 +311,8 @@ export default function ASMDashboard() {
             )}
             {isConnected ? "Live Updates On" : "Connecting..."}
           </div>
-          <div className="bg-white border border-gray-200 rounded-lg px-4 py-2 text-sm text-gray-600 shadow-sm flex items-center">
-            <Clock className="w-4 h-4 mr-2" />
+          <div className="bg-white border border-gray-200 rounded-lg px-3 sm:px-4 py-1.5 sm:py-2 text-sm text-gray-600 shadow-sm flex items-center">
+            <Clock className="w-4 h-4 mr-2 shrink-0" />
             {new Date().toLocaleTimeString("en-US", {
               hour: "2-digit",
               minute: "2-digit",

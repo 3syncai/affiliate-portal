@@ -171,12 +171,12 @@ export default function StateAdminEarningsPage() {
             )}
 
             {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900">State Earnings</h1>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4 min-w-0">
+                <div className="min-w-0">
+                    <h1 className="text-xl sm:text-2xl font-bold text-gray-900">State Earnings</h1>
                     <p className="text-gray-500 text-sm mt-1">Detailed breakdown of income sources from {userData?.state}</p>
                 </div>
-                <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium self-start md:self-auto ${isConnected ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                <div className={`inline-flex self-start items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium shrink-0 ${isConnected ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
                     {isConnected ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
                     {isConnected ? 'Live Updates On' : 'Connecting...'}
                 </div>

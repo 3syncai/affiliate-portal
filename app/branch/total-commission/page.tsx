@@ -325,11 +325,11 @@ export default function TotalCommissionPage() {
             {selectedAffiliate && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
                     <div className="bg-white rounded-t-2xl sm:rounded-lg max-w-4xl w-full max-h-[90dvh] flex flex-col overflow-hidden">
-                        <div className="p-4 sm:p-6 border-b border-gray-200 flex justify-between items-center shrink-0">
-                            <h2 className="text-lg sm:text-2xl font-bold text-gray-900">Affiliate Commission Details</h2>
+                        <div className="p-4 sm:p-6 border-b border-gray-200 flex justify-between items-center gap-3 shrink-0">
+                            <h2 className="text-lg sm:text-2xl font-bold text-gray-900 min-w-0 truncate pr-2">Affiliate Commission Details</h2>
                             <button
                                 onClick={() => setSelectedAffiliate(null)}
-                                className="text-gray-400 hover:text-gray-600 text-3xl leading-none"
+                                className="text-gray-400 hover:text-gray-600 text-3xl leading-none shrink-0"
                             >
                                 ×
                             </button>
@@ -363,36 +363,36 @@ export default function TotalCommissionPage() {
                             <div>
                                 <h3 className="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">Commission & Wallet</h3>
                                 <div className="grid grid-cols-2 gap-3 sm:gap-4">
-                                    <div className="bg-green-50 border border-green-200 p-3 sm:p-4 rounded-lg">
+                                    <div className="bg-green-50 border border-green-200 p-3 sm:p-4 rounded-lg min-w-0">
                                         <div className="flex items-center gap-2 mb-2">
-                                            <DollarSign className="w-5 h-5 text-green-600 shrink-0" />
-                                            <p className="text-xs text-green-700 font-semibold uppercase">Total Commission</p>
+                                            <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 shrink-0" />
+                                            <p className="text-[10px] sm:text-xs text-green-700 font-semibold uppercase leading-tight">Total Commission</p>
                                         </div>
-                                        <p className="text-xl sm:text-2xl font-bold text-green-600">{formatCurrency(selectedAffiliate.total_commission)}</p>
+                                        <p className="text-lg sm:text-2xl font-bold text-green-600 truncate">{formatCurrency(selectedAffiliate.total_commission)}</p>
                                     </div>
 
-                                    <div className="bg-blue-50 border border-blue-200 p-3 sm:p-4 rounded-lg">
+                                    <div className="bg-blue-50 border border-blue-200 p-3 sm:p-4 rounded-lg min-w-0">
                                         <div className="flex items-center gap-2 mb-2">
-                                            <Wallet className="w-5 h-5 text-blue-600 shrink-0" />
-                                            <p className="text-xs text-blue-700 font-semibold uppercase">Wallet Amount</p>
+                                            <Wallet className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 shrink-0" />
+                                            <p className="text-[10px] sm:text-xs text-blue-700 font-semibold uppercase leading-tight">Wallet Amount</p>
                                         </div>
-                                        <p className="text-xl sm:text-2xl font-bold text-blue-600">{formatCurrency(selectedAffiliate.wallet_amount)}</p>
+                                        <p className="text-lg sm:text-2xl font-bold text-blue-600 truncate">{formatCurrency(selectedAffiliate.wallet_amount)}</p>
                                     </div>
 
-                                    <div className="bg-orange-50 border border-orange-200 p-3 sm:p-4 rounded-lg">
+                                    <div className="bg-orange-50 border border-orange-200 p-3 sm:p-4 rounded-lg min-w-0">
                                         <div className="flex items-center gap-2 mb-2">
-                                            <TrendingUp className="w-5 h-5 text-orange-600 shrink-0" />
-                                            <p className="text-xs text-orange-700 font-semibold uppercase">Pending Amount</p>
+                                            <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600 shrink-0" />
+                                            <p className="text-[10px] sm:text-xs text-orange-700 font-semibold uppercase leading-tight">Pending Amount</p>
                                         </div>
-                                        <p className="text-xl sm:text-2xl font-bold text-orange-600">{formatCurrency(selectedAffiliate.pending_amount)}</p>
+                                        <p className="text-lg sm:text-2xl font-bold text-orange-600 truncate">{formatCurrency(selectedAffiliate.pending_amount)}</p>
                                     </div>
 
-                                    <div className="bg-purple-50 border border-purple-200 p-3 sm:p-4 rounded-lg">
+                                    <div className="bg-purple-50 border border-purple-200 p-3 sm:p-4 rounded-lg min-w-0">
                                         <div className="flex items-center gap-2 mb-2">
-                                            <ShoppingBag className="w-5 h-5 text-purple-600 shrink-0" />
-                                            <p className="text-xs text-purple-700 font-semibold uppercase">Total Orders</p>
+                                            <ShoppingBag className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600 shrink-0" />
+                                            <p className="text-[10px] sm:text-xs text-purple-700 font-semibold uppercase leading-tight">Total Orders</p>
                                         </div>
-                                        <p className="text-xl sm:text-2xl font-bold text-purple-600">{selectedAffiliate.total_orders}</p>
+                                        <p className="text-lg sm:text-2xl font-bold text-purple-600 truncate">{selectedAffiliate.total_orders}</p>
                                     </div>
                                 </div>
                             </div>

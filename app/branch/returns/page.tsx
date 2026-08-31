@@ -209,7 +209,7 @@ export default function BranchReturnsPage() {
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
           />
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-nowrap sm:flex-wrap gap-2 overflow-x-auto pb-1 -mx-1 px-1">
           {(
             [
               { key: "all", label: "All" },
@@ -223,7 +223,7 @@ export default function BranchReturnsPage() {
               key={chip.key}
               type="button"
               onClick={() => setActiveFilter(chip.key)}
-              className={`px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-colors ${
+              className={`px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-colors whitespace-nowrap shrink-0 ${
                 activeFilter === chip.key
                   ? "bg-emerald-600 text-white"
                   : "bg-gray-100 text-gray-700 hover:bg-gray-200"

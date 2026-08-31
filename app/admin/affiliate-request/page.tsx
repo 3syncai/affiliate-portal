@@ -92,98 +92,144 @@ export default function AffiliateRequestPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Sales Executive Request</h1>
-        <p className="text-gray-600 mt-1">Review and manage affiliate user registrations</p>
+      <div className="min-w-0">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Sales Executive Request</h1>
+        <p className="text-gray-600 mt-1 text-sm sm:text-base">Review and manage affiliate user registrations</p>
       </div>
 
       {pendingUsers.length === 0 ? (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 sm:p-12 text-center">
           <p className="text-gray-500">No pending Sales Executive requests</p>
         </div>
       ) : (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Name
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Email
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Phone
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Registered
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {pendingUsers.map((user) => (
-                  <tr key={user.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">
-                            {user.first_name} {user.last_name}
-                          </div>
-                          {user.is_agent && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 mt-1">
-                              Oweg Partner
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {user.email}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {user.phone || "-"}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {formatDate(user.created_at)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex items-center justify-end space-x-2">
-                        <button
-                          onClick={() => setSelectedUser(user)}
-                          className="text-indigo-600 hover:text-indigo-900 flex items-center"
-                        >
-                          <Eye className="w-4 h-4 mr-1" />
-                          View
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        <>
+          {/* Mobile cards */}
+          <div className="md:hidden space-y-3">
+            {pendingUsers.map((user) => (
+              <div key={user.id} className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 min-w-0">
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <div className="min-w-0">
+                    <p className="font-semibold text-gray-900 truncate">
+                      {user.first_name} {user.last_name}
+                    </p>
+                    <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                  </div>
+                  {user.is_agent && (
+                    <span className="shrink-0 inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-blue-100 text-blue-800">
+                      Oweg Partner
+                    </span>
+                  )}
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-xs text-gray-600 mb-3">
+                  <div>
+                    <p className="uppercase tracking-wide text-[10px] text-gray-400 font-semibold">Phone</p>
+                    <p>{user.phone || "-"}</p>
+                  </div>
+                  <div>
+                    <p className="uppercase tracking-wide text-[10px] text-gray-400 font-semibold">Registered</p>
+                    <p className="truncate">{formatDate(user.created_at)}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setSelectedUser(user)}
+                  className="w-full inline-flex items-center justify-center gap-1.5 text-sm font-semibold text-indigo-600 hover:text-indigo-900 py-2 rounded-lg hover:bg-indigo-50 transition-colors"
+                >
+                  <Eye className="w-4 h-4" /> View
+                </button>
+              </div>
+            ))}
           </div>
-        </div>
+
+          {/* Desktop table */}
+          <div className="hidden md:block bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Name
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Email
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Phone
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Registered
+                    </th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {pendingUsers.map((user) => (
+                    <tr key={user.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div>
+                            <div className="text-sm font-medium text-gray-900">
+                              {user.first_name} {user.last_name}
+                            </div>
+                            {user.is_agent && (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 mt-1">
+                                Oweg Partner
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {user.email}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {user.phone || "-"}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {formatDate(user.created_at)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <div className="flex items-center justify-end space-x-2">
+                          <button
+                            onClick={() => setSelectedUser(user)}
+                            className="text-indigo-600 hover:text-indigo-900 flex items-center"
+                          >
+                            <Eye className="w-4 h-4 mr-1" />
+                            View
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
       )}
 
       {/* View User Modal */}
       {selectedUser && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-200 flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-gray-900">User Details</h2>
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <button
+            type="button"
+            aria-label="Close"
+            onClick={() => setSelectedUser(null)}
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm cursor-default"
+          />
+          <div className="relative w-full max-w-4xl bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl border border-gray-200 max-h-[90dvh] overflow-hidden flex flex-col">
+            <div className="p-4 sm:p-6 border-b border-gray-200 flex justify-between items-center gap-3 shrink-0">
+              <h2 className="text-lg sm:text-2xl font-bold text-gray-900 min-w-0 truncate">User Details</h2>
               <button
                 onClick={() => setSelectedUser(null)}
-                className="text-gray-400 hover:text-gray-600"
+                className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors shrink-0"
               >
                 <XCircle className="w-6 h-6" />
               </button>
             </div>
 
-            <div className="p-6 grid grid-cols-2 gap-6">
+            <div className="overflow-y-auto p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 min-h-0">
               <div>
                 <h3 className="text-sm font-semibold text-gray-700 mb-3">Personal Information</h3>
                 <div className="space-y-2 text-sm text-black">
@@ -240,7 +286,7 @@ export default function AffiliateRequestPage() {
                     <p><strong>Aadhar No:</strong> {selectedUser.aadhar_card_no || "-"}</p>
                     {selectedUser.aadhar_card_photo ? (
                       <div className="mt-2">
-                        <p className="text-xs text-gray-600 mb-1">Photo path: {selectedUser.aadhar_card_photo}</p>
+                        <p className="text-xs text-gray-600 mb-1 break-all">Photo path: {selectedUser.aadhar_card_photo}</p>
                         <a href={selectedUser.aadhar_card_photo} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline block mb-2">
                           📎 View Aadhar Card (Open in new tab)
                         </a>
@@ -266,7 +312,7 @@ export default function AffiliateRequestPage() {
                     <p><strong>PAN No:</strong> {selectedUser.pan_card_no || "-"}</p>
                     {selectedUser.pan_card_photo ? (
                       <div className="mt-2">
-                        <p className="text-xs text-gray-600 mb-1">Photo path: {selectedUser.pan_card_photo}</p>
+                        <p className="text-xs text-gray-600 mb-1 break-all">Photo path: {selectedUser.pan_card_photo}</p>
                         <a href={selectedUser.pan_card_photo} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline block mb-2">
                           📎 View PAN Card (Open in new tab)
                         </a>
@@ -302,10 +348,10 @@ export default function AffiliateRequestPage() {
               </div>
             </div>
 
-            <div className="p-6 border-t border-gray-200 flex justify-end">
+            <div className="p-4 sm:p-6 border-t border-gray-200 flex justify-end shrink-0 bg-gray-50">
               <button
                 onClick={() => setSelectedUser(null)}
-                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
               >
                 Close
               </button>
