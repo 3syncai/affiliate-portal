@@ -132,37 +132,37 @@ export default function ASMProfilePage() {
     }
 
     return (
-        <div className="max-w-4xl mx-auto space-y-6">
+        <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6 min-w-0">
             {/* Header */}
-            <div>
-                <h1 className="text-3xl font-bold text-gray-900">Branch Manager Profile</h1>
-                <p className="text-gray-600 mt-1">View your account information and security details</p>
+            <div className="min-w-0">
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Branch Manager Profile</h1>
+                <p className="text-gray-600 mt-1 text-sm sm:text-base">View your account information and security details</p>
             </div>
 
             {/* Profile Card with Photo */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <div className="flex items-center gap-6">
-                    <div className="relative">
-                        <div className="w-24 h-24 rounded-full flex items-center justify-center text-white text-3xl font-bold" style={{ background: `linear-gradient(to bottom right, ${theme.primary}, ${theme.sidebar})` }}>
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
+                    <div className="relative shrink-0">
+                        <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full flex items-center justify-center text-white text-2xl sm:text-3xl font-bold" style={{ background: `linear-gradient(to bottom right, ${theme.primary}, ${theme.sidebar})` }}>
                             {(user?.first_name || 'B').charAt(0).toUpperCase()}
                         </div>
                     </div>
 
                     {/* User Info */}
-                    <div className="flex-1">
-                        <h2 className="text-2xl font-bold text-gray-900">{user?.first_name} {user?.last_name}</h2>
-                        <p className="text-gray-600">{user?.email}</p>
+                    <div className="flex-1 min-w-0">
+                        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 truncate">{user?.first_name} {user?.last_name}</h2>
+                        <p className="text-gray-600 truncate">{user?.email}</p>
                         <p className="text-sm text-gray-500 mt-1 flex items-center gap-1">
-                            <Phone className="w-4 h-4" />
+                            <Phone className="w-4 h-4 shrink-0" />
                             {formatPhoneDisplay(user?.phone)}
                         </p>
-                        <div className="flex items-center gap-4 mt-3">
+                        <div className="flex flex-wrap items-center gap-3 sm:gap-4 mt-3">
                             <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                                 <Briefcase className="w-3 h-3 mr-1" />
                                 Branch Manager
                             </span>
                             <span className="text-sm text-gray-500 flex items-center">
-                                <MapPin className="w-4 h-4 mr-1" />
+                                <MapPin className="w-4 h-4 mr-1 shrink-0" />
                                 {user?.city}, {user?.state}
                             </span>
                         </div>
@@ -172,11 +172,11 @@ export default function ASMProfilePage() {
 
             {/* Tabs */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-                <div className="border-b border-gray-200">
-                    <nav className="flex -mb-px">
+                <div className="border-b border-gray-200 overflow-x-auto">
+                    <nav className="flex -mb-px min-w-max sm:min-w-0">
                         <button
                             onClick={() => setActiveTab('info')}
-                            className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors ${activeTab === 'info'
+                            className={`px-4 sm:px-6 py-3 sm:py-4 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${activeTab === 'info'
                                 ? 'border-blue-600 text-blue-600'
                                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                                 }`}
@@ -188,7 +188,7 @@ export default function ASMProfilePage() {
                         </button>
                         <button
                             onClick={() => setActiveTab('security')}
-                            className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors ${activeTab === 'security'
+                            className={`px-4 sm:px-6 py-3 sm:py-4 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${activeTab === 'security'
                                 ? 'border-blue-600 text-blue-600'
                                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                                 }`}
@@ -200,7 +200,7 @@ export default function ASMProfilePage() {
                         </button>
                         <button
                             onClick={() => setActiveTab('kyc')}
-                            className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors ${activeTab === 'kyc'
+                            className={`px-4 sm:px-6 py-3 sm:py-4 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${activeTab === 'kyc'
                                 ? 'border-blue-600 text-blue-600'
                                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                                 }`}
@@ -212,7 +212,7 @@ export default function ASMProfilePage() {
                         </button>
                         <button
                             onClick={() => setActiveTab('theme')}
-                            className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors ${activeTab === 'theme'
+                            className={`px-4 sm:px-6 py-3 sm:py-4 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${activeTab === 'theme'
                                 ? 'border-blue-600 text-blue-600'
                                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                                 }`}
@@ -225,11 +225,11 @@ export default function ASMProfilePage() {
                     </nav>
                 </div>
 
-                <div className="p-6">
+                <div className="p-4 sm:p-6">
                     {/* Personal Information Tab */}
                     {activeTab === 'info' && (
-                        <div className="space-y-6">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-4 sm:space-y-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">
                                         Full Name

@@ -208,14 +208,14 @@ export default function AllUsersPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">All Users</h1>
-          <p className="text-gray-600 mt-1">Manage all sales executives and administrators</p>
+        <div className="min-w-0">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">All Users</h1>
+          <p className="text-gray-600 mt-1 text-sm sm:text-base">Manage all sales executives and administrators</p>
         </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {tabs.map(tab => {
           const Icon = tab.icon
           const count = stats[tab.id]
@@ -247,9 +247,9 @@ export default function AllUsersPage() {
       </div>
 
       {/* Search & Filter Section */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-        <div className="flex items-center gap-4">
-          <div className="relative flex-1">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-3 sm:p-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+          <div className="relative flex-1 min-w-0">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input
               type="text"
@@ -267,7 +267,7 @@ export default function AllUsersPage() {
               </button>
             )}
           </div>
-          <div className="text-sm text-gray-500">
+          <div className="text-sm text-gray-500 shrink-0">
             Showing <span className="font-semibold text-gray-900">{filteredUsers.length}</span> {currentTab.label.toLowerCase()}
           </div>
         </div>
@@ -293,126 +293,190 @@ export default function AllUsersPage() {
             )}
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    User
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Contact
-                  </th>
-                  {activeTab !== "affiliates" && (
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      {activeTab === "state_admins" ? "State" : activeTab === "area_managers" ? "Branch" : "Area Sales Manager"}
-                    </th>
-                  )}
-                  {activeTab === "affiliates" && (
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      Branch
-                    </th>
-                  )}
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Created
-                  </th>
-                  <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-100">
-                {filteredUsers.map((user) => (
-                  <tr key={user.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className={`w-10 h-10 rounded-full bg-gradient-to-r ${currentTab.color} flex items-center justify-center text-white font-semibold text-sm`}>
-                          {getName(user).charAt(0).toUpperCase()}
-                        </div>
-                        <div className="ml-3">
-                          <div className="text-sm font-semibold text-gray-900">
-                            {getName(user)}
-                          </div>
-                          <div className="text-xs text-gray-500">
-                            {getUserSubtitle(user, activeTab)}
-                          </div>
-                        </div>
+          <>
+            {/* Mobile cards */}
+            <div className="md:hidden space-y-3 p-3">
+              {filteredUsers.map((user) => (
+                <div key={user.id} className="rounded-xl border border-gray-200 shadow-sm p-4 min-w-0">
+                  <div className="flex items-start justify-between gap-2 mb-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className={`w-10 h-10 shrink-0 rounded-full bg-gradient-to-r ${currentTab.color} flex items-center justify-center text-white font-semibold text-sm`}>
+                        {getName(user).charAt(0).toUpperCase()}
                       </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{user.email}</div>
-                      <div className="text-sm text-gray-500">{user.phone || "-"}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                        {user.state || user.area || user.branch || "-"}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {formatDate(user.created_at || user.approved_at)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center justify-center gap-2">
-                        <button
-                          type="button"
-                          role="switch"
-                          aria-checked={isUserActive(user)}
-                          aria-label={isUserActive(user) ? "Deactivate user" : "Activate user"}
-                          disabled={togglingId === user.id}
-                          onClick={() => setConfirmToggle({ user, nextActive: !isUserActive(user) })}
-                          className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 ${isUserActive(user) ? "bg-emerald-500 focus:ring-emerald-500" : "bg-gray-300 focus:ring-gray-400"
-                            } ${togglingId === user.id ? "opacity-60 cursor-wait" : ""}`}
-                        >
-                          <span
-                            aria-hidden="true"
-                            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${isUserActive(user) ? "translate-x-5" : "translate-x-0"
-                              }`}
-                          />
-                        </button>
-                        <span className={`text-xs font-medium ${isUserActive(user) ? "text-emerald-600" : "text-gray-500"}`}>
-                          {isUserActive(user) ? "Active" : "Blocked"}
-                        </span>
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-gray-900 truncate">{getName(user)}</p>
+                        <p className="text-xs text-gray-500 truncate">{getUserSubtitle(user, activeTab)}</p>
                       </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right">
-                      <button
-                        onClick={() => setSelectedUser(user)}
-                        className="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium text-blue-600 hover:bg-blue-50 transition-colors"
-                      >
-                        <Eye className="w-4 h-4 mr-1" />
-                        View
-                      </button>
-                    </td>
+                    </div>
+                    <span className={`shrink-0 text-xs font-medium ${isUserActive(user) ? "text-emerald-600" : "text-gray-500"}`}>
+                      {isUserActive(user) ? "Active" : "Blocked"}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-xs text-gray-600 mb-3">
+                    <div className="min-w-0 col-span-2">
+                      <p className="uppercase tracking-wide text-[10px] text-gray-400 font-semibold">Email</p>
+                      <p className="truncate">{user.email}</p>
+                    </div>
+                    <div>
+                      <p className="uppercase tracking-wide text-[10px] text-gray-400 font-semibold">Phone</p>
+                      <p>{user.phone || "-"}</p>
+                    </div>
+                    <div className="min-w-0">
+                      <p className="uppercase tracking-wide text-[10px] text-gray-400 font-semibold">Location</p>
+                      <p className="truncate">{user.state || user.area || user.branch || "-"}</p>
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <button
+                      onClick={() => setSelectedUser(user)}
+                      className="w-full inline-flex items-center justify-center gap-1.5 text-sm font-semibold text-blue-600 hover:text-blue-900 py-2 rounded-lg hover:bg-blue-50 transition-colors"
+                    >
+                      <Eye className="w-4 h-4" /> View
+                    </button>
+                    <button
+                      type="button"
+                      disabled={togglingId === user.id}
+                      onClick={() => setConfirmToggle({ user, nextActive: !isUserActive(user) })}
+                      className={`w-full inline-flex items-center justify-center gap-2 text-sm font-semibold py-2 rounded-lg border transition-colors ${isUserActive(user)
+                        ? "text-red-600 border-red-200 hover:bg-red-50"
+                        : "text-emerald-600 border-emerald-200 hover:bg-emerald-50"
+                        } ${togglingId === user.id ? "opacity-60 cursor-wait" : ""}`}
+                    >
+                      {isUserActive(user) ? "Deactivate" : "Activate"}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop table */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      User
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Contact
+                    </th>
+                    {activeTab !== "affiliates" && (
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                        {activeTab === "state_admins" ? "State" : activeTab === "area_managers" ? "Branch" : "Area Sales Manager"}
+                      </th>
+                    )}
+                    {activeTab === "affiliates" && (
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                        Branch
+                      </th>
+                    )}
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Created
+                    </th>
+                    <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Actions
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-100">
+                  {filteredUsers.map((user) => (
+                    <tr key={user.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className={`w-10 h-10 rounded-full bg-gradient-to-r ${currentTab.color} flex items-center justify-center text-white font-semibold text-sm`}>
+                            {getName(user).charAt(0).toUpperCase()}
+                          </div>
+                          <div className="ml-3">
+                            <div className="text-sm font-semibold text-gray-900">
+                              {getName(user)}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {getUserSubtitle(user, activeTab)}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">{user.email}</div>
+                        <div className="text-sm text-gray-500">{user.phone || "-"}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                          {user.state || user.area || user.branch || "-"}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {formatDate(user.created_at || user.approved_at)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center justify-center gap-2">
+                          <button
+                            type="button"
+                            role="switch"
+                            aria-checked={isUserActive(user)}
+                            aria-label={isUserActive(user) ? "Deactivate user" : "Activate user"}
+                            disabled={togglingId === user.id}
+                            onClick={() => setConfirmToggle({ user, nextActive: !isUserActive(user) })}
+                            className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 ${isUserActive(user) ? "bg-emerald-500 focus:ring-emerald-500" : "bg-gray-300 focus:ring-gray-400"
+                              } ${togglingId === user.id ? "opacity-60 cursor-wait" : ""}`}
+                          >
+                            <span
+                              aria-hidden="true"
+                              className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${isUserActive(user) ? "translate-x-5" : "translate-x-0"
+                                }`}
+                            />
+                          </button>
+                          <span className={`text-xs font-medium ${isUserActive(user) ? "text-emerald-600" : "text-gray-500"}`}>
+                            {isUserActive(user) ? "Active" : "Blocked"}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right">
+                        <button
+                          onClick={() => setSelectedUser(user)}
+                          className="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium text-blue-600 hover:bg-blue-50 transition-colors"
+                        >
+                          <Eye className="w-4 h-4 mr-1" />
+                          View
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
 
       {/* View User Modal */}
       {selectedUser && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl max-w-2xl w-full shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <button
+            type="button"
+            aria-label="Close"
+            onClick={() => setSelectedUser(null)}
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm cursor-default"
+          />
+          <div className="relative w-full max-w-2xl bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl border border-gray-200 max-h-[90dvh] overflow-hidden flex flex-col animate-in fade-in zoom-in duration-200">
             {/* Modal Header */}
-            <div className={`bg-gradient-to-r ${currentTab.color} p-6`}>
-              <div className="flex justify-between items-start">
-                <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center text-white text-2xl font-bold">
+            <div className={`bg-gradient-to-r ${currentTab.color} p-4 sm:p-6 shrink-0`}>
+              <div className="flex justify-between items-start gap-3">
+                <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+                  <div className="w-12 h-12 sm:w-16 sm:h-16 shrink-0 rounded-full bg-white/20 flex items-center justify-center text-white text-xl sm:text-2xl font-bold">
                     {getName(selectedUser).charAt(0).toUpperCase()}
                   </div>
-                  <div>
-                    <h2 className="text-2xl font-bold text-white">{getName(selectedUser)}</h2>
-                    <p className="text-white/80">{getUserSubtitle(selectedUser, activeTab)}</p>
+                  <div className="min-w-0">
+                    <h2 className="text-lg sm:text-2xl font-bold text-white truncate">{getName(selectedUser)}</h2>
+                    <p className="text-white/80 text-sm">{getUserSubtitle(selectedUser, activeTab)}</p>
                   </div>
                 </div>
                 <button
                   onClick={() => setSelectedUser(null)}
-                  className="text-white/80 hover:text-white p-1"
+                  className="text-white/80 hover:text-white p-1 shrink-0"
                 >
                   <X className="w-6 h-6" />
                 </button>
@@ -420,23 +484,23 @@ export default function AllUsersPage() {
             </div>
 
             {/* Modal Content */}
-            <div className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="overflow-y-auto p-4 sm:p-6 min-h-0">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                 {/* Contact Info */}
                 <div className="space-y-4">
                   <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Contact Information</h3>
                   <div className="space-y-3">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center">
+                      <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
                         <Mail className="w-5 h-5 text-gray-600" />
                       </div>
-                      <div>
+                      <div className="min-w-0">
                         <p className="text-xs text-gray-500">Email</p>
-                        <p className="text-sm font-medium text-gray-900">{selectedUser.email}</p>
+                        <p className="text-sm font-medium text-gray-900 break-all">{selectedUser.email}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center">
+                      <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
                         <Phone className="w-5 h-5 text-gray-600" />
                       </div>
                       <div>
@@ -453,7 +517,7 @@ export default function AllUsersPage() {
                   <div className="space-y-3">
                     {selectedUser.state && (
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
+                        <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center shrink-0">
                           <Building2 className="w-5 h-5 text-purple-600" />
                         </div>
                         <div>
@@ -464,7 +528,7 @@ export default function AllUsersPage() {
                     )}
                     {selectedUser.area && (
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center">
+                        <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center shrink-0">
                           <MapPin className="w-5 h-5 text-emerald-600" />
                         </div>
                         <div>
@@ -475,7 +539,7 @@ export default function AllUsersPage() {
                     )}
                     {selectedUser.branch && (
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center">
+                        <div className="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center shrink-0">
                           <GitBranch className="w-5 h-5 text-orange-600" />
                         </div>
                         <div>
@@ -485,7 +549,7 @@ export default function AllUsersPage() {
                       </div>
                     )}
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center">
+                      <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
                         <Calendar className="w-5 h-5 text-gray-600" />
                       </div>
                       <div>
@@ -500,14 +564,14 @@ export default function AllUsersPage() {
               {/* Additional Info */}
               {(selectedUser.referral_code || selectedUser.refer_code) && (
                 <div className="mt-6 pt-6 border-t border-gray-200">
-                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                    <div>
+                  <div className="flex items-center justify-between gap-3 p-4 bg-gray-50 rounded-lg">
+                    <div className="min-w-0">
                       <p className="text-xs text-gray-500">Referral Code</p>
-                      <p className="text-lg font-mono font-bold text-gray-900">{selectedUser.referral_code || selectedUser.refer_code}</p>
+                      <p className="text-lg font-mono font-bold text-gray-900 truncate">{selectedUser.referral_code || selectedUser.refer_code}</p>
                     </div>
                     <button
                       onClick={() => navigator.clipboard.writeText(selectedUser.referral_code || selectedUser.refer_code || "")}
-                      className="px-3 py-1.5 text-sm bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+                      className="px-3 py-1.5 text-sm bg-white border border-gray-300 rounded-lg hover:bg-gray-50 shrink-0"
                     >
                       Copy
                     </button>
@@ -517,8 +581,8 @@ export default function AllUsersPage() {
 
               {/* Account status (activate / deactivate) */}
               <div className="mt-6 pt-6 border-t border-gray-200">
-                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                  <div>
+                <div className="flex items-center justify-between gap-3 p-4 bg-gray-50 rounded-lg">
+                  <div className="min-w-0">
                     <p className="text-xs text-gray-500">Login Access</p>
                     <p className={`text-sm font-semibold ${isUserActive(selectedUser) ? "text-emerald-600" : "text-red-600"}`}>
                       {isUserActive(selectedUser) ? "Active — user can sign in" : "Blocked — user cannot sign in"}
@@ -545,10 +609,10 @@ export default function AllUsersPage() {
             </div>
 
             {/* Modal Footer */}
-            <div className="px-6 py-4 bg-gray-50 flex justify-end">
+            <div className="px-4 sm:px-6 py-4 bg-gray-50 flex justify-end shrink-0 border-t border-gray-100">
               <button
                 onClick={() => setSelectedUser(null)}
-                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+                className="w-full sm:w-auto px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
               >
                 Close
               </button>

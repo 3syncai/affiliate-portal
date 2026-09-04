@@ -111,16 +111,16 @@ export default function TotalCommissionPage() {
     }
 
     return (
-        <div className="space-y-6 overflow-hidden">
+        <div className="space-y-4 sm:space-y-6 overflow-hidden min-w-0">
             {/* Header */}
-            <div className="flex justify-between items-start">
-                <div>
-                    <h1 className="text-3xl font-bold text-gray-900">Total Commission</h1>
-                    <p className="text-gray-600 mt-1">View all affiliate commissions, orders, and wallet balances</p>
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
+                <div className="min-w-0">
+                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Total Commission</h1>
+                    <p className="text-gray-600 mt-1 text-sm sm:text-base">View all affiliate commissions, orders, and wallet balances</p>
                 </div>
                 <button
                     onClick={exportToCSV}
-                    className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                    className="flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors w-full sm:w-auto shrink-0"
                 >
                     <Download className="w-4 h-4" />
                     Export CSV
@@ -128,59 +128,59 @@ export default function TotalCommissionPage() {
             </div>
 
             {/* Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-sm font-medium text-gray-600">Total Commission</p>
-                            <p className="text-2xl font-bold text-green-600 mt-1">{formatCurrency(totalCommissionSum)}</p>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-4 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                        <div className="min-w-0">
+                            <p className="text-xs sm:text-sm font-medium text-gray-600">Total Commission</p>
+                            <p className="text-lg sm:text-2xl font-bold text-green-600 mt-1 truncate">{formatCurrency(totalCommissionSum)}</p>
                         </div>
-                        <div className="bg-green-100 p-3 rounded-lg">
-                            <DollarSign className="w-6 h-6 text-green-600" />
-                        </div>
-                    </div>
-                </div>
-
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-sm font-medium text-gray-600">Wallet Balance</p>
-                            <p className="text-2xl font-bold text-blue-600 mt-1">{formatCurrency(totalWalletSum)}</p>
-                        </div>
-                        <div className="bg-blue-100 p-3 rounded-lg">
-                            <Wallet className="w-6 h-6 text-blue-600" />
+                        <div className="bg-green-100 p-2 sm:p-3 rounded-lg shrink-0">
+                            <DollarSign className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />
                         </div>
                     </div>
                 </div>
 
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-sm font-medium text-gray-600">Pending Amount</p>
-                            <p className="text-2xl font-bold text-orange-600 mt-1">{formatCurrency(totalPendingSum)}</p>
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-4 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                        <div className="min-w-0">
+                            <p className="text-xs sm:text-sm font-medium text-gray-600">Wallet Balance</p>
+                            <p className="text-lg sm:text-2xl font-bold text-blue-600 mt-1 truncate">{formatCurrency(totalWalletSum)}</p>
                         </div>
-                        <div className="bg-orange-100 p-3 rounded-lg">
-                            <TrendingUp className="w-6 h-6 text-orange-600" />
+                        <div className="bg-blue-100 p-2 sm:p-3 rounded-lg shrink-0">
+                            <Wallet className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
                         </div>
                     </div>
                 </div>
 
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-sm font-medium text-gray-600">Total Orders</p>
-                            <p className="text-2xl font-bold text-purple-600 mt-1">{totalOrdersSum}</p>
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-4 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                        <div className="min-w-0">
+                            <p className="text-xs sm:text-sm font-medium text-gray-600">Pending Amount</p>
+                            <p className="text-lg sm:text-2xl font-bold text-orange-600 mt-1 truncate">{formatCurrency(totalPendingSum)}</p>
                         </div>
-                        <div className="bg-purple-100 p-3 rounded-lg">
-                            <ShoppingBag className="w-6 h-6 text-purple-600" />
+                        <div className="bg-orange-100 p-2 sm:p-3 rounded-lg shrink-0">
+                            <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-orange-600" />
+                        </div>
+                    </div>
+                </div>
+
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-4 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                        <div className="min-w-0">
+                            <p className="text-xs sm:text-sm font-medium text-gray-600">Total Orders</p>
+                            <p className="text-lg sm:text-2xl font-bold text-purple-600 mt-1">{totalOrdersSum}</p>
+                        </div>
+                        <div className="bg-purple-100 p-2 sm:p-3 rounded-lg shrink-0">
+                            <ShoppingBag className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" />
                         </div>
                     </div>
                 </div>
             </div>
 
             {/* Search and Table */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <div className="mb-4 flex justify-between items-center">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+                <div className="mb-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
                     <p className="text-sm text-gray-600">
                         Total Affiliates: <span className="font-semibold text-gray-900">{affiliates.length}</span>
                         {searchTerm && ` (Showing ${filteredAffiliates.length})`}
@@ -190,7 +190,7 @@ export default function TotalCommissionPage() {
                         placeholder="Search by name, email, or referral code..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent w-96"
+                        className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent w-full sm:w-96"
                     />
                 </div>
 
@@ -199,7 +199,50 @@ export default function TotalCommissionPage() {
                         <p>{searchTerm ? "No affiliates found matching your search" : "No commission data available"}</p>
                     </div>
                 ) : (
-                    <div className="overflow-x-auto">
+                    <>
+                        <div className="md:hidden space-y-3">
+                            {filteredAffiliates.map((affiliate) => (
+                                <div key={affiliate.user_id} className="rounded-xl border border-gray-200 p-4 min-w-0">
+                                    <div className="flex items-start justify-between gap-2">
+                                        <div className="min-w-0">
+                                            <p className="text-sm font-semibold text-gray-900 truncate">
+                                                {affiliate.first_name} {affiliate.last_name}
+                                            </p>
+                                            <p className="text-xs text-gray-500 truncate">{affiliate.email}</p>
+                                        </div>
+                                        <span className="shrink-0 px-2 py-0.5 text-[10px] font-semibold rounded-full bg-indigo-100 text-indigo-800">
+                                            {affiliate.referral_code}
+                                        </span>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-2 mt-3 text-xs">
+                                        <div>
+                                            <p className="text-[10px] uppercase text-gray-400 font-semibold">Orders</p>
+                                            <p className="font-medium text-gray-900">{affiliate.total_orders}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-[10px] uppercase text-gray-400 font-semibold">Commission</p>
+                                            <p className="font-semibold text-green-600">{formatCurrency(affiliate.total_commission)}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-[10px] uppercase text-gray-400 font-semibold">Wallet</p>
+                                            <p className="font-semibold text-blue-600">{formatCurrency(affiliate.wallet_amount)}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-[10px] uppercase text-gray-400 font-semibold">Pending</p>
+                                            <p className="font-semibold text-orange-600">{formatCurrency(affiliate.pending_amount)}</p>
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={() => setSelectedAffiliate(affiliate)}
+                                        className="mt-3 w-full flex items-center justify-center gap-1.5 py-2 text-sm font-medium text-indigo-600 bg-indigo-50 rounded-lg hover:bg-indigo-100"
+                                    >
+                                        <Eye className="w-4 h-4" />
+                                        View Details
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="hidden md:block overflow-x-auto">
                         <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-gray-50">
                                 <tr>
@@ -273,36 +316,37 @@ export default function TotalCommissionPage() {
                                 ))}
                             </tbody>
                         </table>
-                    </div>
+                        </div>
+                    </>
                 )}
             </div>
 
             {/* View Affiliate Modal */}
             {selectedAffiliate && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-                        <div className="p-6 border-b border-gray-200 flex justify-between items-center">
-                            <h2 className="text-2xl font-bold text-gray-900">Affiliate Commission Details</h2>
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+                    <div className="bg-white rounded-t-2xl sm:rounded-lg max-w-4xl w-full max-h-[90dvh] flex flex-col overflow-hidden">
+                        <div className="p-4 sm:p-6 border-b border-gray-200 flex justify-between items-center gap-3 shrink-0">
+                            <h2 className="text-lg sm:text-2xl font-bold text-gray-900 min-w-0 truncate pr-2">Affiliate Commission Details</h2>
                             <button
                                 onClick={() => setSelectedAffiliate(null)}
-                                className="text-gray-400 hover:text-gray-600 text-3xl leading-none"
+                                className="text-gray-400 hover:text-gray-600 text-3xl leading-none shrink-0"
                             >
                                 ×
                             </button>
                         </div>
 
-                        <div className="p-6 space-y-6">
+                        <div className="p-4 sm:p-6 space-y-6 overflow-y-auto flex-1">
                             {/* Personal Information */}
                             <div>
                                 <h3 className="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">Personal Information</h3>
-                                <div className="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg">
                                     <div>
                                         <p className="text-xs text-gray-500 mb-1">Name</p>
                                         <p className="text-sm font-medium text-gray-900">{selectedAffiliate.first_name} {selectedAffiliate.last_name}</p>
                                     </div>
                                     <div>
                                         <p className="text-xs text-gray-500 mb-1">Email</p>
-                                        <p className="text-sm font-medium text-gray-900">{selectedAffiliate.email}</p>
+                                        <p className="text-sm font-medium text-gray-900 break-all">{selectedAffiliate.email}</p>
                                     </div>
                                     <div>
                                         <p className="text-xs text-gray-500 mb-1">Phone</p>
@@ -318,37 +362,37 @@ export default function TotalCommissionPage() {
                             {/* Commission & Wallet Information */}
                             <div>
                                 <h3 className="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">Commission & Wallet</h3>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
+                                <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                                    <div className="bg-green-50 border border-green-200 p-3 sm:p-4 rounded-lg min-w-0">
                                         <div className="flex items-center gap-2 mb-2">
-                                            <DollarSign className="w-5 h-5 text-green-600" />
-                                            <p className="text-xs text-green-700 font-semibold uppercase">Total Commission</p>
+                                            <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 shrink-0" />
+                                            <p className="text-[10px] sm:text-xs text-green-700 font-semibold uppercase leading-tight">Total Commission</p>
                                         </div>
-                                        <p className="text-2xl font-bold text-green-600">{formatCurrency(selectedAffiliate.total_commission)}</p>
+                                        <p className="text-lg sm:text-2xl font-bold text-green-600 truncate">{formatCurrency(selectedAffiliate.total_commission)}</p>
                                     </div>
 
-                                    <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
+                                    <div className="bg-blue-50 border border-blue-200 p-3 sm:p-4 rounded-lg min-w-0">
                                         <div className="flex items-center gap-2 mb-2">
-                                            <Wallet className="w-5 h-5 text-blue-600" />
-                                            <p className="text-xs text-blue-700 font-semibold uppercase">Wallet Amount</p>
+                                            <Wallet className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 shrink-0" />
+                                            <p className="text-[10px] sm:text-xs text-blue-700 font-semibold uppercase leading-tight">Wallet Amount</p>
                                         </div>
-                                        <p className="text-2xl font-bold text-blue-600">{formatCurrency(selectedAffiliate.wallet_amount)}</p>
+                                        <p className="text-lg sm:text-2xl font-bold text-blue-600 truncate">{formatCurrency(selectedAffiliate.wallet_amount)}</p>
                                     </div>
 
-                                    <div className="bg-orange-50 border border-orange-200 p-4 rounded-lg">
+                                    <div className="bg-orange-50 border border-orange-200 p-3 sm:p-4 rounded-lg min-w-0">
                                         <div className="flex items-center gap-2 mb-2">
-                                            <TrendingUp className="w-5 h-5 text-orange-600" />
-                                            <p className="text-xs text-orange-700 font-semibold uppercase">Pending Amount</p>
+                                            <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600 shrink-0" />
+                                            <p className="text-[10px] sm:text-xs text-orange-700 font-semibold uppercase leading-tight">Pending Amount</p>
                                         </div>
-                                        <p className="text-2xl font-bold text-orange-600">{formatCurrency(selectedAffiliate.pending_amount)}</p>
+                                        <p className="text-lg sm:text-2xl font-bold text-orange-600 truncate">{formatCurrency(selectedAffiliate.pending_amount)}</p>
                                     </div>
 
-                                    <div className="bg-purple-50 border border-purple-200 p-4 rounded-lg">
+                                    <div className="bg-purple-50 border border-purple-200 p-3 sm:p-4 rounded-lg min-w-0">
                                         <div className="flex items-center gap-2 mb-2">
-                                            <ShoppingBag className="w-5 h-5 text-purple-600" />
-                                            <p className="text-xs text-purple-700 font-semibold uppercase">Total Orders</p>
+                                            <ShoppingBag className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600 shrink-0" />
+                                            <p className="text-[10px] sm:text-xs text-purple-700 font-semibold uppercase leading-tight">Total Orders</p>
                                         </div>
-                                        <p className="text-2xl font-bold text-purple-600">{selectedAffiliate.total_orders}</p>
+                                        <p className="text-lg sm:text-2xl font-bold text-purple-600 truncate">{selectedAffiliate.total_orders}</p>
                                     </div>
                                 </div>
                             </div>
@@ -357,17 +401,17 @@ export default function TotalCommissionPage() {
                             <div>
                                 <h3 className="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">Quick Stats</h3>
                                 <div className="bg-gray-50 p-4 rounded-lg space-y-2">
-                                    <div className="flex justify-between items-center">
+                                    <div className="flex justify-between items-center gap-2">
                                         <span className="text-sm text-gray-600">Average Commission per Order</span>
-                                        <span className="text-sm font-semibold text-gray-900">
+                                        <span className="text-sm font-semibold text-gray-900 shrink-0">
                                             {selectedAffiliate.total_orders > 0
                                                 ? formatCurrency(selectedAffiliate.total_commission / selectedAffiliate.total_orders)
                                                 : "₹0.00"}
                                         </span>
                                     </div>
-                                    <div className="flex justify-between items-center">
+                                    <div className="flex justify-between items-center gap-2">
                                         <span className="text-sm text-gray-600">Wallet Utilization</span>
-                                        <span className="text-sm font-semibold text-gray-900">
+                                        <span className="text-sm font-semibold text-gray-900 shrink-0">
                                             {selectedAffiliate.total_commission > 0
                                                 ? `${((selectedAffiliate.wallet_amount / selectedAffiliate.total_commission) * 100).toFixed(1)}%`
                                                 : "0%"}
@@ -377,10 +421,10 @@ export default function TotalCommissionPage() {
                             </div>
                         </div>
 
-                        <div className="p-6 border-t border-gray-200 flex justify-end">
+                        <div className="p-4 sm:p-6 border-t border-gray-200 flex justify-end shrink-0">
                             <button
                                 onClick={() => setSelectedAffiliate(null)}
-                                className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium"
+                                className="w-full sm:w-auto px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium"
                             >
                                 Close
                             </button>

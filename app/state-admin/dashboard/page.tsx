@@ -331,16 +331,16 @@ export default function StateAdminDashboard() {
         />
       )}
 
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-800">Dashboard</h1>
-          <p className="text-slate-500 mt-1">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4 mb-8 min-w-0">
+        <div className="min-w-0">
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-800">Dashboard</h1>
+          <p className="text-slate-500 mt-1 text-sm sm:text-base">
             Overview of your state performance
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <div
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium ${isConnected ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium shrink-0 ${isConnected ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}
           >
             {isConnected ? (
               <Wifi className="w-3 h-3" />
@@ -349,12 +349,12 @@ export default function StateAdminDashboard() {
             )}
             {isConnected ? "Live Updates On" : "Connecting..."}
           </div>
-          <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-xl shadow-sm border border-slate-100/50">
+          <div className="flex items-center gap-2 bg-white px-3 sm:px-4 py-2 rounded-xl shadow-sm border border-slate-100/50">
             <span className="text-xs font-semibold text-slate-500">
               {user?.state} State
             </span>
             <div className="h-4 w-[1px] bg-slate-200"></div>
-            <Clock className="w-4 h-4 text-slate-400" />
+            <Clock className="w-4 h-4 text-slate-400 shrink-0" />
             <span className="text-xs font-medium text-slate-600">
               {new Date().toLocaleTimeString("en-US", {
                 hour: "2-digit",

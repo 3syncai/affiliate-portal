@@ -80,6 +80,17 @@ export default function UserNavbar({ userName }: UserNavbarProps) {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between items-center h-16 gap-3">
                     <div className="flex items-center gap-3 min-w-0 flex-1 md:flex-initial md:gap-8">
+                        <button
+                            type="button"
+                            className="md:hidden shrink-0 inline-flex items-center justify-center p-2 rounded-lg text-gray-700 hover:bg-slate-100 transition-colors"
+                            aria-label={mobileOpen ? "Close menu" : "Open menu"}
+                            aria-expanded={mobileOpen}
+                            onClick={() =>
+                                setMenuPath((p) => (p === pathname ? null : pathname))
+                            }
+                        >
+                            {mobileOpen ? <X size={22} /> : <Menu size={22} />}
+                        </button>
                         <Link
                             href="/dashboard"
                             className="flex items-center min-w-0"
@@ -119,17 +130,6 @@ export default function UserNavbar({ userName }: UserNavbarProps) {
                         >
                             <LogOut size={18} />
                             <span>Logout</span>
-                        </button>
-                        <button
-                            type="button"
-                            className="md:hidden inline-flex items-center justify-center p-2 rounded-lg text-gray-700 hover:bg-slate-100 transition-colors"
-                            aria-label={mobileOpen ? "Close menu" : "Open menu"}
-                            aria-expanded={mobileOpen}
-                            onClick={() =>
-                                setMenuPath((p) => (p === pathname ? null : pathname))
-                            }
-                        >
-                            {mobileOpen ? <X size={22} /> : <Menu size={22} />}
                         </button>
                     </div>
                 </div>

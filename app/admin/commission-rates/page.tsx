@@ -112,12 +112,12 @@ export default function CommissionRatesPage() {
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-3xl font-bold text-gray-900">Commission Rates</h1>
-                    <p className="text-gray-600 mt-1">Manage commission percentages for different user roles</p>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0">
+                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Commission Rates</h1>
+                    <p className="text-gray-600 mt-1 text-sm sm:text-base">Manage commission percentages for different user roles</p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                     {hasChanges && (
                         <button
                             onClick={handleReset}
@@ -139,7 +139,7 @@ export default function CommissionRatesPage() {
             </div>
 
             {/* Info Box */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4">
                 <div className="flex items-start">
                     <Info className="w-5 h-5 text-blue-600 mr-3 mt-0.5 flex-shrink-0" />
                     <div className="text-sm text-blue-800">
@@ -154,16 +154,16 @@ export default function CommissionRatesPage() {
             </div>
 
             {/* Rates Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                 {rates.map((rate) => {
                     const isAffiliateOrBranchDirect = rate.role_type === "affiliate" || rate.role_type === "branch_direct"
 
                     return (
-                        <div key={rate.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                        <div key={rate.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
                             <div className="flex items-start justify-between mb-4">
-                                <div className="flex-1">
-                                    <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-                                        <Settings className="w-5 h-5 mr-2 text-indigo-600" />
+                                <div className="flex-1 min-w-0">
+                                    <h3 className="text-base sm:text-lg font-semibold text-gray-900 flex items-center">
+                                        <Settings className="w-5 h-5 mr-2 text-indigo-600 shrink-0" />
                                         {roleLabels[rate.role_type] || rate.role_type}
                                     </h3>
                                     <p className="text-sm text-gray-600 mt-1">
@@ -219,9 +219,9 @@ export default function CommissionRatesPage() {
             </div>
 
             {/* Current Configuration Summary */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Current Configuration Summary</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Current Configuration Summary</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-lg p-4">
                         <p className="text-sm text-indigo-600 font-medium">Affiliate Direct Referral</p>
                         <p className="text-2xl font-bold text-indigo-900 mt-1">

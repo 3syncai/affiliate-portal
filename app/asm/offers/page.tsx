@@ -100,9 +100,9 @@ export default function ASMOffersPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Offers</h1>
-        <p className="text-gray-600 mt-1">Additional commission offers visible to Branch or All.</p>
+      <div className="min-w-0">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Offers</h1>
+        <p className="text-gray-600 mt-1 text-sm sm:text-base">Additional commission offers visible to Branch or All.</p>
       </div>
 
       {isLoading || loadingProducts ? (

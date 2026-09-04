@@ -155,7 +155,7 @@ export default function EarningsPage() {
 
 
     return (
-        <div className="space-y-8">
+        <div className="space-y-6 sm:space-y-8 min-w-0">
             {/* Payment Received Toast */}
             {showToast && (
                 <Toast
@@ -167,27 +167,27 @@ export default function EarningsPage() {
             )}
 
             {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-2xl font-bold tracking-tight text-gray-900">Area Sales Manager Earnings</h1>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+                <div className="min-w-0">
+                    <h1 className="text-lg sm:text-2xl font-bold tracking-tight text-gray-900 break-words">Area Sales Manager Earnings</h1>
                     <p className="text-sm text-gray-500 mt-1">Detailed breakdown of your income sources</p>
                 </div>
-                <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium ${isConnected ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                <div className={`self-start flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium shrink-0 ${isConnected ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
                     {isConnected ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
                     {isConnected ? 'Live Updates On' : 'Connecting...'}
                 </div>
             </div>
 
             {/* Income Breakdown Section */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
                 {/* 1. Order Volume Card */}
-                <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 hover:border-gray-300 transition-colors">
-                    <div className="flex justify-between items-start mb-2">
-                        <div>
+                <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 sm:p-6 hover:border-gray-300 transition-colors min-w-0">
+                    <div className="flex justify-between items-start mb-2 gap-2">
+                        <div className="min-w-0">
                             <p className="text-sm font-medium text-gray-500">Total Orders</p>
-                            <h3 className="text-2xl font-bold text-gray-900 mt-1 tracking-tight">{stats.totalOrders}</h3>
+                            <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mt-1 tracking-tight">{stats.totalOrders}</h3>
                         </div>
-                        <div className="p-2.5 rounded-lg bg-orange-50">
+                        <div className="p-2.5 rounded-lg bg-orange-50 shrink-0">
                             <ShoppingBag className="w-5 h-5 text-orange-600" />
                         </div>
                     </div>
@@ -197,7 +197,7 @@ export default function EarningsPage() {
                             <div className="bg-blue-500 h-1.5" style={{ width: `${stats.totalOrders > 0 ? (stats.overrideOrders / stats.totalOrders) * 100 : 0}%` }}></div>
                             <div className="bg-emerald-500 h-1.5" style={{ width: `${stats.totalOrders > 0 ? (stats.directOrders / stats.totalOrders) * 100 : 0}%` }}></div>
                         </div>
-                        <div className="flex justify-between text-xs text-gray-500 pt-1">
+                        <div className="flex flex-wrap justify-between gap-2 text-xs text-gray-500 pt-1">
                             <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-blue-500"></div> {stats.overrideOrders} Team Orders</span>
                             <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-emerald-500"></div> {stats.directOrders} Direct Orders</span>
                         </div>
@@ -205,45 +205,51 @@ export default function EarningsPage() {
                 </div>
 
                 {/* 2. Total Earnings Card */}
-                <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 relative overflow-hidden group transition-all hover:shadow-md">
+                <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 sm:p-6 relative overflow-hidden group transition-all hover:shadow-md min-w-0">
                     <div className="absolute top-0 right-0 p-4 opacity-10">
                         <DollarSign className="w-16 h-16 text-emerald-600" />
                     </div>
                     <p className="text-sm font-medium text-gray-500">Total Lifetime Earnings</p>
-                    <h2 className="text-3xl font-bold text-gray-900 mt-2 tracking-tight">{formatCurrency(stats.lifetimeEarnings || stats.totalEarnings)}</h2>
+                    <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mt-2 tracking-tight break-words">{formatCurrency(stats.lifetimeEarnings || stats.totalEarnings)}</h2>
 
                     <div className="mt-4 pt-4 border-t border-gray-100 space-y-2">
-                        <div className="flex justify-between text-xs">
-                            <span className="text-gray-500 flex items-center gap-1"><Users className="w-3 h-3" /> From Partners overrides</span>
-                            <span className="font-medium text-gray-900">{formatCurrency(stats.overrideEarnings)}</span>
+                        <div className="flex justify-between text-xs gap-2">
+                            <span className="text-gray-500 flex items-center gap-1 min-w-0"><Users className="w-3 h-3 shrink-0" /> From Partners overrides</span>
+                            <span className="font-medium text-gray-900 shrink-0">{formatCurrency(stats.overrideEarnings)}</span>
                         </div>
-                        <div className="flex justify-between text-xs">
-                            <span className="text-gray-500 flex items-center gap-1"><Package className="w-3 h-3" /> From Direct Referrals</span>
-                            <span className="font-medium text-gray-900">{formatCurrency(stats.directEarnings)}</span>
+                        <div className="flex justify-between text-xs gap-2">
+                            <span className="text-gray-500 flex items-center gap-1 min-w-0"><Package className="w-3 h-3 shrink-0" /> From Direct Referrals</span>
+                            <span className="font-medium text-gray-900 shrink-0">{formatCurrency(stats.directEarnings)}</span>
                         </div>
-                        <div className="flex justify-between text-xs">
-                            <span className="text-amber-700 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> Pending Until Delivery</span>
-                            <span className="font-medium text-amber-700">{formatCurrency(stats.pendingEarnings)}</span>
+                        <div className="flex justify-between text-xs gap-2">
+                            <span className="text-amber-700 flex items-center gap-1 min-w-0"><AlertCircle className="w-3 h-3 shrink-0" /> Pending Until Delivery</span>
+                            <span className="font-medium text-amber-700 shrink-0">{formatCurrency(stats.pendingEarnings)}</span>
                         </div>
                     </div>
                 </div>
 
                 {/* 3. Wallet/Balance Card (Dark) */}
-                <div className="bg-gray-900 rounded-xl shadow-sm p-6 text-white relative overflow-hidden ring-1 ring-gray-900">
+                <div className="bg-gray-900 rounded-xl shadow-sm p-4 sm:p-6 text-white relative overflow-hidden ring-1 ring-gray-900 min-w-0">
                     <div className="relative z-10">
                         <div className="flex items-center gap-2 mb-1">
                             <p className="text-gray-400 text-sm font-medium">Available to Withdraw</p>
                             <div className="group relative">
-                                <Info className="w-4 h-4 text-gray-500 hover:text-gray-300 cursor-help transition-colors" />
-                                <div className="absolute left-1/2 bottom-full mb-2 -translate-x-1/2 w-64 p-3 bg-white text-gray-900 text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 shadow-xl z-50 pointer-events-none text-center border border-gray-100 font-medium">
+                                <button
+                                    type="button"
+                                    aria-label="TDS information"
+                                    className="inline-flex text-gray-500 hover:text-gray-300 focus:outline-none focus-visible:text-gray-300 transition-colors"
+                                >
+                                    <Info className="w-4 h-4" />
+                                </button>
+                                <div className="absolute left-0 sm:left-1/2 bottom-full mb-2 translate-x-0 sm:-translate-x-1/2 w-[min(16rem,calc(100vw-2rem))] p-3 bg-white text-gray-900 text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all duration-200 shadow-xl z-50 pointer-events-none text-center border border-gray-100 font-medium">
                                     This amount does not include TDS. When you get the payout, TDS (18%) will be deducted from your monthly earnings.
-                                    <div className="absolute left-1/2 top-full -translate-x-1/2 -mt-1 border-4 border-transparent border-t-white"></div>
+                                    <div className="absolute left-4 sm:left-1/2 top-full sm:-translate-x-1/2 -mt-1 border-4 border-transparent border-t-white"></div>
                                 </div>
                             </div>
                         </div>
-                        <h3 className="text-3xl font-bold text-white tracking-tight">{formatCurrency(stats.currentEarnings)}</h3>
+                        <h3 className="text-2xl sm:text-3xl font-bold text-white tracking-tight break-words">{formatCurrency(stats.currentEarnings)}</h3>
 
-                        <div className="mt-4 flex items-center gap-3">
+                        <div className="mt-4 flex flex-wrap items-center gap-3">
                             <span className="flex items-center text-xs font-medium text-emerald-400 bg-emerald-400/10 px-2 py-1 rounded border border-emerald-400/20">
                                 <ArrowUpCircle className="w-3 h-3 mr-1" />
                                 Ready
@@ -254,7 +260,7 @@ export default function EarningsPage() {
                         </div>
 
                         {stats.pendingEarnings > 0 && (
-                            <p className="text-xs text-amber-300 mt-3">
+                            <p className="text-xs text-amber-300 mt-3 break-words">
                                 Pending (until delivery or 7-day return window): {formatCurrency(stats.pendingEarnings)}
                             </p>
                         )}
@@ -266,8 +272,8 @@ export default function EarningsPage() {
             </div>
 
             {filterLabel && (
-                <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 flex items-center justify-between gap-4">
-                    <p className="text-sm text-amber-900">
+                <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
+                    <p className="text-sm text-amber-900 min-w-0">
                         Showing: <span className="font-semibold">{filterLabel}</span>
                         {" "}({displayedOrders.length} record{displayedOrders.length === 1 ? "" : "s"})
                     </p>

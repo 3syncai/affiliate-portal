@@ -127,7 +127,7 @@ export default function BranchMyReferralsPage() {
     }
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6 min-w-0">
             {/* Toast */}
             {showToast && (
                 <Toast
@@ -139,13 +139,13 @@ export default function BranchMyReferralsPage() {
             )}
 
             {/* Header */}
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900">My Direct Referrals</h1>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="min-w-0">
+                    <h1 className="text-xl sm:text-2xl font-bold text-gray-900">My Direct Referrals</h1>
                     <p className="text-gray-500 text-sm mt-1">Customers who registered using your referral code</p>
                 </div>
                 <div
-                    className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium ${isConnected ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"
+                    className={`self-start sm:self-auto flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium shrink-0 ${isConnected ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"
                         }`}
                 >
                     {isConnected ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
@@ -154,7 +154,7 @@ export default function BranchMyReferralsPage() {
             </div>
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-7 gap-3 sm:gap-4">
                 <StatCard
                     label="Total Customers"
                     value={String(stats.total_customers)}
@@ -207,18 +207,56 @@ export default function BranchMyReferralsPage() {
 
             {/* Customers Table */}
             <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-                <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+                <div className="px-4 sm:px-6 py-4 border-b border-gray-200 bg-gray-50">
                     <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">Referred Customers</h2>
                 </div>
 
                 {customers.length === 0 ? (
-                    <div className="p-12 text-center">
+                    <div className="p-8 sm:p-12 text-center">
                         <Package className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                         <p className="text-gray-500 text-sm">No referrals yet</p>
                         <p className="text-gray-400 text-xs mt-1">Share your referral code to start earning!</p>
                     </div>
                 ) : (
-                    <div className="overflow-x-auto">
+                    <>
+                        <div className="md:hidden divide-y divide-gray-100">
+                            {customers.map((customer) => (
+                                <div key={customer.customer_id} className="p-4 min-w-0">
+                                    <div className="text-sm font-medium text-gray-900 truncate">{customer.customer_name}</div>
+                                    <div className="text-xs text-gray-500 truncate">{customer.customer_email}</div>
+                                    <div className="grid grid-cols-2 gap-2 mt-3 text-xs">
+                                        <div>
+                                            <p className="text-[10px] uppercase text-gray-400 font-semibold">Joined</p>
+                                            <p className="text-gray-700">{formatISTDate(customer.joined_at) || "Not yet"}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-[10px] uppercase text-gray-400 font-semibold">First Order</p>
+                                            <p className="text-gray-700">{formatISTDate(customer.first_order_at) || "Not yet"}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-[10px] uppercase text-gray-400 font-semibold">Orders</p>
+                                            <span
+                                                className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${customer.total_orders > 0
+                                                    ? "bg-green-100 text-green-700"
+                                                    : "bg-gray-100 text-gray-600"
+                                                    }`}
+                                            >
+                                                {customer.total_orders} {customer.total_orders === 1 ? "order" : "orders"}
+                                            </span>
+                                        </div>
+                                        <div>
+                                            <p className="text-[10px] uppercase text-gray-400 font-semibold">Spent</p>
+                                            <p className="font-medium text-gray-900">{formatCurrency(customer.total_order_value)}</p>
+                                        </div>
+                                    </div>
+                                    <div className="mt-2 pt-2 border-t border-gray-50 flex justify-between items-center">
+                                        <span className="text-[10px] uppercase text-gray-400 font-semibold">Your Earnings</span>
+                                        <span className="text-sm font-bold text-emerald-600">{formatCurrency(customer.total_commission)}</span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="hidden md:block overflow-x-auto">
                         <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-gray-50">
                                 <tr>
@@ -263,19 +301,20 @@ export default function BranchMyReferralsPage() {
                                 ))}
                             </tbody>
                         </table>
-                    </div>
+                        </div>
+                    </>
                 )}
             </div>
 
             {/* Recent Commissions — shows the live 5-min unlock timer per order */}
             <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-                <div className="px-6 py-4 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
+                <div className="px-4 sm:px-6 py-4 border-b border-gray-200 bg-gray-50 flex flex-wrap items-center justify-between gap-2">
                     <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">Recent Commissions</h2>
                     <span className="text-xs text-gray-500">Live updates every 5s</span>
                 </div>
 
                 {recentOrders.length === 0 ? (
-                    <div className="p-12 text-center">
+                    <div className="p-8 sm:p-12 text-center">
                         <Package className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                         <p className="text-gray-500 text-sm">No commissions yet</p>
                     </div>
@@ -287,7 +326,7 @@ export default function BranchMyReferralsPage() {
                             return (
                                 <li
                                     key={order.order_id + order.created_at}
-                                    className="px-6 py-4 flex items-center justify-between gap-4"
+                                    className="px-4 sm:px-6 py-4 flex items-start sm:items-center justify-between gap-3 sm:gap-4"
                                 >
                                     <div className="min-w-0">
                                         <div className="text-sm font-medium text-gray-900 truncate">
@@ -343,14 +382,14 @@ function StatCard({
     valueClass?: string
 }) {
     return (
-        <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-            <div className="flex items-center justify-between">
-                <div>
-                    <p className="text-sm text-gray-500 font-medium">{label}</p>
-                    <p className={`text-2xl font-bold mt-1 ${valueClass}`}>{value}</p>
-                    {sublabel && <p className="text-xs text-gray-400 mt-1">{sublabel}</p>}
+        <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-5 shadow-sm min-w-0">
+            <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                    <p className="text-xs sm:text-sm text-gray-500 font-medium truncate">{label}</p>
+                    <p className={`text-lg sm:text-2xl font-bold mt-1 truncate ${valueClass}`}>{value}</p>
+                    {sublabel && <p className="text-[10px] sm:text-xs text-gray-400 mt-1 truncate">{sublabel}</p>}
                 </div>
-                <div className={`p-3 rounded-lg ${iconBg}`}>{icon}</div>
+                <div className={`p-2 sm:p-3 rounded-lg shrink-0 ${iconBg}`}>{icon}</div>
             </div>
         </div>
     )

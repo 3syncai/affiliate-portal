@@ -347,21 +347,21 @@ export default function StoresPage() {
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-3xl font-bold text-gray-900">Store Management</h1>
-                    <p className="text-gray-600 mt-1">Manage all store locations</p>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0">
+                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Store Management</h1>
+                    <p className="text-gray-600 mt-1 text-sm sm:text-base">Manage all store locations</p>
                 </div>
                 <button
                     onClick={handleOpenModal}
-                    className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
+                    className="flex items-center justify-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors w-full sm:w-auto shrink-0"
                 >
                     <Plus className="w-5 h-5" />
                     Add Store
                 </button>
             </div>
 
-            <div className="bg-white rounded-lg shadow p-4">
+            <div className="bg-white rounded-lg shadow p-3 sm:p-4">
                 <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                     <input
@@ -374,92 +374,168 @@ export default function StoresPage() {
                 </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="w-full">
-                        <thead className="bg-gray-50 border-b border-gray-200">
-                            <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Area Sales Location
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Branch Sales Location
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    State
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Status
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Actions
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                            {filteredStores.length === 0 ? (
-                                <tr>
-                                    <td colSpan={5} className="px-6 py-12 text-center">
-                                        <Building2 className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                                        <p className="text-gray-500">No stores found</p>
-                                    </td>
-                                </tr>
-                            ) : (
-                                filteredStores.map((store) => (
-                                    <tr key={store.id} className="hover:bg-gray-50">
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="font-medium text-gray-900">
-                                                {store.branch_name}
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-gray-700">
-                                            {store.city}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-gray-700">
-                                            {store.state}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <span
-                                                className={`px-2 py-1 text-xs font-medium rounded-full ${store.is_active
-                                                    ? "bg-green-100 text-green-800"
-                                                    : "bg-red-100 text-red-800"
-                                                    }`}
-                                            >
-                                                {store.is_active ? "Active" : "Inactive"}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="flex items-center gap-2">
-                                                <button
-                                                    onClick={() => handleEdit(store)}
-                                                    className="text-indigo-600 hover:text-indigo-900"
-                                                    title="Edit"
-                                                >
-                                                    <Edit2 className="w-4 h-4" />
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDelete(store.id)}
-                                                    className="text-red-600 hover:text-red-900"
-                                                    title="Delete"
-                                                >
-                                                    <Trash2 className="w-4 h-4" />
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
+            {filteredStores.length === 0 ? (
+                <div className="bg-white rounded-lg shadow p-8 sm:p-12 text-center">
+                    <Building2 className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                    <p className="text-gray-500">No stores found</p>
                 </div>
-            </div>
+            ) : (
+                <>
+                    {/* Mobile cards */}
+                    <div className="md:hidden space-y-3">
+                        {filteredStores.map((store) => (
+                            <div
+                                key={store.id}
+                                className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 min-w-0"
+                            >
+                                <div className="flex items-start justify-between gap-2 mb-2">
+                                    <div className="min-w-0">
+                                        <p className="font-semibold text-gray-900 truncate">
+                                            {store.branch_name}
+                                        </p>
+                                        <p className="text-xs text-gray-500 truncate">
+                                            {store.city} · {store.state}
+                                        </p>
+                                    </div>
+                                    <span
+                                        className={`shrink-0 px-2 py-0.5 text-[10px] font-medium rounded-full ${
+                                            store.is_active
+                                                ? "bg-green-100 text-green-800"
+                                                : "bg-red-100 text-red-800"
+                                        }`}
+                                    >
+                                        {store.is_active ? "Active" : "Inactive"}
+                                    </span>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2 text-xs text-gray-600 mb-3">
+                                    <div className="min-w-0">
+                                        <p className="uppercase tracking-wide text-[10px] text-gray-400 font-semibold">
+                                            Area Sales Location
+                                        </p>
+                                        <p className="truncate font-medium text-gray-900">
+                                            {store.branch_name}
+                                        </p>
+                                    </div>
+                                    <div className="min-w-0">
+                                        <p className="uppercase tracking-wide text-[10px] text-gray-400 font-semibold">
+                                            Branch Sales Location
+                                        </p>
+                                        <p className="truncate">{store.city}</p>
+                                    </div>
+                                    <div className="min-w-0">
+                                        <p className="uppercase tracking-wide text-[10px] text-gray-400 font-semibold">
+                                            State
+                                        </p>
+                                        <p className="truncate">{store.state}</p>
+                                    </div>
+                                    <div className="min-w-0">
+                                        <p className="uppercase tracking-wide text-[10px] text-gray-400 font-semibold">
+                                            Pincode
+                                        </p>
+                                        <p className="truncate font-mono">{store.pincode || "—"}</p>
+                                    </div>
+                                </div>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => handleEdit(store)}
+                                        className="flex-1 inline-flex items-center justify-center gap-1.5 text-sm font-semibold text-indigo-600 hover:text-indigo-900 py-2 rounded-lg hover:bg-indigo-50 transition-colors"
+                                    >
+                                        <Edit2 className="w-4 h-4" />
+                                        Edit
+                                    </button>
+                                    <button
+                                        onClick={() => handleDelete(store.id)}
+                                        className="flex-1 inline-flex items-center justify-center gap-1.5 text-sm font-semibold text-red-600 hover:text-red-900 py-2 rounded-lg hover:bg-red-50 transition-colors"
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                        Delete
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Desktop table */}
+                    <div className="hidden md:block bg-white rounded-lg shadow overflow-hidden">
+                        <div className="overflow-x-auto">
+                            <table className="w-full">
+                                <thead className="bg-gray-50 border-b border-gray-200">
+                                    <tr>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Area Sales Location
+                                        </th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Branch Sales Location
+                                        </th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            State
+                                        </th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Status
+                                        </th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Actions
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody className="bg-white divide-y divide-gray-200">
+                                    {filteredStores.map((store) => (
+                                        <tr key={store.id} className="hover:bg-gray-50">
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <div className="font-medium text-gray-900">
+                                                    {store.branch_name}
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-gray-700">
+                                                {store.city}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-gray-700">
+                                                {store.state}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <span
+                                                    className={`px-2 py-1 text-xs font-medium rounded-full ${
+                                                        store.is_active
+                                                            ? "bg-green-100 text-green-800"
+                                                            : "bg-red-100 text-red-800"
+                                                    }`}
+                                                >
+                                                    {store.is_active ? "Active" : "Inactive"}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <div className="flex items-center gap-2">
+                                                    <button
+                                                        onClick={() => handleEdit(store)}
+                                                        className="text-indigo-600 hover:text-indigo-900"
+                                                        title="Edit"
+                                                    >
+                                                        <Edit2 className="w-4 h-4" />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDelete(store.id)}
+                                                        className="text-red-600 hover:text-red-900"
+                                                        title="Delete"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </>
+            )}
 
             {showModal && (
                 <div
                     role="dialog"
                     aria-modal="true"
                     aria-labelledby="store-modal-title"
-                    className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+                    className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4"
                 >
                     <button
                         type="button"
@@ -467,11 +543,11 @@ export default function StoresPage() {
                         onClick={handleCloseModal}
                         className="absolute inset-0 bg-black/50 backdrop-blur-sm cursor-default"
                     />
-                    <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white rounded-xl shadow-2xl border border-gray-200">
-                        <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white rounded-t-xl">
+                    <div className="relative w-full max-w-2xl max-h-[90dvh] overflow-y-auto bg-white rounded-t-2xl sm:rounded-xl shadow-2xl border border-gray-200">
+                        <div className="sticky top-0 z-10 flex items-center justify-between px-4 sm:px-6 py-4 border-b border-gray-200 bg-white rounded-t-2xl sm:rounded-t-xl">
                             <h2
                                 id="store-modal-title"
-                                className="text-xl font-bold text-gray-900"
+                                className="text-lg sm:text-xl font-bold text-gray-900"
                             >
                                 {editingStore ? "Edit Store" : "Add New Store"}
                             </h2>
@@ -484,7 +560,7 @@ export default function StoresPage() {
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
-                        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                        <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
                                     Pincode
@@ -571,7 +647,7 @@ export default function StoresPage() {
                                 )}
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">
                                         Branch Sales Location <span className="text-red-500">*</span>
@@ -626,7 +702,7 @@ export default function StoresPage() {
                                 />
                             </div>
 
-                            <div className="flex gap-3 pt-4">
+                            <div className="flex flex-col-reverse sm:flex-row gap-3 pt-4">
                                 <button
                                     type="button"
                                     onClick={handleCloseModal}
