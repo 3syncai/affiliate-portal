@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import pool from "@/lib/db";
+import databasePool from "@/lib/db";
+import { CommissionEventConflict, receiveCommissionEvent } from "@/lib/commission-webhook-transaction";
 import { sendNotification } from "@/lib/sse";
-import { applyAdditionalCommissionForOrder } from "@/lib/additional-commission";
+import { applyAdditionalCommissionForOrder, ensureAdditionalCommissionSchema } from "@/lib/additional-commission";
 import { syncAffiliateCommissionStatuses } from "@/lib/affiliate-commission-sync";
 import { resolveBranchAdminForSale } from "@/lib/repair-branch-admin-commissions";
 
 export const dynamic = "force-dynamic";
 
 interface CommissionPayload {
+    event_id?: string;
     order_id: string;
     affiliate_code: string;
     product_id: string;  // Required for commission lookup
@@ -29,6 +31,9 @@ interface CommissionPayload {
 export async function POST(request: NextRequest) {
     try {
         const payload: CommissionPayload = await request.json();
+        await ensureAdditionalCommissionSchema();
+        return await receiveCommissionEvent<NextResponse>(databasePool, payload as unknown as Record<string, unknown>, request.headers.get("idempotency-key"), async (pool, afterCommit) => {
+        try {
 
         console.log('[Webhook] Received payload:', JSON.stringify(payload, null, 2));
 
@@ -229,11 +234,11 @@ export async function POST(request: NextRequest) {
                 console.log(`[Hierarchy] Logged Level 1 (Branch Admin) Commission: ₹${affiliateCommission}`);
 
                 // NOTIFY Branch Admin
-                sendNotification(payload.affiliate_code, {
+                afterCommit(() => sendNotification(payload.affiliate_code, {
                     type: 'stats_update',
                     message: `Commission Pending: ₹${affiliateCommission.toFixed(2)}`,
                     amount: affiliateCommission
-                });
+                }));
 
 
             } else {
@@ -590,11 +595,11 @@ export async function POST(request: NextRequest) {
                             console.log(`[Hierarchy] Logged Branch Override: ₹${brCommission}`);
 
                             // NOTIFY Branch Admin (Override)
-                            sendNotification(branchAdmin.refer_code, {
+                            afterCommit(() => sendNotification(branchAdmin.refer_code, {
                                 type: 'stats_update',
                                 message: `Override Commission Pending: ₹${brCommission.toFixed(2)}`,
                                 amount: brCommission
-                            });
+                            }));
 
 
                         } else {
@@ -691,14 +696,11 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        try {
-            await applyAdditionalCommissionForOrder(payload.order_id);
-        } catch (additionalError) {
-            console.error("[Additional Commission] Failed to apply additional commission:", additionalError);
-        }
+        await applyAdditionalCommissionForOrder(payload.order_id, pool, true);
 
         await syncAffiliateCommissionStatuses(pool, {
             logPrefix: "[Commission Webhook]",
+            throwOnError: true,
         });
 
         return NextResponse.json({
@@ -714,5 +716,10 @@ export async function POST(request: NextRequest) {
             success: false,
             error: error instanceof Error ? error.message : "Unknown error"
         }, { status: 500 });
+        }
+        }, () => NextResponse.json({ success: true, duplicate: true, message: "Commission event already processed" }));
+    } catch (error: unknown) {
+        console.error("Commission event failed:", error);
+        return NextResponse.json({ success: false, error: error instanceof CommissionEventConflict ? error.message : "Commission processing failed" }, { status: error instanceof CommissionEventConflict ? 409 : 500 });
     }
 }

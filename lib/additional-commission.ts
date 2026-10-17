@@ -1,4 +1,6 @@
 import pool from "@/lib/db";
+import type { Pool } from "pg";
+type CommissionDb = Pick<Pool, "query">;
 
 export type AdditionalVisibilityRole = "partner" | "asm" | "branch" | "state" | "all";
 
@@ -93,8 +95,8 @@ function isDirectSellerRow(row: CommissionLogRow) {
   return false;
 }
 
-async function getBestCampaign(productId: string, role: Exclude<AdditionalVisibilityRole, "all">) {
-  const result = await pool.query(
+async function getBestCampaign(productId: string, role: Exclude<AdditionalVisibilityRole, "all">, db: CommissionDb = pool) {
+  const result = await db.query(
     `
       SELECT id, additional_rate
       FROM additional_commissions
@@ -116,13 +118,13 @@ async function getBestCampaign(productId: string, role: Exclude<AdditionalVisibi
   };
 }
 
-export async function applyAdditionalCommissionForOrder(orderId: string) {
+export async function applyAdditionalCommissionForOrder(orderId: string, db: CommissionDb = pool, schemaReady = false) {
   const cleanOrderId = String(orderId || "").trim();
   if (!cleanOrderId) return;
 
-  await ensureAdditionalCommissionSchema();
+  if (!schemaReady) await ensureAdditionalCommissionSchema();
 
-  const rowsResult = await pool.query<CommissionLogRow>(
+  const rowsResult = await db.query<CommissionLogRow>(
     `
       SELECT id, product_id, order_amount, commission_source, affiliate_code, commission_amount, affiliate_rate
       FROM affiliate_commission_log
@@ -138,7 +140,7 @@ export async function applyAdditionalCommissionForOrder(orderId: string) {
     if (!isDirectSellerRow(row)) continue;
 
     const visibilityRole = visibilityFromCommissionSource(row.commission_source || "affiliate");
-    const campaign = await getBestCampaign(row.product_id, visibilityRole);
+    const campaign = await getBestCampaign(row.product_id, visibilityRole, db);
 
     if (!campaign) {
       continue;
@@ -151,7 +153,7 @@ export async function applyAdditionalCommissionForOrder(orderId: string) {
     const baseAffiliateCommission = Number((baseCommissionAmount * (affiliateRate / 100)).toFixed(2));
     const totalAffiliateCommission = Number((baseAffiliateCommission + additionalAmount).toFixed(2));
 
-    await pool.query(
+    await db.query(
       `
         UPDATE affiliate_commission_log
         SET additional_commission_id = $2,
