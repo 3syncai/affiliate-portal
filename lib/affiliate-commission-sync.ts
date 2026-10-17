@@ -1,13 +1,13 @@
+import type { Pool } from "pg";
 import { COMMISSION_HAS_ANY_RETURN_REQUEST_SQL } from "@/lib/dashboard-return-sql";
 import { voidCommissionsForApprovedReturns } from "@/lib/void-return-commission";
 
-type Queryable = {
-    query: (text: string, params?: any[]) => Promise<any>;
-};
+type Queryable = Pick<Pool, "query">;
 
 type SyncOptions = {
     affiliateCode?: string;
     logPrefix: string;
+    throwOnError?: boolean;
 };
 
 /** Default post-delivery return window before commission credits (ecomm policy). */
@@ -361,5 +361,6 @@ export async function syncAffiliateCommissionStatuses(db: Queryable, options: Sy
         }
     } catch (error) {
         console.error(`${logPrefix} status sync failed:`, error);
+        if (options.throwOnError) throw error;
     }
 }
