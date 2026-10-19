@@ -1,0 +1,242 @@
+.page {
+  --green: #00a747;
+  --ink: #08162d;
+  --muted: #657089;
+  overflow: clip;
+  background: #fff;
+  color: var(--ink);
+  font-family: var(--font-geist-sans), Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.page *, .page *::before, .page *::after { box-sizing: border-box; }
+.page a { text-decoration: none; }
+.page button, .page a, .page summary { -webkit-tap-highlight-color: transparent; }
+.page a:focus-visible, .page button:focus-visible, .page summary:focus-visible { outline: 3px solid #79c653; outline-offset: 5px; border-radius: 4px; }
+.page section { scroll-margin-top: 100px; }
+.skipLink { position: fixed; top: 10px; left: 20px; z-index: 100; padding: 10px 16px; transform: translateY(-160%); border-radius: 6px; background: #fff; color: #087d3b; box-shadow: 0 2px 15px #0002; }
+.skipLink:focus { transform: none; }
+.header { position: sticky; top: 0; z-index: 20; background: #ffffffef; border-bottom: 1px solid #eef2ed; box-shadow: 0 3px 18px #153a2604; backdrop-filter: blur(16px); }
+.headerInner { display: flex; align-items: center; gap: 34px; max-width: 1300px; min-height: 94px; padding: 10px 36px; margin: auto; }
+.homeLink { display: inline-flex; flex-shrink: 0; }
+
+.logo { --logo-size: 41px; display: inline-flex; flex-direction: column; width: fit-content; color: #6aba2c; text-align: left; }
+.logoName { position: relative; display: inline-flex; align-items: center; width: fit-content; font: italic 900 var(--logo-size)/.9 Arial, sans-serif; letter-spacing: -.065em; }
+.logoInitial { position: relative; display: inline-block; width: .84em; height: 1em; margin-right: -.03em; flex-shrink: 0; overflow: hidden; }
+.logoInitial .logoMark { position: absolute; width: 1.24em; height: 1.24em; max-width: none; left: -.198em; top: -.13em; }
+.registered { position: absolute; top: -.12em; right: -.9em; color: #17251c; font: 600 .23em/1 Arial, sans-serif; letter-spacing: 0; }
+.logoPartners { display: flex; align-items: center; color: #c3911e; font: italic 900 calc(var(--logo-size) * .46)/1 Arial, sans-serif; letter-spacing: -.04em; }
+.logoPartners svg { width: .98em; height: 1em; margin-left: .05em; color: #d9a326; stroke-width: 3.5; }
+.logoTagline { padding-top: .38em; margin-top: .35em; border-top: 1px solid #75b744; color: #1e6a32; font: 800 calc(var(--logo-size) * .105)/1.2 Arial, sans-serif; letter-spacing: .04em; white-space: nowrap; }
+.nav { display: flex; align-items: center; justify-content: flex-end; gap: 28px; flex: 1; }
+.nav a { position: relative; padding: 10px 0; color: #223046; font-size: 12px; font-weight: 500; white-space: nowrap; }
+.nav a::after { position: absolute; right: 0; bottom: 3px; left: 0; height: 2px; border-radius: 5px; background: var(--green); content: ""; transform: scaleX(0); transition: transform .2s; }
+.nav a:hover::after, .nav .activeNav::after { transform: scaleX(1); }
+.headerActions { display: flex; align-items: center; gap: 24px; border-left: 1px solid #e2e7e5; padding-left: 32px; }
+.signIn { color: #223046; font-size: 12px; white-space: nowrap; }
+.signIn:hover { color: #008d3e; }
+.partnerButton { display: inline-flex; align-items: center; justify-content: center; gap: 12px; min-height: 42px; padding: 12px 20px; border: 1px solid #00a347; border-radius: 7px; background: linear-gradient(110deg, #00ad4b, #009b43); color: #fff; font-size: 12px; line-height: 1.3; font-weight: 650; white-space: nowrap; box-shadow: 0 3px 8px #00a7470b; transition: background .2s, box-shadow .2s; }
+.partnerButton svg { width: 16px; height: 16px; }
+.partnerButton:hover { background: #008e3e; box-shadow: 0 4px 12px #00a74720; }
+.menuToggle { display: none; align-items: center; justify-content: center; width: 36px; height: 36px; border: 0; border-radius: 6px; background: transparent; color: var(--ink); }
+.menuToggle svg { width: 22px; height: 22px; }
+
+.hero { position: relative; isolation: isolate; background: radial-gradient(ellipse at 81% 35%, #eaf8ef 0, #f9fdfa55 35%, transparent 61%); }
+.heroGrid { display: grid; grid-template-columns: .98fr 1.08fr; max-width: 1300px; min-height: 474px; padding: 0 36px; margin: auto; }
+.heroCopy { position: relative; z-index: 3; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; padding: 38px 0 44px; }
+.heroCopy h1 { margin: 0 0 14px; color: var(--ink); font-size: clamp(32px, 4.45vw, 60px); line-height: 1.035; font-weight: 800; letter-spacing: -.065em; }
+.heroCopy h1 > span { display: block; white-space: nowrap; }
+.heroCopy h1 .goldText { color: #cc971d; }
+.heroCopy > p { max-width: 475px; margin: 0; padding-right: 20px; color: #56617b; font-size: 16px; line-height: 1.4; letter-spacing: -.2px; }
+.heroCopy > p strong { font-weight: 650; color: #3b4860; }
+.trustBadges { display: flex; flex-wrap: wrap; align-items: center; gap: 22px; margin: 56px 0 0; padding: 0; list-style: none; }
+.trustBadges li { display: flex; align-items: center; gap: 7px; color: #26344b; font-size: 11px; font-weight: 550; white-space: nowrap; }
+.trustBadges li > span { display: grid; place-items: center; width: 27px; height: 27px; border-radius: 50%; background: #e0fae7; }
+.trustBadges svg { width: 15px; height: 15px; border-radius: 50%; padding: 2px; background: #00b644; color: #fff; stroke-width: 3.5; }
+.mobileCta { display: none; }
+.heroVisual { position: relative; min-width: 0; align-self: stretch; }
+.heroImage { position: absolute; z-index: 1; right: -7%; bottom: 0; width: 119%; height: 100%; max-width: none; object-fit: contain; object-position: bottom; }
+.heroBrand { position: absolute; z-index: 2; left: 6%; top: 27%; }
+.heroLogo { --logo-size: clamp(50px, 5.8vw, 78px); filter: drop-shadow(0 2px 1px #fff); }
+.orbits { position: absolute; top: 6%; left: -1%; width: 70%; aspect-ratio: 1; }
+.orbits span { position: absolute; inset: 0; border: 1px dashed #70d79b70; border-radius: 50%; }
+.orbits span:nth-child(2) { inset: 8%; border-style: solid; border-color: #9cdec34a; }
+.orbits span:nth-child(3) { inset: 16%; border-style: solid; border-color: #b0dfc84a; }
+.heroWaves { position: absolute; z-index: -1; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+
+.benefits { position: relative; z-index: 4; padding: 14px 20px 22px; background: linear-gradient(#fdfefd, #f7f9f7); }
+.benefitGrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; max-width: 1250px; margin: auto; }
+.benefitCard { display: flex; align-items: center; gap: 20px; padding: 24px 22px; border: 1px solid #f0f2ee; border-radius: 14px; background: #fff; box-shadow: 0 6px 24px #16331d08; }
+.benefitIcon { display: grid; place-items: center; flex-shrink: 0; width: 65px; height: 65px; border-radius: 50%; background: #eafaDF; color: #00a84a; }
+.benefitIcon svg { width: 37px; height: 37px; stroke-width: 1.7; }
+.benefitCard h2 { margin: 0 0 5px; font-size: 17px; line-height: 1.2; font-weight: 750; letter-spacing: -.6px; }
+.benefitCard p { max-width: 240px; margin: 0; color: var(--muted); font-size: 13px; line-height: 1.4; }
+.howItWorks { max-width: 1300px; margin: auto; padding: 30px 30px 56px; }
+.sectionHeading { text-align: center; }
+.sectionHeading h2 { margin: 0 0 5px; font-size: clamp(23px, 2.7vw, 36px); line-height: 1.2; font-weight: 800; letter-spacing: -1.3px; }
+.sectionHeading h2 > span { color: #008d52; }
+.sectionHeading > p { margin: 0; color: var(--muted); font-size: 14px; }
+.steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 34px; margin: 30px 0 0; padding: 0; list-style: none; }
+.step { position: relative; display: grid; grid-template-columns: 25px 43px 1fr; align-items: start; gap: 12px; padding-right: 20px; }
+.stepNumber { display: grid; place-items: center; width: 25px; height: 25px; border-radius: 50%; background: #dcfbed; color: #00a54b; font-size: 12px; font-weight: 700; }
+.stepIcon { width: 41px; height: 41px; margin-top: 13px; color: #00ad52; stroke-width: 1.7; }
+.step h3 { margin: 11px 0 5px; font-size: 14px; line-height: 1.4; font-weight: 750; letter-spacing: -.4px; }
+.step h3 a { color: inherit; }
+.step h3 a:hover { color: #009c48; text-decoration: underline; }
+.step p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+.stepArrow { position: absolute; top: 30px; right: -17px; width: 20px; height: 20px; color: #7a879d; stroke-width: 1.7; }
+
+.faq { padding: 62px 24px 72px; background: #f7fbf8; border-top: 1px solid #eff5f0; }
+.eyebrow { display: inline-block; margin-bottom: 12px; color: #008e49; font-size: 10px; font-weight: 700; letter-spacing: 1.8px; text-transform: uppercase; }
+.questions { max-width: 760px; margin: 32px auto 0; }
+.questions details { border-bottom: 1px solid #dfeae2; }
+.questions summary { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 21px 0; list-style: none; cursor: pointer; font-size: 15px; font-weight: 600; }
+.questions summary::-webkit-details-marker { display: none; }
+.questions summary svg { width: 18px; height: 18px; color: #009e4d; flex-shrink: 0; transition: transform .2s; }
+.questions details[open] summary svg { transform: rotate(180deg); }
+.questions details > p { max-width: 660px; margin: -3px 0 22px; color: var(--muted); font-size: 14px; line-height: 1.7; }
+.contact { display: flex; align-items: center; justify-content: space-between; gap: 48px; max-width: 1120px; margin: auto; padding: 72px 36px; }
+.contact h2 { margin: 0 0 16px; font-size: clamp(30px, 3.1vw, 42px); line-height: 1.15; font-weight: 800; letter-spacing: -1.6px; }
+.contact h2 span { color: #008e49; }
+.contact p { max-width: 500px; margin: 0; color: var(--muted); font-size: 14px; line-height: 1.7; }
+.contactActions { display: flex; flex-direction: column; align-items: center; gap: 20px; flex-shrink: 0; }
+.contactActions .partnerButton { min-height: 48px; padding: 14px 28px; font-size: 14px; }
+.contactActions > a:last-child { display: inline-flex; align-items: center; gap: 8px; color: #586880; font-size: 12px; }
+.contactActions > a:last-child svg { width: 14px; height: 14px; }
+.contactActions > a:last-child:hover { color: #008e49; }
+.footer { display: flex; justify-content: space-between; align-items: center; gap: 20px; max-width: 1240px; padding: 24px 0; margin: auto; border-top: 1px solid #e9efea; color: #7c8795; font-size: 11px; }
+.footer > div { display: flex; align-items: center; gap: 7px; }
+.footer svg { width: 14px; height: 14px; color: #128d4e; }
+.footer nav { display: flex; gap: 26px; }
+.footer a { color: inherit; }
+.footer a:hover { color: #008e49; }
+
+@media (max-width: 1100px) {
+  .headerInner { min-height: 80px; gap: 24px; padding: 10px 28px; }
+  .logo { --logo-size: 34px; }
+  .nav { gap: 20px; }
+  .nav a, .signIn { font-size: 11px; }
+  .headerActions { gap: 18px; padding-left: 22px; }
+  .headerActions .partnerButton { min-height: 36px; padding: 10px 15px; font-size: 11px; gap: 8px; }
+  .heroGrid { min-height: 408px; padding: 0 28px; }
+  .heroCopy > p { font-size: 13px; }
+  .heroCopy h1 { margin-bottom: 12px; }
+  .trustBadges { gap: 15px; margin-top: 45px; }
+  .trustBadges li { gap: 5px; font-size: 9px; }
+  .trustBadges li > span { width: 24px; height: 24px; }
+  .heroLogo { --logo-size: 60px; }
+  .benefits { padding: 12px 16px 18px; }
+  .benefitCard { padding: 19px 17px; gap: 15px; border-radius: 12px; }
+  .benefitIcon { width: 55px; height: 55px; }
+  .benefitIcon svg { width: 31px; height: 31px; }
+  .benefitCard h2 { font-size: 14px; }
+  .benefitCard p { font-size: 11px; }
+  .howItWorks { padding: 25px 24px 42px; }
+  .sectionHeading > p { font-size: 12px; }
+  .steps { gap: 24px; margin-top: 22px; }
+  .step { grid-template-columns: 23px 33px 1fr; gap: 10px; padding-right: 4px; }
+  .stepNumber { width: 23px; height: 23px; font-size: 11px; }
+  .stepIcon { width: 33px; height: 33px; }
+  .step h3 { font-size: 12px; }
+  .step p { font-size: 11px; }
+  .stepArrow { right: -18px; width: 17px; }
+  .footer { margin: 0 28px; }
+}
+
+@media (max-width: 900px) and (min-width: 761px) {
+  .headerInner { min-height: 70px; gap: 18px; padding: 9px 26px; }
+  .logo { --logo-size: 30px; }
+  .nav { gap: 15px; }
+  .nav a, .signIn { font-size: 10px; }
+  .headerActions { gap: 15px; padding-left: 17px; }
+  .headerActions .partnerButton { font-size: 10px; padding: 9px 12px; min-height: 34px; }
+  .heroGrid { min-height: 335px; padding: 0 26px; }
+  .heroCopy { padding: 30px 0; }
+  .heroCopy > p { font-size: 11px; padding-right: 28px; }
+  .heroLogo { --logo-size: 48px; }
+  .trustBadges { gap: 12px; margin-top: 38px; }
+  .trustBadges li { font-size: 8px; gap: 4px; }
+  .trustBadges li > span { width: 22px; height: 22px; }
+  .trustBadges svg { width: 13px; height: 13px; }
+  .benefitGrid { gap: 11px; }
+  .benefitCard { gap: 12px; padding: 15px 14px; }
+  .benefitIcon { width: 49px; height: 49px; }
+  .benefitCard h2 { font-size: 12px; margin-bottom: 4px; }
+  .benefitCard p { font-size: 10px; }
+  .steps { gap: 20px; }
+  .step { grid-template-columns: 21px 30px 1fr; gap: 8px; }
+  .step h3 { font-size: 11px; }
+  .step p { font-size: 10px; }
+  .stepNumber { width: 21px; height: 21px; font-size: 10px; }
+  .stepIcon { width: 30px; height: 30px; }
+}
+
+@media (max-width: 760px) {
+  .headerInner { min-height: 76px; padding: 10px 22px; justify-content: space-between; }
+  .logo { --logo-size: 34px; }
+  .nav { display: none; position: absolute; top: calc(100% - 1px); left: 16px; right: 16px; padding: 16px; border: 1px solid #e5efe7; border-radius: 0 0 12px 12px; background: #fff; box-shadow: 0 16px 25px #183d2112; }
+  .navOpen { display: flex; flex-direction: column; align-items: stretch; gap: 3px; }
+  .nav a { padding: 12px; font-size: 13px; }
+  .nav a::after { right: auto; left: 12px; width: 22px; }
+  .headerActions { gap: 16px; border: 0; padding: 0; }
+  .signIn { font-size: 12px; }
+  .menuToggle { display: flex; }
+  .heroGrid { grid-template-columns: 1fr; min-height: auto; padding: 0 24px; }
+  .heroCopy { align-items: center; padding: 34px 0 16px; text-align: center; }
+  .heroCopy h1 { margin-bottom: 16px; font-size: clamp(35px, 7.6vw, 50px); line-height: 1.07; letter-spacing: -.06em; }
+  .heroCopy > p { max-width: 420px; padding: 0; font-size: 13px; line-height: 1.6; }
+  .mobileCta { display: inline-flex; margin-top: 22px; min-height: 44px; font-size: 12px; }
+  .trustBadges { justify-content: center; gap: 15px; margin-top: 24px; }
+  .trustBadges li { font-size: 9px; }
+  .heroVisual { width: 100%; max-width: 540px; min-height: 335px; margin: -5px auto 0; }
+  .heroImage { right: -6%; width: 111%; }
+  .heroBrand { top: 25%; left: 13%; }
+  .heroLogo { --logo-size: clamp(48px, 9.5vw, 60px); }
+  .orbits { left: 5%; top: 5%; width: 64%; }
+  .heroWaves { top: auto; height: 55%; bottom: 0; }
+  .benefits { padding: 20px; }
+  .benefitGrid { grid-template-columns: 1fr; gap: 12px; max-width: 500px; }
+  .benefitCard { padding: 18px 20px; gap: 18px; }
+  .benefitCard h2 { font-size: 16px; }
+  .benefitCard p { max-width: 320px; font-size: 12px; }
+  .benefitIcon { width: 57px; height: 57px; }
+  .howItWorks { padding: 34px 24px 44px; }
+  .sectionHeading h2 { font-size: 27px; letter-spacing: -1px; }
+  .sectionHeading > p { font-size: 12px; line-height: 1.5; }
+  .steps { grid-template-columns: 1fr; gap: 28px; max-width: 440px; margin: 28px auto 0; }
+  .step { grid-template-columns: 24px 40px 1fr; gap: 15px; padding: 0; }
+  .stepNumber { width: 24px; height: 24px; }
+  .stepIcon { width: 37px; height: 37px; margin-top: 4px; }
+  .step h3 { margin-top: 0; font-size: 14px; }
+  .step p { max-width: 280px; font-size: 12px; }
+  .stepArrow { display: none; }
+  .faq { padding: 42px 24px 48px; }
+  .questions { margin-top: 20px; }
+  .questions summary { padding: 19px 0; font-size: 13px; }
+  .questions details > p { font-size: 12px; }
+  .contact { flex-direction: column; gap: 28px; padding: 44px 28px; text-align: center; }
+  .contact h2 { font-size: 34px; }
+  .contact p { font-size: 13px; }
+  .contactActions { gap: 18px; }
+  .footer { flex-direction: column; justify-content: center; margin: 0 20px; padding: 22px 0; font-size: 10px; gap: 17px; }
+  .page section { scroll-margin-top: 90px; }
+}
+
+@media (max-width: 480px) {
+  .headerInner { gap: 12px; padding-right: 16px; padding-left: 20px; }
+  .headerActions > .partnerButton { display: none; }
+  .headerActions { gap: 18px; }
+  .heroGrid { padding: 0 20px; }
+  .heroCopy h1 { font-size: clamp(30px, 8.65vw, 40px); }
+  .heroCopy > p { font-size: 12px; }
+  .trustBadges { gap: 10px; }
+  .trustBadges li { font-size: 8px; gap: 4px; }
+  .trustBadges li > span { width: 22px; height: 22px; }
+  .heroVisual { min-height: 285px; }
+  .heroLogo { --logo-size: 45px; }
+  .heroBrand { top: 26%; left: 9%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page *, .page *::before, .page *::after { scroll-behavior: auto !important; transition: none !important; }
+}
