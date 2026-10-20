@@ -222,18 +222,13 @@ function LoginContent() {
         <section className={styles.brand} aria-labelledby="partner-heading">
           <Link href="/" className={styles.brandLink} aria-label="OWEG Partners home">
             <span className={styles.wordmark}>
-              <span className={styles.brandName}>
-                <span className={styles.brandInitial}>
-                  <Image src="/uploads/coin/Oweg3d-400.png" alt="O" width={86} height={86} className={styles.brandMark} priority />
-                </span>
-                WEG<span className={styles.registered}>®</span>
-              </span>
+              <Image src="/brand/oweg-wordmark.svg" alt="OWEG" width={685} height={173} className={styles.brandName} priority />
               <span className={styles.partnerName}>PARTNERS<TrendingUp aria-hidden="true" /></span>
               <span className={styles.tagline}>YOUR LIFETIME EARNING PARTNER.</span>
             </span>
           </Link>
           <div className={styles.brandCopy}>
-            <h1 id="partner-heading">Grow With OWEG Partners.</h1>
+            <h1 id="partner-heading">Grow With{" "}<Image src="/brand/oweg-wordmark.svg" alt="OWEG" width={685} height={173} className={styles.headingLogo} />{" "}Partners.</h1>
             <p>Your business, your network, your earnings.</p>
           </div>
           <div className={styles.growth}>

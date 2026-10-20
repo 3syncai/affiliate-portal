@@ -43,44 +43,12 @@
   text-decoration: none;
 }
 
-.brandInitial {
-  position: relative;
-  display: inline-block;
-  flex-shrink: 0;
-  width: .84em;
-  height: 1em;
-  margin-right: -.03em;
-  overflow: hidden;
-}
-
-.brandInitial .brandMark {
-  position: absolute;
-  width: 1.24em;
-  height: 1.24em;
-  max-width: none;
-  left: -.198em;
-  top: -.13em;
-}
-
 .wordmark { display: flex; flex-direction: column; }
 
 .brandName {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  width: fit-content;
-  color: #64b321;
-  font: italic 900 65px/.9 Arial, sans-serif;
-  letter-spacing: -5px;
-}
-
-.registered {
-  position: absolute;
-  top: -5px;
-  right: -17px;
-  font: 600 15px/1 Arial, sans-serif;
-  letter-spacing: 0;
-  color: #1c2e21;
+  display: block;
+  width: 240px;
+  height: auto;
 }
 
 .partnerName {
@@ -111,6 +79,13 @@
   line-height: 1.2;
   font-weight: 800;
   letter-spacing: -1.6px;
+}
+
+.headingLogo {
+  display: inline-block;
+  width: auto;
+  height: .82em;
+  vertical-align: -.04em;
 }
 
 .brandCopy > p { margin: 10px 0 0; color: #74798b; font-size: 19px; line-height: 1.6; letter-spacing: -.3px; }
@@ -187,8 +162,7 @@
   .layout { max-width: 440px; display: flex; flex-direction: column; gap: 26px; }
   .brand { padding: 0; text-align: center; }
   .brandLink { margin: 0 0 22px; gap: 5px; }
-  .brandName { font-size: 47px; letter-spacing: -3px; }
-  .registered { font-size: 11px; right: -13px; top: -1px; }
+  .brandName { width: 178px; }
   .partnerName { font-size: 22px; }
   .partnerName svg { width: 26px; height: 26px; }
   .tagline { font-size: 6px; letter-spacing: .5px; }

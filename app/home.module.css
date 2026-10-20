@@ -21,10 +21,7 @@
 .homeLink { display: inline-flex; flex-shrink: 0; }
 
 .logo { --logo-size: 41px; display: inline-flex; flex-direction: column; width: fit-content; color: #6aba2c; text-align: left; }
-.logoName { position: relative; display: inline-flex; align-items: center; width: fit-content; font: italic 900 var(--logo-size)/.9 Arial, sans-serif; letter-spacing: -.065em; }
-.logoInitial { position: relative; display: inline-block; width: .84em; height: 1em; margin-right: -.03em; flex-shrink: 0; overflow: hidden; }
-.logoInitial .logoMark { position: absolute; width: 1.24em; height: 1.24em; max-width: none; left: -.198em; top: -.13em; }
-.registered { position: absolute; top: -.12em; right: -.9em; color: #17251c; font: 600 .23em/1 Arial, sans-serif; letter-spacing: 0; }
+.logoName { display: block; width: calc(var(--logo-size) * 3.4); height: auto; }
 .logoPartners { display: flex; align-items: center; color: #c3911e; font: italic 900 calc(var(--logo-size) * .46)/1 Arial, sans-serif; letter-spacing: -.04em; }
 .logoPartners svg { width: .98em; height: 1em; margin-left: .05em; color: #d9a326; stroke-width: 3.5; }
 .logoTagline { padding-top: .38em; margin-top: .35em; border-top: 1px solid #75b744; color: #1e6a32; font: 800 calc(var(--logo-size) * .105)/1.2 Arial, sans-serif; letter-spacing: .04em; white-space: nowrap; }

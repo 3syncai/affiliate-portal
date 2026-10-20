@@ -51,12 +51,7 @@ const questions = [
 function BrandLogo({ hero = false }: { hero?: boolean }) {
   return (
     <span className={`${styles.logo} ${hero ? styles.heroLogo : ""}`} aria-hidden="true">
-      <span className={styles.logoName}>
-        <span className={styles.logoInitial}>
-          <Image src="/uploads/coin/Oweg3d-400.png" alt="" width={100} height={100} className={styles.logoMark} priority />
-        </span>
-        WEG<span className={styles.registered}>®</span>
-      </span>
+      <Image src="/brand/oweg-wordmark.svg" alt="" width={685} height={173} className={styles.logoName} priority />
       <span className={styles.logoPartners}>PARTNERS<TrendingUp /></span>
       <span className={styles.logoTagline}>YOUR LIFETIME EARNING PARTNER.</span>
     </span>
