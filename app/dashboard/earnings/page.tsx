@@ -167,7 +167,7 @@ function EarningsContent() {
         <div className="bg-blue-50/50 rounded-lg p-4 border border-blue-100 flex items-start gap-3 sm:gap-4">
           <AlertCircle className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
           <p className="text-sm text-blue-800">
-            Commission is calculated from orders placed by customers you referred. Pending amounts unlock after delivery, then a 7-day return window before crediting.
+            Commission is calculated from orders placed by customers you referred. Pending amounts credit after delivery and the longer admin return/replacement policy window. If no policy is configured, the hold is 7 days.
           </p>
         </div>
 
