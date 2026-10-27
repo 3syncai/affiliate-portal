@@ -165,27 +165,25 @@ export default function CommissionLedgerPage() {
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row justify-between gap-4 items-start sm:items-center">
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Commission Ledger</h1>
-                    <p className="text-sm text-gray-500">
+            <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center">
+                <div className="min-w-0">
+                    <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Commission Ledger</h1>
+                    <p className="text-sm text-gray-500 mt-0.5">
                         Comprehensive history of all commission transactions
                     </p>
                 </div>
-                <div className="flex items-center gap-2">
-                    <button
-                        onClick={handleExport}
-                        className="flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 cursor-pointer"
-                    >
-                        <Download className="w-4 h-4 mr-2" />
-                        Export
-                    </button>
-                </div>
+                <button
+                    onClick={handleExport}
+                    className="flex items-center justify-center px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 cursor-pointer w-full sm:w-auto shrink-0"
+                >
+                    <Download className="w-4 h-4 mr-2" />
+                    Export
+                </button>
             </div>
 
             {/* Filters */}
-            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex flex-col sm:flex-row gap-4">
-                <div className="relative flex-1">
+            <div className="bg-white p-3 sm:p-4 rounded-xl shadow-sm border border-gray-200 flex flex-col gap-3 sm:flex-row sm:gap-4">
+                <div className="relative flex-1 min-w-0">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                     <input
                         type="text"
@@ -195,10 +193,10 @@ export default function CommissionLedgerPage() {
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 shrink-0">
                     <Filter className="w-4 h-4 text-gray-500" />
                     <select
-                        className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        className="flex-1 sm:flex-none border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         value={statusFilter}
                         onChange={(e) => setStatusFilter(e.target.value)}
                     >
@@ -211,8 +209,103 @@ export default function CommissionLedgerPage() {
                 </div>
             </div>
 
-            {/* Data Table */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            {/* Mobile cards */}
+            <div className="md:hidden space-y-3">
+                {isLoading ? (
+                    <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-8 text-center text-gray-500">
+                        Loading...
+                    </div>
+                ) : ledger.length === 0 ? (
+                    <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-8 text-center text-gray-500">
+                        No records found
+                    </div>
+                ) : (
+                    ledger.map((item: LedgerItem) => (
+                        <div
+                            key={item.id}
+                            className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 min-w-0"
+                        >
+                            <div className="flex items-start justify-between gap-2 mb-2">
+                                <div className="min-w-0">
+                                    <p className="font-semibold text-gray-900 truncate">
+                                        {item.product_name}
+                                    </p>
+                                    <p className="text-xs text-gray-500 font-mono truncate">
+                                        ID: {item.order_id}
+                                    </p>
+                                </div>
+                                <span
+                                    className={`shrink-0 px-2 py-0.5 text-[10px] font-semibold rounded-full ${ledgerStatusBadgeClass(item)}`}
+                                >
+                                    {ledgerDisplayStatus(item)}
+                                </span>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2 text-xs text-gray-600 mb-2">
+                                <div className="min-w-0">
+                                    <p className="uppercase tracking-wide text-[10px] text-gray-400 font-semibold">
+                                        Date
+                                    </p>
+                                    <p className="font-medium text-gray-900">
+                                        {formatDate(item.created_at).split(",")[0]}
+                                    </p>
+                                    <p className="text-[11px] text-gray-500">
+                                        {formatDate(item.created_at).split(",")[1]}
+                                    </p>
+                                </div>
+                                <div className="min-w-0">
+                                    <p className="uppercase tracking-wide text-[10px] text-gray-400 font-semibold">
+                                        Qty
+                                    </p>
+                                    <p className="font-medium text-gray-900">{item.quantity}</p>
+                                </div>
+                                <div className="min-w-0 col-span-2">
+                                    <p className="uppercase tracking-wide text-[10px] text-gray-400 font-semibold">
+                                        Agent
+                                    </p>
+                                    <p className="font-medium text-gray-900 truncate">
+                                        {item.first_name
+                                            ? `${item.first_name} ${item.last_name}`
+                                            : "Unknown"}
+                                    </p>
+                                    <p className="text-[11px] text-gray-500 truncate">
+                                        {item.refer_code}
+                                    </p>
+                                    <div className="mt-1">{getRoleBadge(item)}</div>
+                                </div>
+                                <div className="min-w-0">
+                                    <p className="uppercase tracking-wide text-[10px] text-gray-400 font-semibold">
+                                        Order Amt
+                                    </p>
+                                    <p className="font-semibold text-gray-900">
+                                        {formatCurrency(item.order_amount)}
+                                    </p>
+                                </div>
+                                <div className="min-w-0">
+                                    <p className="uppercase tracking-wide text-[10px] text-gray-400 font-semibold">
+                                        Commission
+                                    </p>
+                                    <p
+                                        className={ledgerCommissionClass(
+                                            item.affiliate_commission,
+                                            isVoidedLedgerEntry(item),
+                                        )}
+                                    >
+                                        {formatSignedCommission(item.affiliate_commission)}
+                                    </p>
+                                    {item.branch_admin_bonus > 0 && (
+                                        <p className="text-[11px] text-blue-600">
+                                            Incl. Bonus: {formatCurrency(item.branch_admin_bonus)}
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    ))
+                )}
+            </div>
+
+            {/* Desktop table */}
+            <div className="hidden md:block bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
@@ -290,37 +383,35 @@ export default function CommissionLedgerPage() {
                         </tbody>
                     </table>
                 </div>
+            </div>
 
-                {/* Pagination */}
-                <div className="bg-white px-4 py-3 border-t border-gray-200 flex items-center justify-between sm:px-6">
-                    <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                        <div>
-                            <p className="text-sm text-gray-700">
-                                Showing <span className="font-medium">{(page - 1) * limit + 1}</span> to <span className="font-medium">{Math.min(page * limit, pagination.total)}</span> of <span className="font-medium">{pagination.total}</span> results
-                            </p>
-                        </div>
-                        <div>
-                            <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                                <button
-                                    onClick={() => setPage(p => Math.max(1, p - 1))}
-                                    disabled={page === 1}
-                                    className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                                >
-                                    <span className="sr-only">Previous</span>
-                                    <ChevronLeft className="h-5 w-5" aria-hidden="true" />
-                                </button>
-                                <button
-                                    onClick={() => setPage(p => Math.min(pagination.totalPages, p + 1))}
-                                    disabled={page === pagination.totalPages}
-                                    className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                                >
-                                    <span className="sr-only">Next</span>
-                                    <ChevronRight className="h-5 w-5" aria-hidden="true" />
-                                </button>
-                            </nav>
-                        </div>
-                    </div>
-                </div>
+            {/* Pagination */}
+            <div className="bg-white px-3 sm:px-6 py-3 border border-gray-200 rounded-xl shadow-sm flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-sm text-gray-700 text-center sm:text-left">
+                    Showing{" "}
+                    <span className="font-medium">{pagination.total === 0 ? 0 : (page - 1) * limit + 1}</span>{" "}
+                    to{" "}
+                    <span className="font-medium">{Math.min(page * limit, pagination.total)}</span>{" "}
+                    of <span className="font-medium">{pagination.total}</span> results
+                </p>
+                <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px self-center" aria-label="Pagination">
+                    <button
+                        onClick={() => setPage(p => Math.max(1, p - 1))}
+                        disabled={page === 1}
+                        className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                    >
+                        <span className="sr-only">Previous</span>
+                        <ChevronLeft className="h-5 w-5" aria-hidden="true" />
+                    </button>
+                    <button
+                        onClick={() => setPage(p => Math.min(pagination.totalPages, p + 1))}
+                        disabled={page === pagination.totalPages}
+                        className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                    >
+                        <span className="sr-only">Next</span>
+                        <ChevronRight className="h-5 w-5" aria-hidden="true" />
+                    </button>
+                </nav>
             </div>
         </div>
     );

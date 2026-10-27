@@ -99,18 +99,18 @@ export default function BranchOffersPage() {
   const offerProducts = products.filter((p) => (additionalByProduct[p.id] || 0) > 0)
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Offers</h1>
-        <p className="text-gray-600 mt-1">Additional commission offers visible to Branch or All.</p>
+    <div className="space-y-4 sm:space-y-6 min-w-0">
+      <div className="min-w-0">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Offers</h1>
+        <p className="text-gray-600 mt-1 text-sm sm:text-base">Additional commission offers visible to Branch or All.</p>
       </div>
 
       {isLoading || loadingProducts ? (
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-8 text-gray-500">Loading offers...</div>
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 sm:p-8 text-gray-500">Loading offers...</div>
       ) : offerProducts.length === 0 ? (
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-8 text-gray-500">No active offers available for your role.</div>
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 sm:p-8 text-gray-500">No active offers available for your role.</div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
           {offerProducts.map((product) => (
             <OfferCard
               key={product.id}
@@ -159,7 +159,7 @@ function OfferCard({
 
       {copied && <div className="absolute top-4 left-4 z-10 bg-emerald-500 text-white text-xs font-semibold px-3 py-1.5 rounded-full">Link copied!</div>}
 
-      <div className="h-52 bg-gradient-to-br from-gray-50 to-white flex items-center justify-center p-5">
+      <div className="h-44 sm:h-52 bg-gradient-to-br from-gray-50 to-white flex items-center justify-center p-4 sm:p-5">
         {product.thumbnail ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={product.thumbnail} alt={product.title} className="w-full h-full object-contain" />
@@ -168,17 +168,17 @@ function OfferCard({
         )}
       </div>
 
-      <div className="p-5 space-y-4">
-        <div className="flex items-start justify-between gap-3">
-          <h3 className="font-bold text-gray-900 text-lg leading-tight line-clamp-2">{product.title}</h3>
-          <span className={`px-3 py-1.5 text-xs font-bold rounded-full whitespace-nowrap ${product.isInStock ? "bg-emerald-500 text-white" : "bg-red-500 text-white"}`}>
+      <div className="p-4 sm:p-5 space-y-3 sm:space-y-4">
+        <div className="flex flex-col gap-2 min-[400px]:flex-row min-[400px]:items-start min-[400px]:justify-between">
+          <h3 className="font-bold text-gray-900 text-base sm:text-lg leading-tight line-clamp-2 min-w-0">{product.title}</h3>
+          <span className={`self-start px-3 py-1.5 text-xs font-bold rounded-full whitespace-nowrap ${product.isInStock ? "bg-emerald-500 text-white" : "bg-red-500 text-white"}`}>
             {product.isInStock ? "In Stock" : "Out of Stock"}
           </span>
         </div>
 
         <p className="text-gray-600 text-sm line-clamp-2">{product.description || "No description available"}</p>
 
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <span className="text-xs font-medium text-gray-500 bg-gray-100 px-3 py-1.5 rounded-full border border-gray-200">{product.category}</span>
           {product.commissionRate && (
             <span className="text-sm font-bold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-full">
@@ -187,7 +187,7 @@ function OfferCard({
           )}
         </div>
 
-        <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-gray-100">
           <div className="flex items-center gap-1">
             <IndianRupee size={18} className="text-gray-700" />
             <span className="text-2xl font-bold text-gray-900">{product.price.toLocaleString("en-IN")}</span>
@@ -196,9 +196,9 @@ function OfferCard({
         </div>
 
         <div className="rounded-xl border-2 border-emerald-500 px-4 py-3">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-gray-600">Your commission:</span>
-            <span className="text-lg font-bold text-emerald-600">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span className="text-sm font-medium text-gray-600 min-w-0">Your commission:</span>
+            <span className="text-base sm:text-lg font-bold text-emerald-600 shrink-0">
               ₹{actualCommission.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
           </div>

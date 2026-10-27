@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, FormEvent, useEffect, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import axios from "axios";
 import {
   Mail,
@@ -12,11 +13,16 @@ import {
   Eye,
   EyeOff,
   Smartphone,
+  ChartNoAxesCombined,
+  Network,
+  Monitor,
+  ShieldCheck,
+  TrendingUp,
 } from "lucide-react";
-import { BACKEND_URL } from "@/lib/config";
+import Image from "next/image";
+import styles from "./login.module.css";
 
 function LoginContent() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -196,84 +202,63 @@ function LoginContent() {
   };
 
   return (
-    <div className="min-h-screen flex">
-      {/* Left Side - Brand Section */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-700 relative overflow-hidden">
-        {/* Decorative Background Elements */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-20 left-20 w-96 h-96 bg-white rounded-full blur-3xl"></div>
-          <div className="absolute bottom-20 right-20 w-80 h-80 bg-white rounded-full blur-3xl"></div>
-        </div>
-
-        {/* Coin Decoration */}
-        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-[600px] h-[600px] opacity-20">
-          <img
-            src="/uploads/coin/coin.png"
-            alt="Coin"
-            className="w-full h-full object-contain"
-          />
-        </div>
-
-        {/* Content */}
-        <div className="relative z-10 flex flex-col justify-center px-16 text-white">
-          <div className="mb-12">
-            <img
-              src="/uploads/coin/Oweg3d-400.png"
-              alt="Oweg Logo"
-              className="h-20 mb-8"
-            />
-            <h1 className="text-5xl font-bold mb-6 leading-tight">
-              Welcome to
-              <br />
-              Oweg Partners
-            </h1>
-            <p className="text-xl text-emerald-100 leading-relaxed max-w-md">
-              Join our partner program and start earning commissions by
-              promoting our products.
-            </p>
+    <main className={styles.page}>
+      <svg className={styles.backdrop} viewBox="0 0 1440 900" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <linearGradient id="login-mint" x1="0" y1="1" x2="1" y2="0">
+            <stop stopColor="#dcefd8" stopOpacity=".65" />
+            <stop offset="1" stopColor="#eff8f1" stopOpacity=".35" />
+          </linearGradient>
+          <linearGradient id="login-gold" x1="0" x2="1">
+            <stop stopColor="#edb64d" />
+            <stop offset="1" stopColor="#b3d770" />
+          </linearGradient>
+        </defs>
+        <path d="M420 900C290 600 550 410 840 335S1085 80 1320 0H1440C1140 145 1220 325 880 420S460 650 575 900Z" fill="url(#login-mint)" />
+        <path d="M0 772C220 945 382 785 620 840S1140 1040 1440 685V775C1150 1100 850 940 612 881S230 1010 0 832Z" fill="url(#login-mint)" />
+        <path d="M0 770C240 952 375 794 620 844C350 813 237 958 0 783Z" fill="url(#login-gold)" />
+      </svg>
+      <div className={styles.layout}>
+        <section className={styles.brand} aria-labelledby="partner-heading">
+          <Link href="/" className={styles.brandLink} aria-label="OWEG Partners home">
+            <span className={styles.wordmark}>
+              <Image src="/brand/oweg-wordmark.svg" alt="OWEG" width={685} height={173} className={styles.brandName} priority />
+              <span className={styles.partnerName}>PARTNERS<TrendingUp aria-hidden="true" /></span>
+              <span className={styles.tagline}>YOUR LIFETIME EARNING PARTNER.</span>
+            </span>
+          </Link>
+          <div className={styles.brandCopy}>
+            <h1 id="partner-heading">Grow With{" "}<Image src="/brand/oweg-wordmark.svg" alt="OWEG" width={685} height={173} className={styles.headingLogo} />{" "}Partners.</h1>
+            <p>Your business, your network, your earnings.</p>
           </div>
-
-          <div className="space-y-4 text-emerald-100">
-            <div className="flex items-center gap-3">
-              <CheckCircle className="w-6 h-6 flex-shrink-0" />
-              <span className="text-lg">Track your earnings in real-time</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <CheckCircle className="w-6 h-6 flex-shrink-0" />
-              <span className="text-lg">Easy withdrawal process</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <CheckCircle className="w-6 h-6 flex-shrink-0" />
-              <span className="text-lg">24/7 support and analytics</span>
-            </div>
+          <div className={styles.growth}>
+            <ul className={styles.features}>
+              <li>
+                <span className={styles.featureIcon}><ChartNoAxesCombined aria-hidden="true" /></span>
+                <span><strong>Track commissions</strong><span>and earnings in real time</span></span>
+              </li>
+              <li>
+                <span className={styles.featureIcon}><Network aria-hidden="true" /></span>
+                <span><strong>Monitor partners</strong><span>and sales</span></span>
+              </li>
+              <li>
+                <span className={styles.featureIcon}><Monitor aria-hidden="true" /></span>
+                <span><strong>Access your</strong><span>partner dashboard</span></span>
+              </li>
+            </ul>
+            <Image src="/images/partner-growth.png" alt="" width={640} height={427} className={styles.illustration} priority />
           </div>
-        </div>
-      </div>
-
-      {/* Right Side - Login Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center px-6 sm:px-12 bg-white">
-        <div className="w-full max-w-md">
-          {/* Mobile Logo */}
-          <div className="lg:hidden mb-8 text-center">
-            <img
-              src="/uploads/coin/Oweg3d-400.png"
-              alt="Oweg Logo"
-              className="h-16 mx-auto mb-4"
-            />
-          </div>
-
-          <div className="mb-8">
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">
-              Sign in to your account
-            </h2>
-            <p className="text-gray-600">
-              Enter your credentials to access your Partner dashboard
-            </p>
-          </div>
-
+        </section>
+        <section className={styles.formSection} aria-labelledby="login-heading">
+          <div className={styles.card}>
+            <header className={styles.formHeader}>
+              <h2 id="login-heading">{otpStep ? "Verify your number" : "Welcome back!"}</h2>
+              <p>{otpStep ? "One more step to access your OWEG partnership." : "Sign in to manage your OWEG partnership."}</p>
+            </header>
           {/* Success Alert */}
           {success && (
-            <div className="mb-6 flex items-start gap-3 bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 rounded-xl">
+            <div role="status"
+              className="mb-6 flex items-start gap-3 bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 rounded-xl">
               <CheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
               <span className="text-sm">{success}</span>
             </div>
@@ -281,14 +266,15 @@ function LoginContent() {
 
           {/* Error Alert */}
           {error && (
-            <div className="mb-6 flex items-start gap-3 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-xl">
+            <div role="alert"
+              className="mb-6 flex items-start gap-3 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-xl">
               <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
               <span className="text-sm">{error}</span>
             </div>
           )}
 
           {!otpStep ? (
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form onSubmit={handleSubmit} className={styles.form}>
               <div>
                 <label
                   htmlFor="email"
@@ -307,7 +293,7 @@ function LoginContent() {
                     autoComplete="email"
                     required
                     className="block w-full pl-11 pr-4 py-3 border border-gray-300 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
-                    placeholder="you@example.com"
+                    placeholder="Enter your registered email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                   />
@@ -332,13 +318,15 @@ function LoginContent() {
                     autoComplete="current-password"
                     required
                     className="block w-full pl-11 pr-12 py-3 border border-gray-300 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
-                    placeholder="••••••••"
+                    placeholder="Enter your password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    aria-pressed={showPassword}
                     className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none"
                   >
                     {showPassword ? (
@@ -378,7 +366,7 @@ function LoginContent() {
               </button>
             </form>
           ) : (
-            <form onSubmit={handleVerifyOtp} className="space-y-5">
+            <form onSubmit={handleVerifyOtp} className={styles.form}>
               <div className="rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
                 Enter the 6-digit OTP sent to{" "}
                 <span className="font-semibold">
@@ -407,7 +395,7 @@ function LoginContent() {
                     required
                     maxLength={6}
                     pattern="[0-9]{6}"
-                    className="block w-full pl-11 pr-4 py-3 border border-gray-300 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all tracking-[0.35em] text-center text-lg font-semibold"
+                    className="block w-full pl-11 pr-4 py-3 border border-gray-300 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all tracking-[0.2em] sm:tracking-[0.35em] text-center text-base sm:text-lg font-semibold"
                     placeholder="000000"
                     value={otp}
                     onChange={(e) =>
@@ -435,11 +423,11 @@ function LoginContent() {
                 )}
               </button>
 
-              <div className="flex items-center justify-between gap-3 text-sm">
+              <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 text-sm">
                 <button
                   type="button"
                   onClick={handleBackToLogin}
-                  className="font-medium text-gray-600 hover:text-gray-900"
+                  className="font-medium text-gray-600 hover:text-gray-900 text-center sm:text-left py-2 sm:py-0"
                 >
                   Back to login
                 </button>
@@ -447,7 +435,7 @@ function LoginContent() {
                   type="button"
                   onClick={handleResendOtp}
                   disabled={loading || resendCooldown > 0}
-                  className="font-semibold text-emerald-600 hover:text-emerald-700 disabled:text-gray-400"
+                  className="font-semibold text-emerald-600 hover:text-emerald-700 disabled:text-gray-400 text-center sm:text-right py-2 sm:py-0"
                 >
                   {resendCooldown > 0
                     ? `Resend in ${resendCooldown}s`
@@ -457,26 +445,17 @@ function LoginContent() {
             </form>
           )}
 
-          {/* Sign Up Link */}
-          <div className="mt-8 text-center">
-            <p className="text-gray-600">
-              Don't have an account?{" "}
-              <a
-                href="/register"
-                className="font-semibold text-emerald-600 hover:text-emerald-700 transition-colors"
-              >
-                Sign up for free
-              </a>
-            </p>
+          <div className={styles.signup}>
+            <p>Don&apos;t have an account? <Link href="/register">Sign up for free</Link></p>
           </div>
-
-          {/* Footer */}
-          <div className="mt-12 pt-6 border-t border-gray-200 text-center text-sm text-gray-500">
-            <p>© 2025 Oweg. All rights reserved.</p>
           </div>
-        </div>
+          <footer className={styles.footer}>
+            <ShieldCheck aria-hidden="true" />
+            <span>Secure Partner Access <span className={styles.footerDot}>·</span> © {new Date().getFullYear()} OWEG. All rights reserved.</span>
+          </footer>
+        </section>
       </div>
-    </div>
+    </main>
   );
 }
 

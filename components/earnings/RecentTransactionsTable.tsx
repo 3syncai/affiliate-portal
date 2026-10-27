@@ -31,8 +31,8 @@ export default function RecentTransactionsTable({
         : emptyMessage;
 
     return (
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-gray-50/50">
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden min-w-0">
+            <div className="px-4 sm:px-6 py-4 border-b border-gray-200 flex flex-wrap items-center justify-between gap-2 bg-gray-50/50">
                 <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">
                     Recent Transactions
                 </h2>
@@ -46,90 +46,153 @@ export default function RecentTransactionsTable({
                     <div className="w-6 h-6 border-2 border-t-transparent border-gray-300 rounded-full animate-spin" />
                 </div>
             ) : orders.length === 0 ? (
-                <div className="p-12 text-center text-gray-500 text-sm">{emptyText}</div>
+                <div className="p-8 sm:p-12 text-center text-gray-500 text-sm">{emptyText}</div>
             ) : (
-                <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
-                            <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Date
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Type
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Details
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Customer/Partner
-                                </th>
-                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Your Earning
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-200 bg-white">
-                            {orders.map((order) => {
-                                const voided = isVoidedLedgerEntry(order);
-
-                                return (
-                                    <tr
-                                        key={order.id}
-                                        className="hover:bg-gray-50 transition-colors"
-                                    >
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {formatTransactionDate(order.created_at)}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <span
-                                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${saleLevelBadgeClass(order.saleLevel)}`}
-                                            >
-                                                {saleLevelLabel(order.saleLevel)}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 text-sm text-gray-600">
-                                            <div className="font-medium text-gray-900">
+                <>
+                    <div className="md:hidden divide-y divide-gray-100">
+                        {orders.map((order) => {
+                            const voided = isVoidedLedgerEntry(order);
+                            return (
+                                <div key={order.id} className="p-4 min-w-0">
+                                    <div className="flex items-start justify-between gap-3">
+                                        <div className="min-w-0">
+                                            <p className="text-sm font-medium text-gray-900 truncate">
                                                 {order.product_name}
-                                            </div>
-                                            <div className="flex items-center gap-2 mt-1">
-                                                <div className="text-xs text-gray-500">
-                                                    #{order.order_id}
-                                                </div>
-                                                <CommissionStatusBadge
-                                                    status={order.status || ""}
-                                                    unlockAt={order.unlock_at}
-                                                    hasReturn={order.has_return}
-                                                    returnRequestPending={
-                                                        order.has_return_request && !order.has_return
-                                                    }
-                                                />
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            <div className="text-gray-900">
+                                            </p>
+                                            <p className="text-xs text-gray-500 mt-0.5">
+                                                {formatTransactionDate(order.created_at)}
+                                            </p>
+                                        </div>
+                                        <span
+                                            className={`shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${saleLevelBadgeClass(order.saleLevel)}`}
+                                        >
+                                            {saleLevelLabel(order.saleLevel)}
+                                        </span>
+                                    </div>
+                                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                                        <span className="text-xs text-gray-500 font-mono">
+                                            #{order.order_id}
+                                        </span>
+                                        <CommissionStatusBadge
+                                            status={order.status || ""}
+                                            unlockAt={order.unlock_at}
+                                            hasReturn={order.has_return}
+                                            returnRequestPending={
+                                                order.has_return_request && !order.has_return
+                                            }
+                                        />
+                                    </div>
+                                    <div className="mt-3 flex items-end justify-between gap-2">
+                                        <div className="min-w-0">
+                                            <p className="text-[10px] uppercase text-gray-400 font-semibold">
+                                                Customer/Partner
+                                            </p>
+                                            <p className="text-sm text-gray-900 truncate">
                                                 {order.participant_name}
-                                            </div>
+                                            </p>
                                             {order.participant_branch ? (
-                                                <span className="block text-xs text-gray-400 mt-0.5">
+                                                <p className="text-xs text-gray-400 truncate">
                                                     {order.participant_branch}
-                                                </span>
+                                                </p>
                                             ) : null}
-                                        </td>
-                                        <td
-                                            className={`px-6 py-4 whitespace-nowrap text-sm text-right ${ledgerCommissionClass(
+                                        </div>
+                                        <p
+                                            className={`text-sm font-bold shrink-0 ${ledgerCommissionClass(
                                                 order.commission_amount,
                                                 voided,
                                             )}`}
                                         >
                                             {formatSignedCommission(order.commission_amount)}
-                                        </td>
-                                    </tr>
-                                );
-                            })}
-                        </tbody>
-                    </table>
-                </div>
+                                        </p>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+
+                    <div className="hidden md:block overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200">
+                            <thead className="bg-gray-50">
+                                <tr>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Date
+                                    </th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Type
+                                    </th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Details
+                                    </th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Customer/Partner
+                                    </th>
+                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Your Earning
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-200 bg-white">
+                                {orders.map((order) => {
+                                    const voided = isVoidedLedgerEntry(order);
+
+                                    return (
+                                        <tr
+                                            key={order.id}
+                                            className="hover:bg-gray-50 transition-colors"
+                                        >
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                {formatTransactionDate(order.created_at)}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <span
+                                                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${saleLevelBadgeClass(order.saleLevel)}`}
+                                                >
+                                                    {saleLevelLabel(order.saleLevel)}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 text-sm text-gray-600">
+                                                <div className="font-medium text-gray-900">
+                                                    {order.product_name}
+                                                </div>
+                                                <div className="flex items-center gap-2 mt-1">
+                                                    <div className="text-xs text-gray-500">
+                                                        #{order.order_id}
+                                                    </div>
+                                                    <CommissionStatusBadge
+                                                        status={order.status || ""}
+                                                        unlockAt={order.unlock_at}
+                                                        hasReturn={order.has_return}
+                                                        returnRequestPending={
+                                                            order.has_return_request && !order.has_return
+                                                        }
+                                                    />
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                <div className="text-gray-900">
+                                                    {order.participant_name}
+                                                </div>
+                                                {order.participant_branch ? (
+                                                    <span className="block text-xs text-gray-400 mt-0.5">
+                                                        {order.participant_branch}
+                                                    </span>
+                                                ) : null}
+                                            </td>
+                                            <td
+                                                className={`px-6 py-4 whitespace-nowrap text-sm text-right ${ledgerCommissionClass(
+                                                    order.commission_amount,
+                                                    voided,
+                                                )}`}
+                                            >
+                                                {formatSignedCommission(order.commission_amount)}
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                </>
             )}
         </div>
     );

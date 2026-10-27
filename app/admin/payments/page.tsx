@@ -259,16 +259,18 @@ export default function PaymentsPage() {
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div>
-                <h1 className="text-3xl font-bold text-gray-900">Admin Payments</h1>
-                <p className="text-gray-600 mt-1">Process payments to Area Sales Managers, Branch Admins, and State Admins</p>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between min-w-0">
+                <div className="min-w-0">
+                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Admin Payments</h1>
+                    <p className="text-gray-600 mt-1 text-sm sm:text-base">Process payments to Area Sales Managers, Branch Admins, and State Admins</p>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
                 {/* Payment Form - Left Side */}
                 <div className="xl:col-span-2 space-y-6">
                     {/* Admin Selection */}
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
                         <h2 className="text-lg font-semibold text-gray-900 mb-4">Select Admin to Pay</h2>
 
                         {/* Search */}
@@ -297,18 +299,18 @@ export default function PaymentsPage() {
                                             : "border-gray-200 hover:border-gray-300 bg-white"
                                             }`}
                                     >
-                                        <div className="flex items-start justify-between">
-                                            <div className="flex-1">
-                                                <div className="flex items-center gap-2">
+                                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex flex-wrap items-center gap-2">
                                                     <p className="font-semibold text-gray-900">{admin.name}</p>
                                                     <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-blue-100 text-blue-700">
                                                         {admin.typeLabel}
                                                     </span>
                                                 </div>
-                                                <p className="text-sm text-gray-600 mt-1">{admin.email}</p>
+                                                <p className="text-sm text-gray-600 mt-1 truncate">{admin.email}</p>
                                                 <p className="text-xs text-gray-500 mt-1">📍 {admin.location}</p>
                                             </div>
-                                            <div className="text-right">
+                                            <div className="text-left sm:text-right shrink-0">
                                                 <p className="text-sm font-medium text-gray-600">Total Earnings</p>
                                                 <p className="text-lg font-bold text-green-600">{formatCurrency(admin.totalEarnings)}</p>
                                             </div>
@@ -321,7 +323,7 @@ export default function PaymentsPage() {
 
                     {/* Payment Form */}
                     {selectedAdmin && (
-                        <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                        <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
                             <h2 className="text-lg font-semibold text-gray-900 mb-4">Payment Details</h2>
 
                             <div className="space-y-4">
@@ -464,7 +466,7 @@ export default function PaymentsPage() {
                                                         </div>
                                                     )}
 
-                                                    <div className="grid grid-cols-2 gap-4">
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                                         <div>
                                                             <label className="block text-sm font-medium text-gray-700 mb-2">
                                                                 Account Number
@@ -490,7 +492,7 @@ export default function PaymentsPage() {
                                                             />
                                                         </div>
                                                         {bankPrefilled && (
-                                                            <p className="col-span-2 -mt-2 text-xs text-indigo-600">
+                                                            <p className="sm:col-span-2 -mt-2 text-xs text-indigo-600">
                                                                 Pre-filled from profile — edit if needed.
                                                             </p>
                                                         )}
@@ -560,7 +562,7 @@ export default function PaymentsPage() {
 
                 {/* Payment History - Right Side */}
                 <div className="xl:col-span-1">
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 xl:sticky xl:top-6">
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 xl:sticky xl:top-6">
                         <h2 className="text-lg font-semibold text-gray-900 mb-4">Recent Payments</h2>
 
                         <div className="space-y-3 max-h-[600px] overflow-y-auto">

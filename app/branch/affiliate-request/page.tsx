@@ -111,30 +111,30 @@ export default function BranchAffiliateRequestPage() {
     if (loading) return <div className="flex items-center justify-center h-64"><div className="text-lg text-gray-500">Loading...</div></div>
 
     return (
-        <div className="space-y-6">
-            <div>
-                <h1 className="text-3xl font-bold text-gray-900">Partner Requests</h1>
-                <p className="text-gray-600 mt-1">Approve or reject partner requests for {branchData?.branch}</p>
+        <div className="space-y-4 sm:space-y-6 min-w-0">
+            <div className="min-w-0">
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Partner Requests</h1>
+                <p className="text-gray-600 mt-1 text-sm sm:text-base break-words">Approve or reject partner requests for {branchData?.branch}</p>
             </div>
 
             {/* Tabs */}
-            <div className="flex gap-4 border-b border-gray-200">
+            <div className="flex gap-2 sm:gap-4 border-b border-gray-200 overflow-x-auto">
                 <button
                     onClick={() => setActiveTab("pending")}
-                    className={`px-4 py-2 font-medium border-b-2 transition-colors ${activeTab === "pending" ? "border-orange-500 text-orange-600" : "border-transparent text-gray-500 hover:text-gray-700"}`}
+                    className={`px-3 sm:px-4 py-2 font-medium border-b-2 transition-colors whitespace-nowrap text-sm sm:text-base ${activeTab === "pending" ? "border-orange-500 text-orange-600" : "border-transparent text-gray-500 hover:text-gray-700"}`}
                 >
                     Pending ({pendingUsers.length})
                 </button>
                 <button
                     onClick={() => setActiveTab("approved")}
-                    className={`px-4 py-2 font-medium border-b-2 transition-colors ${activeTab === "approved" ? "border-orange-500 text-orange-600" : "border-transparent text-gray-500 hover:text-gray-700"}`}
+                    className={`px-3 sm:px-4 py-2 font-medium border-b-2 transition-colors whitespace-nowrap text-sm sm:text-base ${activeTab === "approved" ? "border-orange-500 text-orange-600" : "border-transparent text-gray-500 hover:text-gray-700"}`}
                 >
                     Approved ({approvedUsers.length})
                 </button>
             </div>
 
             {/* Search */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-4">
                 <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <input
@@ -149,76 +149,116 @@ export default function BranchAffiliateRequestPage() {
 
             {/* Table */}
             {filteredUsers.length === 0 ? (
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 sm:p-12 text-center">
                     <Clock className="w-12 h-12 text-gray-300 mx-auto mb-4" />
                     <p className="text-gray-500">No {activeTab} partner requests</p>
                 </div>
             ) : (
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
-                                <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Phone</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Referral Code</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
-                                {filteredUsers.map((user) => (
-                                    <tr key={user.id} className="hover:bg-gray-50">
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{user.first_name} {user.last_name}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.email}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.phone || "-"}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap font-mono text-sm text-indigo-600">{user.refer_code}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(user.created_at)}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-right">
-                                            <div className="flex items-center justify-end gap-2">
-                                                <button onClick={() => setSelectedUser(user)} className="text-blue-600 hover:text-blue-900 flex items-center gap-1">
-                                                    <Eye className="w-4 h-4" /> View
-                                                </button>
-                                                {activeTab === "pending" && (
-                                                    <>
-                                                        <button onClick={() => handleApprove(user.id)} className="text-green-600 hover:text-green-900 flex items-center gap-1">
-                                                            <UserCheck className="w-4 h-4" /> Approve
-                                                        </button>
-                                                        <button onClick={() => handleReject(user.id)} className="text-red-600 hover:text-red-900 flex items-center gap-1">
-                                                            <UserX className="w-4 h-4" /> Reject
-                                                        </button>
-                                                    </>
-                                                )}
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                <>
+                    <div className="md:hidden space-y-3">
+                        {filteredUsers.map((user) => (
+                            <div key={user.id} className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 min-w-0">
+                                <p className="font-semibold text-gray-900 truncate">{user.first_name} {user.last_name}</p>
+                                <p className="text-xs text-gray-500 truncate mt-0.5">{user.email}</p>
+                                <div className="grid grid-cols-2 gap-2 text-xs text-gray-600 mt-3 mb-3">
+                                    <div className="min-w-0">
+                                        <p className="uppercase tracking-wide text-[10px] text-gray-400 font-semibold">Phone</p>
+                                        <p className="truncate">{user.phone || "-"}</p>
+                                    </div>
+                                    <div className="min-w-0">
+                                        <p className="uppercase tracking-wide text-[10px] text-gray-400 font-semibold">Referral</p>
+                                        <p className="font-mono text-indigo-600 truncate">{user.refer_code}</p>
+                                    </div>
+                                    <div className="min-w-0 col-span-2">
+                                        <p className="uppercase tracking-wide text-[10px] text-gray-400 font-semibold">Date</p>
+                                        <p>{formatDate(user.created_at)}</p>
+                                    </div>
+                                </div>
+                                <div className="flex flex-col gap-2">
+                                    <button onClick={() => setSelectedUser(user)} className="w-full inline-flex items-center justify-center gap-1.5 text-sm font-semibold text-blue-600 py-2 rounded-lg hover:bg-blue-50">
+                                        <Eye className="w-4 h-4" /> View
+                                    </button>
+                                    {activeTab === "pending" && (
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <button onClick={() => handleApprove(user.id)} className="inline-flex items-center justify-center gap-1 text-sm font-semibold text-green-600 py-2 rounded-lg hover:bg-green-50 border border-green-100">
+                                                <UserCheck className="w-4 h-4" /> Approve
+                                            </button>
+                                            <button onClick={() => handleReject(user.id)} className="inline-flex items-center justify-center gap-1 text-sm font-semibold text-red-600 py-2 rounded-lg hover:bg-red-50 border border-red-100">
+                                                <UserX className="w-4 h-4" /> Reject
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
                     </div>
-                </div>
+
+                    <div className="hidden md:block bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                        <div className="overflow-x-auto">
+                            <table className="min-w-full divide-y divide-gray-200">
+                                <thead className="bg-gray-50">
+                                    <tr>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Phone</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Referral Code</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="bg-white divide-y divide-gray-200">
+                                    {filteredUsers.map((user) => (
+                                        <tr key={user.id} className="hover:bg-gray-50">
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{user.first_name} {user.last_name}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.email}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.phone || "-"}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap font-mono text-sm text-indigo-600">{user.refer_code}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(user.created_at)}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-right">
+                                                <div className="flex items-center justify-end gap-2">
+                                                    <button onClick={() => setSelectedUser(user)} className="text-blue-600 hover:text-blue-900 flex items-center gap-1">
+                                                        <Eye className="w-4 h-4" /> View
+                                                    </button>
+                                                    {activeTab === "pending" && (
+                                                        <>
+                                                            <button onClick={() => handleApprove(user.id)} className="text-green-600 hover:text-green-900 flex items-center gap-1">
+                                                                <UserCheck className="w-4 h-4" /> Approve
+                                                            </button>
+                                                            <button onClick={() => handleReject(user.id)} className="text-red-600 hover:text-red-900 flex items-center gap-1">
+                                                                <UserX className="w-4 h-4" /> Reject
+                                                            </button>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </>
             )}
 
             {/* View Modal */}
             {selectedUser && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
                     <div
                         className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
                         onClick={() => setSelectedUser(null)}
                     ></div>
-                    <div className="relative bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl z-10 transition-transform transform scale-100">
-                        <div className="p-6 border-b border-gray-100 flex justify-between items-center sticky top-0 bg-white z-20">
-                            <div>
-                                <h2 className="text-2xl font-bold text-gray-900">Partner Details</h2>
-                                <p className="text-sm text-gray-500">Applicant ID: <span className="font-mono">{selectedUser.id.slice(0, 8)}</span></p>
+                    <div className="relative bg-white rounded-t-2xl sm:rounded-xl max-w-4xl w-full max-h-[90dvh] overflow-hidden flex flex-col shadow-2xl z-10">
+                        <div className="p-4 sm:p-6 border-b border-gray-100 flex justify-between items-center sticky top-0 bg-white z-20 shrink-0">
+                            <div className="min-w-0 pr-2">
+                                <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Partner Details</h2>
+                                <p className="text-sm text-gray-500 truncate">Applicant ID: <span className="font-mono">{selectedUser.id.slice(0, 8)}</span></p>
                             </div>
-                            <button onClick={() => setSelectedUser(null)} className="text-gray-400 hover:text-gray-600">
+                            <button onClick={() => setSelectedUser(null)} className="text-gray-400 hover:text-gray-600 shrink-0">
                                 <UserX className="w-6 h-6" />
                             </button>
                         </div>
 
-                        <div className="p-6 space-y-8">
+                        <div className="p-4 sm:p-6 space-y-6 sm:space-y-8 overflow-y-auto flex-1">
                             {/* Personal Information */}
                             <section>
                                 <h3 className="text-lg font-semibold text-gray-900 border-b pb-2 mb-4 flex items-center gap-2">
@@ -356,22 +396,22 @@ export default function BranchAffiliateRequestPage() {
                             </section>
                         </div>
 
-                        <div className="p-6 border-t border-gray-100 bg-gray-50 rounded-b-xl flex gap-3 sticky bottom-0">
+                        <div className="p-4 sm:p-6 border-t border-gray-100 bg-gray-50 sm:rounded-b-xl flex flex-col-reverse sm:flex-row gap-3 sticky bottom-0 shrink-0">
                             {!selectedUser.is_approved ? (
                                 <>
-                                    <button onClick={() => { handleApprove(selectedUser.id); setSelectedUser(null); }} className="flex-1 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium transition-colors shadow-sm">
+                                    <button onClick={() => { handleApprove(selectedUser.id); setSelectedUser(null); }} className="w-full sm:flex-1 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium transition-colors shadow-sm">
                                         Approve Application
                                     </button>
-                                    <button onClick={() => { handleReject(selectedUser.id); setSelectedUser(null); }} className="flex-1 px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium transition-colors shadow-sm">
+                                    <button onClick={() => { handleReject(selectedUser.id); setSelectedUser(null); }} className="w-full sm:flex-1 px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium transition-colors shadow-sm">
                                         Reject
                                     </button>
                                 </>
                             ) : (
-                                <div className="flex-1 flex items-center justify-center text-green-600 font-medium bg-green-50 rounded-lg py-2 border border-green-200">
+                                <div className="w-full sm:flex-1 flex items-center justify-center text-green-600 font-medium bg-green-50 rounded-lg py-2 border border-green-200">
                                     <UserCheck className="w-5 h-5 mr-2" /> Application Approved
                                 </div>
                             )}
-                            <button onClick={() => setSelectedUser(null)} className="px-6 py-3 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors shadow-sm">
+                            <button onClick={() => setSelectedUser(null)} className="w-full sm:w-auto px-6 py-3 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors shadow-sm">
                                 Close
                             </button>
                         </div>

@@ -2,6 +2,7 @@
 
 import React, { useState, FormEvent } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import axios from "axios"
 import { User, FileText, Briefcase, CreditCard, MapPin, Lock, ChevronRight, ChevronLeft, Check, Upload, AlertCircle, Mail, Phone, Calendar, Building2, XCircle } from "lucide-react"
 
@@ -372,31 +373,82 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-emerald-50 to-teal-50 py-8 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-emerald-50 to-teal-50 py-6 sm:py-8 px-4 sm:px-6 lg:px-8 overflow-x-hidden">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
-        <div className="text-center mb-8">
-          <img
-            src="/uploads/coin/Oweg3d-400.png"
-            alt="Oweg Logo"
-            className="h-16 mx-auto mb-4"
-          />
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent mb-2">
+        <div className="text-center mb-6 sm:mb-8">
+          <Link href="/" className="inline-block hover:opacity-90 transition-opacity" aria-label="Oweg Partners home">
+            <img
+              src="/uploads/coin/Oweg3d-400.png"
+              alt="Oweg Logo"
+              className="h-12 sm:h-16 mx-auto mb-3 sm:mb-4"
+            />
+          </Link>
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent mb-2 px-2">
             Sales Executive Registration
           </h1>
-          <p className="text-gray-600">Join our network and start your journey with us</p>
+          <p className="text-gray-600 text-sm sm:text-base">Join our network and start your journey with us</p>
         </div>
 
-        {/* Progress Steps */}
-        <div className="bg-white rounded-2xl shadow-xl p-6 mb-6">
+        {/* Progress Steps — mobile compact */}
+        <div className="bg-white rounded-2xl shadow-xl p-4 sm:p-6 mb-6 md:hidden">
+          <div className="flex items-center justify-between gap-3 mb-3">
+            <span className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
+              Step {currentStep} of {steps.length}
+            </span>
+            <span className="text-sm font-bold text-gray-900 truncate">
+              {steps.find((s) => s.id === currentStep)?.name}
+            </span>
+          </div>
+          <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-r from-emerald-600 to-teal-600 rounded-full transition-all duration-300"
+              style={{ width: `${(currentStep / steps.length) * 100}%` }}
+            />
+          </div>
+          <div className="mt-4 flex justify-between gap-1">
+            {steps.map((step) => {
+              const Icon = step.icon
+              const isActive = currentStep === step.id
+              const isCompleted = currentStep > step.id
+              return (
+                <div
+                  key={step.id}
+                  className={`flex-1 flex flex-col items-center min-w-0 ${
+                    isActive ? "opacity-100" : "opacity-60"
+                  }`}
+                >
+                  <div
+                    className={`w-9 h-9 rounded-full flex items-center justify-center ${
+                      isCompleted
+                        ? "bg-gradient-to-br from-green-500 to-emerald-600"
+                        : isActive
+                          ? "bg-gradient-to-br from-emerald-600 to-teal-600"
+                          : "bg-gray-200"
+                    }`}
+                  >
+                    {isCompleted ? (
+                      <Check className="w-4 h-4 text-white" />
+                    ) : (
+                      <Icon className={`w-4 h-4 ${isActive ? "text-white" : "text-gray-400"}`} />
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Progress Steps — desktop full track */}
+        <div className="bg-white rounded-2xl shadow-xl p-6 mb-6 hidden md:block">
           <div className="flex justify-between items-center">
             {steps.map((step, index) => {
               const Icon = step.icon
               const isActive = currentStep === step.id
               const isCompleted = currentStep > step.id
               return (
-                <div key={step.id} className="flex items-center flex-1">
-                  <div className="flex flex-col items-center flex-1">
+                <div key={step.id} className="flex items-center flex-1 min-w-0">
+                  <div className="flex flex-col items-center flex-1 min-w-0">
                     <div className={`relative w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 ${isCompleted
                       ? "bg-gradient-to-br from-green-500 to-emerald-600 scale-110 shadow-lg"
                       : isActive
@@ -409,7 +461,7 @@ export default function RegisterPage() {
                         <Icon className={`w-6 h-6 ${isActive ? "text-white" : "text-gray-400"}`} />
                       )}
                     </div>
-                    <span className={`mt-2 text-xs font-medium ${isActive ? "text-emerald-600 font-bold" : "text-gray-500"}`}>
+                    <span className={`mt-2 text-xs font-medium text-center ${isActive ? "text-emerald-600 font-bold" : "text-gray-500"}`}>
                       {step.name}
                     </span>
                   </div>
@@ -423,8 +475,8 @@ export default function RegisterPage() {
         </div>
 
         {/* Form Card */}
-        <div className="bg-white shadow-2xl rounded-3xl overflow-hidden">
-          <div className="p-8">
+        <div className="bg-white shadow-2xl rounded-2xl sm:rounded-3xl overflow-hidden">
+          <div className="p-4 sm:p-6 md:p-8">
             {/* Alerts */}
             {error && (
               <div className="mb-6 flex items-start gap-3 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-xl">
@@ -752,9 +804,9 @@ export default function RegisterPage() {
                           </p>
                         )}
                         {uploadStatus.aadhar_card_photo === "success" && files.aadhar_card_photo && (
-                          <p className="mt-2 text-sm text-green-600 flex items-center gap-1">
-                            <Check className="w-4 h-4" />
-                            ✓ {files.aadhar_card_photo.name} - Uploaded successfully!
+                          <p className="mt-2 text-sm text-green-600 flex items-start gap-1 min-w-0">
+                            <Check className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                            <span className="break-all">✓ {files.aadhar_card_photo.name} - Uploaded successfully!</span>
                           </p>
                         )}
                         {uploadStatus.aadhar_card_photo === "error" && (
@@ -781,9 +833,9 @@ export default function RegisterPage() {
                           </p>
                         )}
                         {uploadStatus.pan_card_photo === "success" && files.pan_card_photo && (
-                          <p className="mt-2 text-sm text-green-600 flex items-center gap-1">
-                            <Check className="w-4 h-4" />
-                            ✓ {files.pan_card_photo.name} - Uploaded successfully!
+                          <p className="mt-2 text-sm text-green-600 flex items-start gap-1 min-w-0">
+                            <Check className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                            <span className="break-all">✓ {files.pan_card_photo.name} - Uploaded successfully!</span>
                           </p>
                         )}
                         {uploadStatus.pan_card_photo === "error" && (
@@ -1071,13 +1123,13 @@ export default function RegisterPage() {
               )}
 
               {/* Navigation Buttons */}
-              <div className="mt-8 flex items-center justify-between pt-6 border-t border-gray-200">
-                <div>
+              <div className="mt-8 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-6 border-t border-gray-200">
+                <div className="flex justify-center sm:justify-start">
                   {currentStep > 1 && (
                     <button
                       type="button"
                       onClick={prevStep}
-                      className="px-5 py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold transition-all flex items-center gap-2"
+                      className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold transition-all flex items-center justify-center gap-2"
                     >
                       <ChevronLeft className="w-4 h-4" />
                       Back
@@ -1085,12 +1137,12 @@ export default function RegisterPage() {
                   )}
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 w-full sm:w-auto">
                   {currentStep < 5 ? (
                     <button
                       type="button"
                       onClick={nextStep}
-                      className="px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold shadow-lg transition-all flex items-center gap-2"
+                      className="w-full sm:w-auto px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold shadow-lg transition-all flex items-center justify-center gap-2"
                     >
                       Next
                       <ChevronRight className="w-4 h-4" />
@@ -1099,7 +1151,7 @@ export default function RegisterPage() {
                     <button
                       type="submit"
                       disabled={loading}
-                      className="px-8 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                      className="w-full sm:w-auto px-6 sm:px-8 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm sm:text-base"
                     >
                       {loading ? (
                         <>
@@ -1108,7 +1160,7 @@ export default function RegisterPage() {
                         </>
                       ) : (
                         <>
-                          <Check className="w-5 h-5" />
+                          <Check className="w-5 h-5 flex-shrink-0" />
                           Complete Registration
                         </>
                       )}

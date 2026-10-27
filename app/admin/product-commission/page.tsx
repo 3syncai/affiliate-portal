@@ -156,70 +156,99 @@ export default function ProductCommissionPage() {
     )
   }
 
+  const renderAdditionalCommission = (product: Product) => {
+    const active = additionalCampaigns.filter(
+      (c) => c.product_id === product.id && c.runtime_status === "ACTIVE"
+    )
+    const upcoming = additionalCampaigns.filter(
+      (c) => c.product_id === product.id && c.runtime_status === "UPCOMING"
+    )
+    if (active.length === 0 && upcoming.length === 0) {
+      return <span className="text-xs text-gray-400">—</span>
+    }
+    return (
+      <div className="space-y-1">
+        {active.map((c) => (
+          <div key={c.id} className="flex items-center gap-1.5 flex-wrap">
+            <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+            <span className="text-xs font-semibold text-emerald-700">+{c.additional_rate}%</span>
+            <span className="text-xs text-gray-500">({roleLabels[c.target_role] ?? c.target_role})</span>
+          </div>
+        ))}
+        {upcoming.map((c) => (
+          <div key={c.id} className="flex items-center gap-1.5 flex-wrap">
+            <span className="inline-block w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0" />
+            <span className="text-xs font-semibold text-blue-600">+{c.additional_rate}%</span>
+            <span className="text-xs text-gray-400">(upcoming · {roleLabels[c.target_role] ?? c.target_role})</span>
+          </div>
+        ))}
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Product Commission</h1>
-        <p className="text-gray-600 mt-1">Manage commission settings for products, categories, and brands</p>
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Product Commission</h1>
+        <p className="text-gray-600 mt-1 text-sm sm:text-base">Manage commission settings for products, categories, and brands</p>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Total Products</p>
-              <p className="text-2xl font-bold text-gray-900 mt-2">{stats.total}</p>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-6 min-w-0">
+          <div className="flex items-center justify-between gap-2">
+            <div className="min-w-0">
+              <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">Total Products</p>
+              <p className="text-xl sm:text-2xl font-bold text-gray-900 mt-1 sm:mt-2">{stats.total}</p>
             </div>
-            <div className="bg-blue-100 p-3 rounded-lg">
-              <Package className="w-6 h-6 text-blue-600" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">In Stock</p>
-              <p className="text-2xl font-bold text-green-600 mt-2">{stats.in_stock}</p>
-            </div>
-            <div className="bg-green-100 p-3 rounded-lg">
-              <CheckCircle className="w-6 h-6 text-green-600" />
+            <div className="bg-blue-100 p-2 sm:p-3 rounded-lg shrink-0">
+              <Package className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Out of Stock</p>
-              <p className="text-2xl font-bold text-red-600 mt-2">{stats.out_of_stock}</p>
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-6 min-w-0">
+          <div className="flex items-center justify-between gap-2">
+            <div className="min-w-0">
+              <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">In Stock</p>
+              <p className="text-xl sm:text-2xl font-bold text-green-600 mt-1 sm:mt-2">{stats.in_stock}</p>
             </div>
-            <div className="bg-red-100 p-3 rounded-lg">
-              <XCircle className="w-6 h-6 text-red-600" />
+            <div className="bg-green-100 p-2 sm:p-3 rounded-lg shrink-0">
+              <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Filtered Results</p>
-              <p className="text-2xl font-bold text-indigo-600 mt-2">{filteredProducts.length}</p>
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-6 min-w-0">
+          <div className="flex items-center justify-between gap-2">
+            <div className="min-w-0">
+              <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">Out of Stock</p>
+              <p className="text-xl sm:text-2xl font-bold text-red-600 mt-1 sm:mt-2">{stats.out_of_stock}</p>
             </div>
-            <div className="bg-indigo-100 p-3 rounded-lg">
-              <TrendingUp className="w-6 h-6 text-indigo-600" />
+            <div className="bg-red-100 p-2 sm:p-3 rounded-lg shrink-0">
+              <XCircle className="w-5 h-5 sm:w-6 sm:h-6 text-red-600" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-6 min-w-0">
+          <div className="flex items-center justify-between gap-2">
+            <div className="min-w-0">
+              <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">Filtered Results</p>
+              <p className="text-xl sm:text-2xl font-bold text-indigo-600 mt-1 sm:mt-2">{filteredProducts.length}</p>
+            </div>
+            <div className="bg-indigo-100 p-2 sm:p-3 rounded-lg shrink-0">
+              <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-indigo-600" />
             </div>
           </div>
         </div>
       </div>
 
-      {/* Search and Filters */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 relative z-10">
-        <div className="flex flex-col md:flex-row gap-4">
-          {/* Search */}
-          <div className="flex-1 relative z-10">
+      {/* Search and Filters — stacked on mobile */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 relative z-10">
+        <div className="flex flex-col gap-3 sm:gap-4">
+          <div className="w-full relative z-10">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5 z-10" />
             <input
               type="text"
@@ -230,19 +259,17 @@ export default function ProductCommissionPage() {
             />
           </div>
 
-          {/* Filter Toggle */}
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className="flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 bg-white text-gray-700"
+            className="flex items-center justify-center w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 bg-white text-gray-700"
           >
             <Filter className="w-5 h-5 mr-2 text-gray-500" />
             Filters
           </button>
         </div>
 
-        {/* Filter Options */}
         {showFilters && (
-          <div className="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4 pt-4 border-t border-gray-200 relative z-10 bg-white">
+          <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-4 border-t border-gray-200 relative z-10 bg-white">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
               <select
@@ -307,166 +334,233 @@ export default function ProductCommissionPage() {
         )}
       </div>
 
-      {/* Products Table */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Product
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Category
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Brand
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Inventory
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Commission
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Additional Commission
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredProducts.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
-                    No products found
-                  </td>
-                </tr>
-              ) : (
-                filteredProducts.map((product) => (
-                  <tr key={product.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center">
-                        {product.thumbnail && (
-                          <img
-                            src={product.thumbnail}
-                            alt={product.title}
-                            className="w-12 h-12 rounded-lg object-cover mr-3"
-                          />
-                        )}
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">{product.title}</div>
-                          <div className="text-xs text-gray-500">SKU: {product.variants[0]?.sku || "N/A"}</div>
-                        </div>
+      {filteredProducts.length === 0 ? (
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 sm:p-12 text-center text-gray-500">
+          No products found
+        </div>
+      ) : (
+        <>
+          {/* Mobile cards */}
+          <div className="md:hidden space-y-3">
+            {filteredProducts.map((product) => (
+              <div
+                key={product.id}
+                className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 min-w-0"
+              >
+                <div className="flex items-start gap-3 mb-3">
+                  {product.thumbnail ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={product.thumbnail}
+                      alt={product.title}
+                      className="w-12 h-12 rounded-lg object-cover shrink-0"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
+                      <Package className="w-5 h-5 text-gray-400" />
+                    </div>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-gray-900 truncate">{product.title}</p>
+                        <p className="text-xs text-gray-500 truncate">SKU: {product.variants[0]?.sku || "N/A"}</p>
                       </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        {product.categories.length > 0 ? (
-                          <div className="space-y-1">
-                            {product.categories.map((cat) => (
-                              <div key={cat.id} className="flex items-center">
-                                <span>{cat.name}</span>
-                                {cat.commission > 0 && (
-                                  <span className="ml-2 text-xs text-green-600">
-                                    ({cat.commission}%)
-                                  </span>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <span className="text-gray-400">No category</span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        {product.collection ? (
-                          <div>
-                            <div>{product.collection.title}</div>
-                            {product.collection.commission > 0 && (
-                              <div className="text-xs text-green-600">
-                                Commission: {product.collection.commission}%
-                              </div>
-                            )}
-                          </div>
-                        ) : (
-                          <span className="text-gray-400">No brand</span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm">
-                        <div className={`font-medium ${product.in_stock ? "text-green-600" : "text-red-600"}`}>
-                          {product.total_inventory} units
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          {product.variants.length} variant{product.variants.length !== 1 ? "s" : ""}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm">
-                        <div className="font-medium text-indigo-600">
-                          {product.commission > 0 ? `${product.commission}%` : "Not set"}
-                        </div>
-                        {product.variants[0]?.price && (
-                          <div className="text-xs text-gray-500">
-                            Price: {formatCurrency(product.variants[0].price)}
-                          </div>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      {(() => {
-                        const active = additionalCampaigns.filter(
-                          (c) => c.product_id === product.id && c.runtime_status === "ACTIVE"
-                        )
-                        const upcoming = additionalCampaigns.filter(
-                          (c) => c.product_id === product.id && c.runtime_status === "UPCOMING"
-                        )
-                        if (active.length === 0 && upcoming.length === 0) {
-                          return <span className="text-xs text-gray-400">—</span>
-                        }
-                        return (
-                          <div className="space-y-1">
-                            {active.map((c) => (
-                              <div key={c.id} className="flex items-center gap-1.5">
-                                <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-                                <span className="text-xs font-semibold text-emerald-700">+{c.additional_rate}%</span>
-                                <span className="text-xs text-gray-500">({roleLabels[c.target_role] ?? c.target_role})</span>
-                              </div>
-                            ))}
-                            {upcoming.map((c) => (
-                              <div key={c.id} className="flex items-center gap-1.5">
-                                <span className="inline-block w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0" />
-                                <span className="text-xs font-semibold text-blue-600">+{c.additional_rate}%</span>
-                                <span className="text-xs text-gray-400">(upcoming · {roleLabels[c.target_role] ?? c.target_role})</span>
-                              </div>
-                            ))}
-                          </div>
-                        )
-                      })()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
                       <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${product.in_stock
-                          ? "bg-green-100 text-green-800"
-                          : "bg-red-100 text-red-800"
-                          }`}
+                        className={`shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                          product.in_stock ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
+                        }`}
                       >
                         {product.in_stock ? "In Stock" : "Out of Stock"}
                       </span>
-                    </td>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-xs text-gray-600 mb-3">
+                  <div className="min-w-0">
+                    <p className="uppercase tracking-wide text-[10px] text-gray-400 font-semibold">Category</p>
+                    {product.categories.length > 0 ? (
+                      <div className="space-y-0.5">
+                        {product.categories.map((cat) => (
+                          <p key={cat.id} className="truncate">
+                            {cat.name}
+                            {cat.commission > 0 ? ` (${cat.commission}%)` : ""}
+                          </p>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-gray-400">No category</p>
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="uppercase tracking-wide text-[10px] text-gray-400 font-semibold">Brand</p>
+                    {product.collection ? (
+                      <p className="truncate">
+                        {product.collection.title}
+                        {product.collection.commission > 0 ? ` (${product.collection.commission}%)` : ""}
+                      </p>
+                    ) : (
+                      <p className="text-gray-400">No brand</p>
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="uppercase tracking-wide text-[10px] text-gray-400 font-semibold">Inventory</p>
+                    <p className={`font-medium ${product.in_stock ? "text-green-600" : "text-red-600"}`}>
+                      {product.total_inventory} units
+                    </p>
+                    <p className="text-gray-500">
+                      {product.variants.length} variant{product.variants.length !== 1 ? "s" : ""}
+                    </p>
+                  </div>
+                  <div className="min-w-0">
+                    <p className="uppercase tracking-wide text-[10px] text-gray-400 font-semibold">Commission</p>
+                    <p className="font-medium text-indigo-600">
+                      {product.commission > 0 ? `${product.commission}%` : "Not set"}
+                    </p>
+                    {product.variants[0]?.price != null && (
+                      <p className="text-gray-500 truncate">{formatCurrency(product.variants[0].price)}</p>
+                    )}
+                  </div>
+                  <div className="min-w-0 col-span-2">
+                    <p className="uppercase tracking-wide text-[10px] text-gray-400 font-semibold mb-1">
+                      Additional Commission
+                    </p>
+                    {renderAdditionalCommission(product)}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop table */}
+          <div className="hidden md:block bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Product
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Category
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Brand
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Inventory
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Commission
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Additional Commission
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Status
+                    </th>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {filteredProducts.map((product) => (
+                    <tr key={product.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center">
+                          {product.thumbnail && (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={product.thumbnail}
+                              alt={product.title}
+                              className="w-12 h-12 rounded-lg object-cover mr-3"
+                            />
+                          )}
+                          <div>
+                            <div className="text-sm font-medium text-gray-900">{product.title}</div>
+                            <div className="text-xs text-gray-500">SKU: {product.variants[0]?.sku || "N/A"}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">
+                          {product.categories.length > 0 ? (
+                            <div className="space-y-1">
+                              {product.categories.map((cat) => (
+                                <div key={cat.id} className="flex items-center">
+                                  <span>{cat.name}</span>
+                                  {cat.commission > 0 && (
+                                    <span className="ml-2 text-xs text-green-600">
+                                      ({cat.commission}%)
+                                    </span>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-gray-400">No category</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">
+                          {product.collection ? (
+                            <div>
+                              <div>{product.collection.title}</div>
+                              {product.collection.commission > 0 && (
+                                <div className="text-xs text-green-600">
+                                  Commission: {product.collection.commission}%
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-gray-400">No brand</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm">
+                          <div className={`font-medium ${product.in_stock ? "text-green-600" : "text-red-600"}`}>
+                            {product.total_inventory} units
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {product.variants.length} variant{product.variants.length !== 1 ? "s" : ""}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm">
+                          <div className="font-medium text-indigo-600">
+                            {product.commission > 0 ? `${product.commission}%` : "Not set"}
+                          </div>
+                          {product.variants[0]?.price && (
+                            <div className="text-xs text-gray-500">
+                              Price: {formatCurrency(product.variants[0].price)}
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        {renderAdditionalCommission(product)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            product.in_stock
+                              ? "bg-green-100 text-green-800"
+                              : "bg-red-100 text-red-800"
+                          }`}
+                        >
+                          {product.in_stock ? "In Stock" : "Out of Stock"}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   )
 }

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import axios from "axios"
 import { RotateCcw, Search, XCircle, Package } from "lucide-react"
 import CommissionStatusBadge from "@/app/components/CommissionStatusBadge"
+import UserNavbar from "@/app/components/UserNavbar"
 import type { IssueType } from "@/lib/returns-response"
 
 type ReturnOrder = {
@@ -28,35 +29,6 @@ type ReturnStats = {
 }
 
 type FilterKey = "all" | "cancelled" | "return_requested"
-
-function SalesExecutiveNav({ userName }: { userName: string }) {
-  return (
-    <nav className="bg-white border-b border-gray-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
-          <div className="flex items-center gap-3">
-            <h1 className="text-xl font-semibold text-gray-900">Sales Executive</h1>
-            <a href="/dashboard" className="ml-4 inline-flex items-center gap-1.5 px-3 py-1 bg-white border border-gray-200 text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 rounded-md text-sm font-medium transition-colors">
-              Dashboard
-            </a>
-            <a href="/products" className="inline-flex items-center gap-1.5 px-3 py-1 bg-white border border-gray-200 text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 rounded-md text-sm font-medium transition-colors">
-              Products
-            </a>
-            <a href="/offers" className="inline-flex items-center gap-1.5 px-3 py-1 bg-white border border-gray-200 text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 rounded-md text-sm font-medium transition-colors">
-              Offers
-            </a>
-            <a href="/dashboard/profile" className="inline-flex items-center gap-1.5 px-3 py-1 bg-white border border-gray-200 text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 rounded-md text-sm font-medium transition-colors">
-              Profile
-            </a>
-          </div>
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-gray-600">Welcome, <strong className="text-gray-900">{userName}</strong></span>
-          </div>
-        </div>
-      </div>
-    </nav>
-  )
-}
 
 export default function AffiliateReturnsPage() {
   const router = useRouter()
@@ -167,16 +139,16 @@ export default function AffiliateReturnsPage() {
   const userName = user?.first_name || user?.email || "Partner"
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <SalesExecutiveNav userName={userName} />
+    <div className="min-h-screen bg-gray-50 overflow-x-hidden">
+      <UserNavbar userName={userName} />
 
-      <main className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 space-y-6">
+      <main className="max-w-7xl mx-auto py-6 sm:py-8 px-4 sm:px-6 lg:px-8 space-y-6">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <RotateCcw className="w-6 h-6 text-rose-600" />
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-2">
+            <RotateCcw className="w-6 h-6 text-rose-600 shrink-0" />
             Total Returns
           </h2>
-          <p className="text-gray-600 mt-1">
+          <p className="text-gray-600 mt-1 text-sm sm:text-base">
             Cancelled and return-requested orders from your referred customers
           </p>
         </div>

@@ -53,7 +53,7 @@ export function Toast({ message, type = "success", duration = 5000, onClose, amo
 
     return (
         <div
-            className={`fixed top-4 right-4 z-[9999] flex items-center gap-3 px-4 py-3 rounded-xl border shadow-lg backdrop-blur-sm transition-all duration-300 ${backgrounds[type]
+            className={`fixed top-4 left-4 right-4 sm:left-auto sm:right-4 z-[9999] flex items-center gap-3 px-4 py-3 rounded-xl border shadow-lg backdrop-blur-sm transition-all duration-300 sm:max-w-sm w-auto min-w-0 ${backgrounds[type]
                 } ${isExiting ? "opacity-0 translate-x-4" : "opacity-100 translate-x-0"}`}
         >
             <div className="flex-shrink-0">
@@ -65,8 +65,8 @@ export function Toast({ message, type = "success", duration = 5000, onClose, amo
                     icons[type]
                 )}
             </div>
-            <div className="flex-1">
-                <p className="font-medium text-gray-900">{message}</p>
+            <div className="flex-1 min-w-0">
+                <p className="font-medium text-gray-900 break-words">{message}</p>
                 {formattedAmount && (
                     <p className="text-lg font-bold text-emerald-600">₹{formattedAmount}</p>
                 )}

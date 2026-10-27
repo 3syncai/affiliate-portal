@@ -1,0 +1,186 @@
+.page {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  align-items: center;
+  min-height: 100svh;
+  overflow: hidden;
+  padding: 64px 48px;
+  background: #fdfefd;
+  color: #122c25;
+  font-family: var(--font-geist-sans), Arial, sans-serif;
+}
+
+.backdrop {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.layout {
+  width: 100%;
+  max-width: 1240px;
+  margin: auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(360px, 1fr);
+  align-items: center;
+  gap: 48px;
+}
+
+.brand {
+  min-width: 0;
+  padding: 8px 0 24px;
+}
+
+.brandLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 44px 34px;
+  text-decoration: none;
+}
+
+.wordmark { display: flex; flex-direction: column; }
+
+.brandName {
+  display: block;
+  width: 240px;
+  height: auto;
+}
+
+.partnerName {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  color: #ab7c1d;
+  font: italic 900 30px/1.1 Arial, sans-serif;
+  letter-spacing: -.8px;
+}
+
+.partnerName svg { width: 36px; height: 36px; stroke-width: 3; color: #dda62f; }
+
+.tagline {
+  border-top: 1px solid #82bf52;
+  margin-top: 5px;
+  padding-top: 5px;
+  color: #1a6940;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: .65px;
+}
+
+.brandCopy h1 {
+  margin: 0;
+  color: #c5a153;
+  font-size: clamp(28px, 3vw, 40px);
+  line-height: 1.2;
+  font-weight: 800;
+  letter-spacing: -1.6px;
+}
+
+.headingLogo {
+  display: inline-block;
+  width: auto;
+  height: .82em;
+  vertical-align: -.04em;
+}
+
+.brandCopy > p { margin: 10px 0 0; color: #74798b; font-size: 19px; line-height: 1.6; letter-spacing: -.3px; }
+
+.growth { position: relative; min-height: 285px; margin-top: 30px; }
+
+.features { position: relative; z-index: 1; display: grid; gap: 25px; margin: 0; padding: 0; list-style: none; }
+.features li { display: flex; gap: 16px; align-items: center; }
+.features li > span:last-child { display: flex; flex-direction: column; font-size: 14px; line-height: 1.55; }
+.features strong { font-weight: 700; color: #176246; }
+.features li > span:last-child > span { color: #303c36; }
+
+.featureIcon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 54px;
+  height: 54px;
+  color: #fff;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #83c735 0%, #119644 55%, #087a37 100%);
+  box-shadow: inset 0 1px 4px #ffffff75, 0 4px 12px #329c3115;
+}
+
+.featureIcon svg { width: 28px; height: 28px; stroke-width: 1.65; }
+.illustration { position: absolute; right: -20px; bottom: -20px; width: 65%; height: auto; object-fit: contain; pointer-events: none; }
+
+.formSection { position: relative; width: 100%; padding-bottom: 28px; }
+.card { border: 1px solid #f0f2ec; border-radius: 16px; padding: 44px 40px 30px; background: #ffffffed; box-shadow: 0 8px 40px #23402a0c, 0 2px 12px #233c2410; }
+.formHeader { margin-bottom: 30px; }
+.formHeader h2 { margin: 0 0 6px; color: #10291f; font-size: 35px; line-height: 1.2; letter-spacing: -1.3px; font-weight: 800; }
+.formHeader p { margin: 0; font-size: 14px; line-height: 1.6; color: #7a7f91; }
+
+.form { display: flex; flex-direction: column; gap: 22px; }
+.form label { margin-bottom: 8px; color: #202a25; font-size: 13px; font-weight: 600; }
+.form input { min-height: 47px; padding-top: 12px; padding-bottom: 12px; border-radius: 7px; border-color: #dfe2e9; background: #fff; color: #23372b; font-family: inherit; font-size: 13px; box-shadow: 0 1px 2px #20392803; }
+.form input::placeholder { color: #8a8fa2; opacity: 1; }
+.form input:focus { border-color: #079448; outline: 3px solid #07944816; --tw-ring-color: transparent; }
+.form input + button { border-radius: 0 7px 7px 0; }
+.form input + button:focus-visible { outline: 2px solid #079448; outline-offset: 2px; }
+.form svg { width: 18px; height: 18px; }
+.form input + button svg, .form input ~ button svg { color: #80859b; }
+.form a { color: #008b42; font-size: 12px; font-weight: 700; }
+.form > div:has(> a[href="/forgot-password"]) { margin-top: -11px; }
+.form button[type="submit"] { min-height: 47px; margin-top: 4px; padding: 12px 16px; background: linear-gradient(100deg, #009b50, #008a43); border: 1px solid #009345; border-radius: 7px; box-shadow: 0 6px 14px #087b3824; font-size: 15px; font-weight: 600; transform: none; transition: background .2s, box-shadow .2s; }
+.form button[type="submit"]:hover:not(:disabled) { background: #007e3d; box-shadow: 0 7px 16px #087b3833; }
+.form button[type="submit"]:focus-visible { outline: 3px solid #8acb7a; outline-offset: 3px; }
+.signup { margin-top: 30px; padding-top: 19px; border-top: 1px solid #e1e6df; text-align: center; }
+.signup p { margin: 0; color: #374139; font-size: 13px; line-height: 1.8; }
+.signup a { padding-left: 4px; color: #007d3b; font-weight: 700; white-space: nowrap; }
+.signup a:hover, .form a:hover { text-decoration: underline; }
+.footer { position: absolute; top: calc(100% - 10px); left: -20px; right: -20px; display: flex; align-items: center; justify-content: center; gap: 7px; color: #828796; font-size: 9px; line-height: 1.6; text-align: center; }
+.footer svg { width: 13px; height: 13px; color: #198746; flex-shrink: 0; }
+.footerDot { padding: 0 5px; }
+
+@media (min-width: 1500px) { .layout { gap: 76px; } }
+
+@media (max-width: 1100px) {
+  .page { padding: 48px 32px; }
+  .layout { grid-template-columns: minmax(0, 1.2fr) minmax(330px, 1fr); gap: 32px; }
+  .card { padding: 36px 30px 26px; }
+  .formHeader h2 { font-size: 31px; }
+  .brandCopy h1 { font-size: 31px; letter-spacing: -1.2px; }
+  .brandCopy > p { font-size: 16px; }
+  .features li { gap: 12px; }
+  .features li > span:last-child { font-size: 12px; }
+  .featureIcon { width: 46px; height: 46px; }
+  .illustration { width: 64%; right: -16px; bottom: -5px; }
+  .brandLink { margin-left: 10px; }
+}
+
+@media (max-width: 760px) {
+  .page { display: block; padding: 36px 20px 64px; }
+  .layout { max-width: 440px; display: flex; flex-direction: column; gap: 26px; }
+  .brand { padding: 0; text-align: center; }
+  .brandLink { margin: 0 0 22px; gap: 5px; }
+  .brandName { width: 178px; }
+  .partnerName { font-size: 22px; }
+  .partnerName svg { width: 26px; height: 26px; }
+  .tagline { font-size: 6px; letter-spacing: .5px; }
+  .brandCopy h1 { font-size: 27px; letter-spacing: -1px; }
+  .brandCopy > p { margin-top: 7px; font-size: 13px; }
+  .growth { display: none; }
+  .card { padding: 30px 26px 26px; border-radius: 14px; }
+  .formHeader { margin-bottom: 27px; }
+  .formHeader h2 { font-size: 30px; }
+  .formHeader p { font-size: 12px; }
+  .form { gap: 21px; }
+  .form input { font-size: 12px; min-height: 48px; }
+  .signup p { font-size: 12px; }
+  .footer { left: -8px; right: -8px; font-size: 8px; }
+  .footerDot { padding: 0 2px; }
+  .backdrop { opacity: .75; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .form input, .form button { transition: none; }
+}

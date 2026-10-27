@@ -5,6 +5,10 @@ import { Search, Package, IndianRupee, Box, Share2 } from "lucide-react"
 import axios from "axios"
 import { STORE_URL } from "@/lib/config"
 import { useTheme } from "@/contexts/ThemeContext"
+import {
+    ProductRoleCommissionDisplay,
+    ProductRoleCommissionRateBadge,
+} from "@/app/components/ProductRoleCommissionDisplay"
 
 interface Product {
     id: string
@@ -120,19 +124,19 @@ export default function BranchProductsPage() {
     }
 
     return (
-        <div className="space-y-6">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                <div>
-                    <h1 className="text-3xl font-bold text-gray-900">Commission Overview</h1>
-                    <p className="text-gray-600 mt-1">Direct sales earn you maximum commission</p>
+        <div className="space-y-4 sm:space-y-6 min-w-0">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 sm:gap-4">
+                <div className="min-w-0">
+                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Commission Overview</h1>
+                    <p className="text-gray-600 mt-1 text-sm sm:text-base">Direct sales earn you maximum commission</p>
                 </div>
-                <div className="px-4 py-2 rounded-full text-sm font-medium" style={{ backgroundColor: theme.primaryLight, color: theme.primary }}>
+                <div className="self-start px-4 py-2 rounded-full text-sm font-medium shrink-0" style={{ backgroundColor: theme.primaryLight, color: theme.primary }}>
                     {filteredProducts.length} Products Available
                 </div>
             </div>
 
-            <div className="flex flex-col lg:flex-row gap-4">
-                <div className="flex-1 relative">
+            <div className="flex flex-col lg:flex-row gap-3 sm:gap-4">
+                <div className="flex-1 relative min-w-0">
                     <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
                     <input
                         type="text"
@@ -146,7 +150,7 @@ export default function BranchProductsPage() {
                 <div className="flex flex-wrap gap-2">
                     <button
                         onClick={() => setSelectedCategory("all")}
-                        className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${selectedCategory === "all"
+                        className={`px-3 sm:px-4 py-2 rounded-full text-sm font-medium transition-all ${selectedCategory === "all"
                             ? "text-white"
                             : "bg-white border border-gray-200 text-gray-700 hover:bg-gray-50"
                             }`}
@@ -158,7 +162,7 @@ export default function BranchProductsPage() {
                         <button
                             key={category}
                             onClick={() => setSelectedCategory(category)}
-                            className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${selectedCategory === category
+                            className={`px-3 sm:px-4 py-2 rounded-full text-sm font-medium transition-all ${selectedCategory === category
                                 ? "text-white"
                                 : "bg-white border border-gray-200 text-gray-700 hover:bg-gray-50"
                                 }`}
@@ -177,17 +181,17 @@ export default function BranchProductsPage() {
             )}
 
             {filteredProducts.length === 0 ? (
-                <div className="text-center py-16 bg-white rounded-lg shadow-sm border border-gray-200">
+                <div className="text-center py-12 sm:py-16 bg-white rounded-lg shadow-sm border border-gray-200 p-4">
                     <Package className="mx-auto text-gray-400 mb-4" size={48} />
                     <h3 className="text-lg font-medium text-gray-900 mb-2">No products found</h3>
-                    <p className="text-gray-600">
+                    <p className="text-gray-600 text-sm sm:text-base">
                         {searchQuery || selectedCategory !== "all"
                             ? "Try adjusting your search or filter criteria"
                             : "Products with commission will appear here once admin sets them up"}
                     </p>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                     {filteredProducts.map((product) => (
                         <ProductCard
                             key={product.id}
@@ -206,9 +210,6 @@ export default function BranchProductsPage() {
 
 function ProductCard({ product, user, theme, commissionRate, additionalCommissionRate }: { product: Product; user: any; theme: any; commissionRate: number; additionalCommissionRate: number }) {
     const [copied, setCopied] = useState(false)
-
-    const actualCommission = product.commissionAmount * (commissionRate / 100)
-    const additionalCommissionAmount = product.price * (additionalCommissionRate / 100)
 
     const handleShare = () => {
         const referralCode = user?.refer_code || ''
@@ -248,12 +249,12 @@ function ProductCard({ product, user, theme, commissionRate, additionalCommissio
                 )}
             </div>
 
-            <div className="p-5">
-                <div className="flex items-start justify-between gap-2 mb-2">
-                    <h3 className="font-semibold text-gray-900 text-lg leading-tight line-clamp-2">
+            <div className="p-4 sm:p-5">
+                <div className="flex flex-col gap-2 min-[400px]:flex-row min-[400px]:items-start min-[400px]:justify-between mb-2">
+                    <h3 className="font-semibold text-gray-900 text-base sm:text-lg leading-tight line-clamp-2 min-w-0">
                         {product.title}
                     </h3>
-                    <span className={`px-2 py-0.5 text-xs font-medium rounded-full whitespace-nowrap ${product.isInStock
+                    <span className={`self-start px-2 py-0.5 text-xs font-medium rounded-full whitespace-nowrap ${product.isInStock
                         ? "bg-green-100 text-green-700"
                         : "bg-red-100 text-red-700"
                         }`}>
@@ -265,7 +266,7 @@ function ProductCard({ product, user, theme, commissionRate, additionalCommissio
                     {product.description || "No description available"}
                 </p>
 
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
                     <div className="flex items-center gap-1">
                         <span className="text-yellow-500">★</span>
                         <span className="text-sm text-gray-600">4.5</span>
@@ -275,18 +276,18 @@ function ProductCard({ product, user, theme, commissionRate, additionalCommissio
                     </span>
                 </div>
 
-                <div className="flex items-center justify-between mb-3">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-3">
                     <div className="flex items-center gap-1">
                         <IndianRupee size={16} className="text-gray-700" />
                         <span className="text-xl font-bold text-gray-900">
                             {product.price.toLocaleString("en-IN")}
                         </span>
                     </div>
-                    {product.commissionRate && (
-                        <span className="text-sm font-medium" style={{ color: theme.primary }}>
-                            {product.commissionRate}% commission
-                        </span>
-                    )}
+                    <ProductRoleCommissionRateBadge
+                        productCommissionRate={product.commissionRate}
+                        roleDirectRate={commissionRate}
+                        theme={theme}
+                    />
                 </div>
 
                 {product.inventoryQuantity > 0 && (
@@ -296,35 +297,14 @@ function ProductCard({ product, user, theme, commissionRate, additionalCommissio
                     </div>
                 )}
 
-                {product.commissionRate && (
-                    <div className="rounded-lg px-3 py-2 space-y-1" style={{ backgroundColor: theme.primaryLight, border: `1px solid ${theme.primary}20` }}>
-                        <div className="flex justify-between items-center">
-                            <span className="text-xs font-medium text-gray-600">Your Share ({commissionRate}%):</span>
-                            <span className="font-bold text-lg" style={{ color: theme.primary }}>
-                                ₹{actualCommission.toLocaleString("en-IN", {
-                                    minimumFractionDigits: 2,
-                                    maximumFractionDigits: 2
-                                })}
-                            </span>
-                        </div>
-                        <div className="flex justify-between items-center text-xs text-gray-500 border-t border-gray-200 pt-1 mt-1">
-                            <span>Total Commission:</span>
-                            <span>₹{product.commissionAmount.toLocaleString("en-IN", {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2
-                            })}</span>
-                        </div>
-                    </div>
-                )}
-
-                {additionalCommissionRate > 0 && (
-                    <div className="mt-2 rounded-lg px-3 py-2 space-y-1 bg-emerald-50 border border-emerald-200">
-                        <div className="text-xs font-medium text-emerald-700">Additional Commission</div>
-                        <div className="text-sm font-semibold text-emerald-700">
-                            +{additionalCommissionRate}% (₹{additionalCommissionAmount.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
-                        </div>
-                    </div>
-                )}
+                <ProductRoleCommissionDisplay
+                    productCommissionRate={product.commissionRate}
+                    productCommissionAmount={product.commissionAmount}
+                    productPrice={product.price}
+                    roleDirectRate={commissionRate}
+                    additionalCommissionRate={additionalCommissionRate}
+                    theme={theme}
+                />
             </div>
         </div>
     )

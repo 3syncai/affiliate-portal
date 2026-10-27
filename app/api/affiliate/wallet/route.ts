@@ -75,13 +75,15 @@ export async function GET(request: Request) {
         const withdrawnQuery = `
       SELECT 
         COALESCE(SUM(CASE WHEN status = 'PAID' THEN net_payable ELSE 0 END), 0) as paid_out,
-        COALESCE(SUM(CASE WHEN status = 'PAID' THEN withdrawal_amount ELSE 0 END), 0) as total_deducted
+        COALESCE(SUM(CASE WHEN status = 'PAID' THEN withdrawal_amount ELSE 0 END), 0) as total_deducted,
+        COALESCE(SUM(CASE WHEN status = 'PAID' THEN gst_amount ELSE 0 END), 0) as total_tds_deducted
       FROM withdrawal_request
       WHERE affiliate_code = $1
     `;
         const withdrawnResult = await pool.query(withdrawnQuery, [referCode]);
         const totalPaidOut = parseFloat(withdrawnResult.rows[0]?.paid_out) || 0;
         const totalDeducted = parseFloat(withdrawnResult.rows[0]?.total_deducted) || 0;
+        const totalTdsDeducted = parseFloat(withdrawnResult.rows[0]?.total_tds_deducted) || 0;
 
         // Calculate available balance dynamically (never gets out of sync!)
         // Available = Total Earned (70% of commissions) - Total Deducted (approved/paid withdrawals)
@@ -98,7 +100,8 @@ export async function GET(request: Request) {
             balance: {
                 current: availableBalance,  // Calculated dynamically!
                 totalEarned: totalEarned,
-                withdrawn: totalPaidOut  // Only PAID withdrawals (actual money sent)
+                withdrawn: totalPaidOut,  // Only PAID withdrawals (actual money sent)
+                tdsDeducted: totalTdsDeducted,
             },
             paymentMethod: user.payment_method ? {
                 method: user.payment_method,

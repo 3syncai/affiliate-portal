@@ -138,15 +138,15 @@ export default function CommissionSettingsPage() {
 
     return (
         <div className="space-y-6">
-            <div>
-                <h1 className="text-3xl font-bold text-gray-900">Commission Settings</h1>
-                <p className="text-gray-600 mt-1">
+            <div className="min-w-0">
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Commission Settings</h1>
+                <p className="text-gray-600 mt-1 text-sm sm:text-base">
                     Manage commission rates for different admin roles
                 </p>
             </div>
 
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 max-w-2xl">
-                <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 max-w-2xl">
+                <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
                     {/* Error Alert */}
                     {error && (
                         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
@@ -203,12 +203,12 @@ export default function CommissionSettingsPage() {
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="flex gap-3 pt-4">
+                    <div className="flex flex-col-reverse sm:flex-row gap-3 pt-4">
                         <button
                             type="button"
                             onClick={fetchRates}
                             disabled={saving}
-                            className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2"
+                            className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
                         >
                             <RefreshCw className="w-4 h-4" />
                             Reset
@@ -235,7 +235,7 @@ export default function CommissionSettingsPage() {
             </div>
 
             {/* Information Card */}
-            <div className="bg-gray-50 rounded-lg border border-gray-200 p-6 max-w-2xl">
+            <div className="bg-gray-50 rounded-lg border border-gray-200 p-4 sm:p-6 max-w-2xl">
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">How Commission Works</h3>
                 <ul className="space-y-2 text-sm text-gray-700">
                     <li className="flex items-start">

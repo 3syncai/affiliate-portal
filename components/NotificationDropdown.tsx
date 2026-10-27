@@ -119,7 +119,7 @@ export default function NotificationDropdown({ userId, userRole }: NotificationD
                     />
 
                     {/* Dropdown Panel */}
-                    <div className="absolute right-0 mt-2 w-96 bg-white rounded-xl shadow-2xl border border-gray-200 z-40 max-h-[500px] flex flex-col">
+                    <div className="absolute right-0 mt-2 w-[calc(100vw-2rem)] max-w-sm sm:w-96 sm:max-w-none bg-white rounded-xl shadow-2xl border border-gray-200 z-40 max-h-[calc(100dvh-5rem)] flex flex-col">
                         {/* Header */}
                         <div className="flex items-center justify-between p-4 border-b border-gray-200">
                             <div>

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import CommissionStatusBadge from "@/app/components/CommissionStatusBadge";
 import {
   DollarSign,
   CheckCircle,
@@ -21,6 +22,10 @@ export type RecentActivityFeedItem = {
   subtitle?: string;
   amount?: number | null;
   timestamp: string;
+  commissionStatus?: string;
+  unlockAt?: string | null;
+  hasReturn?: boolean;
+  hasReturnRequest?: boolean;
   variant?:
     | "commission"
     | "approval"
@@ -149,39 +154,50 @@ export default function RecentActivityFeed({
             const Icon = style.icon;
             const showAmount =
               activity.amount != null && Number(activity.amount) > 0;
+            const showCommissionStatus = Boolean(activity.commissionStatus);
 
             return (
               <div
                 key={activity.id}
-                className="p-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                className="p-3 sm:p-4 flex items-start sm:items-center justify-between gap-3 hover:bg-gray-50 transition-colors"
               >
-                <div className="flex items-center gap-4 min-w-0">
+                <div className="flex items-center gap-3 sm:gap-4 min-w-0">
                   <div
-                    className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${style.bg}`}
+                    className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center shrink-0 ${style.bg}`}
                   >
                     <Icon className={`w-5 h-5 ${style.iconClass}`} />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-gray-900">
+                    <p className="text-sm font-medium text-gray-900 break-words">
                       <span className="font-bold">{activity.name}</span>{" "}
                       {activity.action}
                     </p>
                     {activity.subtitle ? (
-                      <p className="text-xs text-gray-500 line-clamp-1">
+                      <p className="text-xs text-gray-500 line-clamp-2 sm:line-clamp-1">
                         {activity.subtitle}
                       </p>
                     ) : null}
                   </div>
                 </div>
-                <div className="text-right shrink-0 ml-4">
+                <div className="text-right shrink-0 ml-2 sm:ml-4">
                   {showAmount ? (
                     <p className="text-sm font-bold text-green-600">
                       +{formatCurrency(Number(activity.amount))}
                     </p>
                   ) : null}
-                  <p
-                    className={`text-xs text-gray-400 ${showAmount ? "" : "mt-1"}`}
-                  >
+                  {showCommissionStatus ? (
+                    <div className={`flex justify-end ${showAmount ? "mt-1" : ""}`}>
+                      <CommissionStatusBadge
+                        status={activity.commissionStatus!}
+                        unlockAt={activity.unlockAt}
+                        hasReturn={activity.hasReturn}
+                        returnRequestPending={
+                          activity.hasReturnRequest && !activity.hasReturn
+                        }
+                      />
+                    </div>
+                  ) : null}
+                  <p className="text-xs text-gray-400 mt-1">
                     {formatActivityDate(activity.timestamp)}
                   </p>
                 </div>

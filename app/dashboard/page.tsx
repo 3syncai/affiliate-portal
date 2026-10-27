@@ -16,10 +16,7 @@ import {
   DollarSign,
   RotateCcw,
   ArrowUpRight,
-  LogOut,
-  LayoutDashboard,
   Package,
-  Gift,
   User as UserIcon,
   Sparkles,
   CheckCircle2,
@@ -31,7 +28,7 @@ import {
   Hash,
 } from 'lucide-react'
 import { STORE_URL } from "@/lib/config"
-import ConfirmModal from "@/app/components/ConfirmModal"
+import UserNavbar from "@/app/components/UserNavbar"
 import CommissionStatusBadge from "@/app/components/CommissionStatusBadge"
 
 interface AffiliateStats {
@@ -94,7 +91,6 @@ export default function DashboardPage() {
   const [qrDataUrl, setQrDataUrl] = useState('')
   const [copied, setCopied] = useState(false)
   const [affiliateRate, setAffiliateRate] = useState<number>(100) // Default 100% if not set
-  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
   const loadImage = (src: string) =>
@@ -262,13 +258,6 @@ export default function DashboardPage() {
     }
   }
 
-  const performLogout = () => {
-    localStorage.removeItem("affiliate_token")
-    localStorage.removeItem("affiliate_user")
-    localStorage.removeItem("affiliate_role")
-    router.push("/login")
-  }
-
   const copyReferralCode = async () => {
     if (user?.refer_code) {
       await navigator.clipboard.writeText(user.refer_code)
@@ -312,7 +301,6 @@ export default function DashboardPage() {
   const greetingHour = new Date().getHours()
   const greeting = greetingHour < 12 ? 'Good morning' : greetingHour < 17 ? 'Good afternoon' : 'Good evening'
   const fullName = user?.first_name && user?.last_name ? `${user.first_name} ${user.last_name}` : user?.email
-  const initials = (user?.first_name?.[0] || '') + (user?.last_name?.[0] || '') || (user?.email?.[0] || 'U')
   const today = new Date().toLocaleDateString('en-IN', {
     weekday: 'long',
     day: 'numeric',
@@ -324,68 +312,14 @@ export default function DashboardPage() {
   const walletBalance = walletData?.success ? walletData.data.balance.current : 0
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/40">
-      {/* ─── Top Navigation ─────────────────────────────────────────── */}
-      <nav className="sticky top-0 z-40 backdrop-blur-xl bg-white/75 border-b border-slate-200/70">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16 gap-4">
-            {/* Brand + Primary Nav */}
-            <div className="flex items-center gap-2 sm:gap-6 min-w-0">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-sm shadow-emerald-200">
-                  <Sparkles className="w-5 h-5 text-white" />
-                </div>
-                <div className="hidden sm:flex flex-col leading-tight">
-                  <span className="text-[11px] font-semibold tracking-wider text-emerald-700 uppercase">Sales Executive</span>
-                  <span className="text-[10px] text-slate-400">Partner Console</span>
-                </div>
-              </div>
-
-              <div className="hidden md:flex items-center gap-1 bg-slate-100/70 p-1 rounded-xl">
-                <NavTab href="/dashboard" icon={LayoutDashboard} label="Dashboard" active />
-                <NavTab href="/products" icon={Package} label="Products" />
-                <NavTab href="/offers" icon={Gift} label="Offers" />
-                <NavTab href="/dashboard/profile" icon={UserIcon} label="Profile" />
-              </div>
-            </div>
-
-            {/* Live + User + Logout */}
-            <div className="flex items-center gap-2 sm:gap-3">
-              <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 bg-emerald-50 border border-emerald-100 rounded-full text-xs font-medium text-emerald-700">
-                <span className="relative flex h-2 w-2">
-                  <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                </span>
-                Live Updates
-              </div>
-
-              <div className="hidden sm:flex items-center gap-2.5 pl-3 pr-1 py-1 bg-white border border-slate-200 rounded-full shadow-sm">
-                <div className="text-right leading-tight">
-                  <p className="text-[11px] text-slate-400">Welcome</p>
-                  <p className="text-xs font-semibold text-slate-900 max-w-[140px] truncate">{fullName}</p>
-                </div>
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white text-xs font-bold uppercase">
-                  {initials}
-                </div>
-              </div>
-
-              <button
-                onClick={() => setShowLogoutConfirm(true)}
-                className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-slate-600 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
-              >
-                <LogOut className="w-4 h-4" />
-                <span className="hidden sm:inline">Logout</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </nav>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/40 overflow-x-hidden">
+      <UserNavbar userName={fullName || undefined} />
 
       {/* ─── Main Content ──────────────────────────────────────────── */}
-      <main className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-        <div className="space-y-8">
+      <main className="max-w-7xl mx-auto py-6 sm:py-8 px-4 sm:px-6 lg:px-8">
+        <div className="space-y-6 sm:space-y-8">
           {/* ─── Hero / Greeting ───────────────────────────────────── */}
-          <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-700 p-8 sm:p-10 text-white shadow-xl shadow-emerald-200/40">
+          <section className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-700 p-5 sm:p-8 lg:p-10 text-white shadow-xl shadow-emerald-200/40">
             <div className="absolute inset-0 opacity-20" style={{
               backgroundImage: 'radial-gradient(circle at 30% 50%, rgba(255,255,255,.35) 0, transparent 35%), radial-gradient(circle at 80% 20%, rgba(255,255,255,.25) 0, transparent 40%)'
             }} />
@@ -398,25 +332,25 @@ export default function DashboardPage() {
                   <Calendar className="w-4 h-4" />
                   <span>{today}</span>
                 </div>
-                <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight">
                   {greeting}, {user?.first_name || 'Partner'} 👋
                 </h1>
-                <p className="text-emerald-50/90 mt-2 text-base">
+                <p className="text-emerald-50/90 mt-2 text-sm sm:text-base">
                   Here's a snapshot of your performance and earnings.
                 </p>
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                 <a
                   href="/products"
-                  className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-white text-emerald-700 hover:bg-emerald-50 rounded-xl font-semibold text-sm shadow-md transition-all hover:scale-[1.02]"
+                  className="inline-flex w-full sm:w-auto items-center justify-center gap-2 px-5 py-3 bg-white text-emerald-700 hover:bg-emerald-50 rounded-xl font-semibold text-sm shadow-md transition-all hover:scale-[1.02]"
                 >
                   <Package className="w-4 h-4" />
                   Browse Products
                 </a>
                 <a
                   href="/dashboard/wallet"
-                  className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-white/15 backdrop-blur-sm border border-white/30 text-white hover:bg-white/25 rounded-xl font-semibold text-sm transition-all"
+                  className="inline-flex w-full sm:w-auto items-center justify-center gap-2 px-5 py-3 bg-white/15 backdrop-blur-sm border border-white/30 text-white hover:bg-white/25 rounded-xl font-semibold text-sm transition-all"
                 >
                   <Wallet className="w-4 h-4" />
                   Wallet
@@ -425,8 +359,8 @@ export default function DashboardPage() {
             </div>
           </section>
 
-          {/* ─── Stats Grid ────────────────────────────────────────── */}
-          <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+          {/* ─── Stats Grid — 2x2 matrix on mobile; wallet full-width under KPIs ── */}
+          <section className="grid grid-cols-2 gap-2.5 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 min-w-0">
             <StatCard
               label="Total Referrals"
               value={String(stats?.referrals.total || 0)}
@@ -469,26 +403,26 @@ export default function DashboardPage() {
               href="/dashboard/earnings"
             />
 
-            {/* Wallet Card — featured */}
-            <a href="/dashboard/wallet" className="group block">
-              <div className="relative h-full overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-700 p-5 shadow-lg shadow-emerald-200/50 hover:shadow-xl hover:shadow-emerald-300/50 transition-all hover:-translate-y-0.5">
+            {/* Wallet Card — featured; full-width on mobile under 2x2 KPI matrix */}
+            <a href="/dashboard/wallet" className="group block col-span-2 sm:col-span-1 min-w-0">
+              <div className="relative h-full overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-700 p-3.5 sm:p-5 shadow-lg shadow-emerald-200/50 hover:shadow-xl hover:shadow-emerald-300/50 transition-all hover:-translate-y-0.5">
                 <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/10 blur-2xl" />
                 <div className="relative">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="w-11 h-11 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center ring-1 ring-white/30">
-                      <Wallet className="w-5 h-5 text-white" />
+                  <div className="flex items-start justify-between mb-2 sm:mb-3">
+                    <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center ring-1 ring-white/30">
+                      <Wallet className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                     </div>
                     <ArrowUpRight className="w-4 h-4 text-white/80 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
                   </div>
                   <p className="text-[11px] uppercase tracking-wider text-emerald-100 font-semibold">Wallet Balance</p>
-                  <p className="text-3xl font-bold text-white mt-1 tracking-tight">₹{walletBalance.toFixed(2)}</p>
+                  <p className="text-2xl sm:text-3xl font-bold text-white mt-1 tracking-tight truncate">₹{walletBalance.toFixed(2)}</p>
                   {(stats?.wallet.locked || 0) > 0 ? (
-                    <p className="text-xs text-emerald-100/90 mt-2 flex items-center gap-1">
-                      <Sparkles className="w-3 h-3" />
-                      ₹{((stats?.wallet.locked || 0) * affiliateRate / 100).toFixed(2)} unlocking soon
+                    <p className="text-[11px] sm:text-xs text-emerald-100/90 mt-2 flex items-center gap-1">
+                      <Sparkles className="w-3 h-3 shrink-0" />
+                      <span className="truncate">₹{((stats?.wallet.locked || 0) * affiliateRate / 100).toFixed(2)} unlocking soon</span>
                     </p>
                   ) : (
-                    <p className="text-xs text-emerald-100/80 mt-2">All funds available</p>
+                    <p className="text-[11px] sm:text-xs text-emerald-100/80 mt-2">All funds available</p>
                   )}
                 </div>
               </div>
@@ -647,45 +581,45 @@ export default function DashboardPage() {
           </section>
 
           {/* ─── Recent Activity ──────────────────────────────────── */}
-          <section className="grid gap-6 lg:grid-cols-2">
+          <section className="grid gap-6 lg:grid-cols-2 min-w-0">
             {/* Recent Referrals */}
-            <div className="rounded-2xl bg-white border border-slate-200 shadow-sm">
-              <div className="flex items-center justify-between p-6 pb-3">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
+            <div className="rounded-2xl bg-white border border-slate-200 shadow-sm min-w-0 overflow-hidden">
+              <div className="flex items-center justify-between gap-2 p-4 sm:p-6 pb-3 min-w-0">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center shrink-0">
                     <Users className="w-4 h-4 text-blue-600" />
                   </div>
-                  <div>
-                    <h3 className="text-sm font-semibold text-slate-900">Recent Referrals</h3>
-                    <p className="text-[11px] text-slate-500">Latest customers you onboarded</p>
+                  <div className="min-w-0">
+                    <h3 className="text-sm font-semibold text-slate-900 truncate">Recent Referrals</h3>
+                    <p className="text-[11px] text-slate-500 truncate">Latest customers you onboarded</p>
                   </div>
                 </div>
-                <a href="/dashboard/referrals" className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 hover:text-emerald-800">
+                <a href="/dashboard/referrals" className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 hover:text-emerald-800 shrink-0">
                   View all <ArrowUpRight className="w-3 h-3" />
                 </a>
               </div>
 
-              <div className="px-6 pb-6">
+              <div className="px-4 sm:px-6 pb-6 min-w-0">
                 {stats?.recent_referrals && stats.recent_referrals.length > 0 ? (
                   <div className="space-y-2">
                     {stats.recent_referrals.slice(0, 5).map((ref) => {
                       const refInitials = ((ref.customer_name || ref.customer_email || 'C').trim()[0] || 'C').toUpperCase()
                       return (
-                        <div key={ref.id} className="group flex items-center justify-between gap-3 p-3 rounded-xl border border-transparent hover:border-slate-200 hover:bg-slate-50 transition-colors">
-                          <div className="flex items-center gap-3 min-w-0">
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                        <div key={ref.id} className="group flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 p-3 rounded-xl border border-transparent hover:border-slate-200 hover:bg-slate-50 transition-colors min-w-0 overflow-hidden">
+                          <div className="flex items-center gap-3 min-w-0 flex-1 overflow-hidden">
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white text-sm font-bold shrink-0">
                               {refInitials}
                             </div>
-                            <div className="min-w-0">
+                            <div className="min-w-0 flex-1 overflow-hidden">
                               <p className="text-sm font-semibold text-slate-900 truncate">{ref.customer_name || 'Customer'}</p>
                               <p className="text-xs text-slate-500 truncate">{ref.customer_email}</p>
                             </div>
                           </div>
-                          <div className="text-right flex-shrink-0">
+                          <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between sm:justify-start gap-2 sm:gap-0 sm:text-right shrink-0 pl-12 sm:pl-0">
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100">
                               {ref.total_orders} {ref.total_orders === 1 ? 'order' : 'orders'}
                             </span>
-                            <p className="text-[10px] text-slate-400 mt-1">{formatDate(ref.referred_at)}</p>
+                            <p className="text-[10px] text-slate-400 sm:mt-1">{formatDate(ref.referred_at)}</p>
                           </div>
                         </div>
                       )
@@ -704,32 +638,32 @@ export default function DashboardPage() {
             </div>
 
             {/* Recent Commission */}
-            <div className="rounded-2xl bg-white border border-slate-200 shadow-sm">
-              <div className="flex items-center justify-between p-6 pb-3">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
+            <div className="rounded-2xl bg-white border border-slate-200 shadow-sm min-w-0 overflow-hidden">
+              <div className="flex items-center justify-between gap-2 p-4 sm:p-6 pb-3 min-w-0">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center shrink-0">
                     <DollarSign className="w-4 h-4 text-emerald-600" />
                   </div>
-                  <div>
-                    <h3 className="text-sm font-semibold text-slate-900">Recent Commission</h3>
-                    <p className="text-[11px] text-slate-500">Earnings from your last referrals</p>
+                  <div className="min-w-0">
+                    <h3 className="text-sm font-semibold text-slate-900 truncate">Recent Commission</h3>
+                    <p className="text-[11px] text-slate-500 truncate">Earnings from your last referrals</p>
                   </div>
                 </div>
-                <a href="/dashboard/orders" className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 hover:text-emerald-800">
+                <a href="/dashboard/orders" className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 hover:text-emerald-800 shrink-0">
                   View all <ArrowUpRight className="w-3 h-3" />
                 </a>
               </div>
 
-              <div className="px-6 pb-6">
+              <div className="px-4 sm:px-6 pb-6 min-w-0">
                 {stats?.recent_commissions && stats.recent_commissions.length > 0 ? (
                   <div className="space-y-2">
                     {stats.recent_commissions.slice(0, 5).map((comm) => (
-                      <div key={comm.id} className="group flex items-center justify-between gap-3 p-3 rounded-xl border border-transparent hover:border-slate-200 hover:bg-slate-50 transition-colors">
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-100 to-teal-100 flex items-center justify-center flex-shrink-0">
+                      <div key={comm.id} className="group flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 p-3 rounded-xl border border-transparent hover:border-slate-200 hover:bg-slate-50 transition-colors min-w-0 overflow-hidden">
+                        <div className="flex items-center gap-3 min-w-0 flex-1 overflow-hidden">
+                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-100 to-teal-100 flex items-center justify-center shrink-0">
                             <Package className="w-4 h-4 text-emerald-700" />
                           </div>
-                          <div className="min-w-0">
+                          <div className="min-w-0 flex-1 overflow-hidden">
                             <p className="text-sm font-semibold text-slate-900 truncate">{comm.product_name}</p>
                             <p className="text-xs text-slate-500">
                               ₹{comm.order_amount} <span className="text-slate-300">·</span> {comm.commission_rate}%
@@ -737,11 +671,11 @@ export default function DashboardPage() {
                             <p className="text-[10px] text-slate-400 truncate">{comm.order_id}</p>
                           </div>
                         </div>
-                        <div className="text-right flex-shrink-0">
+                        <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between sm:justify-start gap-2 shrink-0 pl-12 sm:pl-0 sm:text-right">
                           <p className={`text-base font-bold ${comm.has_return ? "text-slate-400 line-through" : "text-emerald-600"}`}>
                             +₹{(comm.has_return ? 0 : comm.commission_amount).toFixed(2)}
                           </p>
-                          <div className="mt-1 flex justify-end">
+                          <div className="flex justify-end max-w-full">
                             <CommissionStatusBadge
                               status={comm.status}
                               unlockAt={comm.unlock_at}
@@ -793,19 +727,6 @@ export default function DashboardPage() {
           </section>
         </div>
       </main>
-
-      <ConfirmModal
-        open={showLogoutConfirm}
-        title="Do you want to logout?"
-        message="You will be returned to the login screen."
-        confirmLabel="Yes, logout"
-        cancelLabel="No"
-        onConfirm={() => {
-          setShowLogoutConfirm(false)
-          performLogout()
-        }}
-        onCancel={() => setShowLogoutConfirm(false)}
-      />
     </div>
   )
 }
@@ -816,31 +737,6 @@ export default function DashboardPage() {
  * ────────────────────────────────────────────────────────────────── */
 
 type LucideIcon = React.ComponentType<{ className?: string }>
-
-function NavTab({
-  href,
-  icon: Icon,
-  label,
-  active = false,
-}: {
-  href: string
-  icon: LucideIcon
-  label: string
-  active?: boolean
-}) {
-  return (
-    <a
-      href={href}
-      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${active
-        ? 'bg-white text-emerald-700 shadow-sm ring-1 ring-emerald-100'
-        : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
-        }`}
-    >
-      <Icon className="w-4 h-4" />
-      {label}
-    </a>
-  )
-}
 
 function StatCard({
   label,
@@ -864,22 +760,22 @@ function StatCard({
   href?: string
 }) {
   const card = (
-    <div className={`group relative overflow-hidden rounded-2xl bg-white border border-slate-200 p-5 shadow-sm transition-all h-full ${href ? 'hover:shadow-md hover:-translate-y-0.5 cursor-pointer' : 'hover:shadow-md hover:-translate-y-0.5'}`}>
-      <div className="flex items-start justify-between mb-3">
-        <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center shadow-sm ring-4 ${ringClass}`}>
-          <Icon className="w-5 h-5 text-white" />
+    <div className={`group relative overflow-hidden rounded-xl sm:rounded-2xl bg-white border border-slate-200 p-3.5 sm:p-5 shadow-sm transition-all h-full min-w-0 ${href ? 'hover:shadow-md hover:-translate-y-0.5 cursor-pointer' : 'hover:shadow-md hover:-translate-y-0.5'}`}>
+      <div className="flex items-start justify-between mb-2 sm:mb-3 gap-1">
+        <div className={`w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center shadow-sm ring-2 sm:ring-4 ${ringClass} shrink-0`}>
+          <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
         </div>
-        <ArrowUpRight className={`w-4 h-4 ${accent} ${href ? 'opacity-60 group-hover:opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity`} />
+        <ArrowUpRight className={`w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0 ${accent} ${href ? 'opacity-60 group-hover:opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity`} />
       </div>
-      <p className="text-[11px] uppercase tracking-wider font-semibold text-slate-500">{label}</p>
-      <p className="text-3xl font-bold text-slate-900 mt-1 tracking-tight">{value}</p>
-      <p className={`text-xs mt-2 ${metaTone === 'amber' ? 'text-amber-600 font-medium' : 'text-slate-500'}`}>{meta}</p>
+      <p className="text-[10px] sm:text-[11px] uppercase tracking-wider font-semibold text-slate-500 truncate">{label}</p>
+      <p className="text-xl sm:text-3xl font-bold text-slate-900 mt-0.5 sm:mt-1 tracking-tight truncate">{value}</p>
+      <p className={`text-[11px] sm:text-xs mt-1.5 sm:mt-2 line-clamp-2 ${metaTone === 'amber' ? 'text-amber-600 font-medium' : 'text-slate-500'}`}>{meta}</p>
     </div>
   )
 
   if (href) {
     return (
-      <Link href={href} className="block">
+      <Link href={href} className="block min-w-0">
         {card}
       </Link>
     )

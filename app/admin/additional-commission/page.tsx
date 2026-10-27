@@ -200,15 +200,15 @@ export default function AdditionalCommissionPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Additional Commission</h1>
-        <p className="text-gray-600 mt-1">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Additional Commission</h1>
+        <p className="text-gray-600 mt-1 text-sm sm:text-base">
           Configure extra commission campaigns by product, time window, and visibility (sales executive/area sales manager/branch/state/all).
         </p>
       </div>
 
-      <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
+      <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6 space-y-4">
         <h2 className="text-lg font-semibold text-gray-900">Create Campaign</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
           <div className="relative lg:col-span-1" ref={productDropdownRef}>
             <button
               type="button"
@@ -292,13 +292,13 @@ export default function AdditionalCommissionPage() {
             placeholder="Additional %"
             value={form.additionalRate}
             onChange={(e) => setForm((prev) => ({ ...prev, additionalRate: e.target.value }))}
-            className="px-4 py-2 border border-gray-300 rounded-lg"
+            className="px-4 py-2 border border-gray-300 rounded-lg w-full"
           />
 
           <select
             value={form.targetRole}
             onChange={(e) => setForm((prev) => ({ ...prev, targetRole: e.target.value }))}
-            className="px-4 py-2 border border-gray-300 rounded-lg"
+            className="px-4 py-2 border border-gray-300 rounded-lg w-full"
           >
             {roleOptions.map((option) => (
               <option key={option.value} value={option.value}>
@@ -311,21 +311,21 @@ export default function AdditionalCommissionPage() {
             type="datetime-local"
             value={form.startsAt}
             onChange={(e) => setForm((prev) => ({ ...prev, startsAt: e.target.value }))}
-            className="px-4 py-2 border border-gray-300 rounded-lg"
+            className="px-4 py-2 border border-gray-300 rounded-lg w-full"
           />
 
           <input
             type="datetime-local"
             value={form.endsAt}
             onChange={(e) => setForm((prev) => ({ ...prev, endsAt: e.target.value }))}
-            className="px-4 py-2 border border-gray-300 rounded-lg"
+            className="px-4 py-2 border border-gray-300 rounded-lg w-full"
           />
         </div>
 
         <button
           onClick={createCampaign}
           disabled={saving}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-60"
+          className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-60"
         >
           <Plus className="w-4 h-4" />
           {saving ? "Saving..." : "Create Campaign"}
@@ -333,77 +333,148 @@ export default function AdditionalCommissionPage() {
       </div>
 
       <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200">
+        <div className="px-4 sm:px-6 py-4 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-900">Configured Campaigns</h2>
         </div>
         {campaigns.length === 0 ? (
-          <div className="p-10 text-center text-gray-500">No additional commission campaigns created yet.</div>
+          <div className="p-8 sm:p-10 text-center text-gray-500">No additional commission campaigns created yet.</div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Additional %</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Visible To</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Start</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">End</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {campaigns.map((campaign) => (
-                  <tr key={campaign.id}>
-                    <td className="px-6 py-4 text-sm text-gray-900">
-                      <div className="flex items-center gap-3">
-                        {productMap.get(campaign.product_id)?.thumbnail ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={productMap.get(campaign.product_id)?.thumbnail || ""}
-                            alt={campaign.product_name || productMap.get(campaign.product_id)?.title || "Product"}
-                            className="w-9 h-9 rounded object-cover border border-gray-200"
-                          />
-                        ) : (
-                          <div className="w-9 h-9 rounded bg-gray-100 border border-gray-200" />
-                        )}
-                        <span>
+          <>
+            {/* Mobile cards */}
+            <div className="md:hidden space-y-3 p-3">
+              {campaigns.map((campaign) => (
+                <div
+                  key={campaign.id}
+                  className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 min-w-0"
+                >
+                  <div className="flex items-start justify-between gap-2 mb-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      {productMap.get(campaign.product_id)?.thumbnail ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={productMap.get(campaign.product_id)?.thumbnail || ""}
+                          alt={campaign.product_name || productMap.get(campaign.product_id)?.title || "Product"}
+                          className="w-9 h-9 rounded object-cover border border-gray-200 shrink-0"
+                        />
+                      ) : (
+                        <div className="w-9 h-9 rounded bg-gray-100 border border-gray-200 shrink-0" />
+                      )}
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-gray-900 truncate">
                           {campaign.product_name || productMap.get(campaign.product_id)?.title || campaign.product_id}
-                        </span>
+                        </p>
+                        <p className="text-xs font-semibold text-emerald-700">+{campaign.additional_rate}%</p>
                       </div>
-                    </td>
-                    <td className="px-6 py-4 text-sm font-semibold text-emerald-700">{campaign.additional_rate}%</td>
-                    <td className="px-6 py-4 text-sm text-gray-700 capitalize">{campaign.target_role}</td>
-                    <td className="px-6 py-4 text-sm text-gray-700">{formatDateTime(campaign.starts_at)}</td>
-                    <td className="px-6 py-4 text-sm text-gray-700">{formatDateTime(campaign.ends_at)}</td>
-                    <td className="px-6 py-4">
-                      <span className={`px-2 py-1 text-xs rounded-full font-medium ${runtimeBadgeClass(campaign.runtime_status)}`}>
-                        {campaign.runtime_status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex justify-end gap-3">
-                        <button
-                          onClick={() => toggleCampaign(campaign)}
-                          className="text-indigo-600 hover:text-indigo-800"
-                          title={campaign.is_active ? "Deactivate" : "Activate"}
-                        >
-                          {campaign.is_active ? <PauseCircle className="w-5 h-5" /> : <PlayCircle className="w-5 h-5" />}
-                        </button>
-                        <button
-                          onClick={() => deleteCampaign(campaign.id)}
-                          className="text-red-600 hover:text-red-800"
-                          title="Delete"
-                        >
-                          <Trash2 className="w-5 h-5" />
-                        </button>
-                      </div>
-                    </td>
+                    </div>
+                    <span className={`shrink-0 px-2 py-0.5 text-[10px] rounded-full font-medium ${runtimeBadgeClass(campaign.runtime_status)}`}>
+                      {campaign.runtime_status}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-xs text-gray-600 mb-3">
+                    <div className="min-w-0">
+                      <p className="uppercase tracking-wide text-[10px] text-gray-400 font-semibold">Visible To</p>
+                      <p className="capitalize truncate">{campaign.target_role}</p>
+                    </div>
+                    <div className="min-w-0">
+                      <p className="uppercase tracking-wide text-[10px] text-gray-400 font-semibold">Start</p>
+                      <p className="truncate">{formatDateTime(campaign.starts_at)}</p>
+                    </div>
+                    <div className="min-w-0 col-span-2">
+                      <p className="uppercase tracking-wide text-[10px] text-gray-400 font-semibold">End</p>
+                      <p className="truncate">{formatDateTime(campaign.ends_at)}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => toggleCampaign(campaign)}
+                      className="flex-1 inline-flex items-center justify-center gap-1.5 text-sm font-semibold text-indigo-600 hover:text-indigo-900 py-2 rounded-lg hover:bg-indigo-50 transition-colors border border-indigo-100"
+                      title={campaign.is_active ? "Deactivate" : "Activate"}
+                    >
+                      {campaign.is_active ? <PauseCircle className="w-4 h-4" /> : <PlayCircle className="w-4 h-4" />}
+                      {campaign.is_active ? "Deactivate" : "Activate"}
+                    </button>
+                    <button
+                      onClick={() => deleteCampaign(campaign.id)}
+                      className="flex-1 inline-flex items-center justify-center gap-1.5 text-sm font-semibold text-red-600 hover:text-red-900 py-2 rounded-lg hover:bg-red-50 transition-colors border border-red-100"
+                      title="Delete"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop table */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Additional %</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Visible To</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Start</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">End</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {campaigns.map((campaign) => (
+                    <tr key={campaign.id}>
+                      <td className="px-6 py-4 text-sm text-gray-900">
+                        <div className="flex items-center gap-3">
+                          {productMap.get(campaign.product_id)?.thumbnail ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={productMap.get(campaign.product_id)?.thumbnail || ""}
+                              alt={campaign.product_name || productMap.get(campaign.product_id)?.title || "Product"}
+                              className="w-9 h-9 rounded object-cover border border-gray-200"
+                            />
+                          ) : (
+                            <div className="w-9 h-9 rounded bg-gray-100 border border-gray-200" />
+                          )}
+                          <span>
+                            {campaign.product_name || productMap.get(campaign.product_id)?.title || campaign.product_id}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-sm font-semibold text-emerald-700">{campaign.additional_rate}%</td>
+                      <td className="px-6 py-4 text-sm text-gray-700 capitalize">{campaign.target_role}</td>
+                      <td className="px-6 py-4 text-sm text-gray-700">{formatDateTime(campaign.starts_at)}</td>
+                      <td className="px-6 py-4 text-sm text-gray-700">{formatDateTime(campaign.ends_at)}</td>
+                      <td className="px-6 py-4">
+                        <span className={`px-2 py-1 text-xs rounded-full font-medium ${runtimeBadgeClass(campaign.runtime_status)}`}>
+                          {campaign.runtime_status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex justify-end gap-3">
+                          <button
+                            onClick={() => toggleCampaign(campaign)}
+                            className="text-indigo-600 hover:text-indigo-800"
+                            title={campaign.is_active ? "Deactivate" : "Activate"}
+                          >
+                            {campaign.is_active ? <PauseCircle className="w-5 h-5" /> : <PlayCircle className="w-5 h-5" />}
+                          </button>
+                          <button
+                            onClick={() => deleteCampaign(campaign.id)}
+                            className="text-red-600 hover:text-red-800"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-5 h-5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
     </div>

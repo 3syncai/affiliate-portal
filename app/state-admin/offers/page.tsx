@@ -99,10 +99,10 @@ export default function StateAdminOffersPage() {
   const offerProducts = products.filter((p) => (additionalByProduct[p.id] || 0) > 0)
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Offers</h1>
-        <p className="text-gray-600 mt-1">Additional commission offers visible to State Admin or All.</p>
+    <div className="space-y-4 sm:space-y-6 min-w-0">
+      <div className="min-w-0">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Offers</h1>
+        <p className="text-gray-600 mt-1 text-sm sm:text-base">Additional commission offers visible to State Admin or All.</p>
       </div>
 
       {isLoading || loadingProducts ? (

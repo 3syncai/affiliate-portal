@@ -131,15 +131,15 @@ export default function BranchAgentsPage() {
         )
 
     return (
-        <div className="space-y-6">
-            <div>
-                <h1 className="text-3xl font-bold text-gray-900">Partners in {user?.branch}</h1>
-                <p className="text-gray-600 mt-1">View all partners in your area</p>
+        <div className="space-y-4 sm:space-y-6 min-w-0">
+            <div className="min-w-0">
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 break-words">Partners in {user?.branch}</h1>
+                <p className="text-gray-600 mt-1 text-sm sm:text-base">View all partners in your area</p>
             </div>
 
             {approvedOnly && (
-                <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 flex items-center justify-between gap-4">
-                    <p className="text-sm text-amber-900">
+                <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 sm:px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
+                    <p className="text-sm text-amber-900 min-w-0">
                         Showing: <span className="font-semibold">Approved partners only</span>
                         {" "}({filteredAgents.length} record{filteredAgents.length === 1 ? "" : "s"})
                     </p>
@@ -152,7 +152,7 @@ export default function BranchAgentsPage() {
                 </div>
             )}
 
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-4">
                 <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <input
@@ -165,72 +165,115 @@ export default function BranchAgentsPage() {
                 </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                <p className="text-gray-600">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-4">
+                <p className="text-gray-600 text-sm sm:text-base">
                     {approvedOnly ? "Sales Executives" : "Total Partners"}:{" "}
                     <span className="font-bold text-gray-900">{filteredAgents.length}</span>
                 </p>
             </div>
 
             {filteredAgents.length === 0 ? (
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 sm:p-12 text-center">
                     <p className="text-gray-500">No partners found in {user?.branch}</p>
                 </div>
             ) : (
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
-                                <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Phone</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Referral Code</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Joined</th>
-                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
-                                {filteredAgents.map((agent) => {
-                                    const status = statusInfo(agent)
-                                    return (
-                                        <tr key={agent.id} className="hover:bg-gray-50">
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                                {fullName(agent)}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                {agent.email || "-"}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                {agent.phone || "-"}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap font-mono text-sm text-indigo-600">
-                                                {agent.refer_code}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <span className={`px-2 py-1 text-xs rounded-full border ${status.class}`}>
-                                                    {status.label}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                {formatISTDate(agent.created_at)}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-right">
-                                                <button
-                                                    onClick={() => setSelectedAgent(agent)}
-                                                    className="text-orange-600 hover:text-orange-900 flex items-center gap-1 ml-auto"
-                                                >
-                                                    <Eye className="w-4 h-4" /> View
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    )
-                                })}
-                            </tbody>
-                        </table>
+                <>
+                    {/* Mobile cards */}
+                    <div className="md:hidden space-y-3">
+                        {filteredAgents.map((agent) => {
+                            const status = statusInfo(agent)
+                            return (
+                                <div key={agent.id} className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 min-w-0">
+                                    <div className="flex items-start justify-between gap-2 mb-2">
+                                        <div className="min-w-0">
+                                            <p className="font-semibold text-gray-900 truncate">{fullName(agent)}</p>
+                                            <p className="text-xs text-gray-500 truncate">{agent.email || "-"}</p>
+                                        </div>
+                                        <span className={`shrink-0 px-2 py-0.5 text-[10px] rounded-full border ${status.class}`}>
+                                            {status.label}
+                                        </span>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-2 text-xs text-gray-600 mb-3">
+                                        <div className="min-w-0">
+                                            <p className="uppercase tracking-wide text-[10px] text-gray-400 font-semibold">Phone</p>
+                                            <p className="truncate">{agent.phone || "-"}</p>
+                                        </div>
+                                        <div className="min-w-0">
+                                            <p className="uppercase tracking-wide text-[10px] text-gray-400 font-semibold">Referral</p>
+                                            <p className="font-mono text-indigo-600 truncate">{agent.refer_code}</p>
+                                        </div>
+                                        <div className="min-w-0 col-span-2">
+                                            <p className="uppercase tracking-wide text-[10px] text-gray-400 font-semibold">Joined</p>
+                                            <p>{formatISTDate(agent.created_at)}</p>
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={() => setSelectedAgent(agent)}
+                                        className="w-full inline-flex items-center justify-center gap-1.5 text-sm font-semibold text-orange-600 hover:text-orange-900 py-2 rounded-lg hover:bg-orange-50 transition-colors"
+                                    >
+                                        <Eye className="w-4 h-4" /> View
+                                    </button>
+                                </div>
+                            )
+                        })}
                     </div>
-                </div>
+
+                    {/* Desktop table */}
+                    <div className="hidden md:block bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                        <div className="overflow-x-auto">
+                            <table className="min-w-full divide-y divide-gray-200">
+                                <thead className="bg-gray-50">
+                                    <tr>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Phone</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Referral Code</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Joined</th>
+                                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="bg-white divide-y divide-gray-200">
+                                    {filteredAgents.map((agent) => {
+                                        const status = statusInfo(agent)
+                                        return (
+                                            <tr key={agent.id} className="hover:bg-gray-50">
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                    {fullName(agent)}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    {agent.email || "-"}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    {agent.phone || "-"}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap font-mono text-sm text-indigo-600">
+                                                    {agent.refer_code}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    <span className={`px-2 py-1 text-xs rounded-full border ${status.class}`}>
+                                                        {status.label}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    {formatISTDate(agent.created_at)}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-right">
+                                                    <button
+                                                        onClick={() => setSelectedAgent(agent)}
+                                                        className="text-orange-600 hover:text-orange-900 flex items-center gap-1 ml-auto"
+                                                    >
+                                                        <Eye className="w-4 h-4" /> View
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        )
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </>
             )}
 
             {selectedAgent && (
@@ -246,23 +289,23 @@ function PartnerDetailsModal({ agent, onClose }: { agent: Agent; onClose: () => 
     const isUpi = agent.payment_method === "UPI"
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
             <button
                 aria-label="Close"
                 onClick={onClose}
                 className="absolute inset-0 bg-black/50 backdrop-blur-sm cursor-default"
             />
 
-            <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl border border-gray-200 max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="relative w-full max-w-2xl bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl border border-gray-200 max-h-[90dvh] overflow-hidden flex flex-col">
                 {/* Header */}
-                <div className="flex items-start justify-between p-6 border-b border-gray-100 bg-gradient-to-r from-emerald-50 to-white">
-                    <div className="flex items-center gap-4">
-                        <div className="w-14 h-14 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-xl font-bold flex-shrink-0">
+                <div className="flex items-start justify-between p-4 sm:p-6 border-b border-gray-100 bg-gradient-to-r from-emerald-50 to-white gap-3">
+                    <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+                        <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-xl font-bold flex-shrink-0">
                             {fullName(agent).charAt(0).toUpperCase()}
                         </div>
                         <div className="min-w-0">
-                            <h2 className="text-xl font-bold text-gray-900 truncate">{fullName(agent)}</h2>
-                            <p className="text-sm text-gray-500 font-mono">{agent.refer_code}</p>
+                            <h2 className="text-lg sm:text-xl font-bold text-gray-900 truncate">{fullName(agent)}</h2>
+                            <p className="text-sm text-gray-500 font-mono truncate">{agent.refer_code}</p>
                             <span className={`mt-1.5 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-semibold border ${status.class}`}>
                                 {agent.rejected_at ? <XCircle className="w-3 h-3" /> : <ShieldCheck className="w-3 h-3" />}
                                 {status.label}
@@ -271,14 +314,14 @@ function PartnerDetailsModal({ agent, onClose }: { agent: Agent; onClose: () => 
                     </div>
                     <button
                         onClick={onClose}
-                        className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+                        className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors shrink-0"
                     >
                         <X className="w-5 h-5" />
                     </button>
                 </div>
 
                 {/* Body */}
-                <div className="overflow-y-auto p-6 space-y-6">
+                <div className="overflow-y-auto p-4 sm:p-6 space-y-6 min-h-0">
                     {/* Stats */}
                     <Section title="Performance">
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -369,10 +412,10 @@ function PartnerDetailsModal({ agent, onClose }: { agent: Agent; onClose: () => 
                 </div>
 
                 {/* Footer */}
-                <div className="border-t border-gray-100 px-6 py-4 bg-gray-50 flex justify-end">
+                <div className="border-t border-gray-100 px-4 sm:px-6 py-4 bg-gray-50 flex justify-end">
                     <button
                         onClick={onClose}
-                        className="px-5 py-2 bg-gray-900 hover:bg-gray-800 text-white rounded-lg text-sm font-medium transition-colors"
+                        className="w-full sm:w-auto px-5 py-2 bg-gray-900 hover:bg-gray-800 text-white rounded-lg text-sm font-medium transition-colors"
                     >
                         Close
                     </button>

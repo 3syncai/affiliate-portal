@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react"
 import axios from "axios"
-import { Wallet, CreditCard, Building2, Smartphone, Plus, Edit2, CheckCircle, TrendingUp, History, ArrowUpRight, Copy, Wifi, WifiOff } from "lucide-react"
+import { Wallet, CreditCard, Building2, Smartphone, Plus, Edit2, CheckCircle, TrendingUp, History, ArrowUpRight, Copy, Wifi, WifiOff, Receipt } from "lucide-react"
 import UserNavbar from "../../components/UserNavbar"
 import { useSSE } from "@/hooks/useSSE"
 import { Toast } from "@/components/Toast"
@@ -32,6 +32,7 @@ type WalletData = {
         current: number
         totalEarned: number
         withdrawn: number
+        tdsDeducted: number
     }
     paymentMethod: PaymentMethod | null
 }
@@ -52,6 +53,7 @@ export default function WalletPage() {
     const [withdrawalHistory, setWithdrawalHistory] = useState<any[]>([])
     const [loadingHistory, setLoadingHistory] = useState(false)
     const [referCode, setReferCode] = useState<string>("")
+    const [balanceDescExpanded, setBalanceDescExpanded] = useState(false)
 
     // Toast notification state
     const [showToast, setShowToast] = useState(false)
@@ -353,12 +355,12 @@ export default function WalletPage() {
                 />
             )}
 
-            <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 px-4 py-6 sm:px-6 lg:px-8">
-                <div className="max-w-7xl mx-auto space-y-8">
+            <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 px-4 py-6 sm:px-6 lg:px-8 overflow-x-hidden">
+                <div className="max-w-7xl mx-auto space-y-6 sm:space-y-8">
                     {/* Header Section */}
-                    <div className="flex items-center justify-between flex-wrap gap-4">
-                        <div>
-                            <h1 className="text-3xl sm:text-4xl font-extrabold bg-gradient-to-r from-slate-900 via-cyan-900 to-emerald-900 bg-clip-text text-transparent mb-1 tracking-tight">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                        <div className="min-w-0">
+                            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold bg-gradient-to-r from-slate-900 via-cyan-900 to-emerald-900 bg-clip-text text-transparent mb-1 tracking-tight">
                                 Wallet & Earnings
                             </h1>
                             <p className="text-gray-600 text-sm sm:text-base">Manage your payouts and payment methods</p>
@@ -375,259 +377,289 @@ export default function WalletPage() {
                     </div>
 
                     {/* Hero + Quick Stats */}
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 items-stretch min-w-0">
                         {/* Available Balance Card - HERO */}
-                        <div className="lg:col-span-2 bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600 rounded-3xl p-6 sm:p-8 text-white shadow-2xl relative overflow-hidden group hover:shadow-emerald-300/70 transition-shadow duration-300 border border-white/20">
+                        <div className="lg:col-span-2 bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600 rounded-2xl sm:rounded-3xl p-4 sm:p-6 lg:p-8 text-white shadow-2xl relative overflow-hidden group hover:shadow-emerald-300/70 transition-shadow duration-300 border border-white/20 min-w-0">
                             {/* Coin Background Decoration */}
-                            <div className="absolute inset-0 opacity-40">
-                                <div className="absolute right-2 sm:right-8 top-1/2 -translate-y-1/2 w-56 h-56 sm:w-72 sm:h-72">
+                            <div className="absolute inset-0 opacity-25 sm:opacity-40">
+                                <div className="absolute right-0 sm:right-8 top-1/2 -translate-y-1/2 w-36 h-36 sm:w-56 sm:h-56 lg:w-72 lg:h-72">
                                     <img
                                         src="/uploads/coin/coin.png"
                                         alt="Coin decoration"
-                                        className="w-full h-full object-contain opacity-80 group-hover:scale-110 group-hover:rotate-12 transition-all duration-700"
+                                        className="w-full h-full object-contain opacity-60 sm:opacity-80 group-hover:scale-110 group-hover:rotate-12 transition-all duration-700"
                                     />
                                 </div>
                             </div>
 
-                            <div className="relative z-10">
-                                <p className="text-emerald-100/90 font-medium mb-1 text-sm uppercase tracking-wider">Available Balance</p>
-                                <h2 className="text-4xl sm:text-5xl font-extrabold mb-5 tracking-tight">
+                            <div className="relative z-10 min-w-0">
+                                <p className="text-emerald-100/90 font-medium mb-0.5 sm:mb-1 text-[11px] sm:text-sm uppercase tracking-wider">Available Balance</p>
+                                <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold mb-3 sm:mb-5 tracking-tight truncate">
                                     {formatCurrency(walletData.balance.current)}
                                 </h2>
-                                <p className="text-sm sm:text-base text-emerald-100/95 mb-6 max-w-md leading-relaxed">
-                                    Your earnings are calculated net of TDS. Withdrawals are processed within 30 days.
-                                </p>
+                                <div className="mb-4 sm:mb-6 max-w-md">
+                                    <button
+                                        type="button"
+                                        onClick={() => setBalanceDescExpanded((open) => !open)}
+                                        className="sm:pointer-events-none text-left w-full"
+                                        aria-expanded={balanceDescExpanded}
+                                    >
+                                        <p
+                                            className={`text-xs sm:text-sm lg:text-base text-emerald-100/95 leading-relaxed sm:line-clamp-none ${
+                                                balanceDescExpanded ? "" : "line-clamp-2"
+                                            }`}
+                                        >
+                                            Available balance is your credited earnings minus withdrawal requests already paid. TDS is deducted when payouts are processed.
+                                        </p>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setBalanceDescExpanded((open) => !open)}
+                                        className="sm:hidden mt-1 text-[11px] font-medium text-white/90 underline underline-offset-2 hover:text-white"
+                                        aria-expanded={balanceDescExpanded}
+                                    >
+                                        {balanceDescExpanded ? "Show less" : "Read more"}
+                                    </button>
+                                </div>
 
-                                <div className="grid grid-cols-2 gap-3 pt-4 border-t border-white/30">
-                                    <div className="bg-white/15 backdrop-blur-md rounded-xl p-3 hover:bg-white/20 transition-all">
-                                        <div className="flex items-center gap-1.5 mb-1">
-                                            <TrendingUp className="w-3.5 h-3.5 text-emerald-100" />
-                                            <p className="text-xs text-emerald-100 font-medium">Total Earned</p>
+                                <div className="grid grid-cols-3 gap-2 sm:gap-3 pt-3 sm:pt-4 border-t border-white/30">
+                                    <div className="bg-white/15 backdrop-blur-md rounded-lg sm:rounded-xl p-2 sm:p-3 hover:bg-white/20 transition-all min-w-0">
+                                        <div className="flex items-center gap-1 sm:gap-1.5 mb-0.5 sm:mb-1 min-w-0">
+                                            <TrendingUp className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-emerald-100 shrink-0" />
+                                            <p className="text-[10px] sm:text-xs text-emerald-100 font-medium truncate">Total Earned</p>
                                         </div>
-                                        <p className="text-lg font-bold">{formatCurrency(walletData.balance.totalEarned)}</p>
-                                        <p className="text-xs text-emerald-200 mt-0.5">Lifetime</p>
+                                        <p className="text-sm sm:text-lg font-bold truncate">{formatCurrency(walletData.balance.totalEarned)}</p>
+                                        <p className="text-[10px] sm:text-xs text-emerald-200 mt-0.5">Lifetime</p>
                                     </div>
-                                    <div className="bg-white/15 backdrop-blur-md rounded-xl p-3 hover:bg-white/20 transition-all">
-                                        <div className="flex items-center gap-1.5 mb-1">
-                                            <History className="w-3.5 h-3.5 text-emerald-100" />
-                                            <p className="text-xs text-emerald-100 font-medium">Withdrawn</p>
+                                    <div className="bg-white/15 backdrop-blur-md rounded-lg sm:rounded-xl p-2 sm:p-3 hover:bg-white/20 transition-all min-w-0">
+                                        <div className="flex items-center gap-1 sm:gap-1.5 mb-0.5 sm:mb-1 min-w-0">
+                                            <History className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-emerald-100 shrink-0" />
+                                            <p className="text-[10px] sm:text-xs text-emerald-100 font-medium truncate">Withdrawn</p>
                                         </div>
-                                        <p className="text-lg font-bold">{formatCurrency(walletData.balance.withdrawn)}</p>
-                                        <p className="text-xs text-emerald-200 mt-0.5">Paid out</p>
+                                        <p className="text-sm sm:text-lg font-bold truncate">{formatCurrency(walletData.balance.withdrawn)}</p>
+                                        <p className="text-[10px] sm:text-xs text-emerald-200 mt-0.5">Net paid</p>
+                                    </div>
+                                    <div className="bg-white/15 backdrop-blur-md rounded-lg sm:rounded-xl p-2 sm:p-3 hover:bg-white/20 transition-all min-w-0">
+                                        <div className="flex items-center gap-1 sm:gap-1.5 mb-0.5 sm:mb-1 min-w-0">
+                                            <Receipt className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-emerald-100 shrink-0" />
+                                            <p className="text-[10px] sm:text-xs text-emerald-100 font-medium truncate">TDS Deducted</p>
+                                        </div>
+                                        <p className="text-sm sm:text-lg font-bold truncate">{formatCurrency(walletData.balance.tdsDeducted ?? 0)}</p>
+                                        <p className="text-[10px] sm:text-xs text-emerald-200 mt-0.5">At payout</p>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Quick Stats Card */}
-                        <div className="bg-white/90 backdrop-blur-md rounded-3xl p-5 shadow-xl border border-gray-100 hover:shadow-2xl transition-shadow duration-300">
-                            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-[0.18em] mb-4">Quick Stats</h3>
-                            <div className="space-y-3">
-                                <div className="flex items-center justify-between p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl hover:from-blue-100 hover:to-indigo-100 transition-all cursor-pointer">
-                                    <div className="flex items-center gap-2">
-                                        <div className="bg-gradient-to-br from-blue-500 to-indigo-600 p-2 rounded-lg shadow-lg">
-                                            <TrendingUp className="w-3.5 h-3.5 text-white" />
-                                        </div>
-                                        <div>
-                                            <span className="text-xs font-medium text-gray-500 block">Earnings</span>
-                                            <span className="text-sm font-bold text-gray-900">{formatCurrency(walletData.balance.totalEarned)}</span>
-                                        </div>
+                        {/* Quick Stats — 2x2 mobile/tablet; stacked + height-matched on lg */}
+                        <div className="bg-white/90 backdrop-blur-md rounded-2xl sm:rounded-3xl p-4 sm:p-5 lg:p-6 shadow-xl border border-gray-100 hover:shadow-2xl transition-shadow duration-300 min-w-0 h-full flex flex-col">
+                            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-[0.18em] mb-3 sm:mb-4 lg:mb-5">Quick Stats</h3>
+                            <div className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid lg:grid-cols-1 lg:grid-rows-4 lg:flex-1 lg:gap-3 min-h-0">
+                                <div className="flex items-center gap-2 lg:gap-3 p-2.5 sm:p-3 lg:p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl hover:from-blue-100 hover:to-indigo-100 transition-all min-w-0">
+                                    <div className="bg-gradient-to-br from-blue-500 to-indigo-600 p-1.5 sm:p-2 lg:p-2.5 rounded-lg shadow-lg shrink-0">
+                                        <TrendingUp className="w-3 h-3 sm:w-3.5 sm:h-3.5 lg:w-4 lg:h-4 text-white" />
+                                    </div>
+                                    <div className="min-w-0">
+                                        <span className="text-[10px] sm:text-xs lg:text-sm font-medium text-gray-500 block truncate">Earnings</span>
+                                        <span className="text-xs sm:text-sm lg:text-base font-bold text-gray-900 truncate block">{formatCurrency(walletData.balance.totalEarned)}</span>
                                     </div>
                                 </div>
-                                <div className="flex items-center justify-between p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl hover:from-purple-100 hover:to-pink-100 transition-all cursor-pointer">
-                                    <div className="flex items-center gap-2">
-                                        <div className="bg-gradient-to-br from-purple-500 to-pink-600 p-2 rounded-lg shadow-lg">
-                                            <History className="w-3.5 h-3.5 text-white" />
-                                        </div>
-                                        <div>
-                                            <span className="text-xs font-medium text-gray-500 block">Paid Out</span>
-                                            <span className="text-sm font-bold text-gray-900">{formatCurrency(walletData.balance.withdrawn)}</span>
-                                        </div>
+                                <div className="flex items-center gap-2 lg:gap-3 p-2.5 sm:p-3 lg:p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl hover:from-purple-100 hover:to-pink-100 transition-all min-w-0">
+                                    <div className="bg-gradient-to-br from-purple-500 to-pink-600 p-1.5 sm:p-2 lg:p-2.5 rounded-lg shadow-lg shrink-0">
+                                        <History className="w-3 h-3 sm:w-3.5 sm:h-3.5 lg:w-4 lg:h-4 text-white" />
+                                    </div>
+                                    <div className="min-w-0">
+                                        <span className="text-[10px] sm:text-xs lg:text-sm font-medium text-gray-500 block truncate">Paid Out</span>
+                                        <span className="text-xs sm:text-sm lg:text-base font-bold text-gray-900 truncate block">{formatCurrency(walletData.balance.withdrawn)}</span>
                                     </div>
                                 </div>
-                                <div className="flex items-center justify-between p-3 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl hover:from-emerald-100 hover:to-teal-100 transition-all cursor-pointer">
-                                    <div className="flex items-center gap-2">
-                                        <div className="bg-gradient-to-br from-emerald-500 to-teal-600 p-2 rounded-lg shadow-lg">
-                                            <Wallet className="w-3.5 h-3.5 text-white" />
-                                        </div>
-                                        <div>
-                                            <span className="text-xs font-medium text-gray-500 block">Available</span>
-                                            <span className="text-sm font-bold text-emerald-600">{formatCurrency(walletData.balance.current)}</span>
-                                        </div>
+                                <div className="flex items-center gap-2 lg:gap-3 p-2.5 sm:p-3 lg:p-4 bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl hover:from-amber-100 hover:to-orange-100 transition-all min-w-0">
+                                    <div className="bg-gradient-to-br from-amber-500 to-orange-600 p-1.5 sm:p-2 lg:p-2.5 rounded-lg shadow-lg shrink-0">
+                                        <Receipt className="w-3 h-3 sm:w-3.5 sm:h-3.5 lg:w-4 lg:h-4 text-white" />
+                                    </div>
+                                    <div className="min-w-0">
+                                        <span className="text-[10px] sm:text-xs lg:text-sm font-medium text-gray-500 block truncate">TDS Deducted</span>
+                                        <span className="text-xs sm:text-sm lg:text-base font-bold text-gray-900 truncate block">{formatCurrency(walletData.balance.tdsDeducted ?? 0)}</span>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-2 lg:gap-3 p-2.5 sm:p-3 lg:p-4 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl hover:from-emerald-100 hover:to-teal-100 transition-all min-w-0">
+                                    <div className="bg-gradient-to-br from-emerald-500 to-teal-600 p-1.5 sm:p-2 lg:p-2.5 rounded-lg shadow-lg shrink-0">
+                                        <Wallet className="w-3 h-3 sm:w-3.5 sm:h-3.5 lg:w-4 lg:h-4 text-white" />
+                                    </div>
+                                    <div className="min-w-0">
+                                        <span className="text-[10px] sm:text-xs lg:text-sm font-medium text-gray-500 block truncate">Available</span>
+                                        <span className="text-xs sm:text-sm lg:text-lg font-bold text-emerald-600 truncate block">{formatCurrency(walletData.balance.current)}</span>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                     {/* Payment Method Card */}
-                    <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden hover:shadow-2xl transition-shadow duration-300">
-                <div className="bg-gradient-to-r from-indigo-50 via-purple-50 to-pink-50 p-4 border-b border-gray-100">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-2.5 rounded-xl shadow-lg">
-                                <CreditCard className="w-4 h-4 text-white" />
-                            </div>
-                            <div>
-                                <h3 className="text-lg font-bold text-gray-900">Payment Method</h3>
-                                <p className="text-gray-600 text-xs mt-0.5">Your default payout destination</p>
-                            </div>
-                        </div>
-                        {walletData.paymentMethod && (
-                            <button
-                                onClick={() => setShowSetupModal(true)}
-                                className="text-emerald-600 hover:text-emerald-700 font-semibold inline-flex items-center gap-1.5 px-4 py-2 rounded-xl hover:bg-emerald-50 transition-all duration-200 border border-emerald-200 hover:border-emerald-300 text-sm"
-                            >
-                                <Edit2 className="w-3.5 h-3.5" />
-                                Edit
-                            </button>
-                        )}
-                    </div>
-                </div>
-
-                <div className="p-4">
-                    {walletData.paymentMethod ? (
-                        <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-gray-50 to-transparent rounded-xl border-2 border-gray-100 hover:border-emerald-200 transition-all">
-                            {walletData.paymentMethod.method === 'Bank Transfer' ? (
-                                <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-3 rounded-xl shadow-xl">
-                                    <Building2 className="w-6 h-6 text-white" />
+                    <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-shadow duration-300 min-w-0">
+                        <div className="bg-gradient-to-r from-emerald-50/80 to-white p-3 sm:p-4 border-b border-gray-100">
+                            <div className="flex items-center justify-between gap-2 min-w-0">
+                                <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                                    <div className="bg-gradient-to-br from-emerald-500 to-teal-600 p-1.5 sm:p-2 rounded-lg shadow-md shrink-0">
+                                        <CreditCard className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
+                                    </div>
+                                    <div className="min-w-0">
+                                        <h3 className="text-sm sm:text-base font-bold text-gray-900 truncate">Payment Method</h3>
+                                        <p className="text-gray-500 text-[10px] sm:text-xs mt-0.5 truncate">Your default payout destination</p>
+                                    </div>
                                 </div>
-                            ) : (
-                                <div className="bg-gradient-to-br from-purple-500 to-pink-600 p-3 rounded-xl shadow-xl">
-                                    <Smartphone className="w-6 h-6 text-white" />
-                                </div>
-                            )}
-
-                            <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-1">
-                                    <p className="font-bold text-gray-900 text-base">
-                                        {walletData.paymentMethod.method}
-                                    </p>
-                                    <span className="bg-gradient-to-r from-green-500 to-emerald-600 text-white text-xs px-2 py-1 rounded-full uppercase tracking-wider font-bold shadow-lg">
-                                        ✓ Verified
-                                    </span>
-                                </div>
-
-                                {walletData.paymentMethod.method === 'Bank Transfer' ? (
-                                    <p className="text-gray-600 text-sm font-medium">
-                                        {walletData.paymentMethod.bank?.name} • {maskAccountNumber(walletData.paymentMethod.bank?.accountNumber || '')}
-                                    </p>
-                                ) : (
-                                    <p className="text-gray-600 text-sm font-mono font-semibold">
-                                        {walletData.paymentMethod.upi?.id}
-                                    </p>
+                                {walletData.paymentMethod && (
+                                    <button
+                                        onClick={() => setShowSetupModal(true)}
+                                        className="shrink-0 text-emerald-600 hover:text-emerald-700 font-semibold inline-flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-lg hover:bg-emerald-50 transition-all duration-200 border border-emerald-200 text-xs sm:text-sm"
+                                    >
+                                        <Edit2 className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                                        Edit
+                                    </button>
                                 )}
                             </div>
                         </div>
-                    ) : (
-                        <div className="text-center py-12">
-                            <div className="bg-gradient-to-br from-gray-50 to-gray-100 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-inner">
-                                <Plus className="w-8 h-8 text-gray-400" />
-                            </div>
-                            <h4 className="text-lg font-bold text-gray-900 mb-2">No Payment Method Added</h4>
-                            <p className="text-gray-600 text-sm mb-6 max-w-md mx-auto">Add your bank account or UPI ID to receive withdrawal payments</p>
-                            <button
-                                onClick={() => setShowSetupModal(true)}
-                                className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white px-5 py-2 rounded-xl font-semibold shadow-lg shadow-emerald-200 transition-all duration-300 hover:scale-105 inline-flex items-center gap-2 text-sm"
-                            >
-                                <Plus className="w-4 h-4" />
-                                Setup Payment Method
-                            </button>
+
+                        <div className="p-3 sm:p-4">
+                            {walletData.paymentMethod ? (
+                                <div className="flex items-center gap-2.5 sm:gap-3 p-2.5 sm:p-3 bg-slate-50/80 rounded-xl border border-gray-100 hover:border-emerald-200 transition-all min-w-0">
+                                    {walletData.paymentMethod.method === 'Bank Transfer' ? (
+                                        <div className="bg-gradient-to-br from-emerald-500 to-teal-600 p-1.5 sm:p-2 rounded-lg shadow-md shrink-0">
+                                            <Building2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
+                                        </div>
+                                    ) : (
+                                        <div className="bg-gradient-to-br from-teal-500 to-cyan-600 p-1.5 sm:p-2 rounded-lg shadow-md shrink-0">
+                                            <Smartphone className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
+                                        </div>
+                                    )}
+
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-1.5 sm:gap-2 mb-0.5 flex-wrap">
+                                            <p className="font-bold text-gray-900 text-sm sm:text-base truncate">
+                                                {walletData.paymentMethod.method}
+                                            </p>
+                                            <span className="bg-emerald-600 text-white text-[10px] sm:text-xs px-1.5 py-0.5 rounded-md uppercase tracking-wide font-semibold shrink-0">
+                                                ✓ Verified
+                                            </span>
+                                        </div>
+
+                                        {walletData.paymentMethod.method === 'Bank Transfer' ? (
+                                            <p className="text-gray-600 text-xs sm:text-sm font-medium truncate">
+                                                {walletData.paymentMethod.bank?.name} • {maskAccountNumber(walletData.paymentMethod.bank?.accountNumber || '')}
+                                            </p>
+                                        ) : (
+                                            <p className="text-gray-600 text-xs sm:text-sm font-mono font-semibold truncate">
+                                                {walletData.paymentMethod.upi?.id}
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="text-center py-6 sm:py-8">
+                                    <div className="bg-slate-50 w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center mx-auto mb-3 shadow-inner">
+                                        <Plus className="w-5 h-5 sm:w-6 sm:h-6 text-gray-400" />
+                                    </div>
+                                    <h4 className="text-sm sm:text-base font-bold text-gray-900 mb-1">No Payment Method Added</h4>
+                                    <p className="text-gray-600 text-xs sm:text-sm mb-4 max-w-md mx-auto px-2">Add your bank account or UPI ID to receive withdrawal payments</p>
+                                    <button
+                                        onClick={() => setShowSetupModal(true)}
+                                        className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white px-4 py-2 rounded-lg font-semibold shadow-md shadow-emerald-200/60 transition-all duration-300 inline-flex items-center gap-1.5 text-xs sm:text-sm"
+                                    >
+                                        <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                        Setup Payment Method
+                                    </button>
+                                </div>
+                            )}
                         </div>
-                    )}
-                </div>
                     </div>
 
                     {/* Withdrawal History */}
-                    <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden hover:shadow-2xl transition-shadow duration-300">
-                <div className="bg-gradient-to-r from-gray-50 to-white p-4 border-b border-gray-100">
-                    <div className="flex items-center gap-3">
-                        <div className="bg-gradient-to-br from-gray-700 to-gray-900 p-2.5 rounded-xl shadow-lg">
-                            <History className="w-4 h-4 text-white" />
-                        </div>
-                        <div>
-                            <h3 className="text-lg font-bold text-gray-900">Withdrawal History</h3>
-                            <p className="text-gray-600 text-xs mt-0.5">Track all your withdrawal requests</p>
-                        </div>
-                    </div>
-                </div>
-
-                {
-                    loadingHistory ? (
-                        <div className="text-center py-12 text-gray-500">
-                            <div className="animate-spin w-8 h-8 border-4 border-gray-200 border-t-emerald-500 rounded-full mx-auto mb-3"></div>
-                            <p className="font-medium text-sm">Loading history...</p>
-                        </div>
-                    ) : withdrawalHistory.length === 0 ? (
-                        <div className="text-center py-12 text-gray-400">
-                            <History className="w-12 h-12 mx-auto mb-3 opacity-20" />
-                            <p className="text-base font-medium">No withdrawal requests found</p>
-                            <p className="text-sm mt-1">Your withdrawal history will appear here</p>
-                        </div>
-                    ) : (
-                        <div className="divide-y divide-gray-100">
-                            {withdrawalHistory.map((withdrawal) => (
-                                <div key={withdrawal.id} className="p-4 hover:bg-gradient-to-r hover:from-gray-50 hover:to-transparent transition-all">
-                                    <div className="flex items-start justify-between mb-3">
-                                        <div className="flex items-center gap-3">
-                                            <div className={`p-2.5 rounded-xl shadow-lg ${withdrawal.status === 'PAID' ? 'bg-gradient-to-br from-green-500 to-emerald-600' :
-                                                withdrawal.status === 'REJECTED' ? 'bg-gradient-to-br from-red-500 to-pink-600' :
-                                                    withdrawal.status === 'APPROVED' ? 'bg-gradient-to-br from-blue-500 to-indigo-600' :
-                                                        'bg-gradient-to-br from-amber-500 to-orange-600'
-                                                }`}>
-                                                {withdrawal.status === 'PAID' ? <CheckCircle className="w-5 h-5 text-white" /> :
-                                                    <Wallet className="w-5 h-5 text-white" />}
-                                            </div>
-                                            <div>
-                                                <p className="font-bold text-gray-900 text-base">Request #{withdrawal.id}</p>
-                                                <p className="text-gray-500 text-xs font-medium">{formatDate(withdrawal.requested_at)}</p>
-                                            </div>
-                                        </div>
-                                        <span className={`px-3 py-1 rounded-xl text-xs font-bold tracking-wider uppercase shadow-md ${getStatusBadge(withdrawal.status)}`}>
-                                            {withdrawal.status}
-                                        </span>
-                                    </div>
-
-                                    <div className="bg-gradient-to-r from-gray-50 to-transparent rounded-xl p-3 grid grid-cols-2 md:grid-cols-4 gap-3 border border-gray-100">
-                                        <div>
-                                            <p className="text-xs text-gray-500 uppercase tracking-widest font-bold mb-1">Amount</p>
-                                            <p className="font-bold text-gray-900 text-sm">{formatCurrency(withdrawal.withdrawal_amount)}</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-xs text-gray-500 uppercase tracking-widest font-bold mb-1">TDS ({tdsPercentage}%)</p>
-                                            <p className="font-bold text-red-600 text-sm">-{formatCurrency(withdrawal.gst_amount || withdrawal.tds_amount)}</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-xs text-gray-500 uppercase tracking-widest font-bold mb-1">Net Payout</p>
-                                            <p className="font-bold text-emerald-600 text-sm">{formatCurrency(withdrawal.net_payable)}</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-xs text-gray-500 uppercase tracking-widest font-bold mb-1">Method</p>
-                                            <p className="font-semibold text-gray-700 text-sm truncate">{withdrawal.payment_method}</p>
-                                        </div>
-                                    </div>
-
-                                    {/* Transaction Details */}
-                                    {withdrawal.status === 'PAID' && withdrawal.transaction_id && (
-                                        <div className="mt-3 flex items-center gap-2 text-xs bg-gradient-to-r from-green-50 to-emerald-50 p-3 rounded-xl border-2 border-green-200">
-                                            <CheckCircle className="w-4 h-4 text-green-600" />
-                                            <span className="font-bold text-green-700">Paid on {formatDate(withdrawal.payment_date || withdrawal.reviewed_at)}</span>
-                                            <span className="text-gray-400 mx-1">|</span>
-                                            <span className="font-mono font-semibold text-gray-700">{withdrawal.transaction_id}</span>
-                                        </div>
-                                    )}
-
-                                    {/* Rejection Details */}
-                                    {withdrawal.status === 'REJECTED' && withdrawal.admin_notes && (
-                                        <div className="mt-3 text-xs bg-gradient-to-r from-red-50 to-pink-50 p-3 rounded-xl border-2 border-red-200">
-                                            <span className="font-bold text-red-700 block mb-1">Rejection Reason:</span>
-                                            <p className="text-red-600">{withdrawal.admin_notes}</p>
-                                        </div>
-                                    )}
+                    <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-shadow duration-300 min-w-0">
+                        <div className="bg-gradient-to-r from-emerald-50/80 to-white p-3 sm:p-4 border-b border-gray-100">
+                            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                                <div className="bg-gradient-to-br from-emerald-600 to-teal-700 p-1.5 sm:p-2 rounded-lg shadow-md shrink-0">
+                                    <History className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
                                 </div>
-                            ))}
+                                <div className="min-w-0">
+                                    <h3 className="text-sm sm:text-base font-bold text-gray-900 truncate">Withdrawal History</h3>
+                                    <p className="text-gray-500 text-[10px] sm:text-xs mt-0.5 truncate">Track all your withdrawal requests</p>
+                                </div>
+                            </div>
                         </div>
-                    )
-                }
+
+                        {loadingHistory ? (
+                            <div className="text-center py-6 sm:py-8 text-gray-500">
+                                <div className="animate-spin w-6 h-6 sm:w-8 sm:h-8 border-4 border-gray-200 border-t-emerald-500 rounded-full mx-auto mb-2"></div>
+                                <p className="font-medium text-xs sm:text-sm">Loading history...</p>
+                            </div>
+                        ) : withdrawalHistory.length === 0 ? (
+                            <div className="text-center py-6 sm:py-8 text-gray-400">
+                                <History className="w-8 h-8 sm:w-10 sm:h-10 mx-auto mb-2 opacity-20" />
+                                <p className="text-sm font-medium">No withdrawal requests found</p>
+                                <p className="text-xs sm:text-sm mt-1">Your withdrawal history will appear here</p>
+                            </div>
+                        ) : (
+                            <div className="divide-y divide-gray-100">
+                                {withdrawalHistory.map((withdrawal) => (
+                                    <div key={withdrawal.id} className="p-3 sm:p-4 hover:bg-slate-50/80 transition-all min-w-0">
+                                        <div className="flex items-start justify-between gap-2 mb-2">
+                                            <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+                                                <div className={`p-1.5 sm:p-2 rounded-lg shadow-md shrink-0 ${withdrawal.status === 'PAID' ? 'bg-gradient-to-br from-green-500 to-emerald-600' :
+                                                    withdrawal.status === 'REJECTED' ? 'bg-gradient-to-br from-red-500 to-pink-600' :
+                                                        withdrawal.status === 'APPROVED' ? 'bg-gradient-to-br from-blue-500 to-indigo-600' :
+                                                            'bg-gradient-to-br from-amber-500 to-orange-600'
+                                                    }`}>
+                                                    {withdrawal.status === 'PAID' ? <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" /> :
+                                                        <Wallet className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />}
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <p className="font-bold text-gray-900 text-sm sm:text-base truncate">Request #{withdrawal.id}</p>
+                                                    <p className="text-gray-500 text-[10px] sm:text-xs font-medium truncate">{formatDate(withdrawal.requested_at)}</p>
+                                                </div>
+                                            </div>
+                                            <span className={`shrink-0 px-2 py-0.5 rounded-md text-[10px] sm:text-xs font-bold tracking-wide uppercase ${getStatusBadge(withdrawal.status)}`}>
+                                                {withdrawal.status}
+                                            </span>
+                                        </div>
+
+                                        <div className="bg-slate-50/80 rounded-lg p-2.5 sm:p-3 grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 border border-gray-100">
+                                            <div className="min-w-0">
+                                                <p className="text-[10px] sm:text-xs text-gray-500 uppercase tracking-wide font-semibold mb-0.5">Amount</p>
+                                                <p className="font-bold text-gray-900 text-xs sm:text-sm truncate">{formatCurrency(withdrawal.withdrawal_amount)}</p>
+                                            </div>
+                                            <div className="min-w-0">
+                                                <p className="text-[10px] sm:text-xs text-gray-500 uppercase tracking-wide font-semibold mb-0.5">TDS ({tdsPercentage}%)</p>
+                                                <p className="font-bold text-red-600 text-xs sm:text-sm truncate">-{formatCurrency(withdrawal.gst_amount || withdrawal.tds_amount)}</p>
+                                            </div>
+                                            <div className="min-w-0">
+                                                <p className="text-[10px] sm:text-xs text-gray-500 uppercase tracking-wide font-semibold mb-0.5">Net Payout</p>
+                                                <p className="font-bold text-emerald-600 text-xs sm:text-sm truncate">{formatCurrency(withdrawal.net_payable)}</p>
+                                            </div>
+                                            <div className="min-w-0">
+                                                <p className="text-[10px] sm:text-xs text-gray-500 uppercase tracking-wide font-semibold mb-0.5">Method</p>
+                                                <p className="font-semibold text-gray-700 text-xs sm:text-sm truncate">{withdrawal.payment_method}</p>
+                                            </div>
+                                        </div>
+
+                                        {/* Transaction Details */}
+                                        {withdrawal.status === 'PAID' && withdrawal.transaction_id && (
+                                            <div className="mt-2 flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs bg-emerald-50/90 p-2 rounded-lg border border-emerald-200 min-w-0">
+                                                <CheckCircle className="w-3.5 h-3.5 text-green-600 shrink-0" />
+                                                <span className="font-semibold text-green-700 truncate">Paid on {formatDate(withdrawal.payment_date || withdrawal.reviewed_at)}</span>
+                                                <span className="text-gray-400 shrink-0">|</span>
+                                                <span className="font-mono font-medium text-gray-700 truncate">{withdrawal.transaction_id}</span>
+                                            </div>
+                                        )}
+
+                                        {/* Rejection Details */}
+                                        {withdrawal.status === 'REJECTED' && withdrawal.admin_notes && (
+                                            <div className="mt-2 text-[10px] sm:text-xs bg-red-50/90 p-2 rounded-lg border border-red-200">
+                                                <span className="font-bold text-red-700 block mb-0.5">Rejection Reason:</span>
+                                                <p className="text-red-600">{withdrawal.admin_notes}</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
@@ -645,7 +677,7 @@ export default function WalletPage() {
                             {/* Method Selector */}
                             <div className="mb-6">
                                 <p className="text-sm font-medium text-gray-700 mb-3">Select Payment Method</p>
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                                     <button
                                         onClick={() => setSelectedMethod('bank')}
                                         className={`p-4 border-2 rounded-lg transition-all ${selectedMethod === 'bank'
@@ -708,14 +740,14 @@ export default function WalletPage() {
                             )}
                         </div>
 
-                        <div className="p-6 border-t border-gray-200 flex gap-3">
+                        <div className="p-4 sm:p-6 border-t border-gray-200 flex flex-col-reverse sm:flex-row gap-3">
                             <button
                                 onClick={() => setShowSetupModal(false)}
-                                className="flex-1 border border-gray-300 text-gray-700 px-6 py-3 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+                                className="w-full sm:flex-1 border border-gray-300 text-gray-700 px-6 py-3 rounded-lg font-medium hover:bg-gray-50 transition-colors"
                             >
                                 Cancel
                             </button>
-                            <button onClick={savePaymentMethod} disabled={saving} className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                            <button onClick={savePaymentMethod} disabled={saving} className="w-full sm:flex-1 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                                 {saving ? 'Saving...' : 'Save Payment Method'}
                             </button>
                         </div>
@@ -728,13 +760,13 @@ export default function WalletPage() {
             {
                 showWithdrawModal && walletData && (
                     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                        <div className="bg-white rounded-xl max-w-lg w-full">
-                            <div className="p-6 border-b border-gray-200">
+                        <div className="bg-white rounded-xl max-w-lg w-full max-h-[90vh] flex flex-col overflow-hidden">
+                            <div className="p-6 border-b border-gray-200 shrink-0">
                                 <h3 className="text-2xl font-bold text-gray-900">Request Withdrawal</h3>
                                 <p className="text-sm text-gray-600 mt-1">Enter the amount you want to withdraw</p>
                             </div>
 
-                            <div className="p-6 space-y-4">
+                            <div className="p-6 space-y-4 overflow-y-auto min-h-0 flex-1">
                                 {/* Amount Input */}
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -799,20 +831,20 @@ export default function WalletPage() {
                                 </div>
                             </div>
 
-                            <div className="p-6 border-t border-gray-200 flex gap-3">
+                            <div className="p-4 sm:p-6 border-t border-gray-200 flex flex-col-reverse sm:flex-row gap-3 shrink-0">
                                 <button
                                     onClick={() => {
                                         setShowWithdrawModal(false)
                                         setWithdrawAmount("")
                                     }}
-                                    className="flex-1 border border-gray-300 text-gray-700 px-6 py-3 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+                                    className="w-full sm:flex-1 border border-gray-300 text-gray-700 px-6 py-3 rounded-lg font-medium hover:bg-gray-50 transition-colors"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     onClick={submitWithdrawal}
                                     disabled={!withdrawAmount || parseFloat(withdrawAmount) < 20 || parseFloat(withdrawAmount) > walletData.balance.current || submittingWithdrawal}
-                                    className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="w-full sm:flex-1 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     {submittingWithdrawal ? "Submitting..." : "Confirm Withdrawal"}
                                 </button>

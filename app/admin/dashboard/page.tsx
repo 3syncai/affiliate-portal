@@ -208,16 +208,16 @@ export default function AdminDashboardPage() {
   ]
 
   return (
-    <div className="space-y-8 p-4 sm:p-6 lg:p-8">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Dashboard</h1>
-          <p className="text-gray-600 mt-1">Overview of your Partner program</p>
+    <div className="space-y-6 sm:space-y-8 p-4 sm:p-6 lg:p-8">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4 min-w-0">
+        <div className="min-w-0">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">Dashboard</h1>
+          <p className="text-gray-600 mt-1 text-sm sm:text-base">Overview of your Partner program</p>
         </div>
         <button
           onClick={() => void mutate()}
           disabled={isValidating}
-          className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium shadow-sm hover:shadow-md disabled:opacity-60"
+          className="inline-flex items-center justify-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium shadow-sm hover:shadow-md disabled:opacity-60 shrink-0"
         >
           <TrendingUp className={`w-4 h-4 mr-2 ${isValidating ? "animate-spin" : ""}`} />
           {isValidating ? "Refreshing..." : "Refresh Data"}
@@ -243,7 +243,7 @@ export default function AdminDashboardPage() {
                     <a
                       key={card.label}
                       href={card.href}
-                      className={`group bg-white p-6 rounded-xl border-2 ${card.borderColor} ${card.hoverBorderColor} transition-all cursor-pointer`}
+                      className={`group bg-white p-4 sm:p-6 rounded-xl border-2 ${card.borderColor} ${card.hoverBorderColor} transition-all cursor-pointer`}
                     >
                       <div className="flex items-center justify-center mb-4">
                         <div className={`p-3 ${card.iconBg} rounded-xl transition-colors`}>
@@ -251,7 +251,7 @@ export default function AdminDashboardPage() {
                         </div>
                       </div>
                       <p className="text-sm text-gray-600 text-center">{card.label}</p>
-                      <p className="text-3xl font-bold text-gray-900 text-center mt-1">
+                      <p className="text-2xl sm:text-3xl font-bold text-gray-900 text-center mt-1">
                         {card.value}
                       </p>
                       <div className="mt-2 flex items-center justify-center text-xs text-gray-500">
@@ -271,12 +271,12 @@ export default function AdminDashboardPage() {
         </div>
 
         <div className="xl:col-span-1 space-y-6">
-          <div className="bg-gradient-to-br from-indigo-50 to-white rounded-xl shadow-sm border border-indigo-200 p-6 xl:sticky xl:top-6">
+          <div className="bg-gradient-to-br from-indigo-50 to-white rounded-xl shadow-sm border border-indigo-200 p-4 sm:p-6 xl:sticky xl:top-6">
             <div className="flex items-center gap-2 mb-5">
               <div className="p-2 bg-indigo-100 rounded-lg">
                 <Percent className="w-5 h-5 text-indigo-600" />
               </div>
-              <h2 className="text-lg font-semibold text-gray-900">Commission Rates</h2>
+              <h2 className="text-base sm:text-lg font-semibold text-gray-900">Commission Rates</h2>
             </div>
             <div className="space-y-4">
               {showSkeleton
@@ -319,8 +319,8 @@ export default function AdminDashboardPage() {
             </a>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Stats</h2>
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
+            <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Quick Stats</h2>
             <div className="space-y-3">
               <a
                 href="/admin/total-commission"

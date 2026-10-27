@@ -125,14 +125,14 @@ export default function ASMNotificationsPage() {
 
     return (
         <div className="max-w-5xl mx-auto space-y-6">
-            <div className="flex items-start justify-between gap-4">
-                <div>
-                    <h1 className="text-3xl font-bold text-gray-900">Notifications</h1>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4 min-w-0">
+                <div className="min-w-0">
+                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Notifications</h1>
                     <p className="text-sm text-gray-500 mt-1">
                         {notifications.length} total • {unreadCount} unread
                     </p>
                 </div>
-                <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium ${isValidating ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-gray-50 text-gray-500 border border-gray-200"}`}>
+                <div className={`inline-flex self-start items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium shrink-0 ${isValidating ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-gray-50 text-gray-500 border border-gray-200"}`}>
                     <Wifi className={`w-3.5 h-3.5 ${isValidating ? "animate-pulse" : ""}`} />
                     Live
                 </div>

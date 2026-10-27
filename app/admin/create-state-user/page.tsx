@@ -163,12 +163,12 @@ export default function CreateStateUserPage() {
 
     return (
         <div className="space-y-6">
-            <div>
-                <h1 className="text-3xl font-bold text-gray-900">Create State User</h1>
-                <p className="text-gray-600 mt-1">Create a new state branch administrator</p>
+            <div className="min-w-0">
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Create State User</h1>
+                <p className="text-gray-600 mt-1 text-sm sm:text-base">Create a new state branch administrator</p>
             </div>
 
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 max-w-2xl">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 max-w-2xl">
                 <form onSubmit={handleSubmit} className="space-y-6">
                     {/* Action Required Alert */}
                     {actionRequired && (
@@ -200,7 +200,7 @@ export default function CreateStateUserPage() {
                     )}
 
                     {/* Name Fields */}
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                                 First Name <span className="text-red-500">*</span>
@@ -295,7 +295,7 @@ export default function CreateStateUserPage() {
                     </div>
 
                     {/* Password Fields */}
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                                 Password <span className="text-red-500">*</span>

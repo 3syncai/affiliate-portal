@@ -322,17 +322,35 @@ export default function SetCommissionPage() {
     )
   }
 
+  const scopeIconClass = (commission: Commission) =>
+    commission.product_id
+      ? "bg-blue-50 text-blue-600"
+      : commission.category_id
+        ? "bg-emerald-50 text-emerald-600"
+        : commission.collection_id
+          ? "bg-purple-50 text-purple-600"
+          : "bg-orange-50 text-orange-600"
+
+  const ScopeIcon = ({ commission }: { commission: Commission }) => (
+    <>
+      {commission.product_id && <Package className="w-4 h-4" />}
+      {commission.category_id && <Tag className="w-4 h-4" />}
+      {commission.collection_id && <Boxes className="w-4 h-4" />}
+      {commission.type_id && <Type className="w-4 h-4" />}
+    </>
+  )
+
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Set Commission</h1>
-          <p className="text-gray-600 mt-1">Manage commission rates for products, categories, brands, and sub-categories</p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Set Commission</h1>
+          <p className="text-gray-600 mt-1 text-sm sm:text-base">Manage commission rates for products, categories, brands, and sub-categories</p>
         </div>
         <button
           onClick={() => setShowForm(true)}
-          className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+          className="flex items-center justify-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 shrink-0"
         >
           <Plus className="w-5 h-5 mr-2" />
           Add Commission
@@ -361,15 +379,17 @@ export default function SetCommissionPage() {
         </div>
       </div>
 
-      {/* Form Modal */}
+      {/* Form Modal — bottom-sheet on mobile */}
       {showForm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] backdrop-blur-sm">
-          <div className={`bg-white rounded-lg p-6 ${modalWidthClass[modalSize]} w-full mx-4 max-h-[90vh] overflow-y-auto transition-[max-width] duration-200`}>
+        <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-[60] backdrop-blur-sm p-0 sm:p-4">
+          <div
+            className={`bg-white rounded-t-2xl sm:rounded-lg p-4 sm:p-6 ${modalWidthClass[modalSize]} w-full max-h-[90dvh] overflow-y-auto transition-[max-width] duration-200`}
+          >
             <div className="flex items-center justify-between mb-4 gap-3">
-              <h2 className="text-xl font-bold">
+              <h2 className="text-lg sm:text-xl font-bold min-w-0 truncate">
                 {editingCommission ? "Edit Commission" : "Add Commission"}
               </h2>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 shrink-0">
                 <div
                   className="hidden sm:flex items-center gap-1 bg-gray-100 rounded-lg p-1"
                   role="group"
@@ -399,7 +419,7 @@ export default function SetCommissionPage() {
                 </div>
                 <button
                   onClick={handleCancel}
-                  className="text-gray-500 hover:text-gray-700"
+                  className="text-gray-500 hover:text-gray-700 p-1"
                   aria-label="Close"
                 >
                   <X className="w-5 h-5" />
@@ -606,7 +626,7 @@ export default function SetCommissionPage() {
                 </p>
               </div>
 
-              <div className="flex gap-3 justify-end pt-4">
+              <div className="flex flex-col-reverse sm:flex-row gap-3 sm:justify-end pt-4">
                 <button
                   onClick={handleCancel}
                   className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm font-semibold"
@@ -617,7 +637,7 @@ export default function SetCommissionPage() {
                 <button
                   onClick={handleSave}
                   disabled={saving}
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 flex items-center text-sm font-semibold shadow-md shadow-indigo-100 transition-all"
+                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 flex items-center justify-center text-sm font-semibold shadow-md shadow-indigo-100 transition-all"
                 >
                   {saving ? (
                     <>
@@ -637,79 +657,116 @@ export default function SetCommissionPage() {
         </div>
       )}
 
-      {/* Commissions Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Scope</th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Entity</th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Commission Rate</th>
-                <th className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-100">
-              {filteredCommissions.length === 0 ? (
-                <tr>
-                  <td colSpan={4} className="px-6 py-12 text-center text-gray-500">
-                    <div className="flex flex-col items-center gap-2">
-                      <Package className="w-8 h-8 text-gray-200" />
-                      <p className="font-medium">{commissions.length === 0 ? "No commissions set yet." : "No matching commissions found."}</p>
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                filteredCommissions.map((commission) => (
-                  <tr key={commission.id} className="hover:bg-gray-50/50 transition-colors group">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className={`p-2 rounded-lg mr-3 ${commission.product_id ? "bg-blue-50 text-blue-600" :
-                            commission.category_id ? "bg-emerald-50 text-emerald-600" :
-                              commission.collection_id ? "bg-purple-50 text-purple-600" :
-                                "bg-orange-50 text-orange-600"
-                          }`}>
-                          {commission.product_id && <Package className="w-4 h-4" />}
-                          {commission.category_id && <Tag className="w-4 h-4" />}
-                          {commission.collection_id && <Boxes className="w-4 h-4" />}
-                          {commission.type_id && <Type className="w-4 h-4" />}
-                        </div>
-                        <span className="text-sm font-bold text-gray-900">{getEntityType(commission)}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm font-medium text-gray-700">{getEntityName(commission)}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-100">
-                        {commission.commission_rate}%
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => handleEdit(commission)}
-                          className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
-                          title="Edit"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(commission.id)}
-                          className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                          title="Delete"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+      {/* Empty state */}
+      {filteredCommissions.length === 0 ? (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 sm:p-12 text-center">
+          <div className="flex flex-col items-center gap-2">
+            <Package className="w-8 h-8 text-gray-200" />
+            <p className="font-medium text-gray-500">
+              {commissions.length === 0 ? "No commissions set yet." : "No matching commissions found."}
+            </p>
+          </div>
         </div>
-      </div>
+      ) : (
+        <>
+          {/* Mobile cards */}
+          <div className="md:hidden space-y-3">
+            {filteredCommissions.map((commission) => (
+              <div
+                key={commission.id}
+                className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 min-w-0"
+              >
+                <div className="flex items-start justify-between gap-2 mb-3">
+                  <div className="flex items-center min-w-0 gap-2">
+                    <div className={`p-2 rounded-lg shrink-0 ${scopeIconClass(commission)}`}>
+                      <ScopeIcon commission={commission} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold text-gray-900">{getEntityType(commission)}</p>
+                      <p className="text-sm text-gray-700 truncate">{getEntityName(commission)}</p>
+                    </div>
+                  </div>
+                  <span className="shrink-0 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-100">
+                    {commission.commission_rate}%
+                  </span>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleEdit(commission)}
+                    className="flex-1 inline-flex items-center justify-center gap-1.5 text-sm font-semibold text-indigo-600 hover:text-indigo-900 py-2 rounded-lg hover:bg-indigo-50 transition-colors border border-indigo-100"
+                  >
+                    <Edit className="w-4 h-4" />
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleDelete(commission.id)}
+                    className="flex-1 inline-flex items-center justify-center gap-1.5 text-sm font-semibold text-red-600 hover:text-red-900 py-2 rounded-lg hover:bg-red-50 transition-colors border border-red-100"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Delete
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop table */}
+          <div className="hidden md:block bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Scope</th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Entity</th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Commission Rate</th>
+                    <th className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-100">
+                  {filteredCommissions.map((commission) => (
+                    <tr key={commission.id} className="hover:bg-gray-50/50 transition-colors group">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className={`p-2 rounded-lg mr-3 ${scopeIconClass(commission)}`}>
+                            <ScopeIcon commission={commission} />
+                          </div>
+                          <span className="text-sm font-bold text-gray-900">{getEntityType(commission)}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm font-medium text-gray-700">{getEntityName(commission)}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-100">
+                          {commission.commission_rate}%
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => handleEdit(commission)}
+                            className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                            title="Edit"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(commission.id)}
+                            className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   )
 }

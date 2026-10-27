@@ -62,19 +62,19 @@ export default function GSTSettingsPage() {
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div>
-                <h1 className="text-3xl font-bold text-gray-900">TDS Settings</h1>
-                <p className="text-gray-600 mt-1">Configure TDS percentage for affiliate commissions</p>
+            <div className="min-w-0">
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">TDS Settings</h1>
+                <p className="text-gray-600 mt-1 text-sm sm:text-base">Configure TDS percentage for affiliate commissions</p>
             </div>
 
             {/* Settings Card */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 max-w-2xl">
-                <div className="flex items-center gap-3 mb-6">
-                    <div className="bg-indigo-100 p-2 rounded-lg">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 max-w-2xl">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-6">
+                    <div className="bg-indigo-100 p-2 rounded-lg shrink-0 w-fit">
                         <Settings className="w-6 h-6 text-indigo-600" />
                     </div>
-                    <div>
-                        <h2 className="text-xl font-semibold text-gray-900">TDS Configuration</h2>
+                    <div className="min-w-0">
+                        <h2 className="text-lg sm:text-xl font-semibold text-gray-900">TDS Configuration</h2>
                         <p className="text-sm text-gray-500">Set the TDS percentage to be applied on affiliate commissions</p>
                     </div>
                 </div>
