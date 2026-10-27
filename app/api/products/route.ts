@@ -1,3 +1,4 @@
+import { listCatalogCommissionRates } from "@/lib/catalog-commission";
 import { NextRequest, NextResponse } from "next/server";
 import pool from "@/lib/db";
 
@@ -67,11 +68,11 @@ let inFlight: Promise<ProductsPayload> | null = null;
 async function buildPayload(): Promise<ProductsPayload> {
     const t0 = Date.now();
 
-    // 8 parallel queries — none depend on each other.
+    // Parallel catalog queries — none depend on each other.
     const [
         productsRes,
         variantsRes,
-        commissionsRes,
+
         categoryRes,
         collectionRes,
         inventoryRes,
@@ -86,10 +87,6 @@ async function buildPayload(): Promise<ProductsPayload> {
             SELECT id, product_id
             FROM product_variant
             WHERE deleted_at IS NULL
-        `),
-        pool.query(`
-            SELECT product_id, category_id, collection_id, commission_rate
-            FROM affiliate_commission
         `),
         pool.query(`
             SELECT
@@ -143,23 +140,7 @@ async function buildPayload(): Promise<ProductsPayload> {
     ]);
 
     // Build lookup maps
-    const commissions: Array<{
-        product_id: string | null;
-        category_id: string | null;
-        collection_id: string | null;
-        commission_rate: number;
-    }> = commissionsRes.rows;
-
-    const productCommission = new Map<string, number>();
-    const categoryCommission = new Map<string, number>();
-    const collectionCommission = new Map<string, number>();
-    for (const c of commissions) {
-        const rate = Number(c.commission_rate) || 0;
-        if (c.product_id) productCommission.set(c.product_id, rate);
-        else if (c.category_id) categoryCommission.set(c.category_id, rate);
-        else if (c.collection_id) collectionCommission.set(c.collection_id, rate);
-    }
-
+    const catalogRates = await listCatalogCommissionRates(pool);
     const productCategories = new Map<string, { ids: Set<string>; names: string[] }>();
     for (const row of categoryRes.rows) {
         const entry = productCategories.get(row.product_id) || { ids: new Set(), names: [] };
@@ -219,25 +200,9 @@ async function buildPayload(): Promise<ProductsPayload> {
         const cats = productCategories.get(p.id);
         const collection = productCollections.get(p.id) || null;
 
-        // Resolve commission rate: product > category > collection
-        let rate: number | null = null;
-        let source: string | null = null;
-        if (productCommission.has(p.id)) {
-            rate = productCommission.get(p.id) ?? 0;
-            source = "product";
-        } else if (cats) {
-            for (const catId of cats.ids) {
-                if (categoryCommission.has(catId)) {
-                    rate = categoryCommission.get(catId) ?? 0;
-                    source = "category";
-                    break;
-                }
-            }
-        }
-        if (rate == null && collection?.id && collectionCommission.has(collection.id)) {
-            rate = collectionCommission.get(collection.id) ?? 0;
-            source = "collection";
-        }
+        const commonRule = catalogRates.get(p.id);
+        const rate = commonRule?.rate ?? null;
+        const source = commonRule?.source ?? null;
 
         const price = productPrice.get(p.id) ?? 0;
         const inventoryQuantity = productInventory.get(p.id) ?? 0;
