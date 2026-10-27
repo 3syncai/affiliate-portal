@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
 
     let filterClause = "";
     if (filter === "pending") {
-      filterClause = " AND acl.status = 'PENDING'";
+      filterClause = " AND acl.status IN ('PENDING', 'RATE_MISSING')";
     } else if (filter === "returns") {
       filterClause = ` AND (${COMMISSION_IS_RETURN_OR_CANCELLED_SQL})`;
     }

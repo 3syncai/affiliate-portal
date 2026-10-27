@@ -1,3 +1,4 @@
+import { listCatalogCommissionRates } from "@/lib/catalog-commission";
 import { NextRequest, NextResponse } from "next/server";
 import { Pool } from "pg";
 
@@ -24,14 +25,6 @@ interface MedusaVariant {
     sku: string;
     inventory_quantity: number;
     prices: { amount: number; currency_code: string }[];
-}
-
-interface DBCommission {
-    id: string;
-    product_id: string | null;
-    category_id: string | null;
-    collection_id: string | null;
-    commission_rate: number;
 }
 
 interface DBCategory {
@@ -79,11 +72,11 @@ export async function GET(req: NextRequest) {
             priceRes,
             typesRes
         ] = await Promise.all([
-            pool.query(`SELECT id, title, handle, status, description, thumbnail, type_id, created_at, updated_at FROM product WHERE deleted_at IS NULL LIMIT 25000`),
+            pool.query(`SELECT id, title, handle, status, description, thumbnail, type_id, metadata, created_at, updated_at FROM product WHERE deleted_at IS NULL LIMIT 25000`),
             pool.query(`SELECT id, product_id, title, sku FROM product_variant WHERE deleted_at IS NULL`),
             pool.query(`SELECT * FROM affiliate_commission`),
             pool.query(`
-                SELECT 
+                SELECT
                     pcp.product_id,
                     pc.id as category_id,
                     pc.name as category_name,
@@ -93,7 +86,7 @@ export async function GET(req: NextRequest) {
                 JOIN product_category pc ON pc.id = pcp.product_category_id
             `),
             pool.query(`
-                SELECT 
+                SELECT
                     p.id as product_id,
                     pc.id as collection_id,
                     pc.title as collection_title,
@@ -103,7 +96,7 @@ export async function GET(req: NextRequest) {
                 WHERE p.collection_id IS NOT NULL
             `),
             pool.query(`
-                SELECT 
+                SELECT
                     pvii.variant_id,
                     COALESCE(SUM(il.stocked_quantity), 0) as inventory_quantity
                 FROM product_variant_inventory_item pvii
@@ -111,19 +104,19 @@ export async function GET(req: NextRequest) {
                 GROUP BY pvii.variant_id
             `),
             pool.query(`
-                SELECT 
+                SELECT
                     pv.id AS variant_id,
                     base_p.amount AS base_price,
                     disc_p.amount AS discounted_price
                 FROM product_variant pv
                 JOIN product_variant_price_set pvps ON pvps.variant_id = pv.id
                 JOIN price_set ps ON ps.id = pvps.price_set_id
-                LEFT JOIN price base_p 
+                LEFT JOIN price base_p
                     ON base_p.price_set_id = ps.id
                     AND base_p.price_list_id IS NULL
                     AND base_p.min_quantity IS NULL
                     AND base_p.max_quantity IS NULL
-                LEFT JOIN price disc_p 
+                LEFT JOIN price disc_p
                     ON disc_p.price_set_id = ps.id
                     AND disc_p.price_list_id IS NOT NULL
                     AND disc_p.min_quantity IS NULL
@@ -201,6 +194,8 @@ export async function GET(req: NextRequest) {
             productVariants.set(v.product_id, existing);
         });
 
+        const catalogRates = await listCatalogCommissionRates(pool);
+
         // Map final products
         const products = productsRes.rows.map(product => {
             const categories = productCategories.get(product.id) || [];
@@ -209,22 +204,14 @@ export async function GET(req: NextRequest) {
             const variants = productVariants.get(product.id) || [];
             const totalInventory = variants.reduce((sum: number, v: any) => sum + v.inventory_quantity, 0);
 
-            let commission = 0;
-            const productCommission = commissions.find((c: DBCommission) => c.product_id === product.id);
-            if (productCommission) {
-                commission = productCommission.commission_rate;
-            } else if (categories.length > 0) {
-                const categoryCommission = commissions.find((c: any) =>
-                    categories.some((cat: any) => cat.id === c.category_id)
-                );
-                if (categoryCommission) commission = categoryCommission.commission_rate;
-            } else if (collection) {
-                const collectionCommission = commissions.find((c: any) => c.collection_id === collection.id);
-                if (collectionCommission) commission = collectionCommission.commission_rate;
-            }
+            const commonRule = catalogRates.get(product.id);
+            const commission = commonRule?.rate ?? 0;
 
             return {
                 id: product.id,
+                catalog_product_id: commonRule?.catalogId || product.id,
+                commission_configured: commonRule?.rate != null,
+                commission_conflict: commonRule?.conflict || false,
                 title: product.title,
                 handle: product.handle,
                 status: product.status || "published",

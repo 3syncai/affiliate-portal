@@ -4,10 +4,19 @@ import { useEffect, useState } from "react"
 import { Search, Plus, Edit, Trash2, Package, Tag, Boxes, Type, Save, X, ChevronDown, Check, Maximize2 } from "lucide-react"
 import axios from "axios"
 import Image from "next/image"
+import CommissionRepair from "./CommissionRepair"
+
+const commissionApi = axios.create()
+commissionApi.interceptors.request.use(config => {
+  const token = localStorage.getItem("affiliate_token")
+  if (token) config.headers.Authorization = `Bearer ${token}`
+  return config
+})
 
 interface Product {
   id: string
   title: string
+  catalog_product_id?: string
   thumbnail?: string
   categories?: { id: string; name: string; parent_category_id?: string | null }[]
   collection?: { id: string; title: string }
@@ -21,6 +30,8 @@ interface Commission {
   category_id?: string | null
   collection_id?: string | null
   type_id?: string | null
+  linked_listing_count?: number
+  catalog_error?: string | null
   commission_rate: number
   product?: { id: string; title: string }
   category?: { id: string; name: string }
@@ -107,7 +118,7 @@ export default function SetCommissionPage() {
 
   const loadCommissions = async () => {
     try {
-      const response = await axios.get("/api/affiliate/admin/commission-settings")
+      const response = await commissionApi.get("/api/affiliate/admin/commission-settings")
       const data = response.data
       setCommissions(data.commissions || [])
     } catch (error: any) {
@@ -122,7 +133,7 @@ export default function SetCommissionPage() {
   const loadProducts = async () => {
     setProductsLoading(true)
     try {
-      const response = await axios.get("/api/affiliate/admin/products")
+      const response = await commissionApi.get("/api/affiliate/admin/products")
       const data = response.data
       setProducts((data.products as Product[]) || [])
 
@@ -203,7 +214,7 @@ export default function SetCommissionPage() {
       if (editingCommission) {
         // Update existing commission
         const requestBody = { commission_rate: commissionRate }
-        response = await axios.put(`/api/affiliate/admin/commission-settings/${editingCommission.id}`, requestBody)
+        response = await commissionApi.put(`/api/affiliate/admin/commission-settings/${editingCommission.id}`, requestBody)
         if (!response.data?.success) throw new Error(response.data?.error || "Update failed")
       } else {
         // Create new commission
@@ -213,7 +224,7 @@ export default function SetCommissionPage() {
         else if (formData.commission_type === "collection") body.collection_id = formData.entity_id
         else if (formData.commission_type === "type") body.type_id = formData.entity_id
 
-        response = await axios.post("/api/affiliate/admin/commission-settings", body)
+        response = await commissionApi.post("/api/affiliate/admin/commission-settings", body)
         if (!response.data?.success) throw new Error(response.data?.error || "Create failed")
       }
 
@@ -232,10 +243,10 @@ export default function SetCommissionPage() {
   }
 
   const handleDelete = async (commissionId: string) => {
-    if (!confirm("Are you sure you want to delete this commission?")) return
+    if (!confirm("Delete this rule? Product rules are removed for all linked vendor listings.")) return
 
     try {
-      const response = await axios.delete(`/api/affiliate/admin/commission-settings/${commissionId}`)
+      const response = await commissionApi.delete(`/api/affiliate/admin/commission-settings/${commissionId}`)
       if (!response.data?.success) throw new Error(response.data?.error || "Delete failed")
       await loadCommissions()
       showToast("Commission deleted successfully", "success")
@@ -346,7 +357,7 @@ export default function SetCommissionPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="min-w-0">
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Set Commission</h1>
-          <p className="text-gray-600 mt-1 text-sm sm:text-base">Manage commission rates for products, categories, brands, and sub-categories</p>
+          <p className="text-gray-600 mt-1 text-sm sm:text-base">One rate per catalog product, shared by all verified vendor listings. Category, brand and sub-category rules remain available.</p>
         </div>
         <button
           onClick={() => setShowForm(true)}
@@ -518,7 +529,8 @@ export default function SetCommissionPage() {
                           ) : (
                             <>
                               {products
-                                .filter(p => !productSearchTerm || p.title.toLowerCase().includes(productSearchTerm.toLowerCase()))
+                                .filter((p, index, all) => all.findIndex(other => (other.catalog_product_id || other.id) === (p.catalog_product_id || p.id)) === index)
+                                .filter(p => !productSearchTerm || (p.title + " " + p.id + " " + (p.catalog_product_id || "")).toLowerCase().includes(productSearchTerm.toLowerCase()))
                                 .map((product) => (
                                   <div
                                     key={product.id}
@@ -546,7 +558,7 @@ export default function SetCommissionPage() {
                                       </div>
                                     )}
                                     <div className="flex-1 min-w-0">
-                                      <div className="text-sm font-medium text-gray-900 truncate">{product.title}</div>
+                                      <div className="text-sm font-medium text-gray-900 truncate">{product.title}</div><p className="text-xs text-slate-500 break-all">Catalog: {product.catalog_product_id || product.id} · SKU: {product.variants?.map(v => v.sku).join(", ") || "—"}</p>
                                       <div className="text-xs text-gray-500 truncate">SKU: {product.variants?.[0]?.sku || "N/A"}</div>
                                     </div>
                                     {formData.entity_id === product.id && (
@@ -684,6 +696,7 @@ export default function SetCommissionPage() {
                     <div className="min-w-0">
                       <p className="text-sm font-bold text-gray-900">{getEntityType(commission)}</p>
                       <p className="text-sm text-gray-700 truncate">{getEntityName(commission)}</p>
+                      {commission.product_id && <><p className="text-xs text-slate-500">Common rate · {commission.linked_listing_count} linked listing(s)</p><CommissionRepair productId={commission.product_id} /></>}
                     </div>
                   </div>
                   <span className="shrink-0 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-100">
@@ -735,6 +748,8 @@ export default function SetCommissionPage() {
                       </td>
                       <td className="px-6 py-4">
                         <div className="text-sm font-medium text-gray-700">{getEntityName(commission)}</div>
+                        {commission.product_id && <><p className="text-xs text-slate-500 mt-1">Common rate · {commission.linked_listing_count} linked listing(s)</p><CommissionRepair productId={commission.product_id} /></>}
+                        {commission.catalog_error && <p className="text-xs text-amber-700">{commission.catalog_error}</p>}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-100">
