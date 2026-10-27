@@ -43,7 +43,7 @@ export async function GET(request: Request) {
         }
 
         // Apply the same delivery / return / unlock logic the affiliate dashboard
-        // uses, so a delivered order shows the 5-minute countdown here too.
+        // uses, so a delivered order shows the return/replacement policy countdown here too.
         await syncAffiliateCommissionStatuses(pool, {
             affiliateCode: referCode,
             logPrefix: '[Branch My Referrals]',

@@ -10,33 +10,6 @@ type SyncOptions = {
     logPrefix: string;
 };
 
-/** Default post-delivery return window before commission credits (ecomm policy). */
-export const COMMISSION_UNLOCK_DAYS = 7;
-
-/** @deprecated Use COMMISSION_UNLOCK_DAYS; kept for dev smoke tests via env override. */
-export const COMMISSION_UNLOCK_MINUTES = parsePositiveInt(
-    process.env.COMMISSION_UNLOCK_MINUTES,
-    0,
-);
-
-function parsePositiveInt(value: string | undefined, fallback: number): number {
-    const parsed = Number.parseInt(String(value ?? ""), 10);
-    return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
-}
-
-/** SQL interval for the unlock window (env: COMMISSION_UNLOCK_MINUTES for dev, else days). */
-export function getCommissionUnlockIntervalSql(): string {
-    const minutesOverride = parsePositiveInt(process.env.COMMISSION_UNLOCK_MINUTES, 0);
-    if (minutesOverride > 0) {
-        return `INTERVAL '${minutesOverride} minutes'`;
-    }
-    const days = parsePositiveInt(
-        process.env.COMMISSION_UNLOCK_DAYS,
-        COMMISSION_UNLOCK_DAYS,
-    );
-    return `INTERVAL '${days} days'`;
-}
-
 type PromotedCommissionRow = {
     commission_source: string;
     affiliate_user_id: string | null;
@@ -144,7 +117,6 @@ async function creditWalletsForPromotedRows(
 
 export async function syncAffiliateCommissionStatuses(db: Queryable, options: SyncOptions) {
     const { affiliateCode, logPrefix } = options;
-    const unlockInterval = getCommissionUnlockIntervalSql();
 
     try {
         const orderTableRes = await db.query(
@@ -323,13 +295,16 @@ export async function syncAffiliateCommissionStatuses(db: Queryable, options: Sy
             await db.query(
                 `
                 UPDATE affiliate_commission_log acl
-                SET unlock_at = ${deliveryAnchorSql} + ${unlockInterval}
+                SET policy_delivered_at = COALESCE(acl.policy_delivered_at, ${deliveryAnchorSql}),
+                    policy_hold_days = resolve_commission_hold_days(acl.order_id),
+                    unlock_at = COALESCE(acl.policy_delivered_at, ${deliveryAnchorSql})
+                        + resolve_commission_hold_days(acl.order_id) * INTERVAL '1 day'
                 FROM "${orderTable}" o
                 ${joinClause}
                 WHERE o.id = acl.order_id
                   ${affiliateFilterClause}
                   AND acl.status = 'PENDING'
-                  AND acl.unlock_at IS NULL
+                  AND acl.policy_hold_days IS NULL
                   AND NOT (${COMMISSION_HAS_ANY_RETURN_REQUEST_SQL})
                   AND (${deliveredConditions.join(" OR ")})
             `,

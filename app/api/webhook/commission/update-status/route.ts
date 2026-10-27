@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
              SET status = 'PENDING',
                  credited_at = NULL
              WHERE order_id = $1
-               AND status IS DISTINCT FROM 'CANCELLED'
+               AND status = 'PENDING'
              RETURNING id, affiliate_code, affiliate_commission, status, unlock_at`,
             [order_id]
         );
