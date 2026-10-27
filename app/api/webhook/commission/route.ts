@@ -1,3 +1,4 @@
+import { lookupCatalogCommission } from "@/lib/catalog-commission";
 import { NextRequest, NextResponse } from "next/server";
 import databasePool from "@/lib/db";
 import { CommissionEventConflict, receiveCommissionEvent } from "@/lib/commission-webhook-transaction";
@@ -115,62 +116,17 @@ export async function POST(request: NextRequest) {
             console.error("[Enrichment] Failed to fetch product metadata:", enrichErr);
         }
 
-        // STEP 1: Lookup commission percentage from affiliate_commission table
-        // Priority: product_id > category (ANY of the product's categories or ancestors)
-        //          > collection_id > product_type_id
-        let commissionPercentage = 0;
-        const commissionQuery = `
-            SELECT commission_rate as commission_percentage,
-                   product_id, category_id, collection_id, type_id,
-                   CASE 
-                       WHEN product_id IS NOT NULL THEN 'product'
-                       WHEN category_id IS NOT NULL THEN 'category'
-                       WHEN collection_id IS NOT NULL THEN 'collection'
-                       WHEN type_id IS NOT NULL THEN 'product_type'
-                   END as source
-            FROM affiliate_commission
-            WHERE (product_id = $1)
-               OR (category_id = ANY($2::text[]) AND product_id IS NULL)
-               OR (collection_id = $3 AND product_id IS NULL AND category_id IS NULL)
-               OR (type_id = $4 AND product_id IS NULL AND category_id IS NULL AND collection_id IS NULL)
-            ORDER BY 
-                CASE 
-                    WHEN product_id IS NOT NULL THEN 1
-                    WHEN category_id IS NOT NULL THEN 2
-                    WHEN collection_id IS NOT NULL THEN 3
-                    WHEN type_id IS NOT NULL THEN 4
-                END,
-                commission_rate DESC
-            LIMIT 1
-        `;
-
-        const commissionResult = await pool.query(commissionQuery, [
-            payload.product_id,
-            productCategoryIds.length > 0 ? productCategoryIds : [null],
-            payload.collection_id || null,
-            payload.product_type_id || null
-        ]);
-
-        if (commissionResult.rows.length > 0) {
-            commissionPercentage = parseFloat(commissionResult.rows[0].commission_percentage);
-            const row = commissionResult.rows[0];
-            // Record the actually matched category on the ledger for clarity
-            if (row.source === "category" && row.category_id) {
-                payload.category_id = row.category_id;
-            }
-            console.log(`[Commission Lookup] Found ${commissionPercentage}% commission via ${row.source}${row.category_id ? ` (category=${row.category_id})` : ""}`);
-        } else {
-            console.log(`[Commission Lookup] No commission found for product=${payload.product_id}, categories=[${productCategoryIds.join(", ")}], collection=${payload.collection_id}, type=${payload.product_type_id}. Using fallback 0%.`);
-            commissionPercentage = 0;
-        }
+        const matchedRule = await lookupCatalogCommission(pool, payload.product_id);
+        const commissionPercentage = matchedRule?.rate ?? 0;
+        if (matchedRule?.categoryId) payload.category_id = matchedRule.categoryId;
 
         // STEP 2: Calculate commission amount based on price and percentage
         const commissionAmount = payload.order_amount * (commissionPercentage / 100);
         console.log(`[Commission Calculation] ${payload.order_amount} * ${commissionPercentage}% = ${commissionAmount}`);
 
-        const commissionStatus = "PENDING" as const;
+        const commissionStatus = matchedRule ? "PENDING" : "RATE_MISSING";
         console.log(
-            `[Commission Status] Incoming status "${payload.status || "PENDING"}" -> ledger PENDING (7-day unlock via sync)`,
+            `[Commission Status] Incoming status "${payload.status || "PENDING"}" -> ledger ${commissionStatus} (delivery unlock via sync)`,
         );
 
         // STEP 3: Check Branch Admin
@@ -696,7 +652,7 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        await applyAdditionalCommissionForOrder(payload.order_id, pool, true);
+        if (matchedRule) await applyAdditionalCommissionForOrder(payload.order_id, pool, true);
 
         await syncAffiliateCommissionStatuses(pool, {
             logPrefix: "[Commission Webhook]",
@@ -707,7 +663,8 @@ export async function POST(request: NextRequest) {
             success: true,
             hierarchy_applied: !!branchAdmin,
             asm_referral: !!asm,
-            message: "Commission processed successfully"
+            rate_configured: Boolean(matchedRule),
+            message: matchedRule ? "Commission processed successfully" : "Commission not configured; held for admin review"
         });
 
     } catch (error: unknown) {

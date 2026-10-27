@@ -85,6 +85,10 @@ export default function CommissionStatusBadge({
     )
   }
 
+  if (status === "RATE_MISSING") {
+    return <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded bg-amber-100 text-amber-800 ${className}`} title="Admin must configure the catalog commission before processing this entry."><AlertCircle className="w-3 h-3" />Commission not configured</span>
+  }
+
   if (status === "CREDITED") {
     return (
       <span className={`inline-block text-xs px-2 py-0.5 rounded bg-green-100 text-green-700 ${className}`}>
