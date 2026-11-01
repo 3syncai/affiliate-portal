@@ -3,37 +3,42 @@
 import { useEffect, useState } from "react"
 import { Settings, Save, RefreshCw, Info } from "lucide-react"
 import axios from "axios"
+import CommissionPoolSummary from "@/app/components/CommissionPoolSummary"
+import { commissionBasisPoints, normalCommissionPool, NORMAL_COMMISSION_ROLES, COMMISSION_POOL_LABELS } from "@/lib/commission-pool"
 
 interface CommissionRate {
     id: string
     role_type: string
-    commission_percentage: number
+    commission_percentage: string | number
     description: string
     updated_at: string
 }
 
 const roleLabels: Record<string, string> = {
-    affiliate: "Sales Executive",
-    branch_direct: "Branch Admin Direct Referrals",
-    branch: "Branch Admin (Team Commission)",
-    area: "Area Sales Manager",
-    state: "State Admin"
+    ...COMMISSION_POOL_LABELS,
+    branch_direct: "Legacy direct-referral setting",
 }
-
 const roleDescriptions: Record<string, string> = {
-    affiliate: "Commission percentage that Oweg Partners receive from their product commissions",
-    branch_direct: "Additional bonus for branch admins on their direct referrals (added to affiliate base rate)",
-    branch: "Commission percentage branch admins earn from their team's affiliate sales",
-    area: "Commission percentage area managers earn from affiliate sales in their area",
-    state: "Commission percentage state admins earn from affiliate sales in their state"
+    affiliate: "Sales Executive share of the product commission pool",
+    branch: "Area Sales Manager (/bm) share of the product commission pool",
+    area: "Branch Admin (/asm) share of the product commission pool",
+    state: "State Head share of the product commission pool",
+    branch_direct: "Separate legacy setting; not an additional share in the normal pool",
+}
+function errorMessage(error: unknown) {
+    return axios.isAxiosError(error) ? error.response?.data?.error || error.message : error instanceof Error ? error.message : "Please try again."
 }
 
 export default function CommissionRatesPage() {
     const [rates, setRates] = useState<CommissionRate[]>([])
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
-    const [editedRates, setEditedRates] = useState<Record<string, number>>({})
-    const [hasChanges, setHasChanges] = useState(false)
+    const [editedRates, setEditedRates] = useState<Record<string, string>>({})
+    const changedRates = rates.filter(rate => editedRates[rate.role_type] !== String(rate.commission_percentage))
+    const hasChanges = changedRates.length > 0
+    const poolState = normalCommissionPool(editedRates)
+    const normalChanged = changedRates.some(rate => (NORMAL_COMMISSION_ROLES as readonly string[]).includes(rate.role_type))
+    const canSave = hasChanges && (!normalChanged || poolState.valid) && changedRates.every(rate => commissionBasisPoints(editedRates[rate.role_type]) !== null)
 
     useEffect(() => {
         loadRates()
@@ -45,32 +50,31 @@ export default function CommissionRatesPage() {
             if (response.data.success) {
                 setRates(response.data.rates)
                 // Initialize edited rates with current values
-                const initialEdits: Record<string, number> = {}
+                const initialEdits: Record<string, string> = {}
                 response.data.rates.forEach((rate: CommissionRate) => {
-                    initialEdits[rate.role_type] = rate.commission_percentage
+                    initialEdits[rate.role_type] = String(rate.commission_percentage)
                 })
                 setEditedRates(initialEdits)
             }
-        } catch (error: any) {
+        } catch (error) {
             console.error("Failed to load commission rates:", error)
-            alert("Failed to load commission rates: " + (error.response?.data?.error || error.message))
+            alert("Failed to load commission rates: " + errorMessage(error))
         } finally {
             setLoading(false)
         }
     }
 
     const handleRateChange = (roleType: string, value: string) => {
-        const numValue = parseFloat(value)
-        if (!isNaN(numValue) && numValue >= 0 && numValue <= 100) {
-            setEditedRates(prev => ({ ...prev, [roleType]: numValue }))
-            setHasChanges(true)
+        if (value === "" || /^\d*\.?\d*$/.test(value)) {
+            setEditedRates(prev => ({ ...prev, [roleType]: value }))
         }
     }
 
     const handleSave = async () => {
+        if (!canSave) return
         setSaving(true)
         try {
-            const ratesToUpdate = rates.map(rate => ({
+            const ratesToUpdate = changedRates.map(rate => ({
                 role_type: rate.role_type,
                 commission_percentage: editedRates[rate.role_type]
             }))
@@ -82,23 +86,21 @@ export default function CommissionRatesPage() {
             if (response.data.success) {
                 alert("Commission rates updated successfully!")
                 await loadRates()
-                setHasChanges(false)
             }
-        } catch (error: any) {
+        } catch (error) {
             console.error("Failed to save commission rates:", error)
-            alert("Failed to save: " + (error.response?.data?.error || error.message))
+            alert("Failed to save: " + errorMessage(error))
         } finally {
             setSaving(false)
         }
     }
 
     const handleReset = () => {
-        const initialEdits: Record<string, number> = {}
+        const initialEdits: Record<string, string> = {}
         rates.forEach(rate => {
-            initialEdits[rate.role_type] = rate.commission_percentage
+            initialEdits[rate.role_type] = String(rate.commission_percentage)
         })
         setEditedRates(initialEdits)
-        setHasChanges(false)
     }
 
     if (loading) {
@@ -129,7 +131,7 @@ export default function CommissionRatesPage() {
                     )}
                     <button
                         onClick={handleSave}
-                        disabled={!hasChanges || saving}
+                        disabled={!canSave || saving}
                         className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         <Save className="w-4 h-4 mr-2" />
@@ -138,6 +140,8 @@ export default function CommissionRatesPage() {
                 </div>
             </div>
 
+            <CommissionPoolSummary values={editedRates} />
+
             {/* Info Box */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4">
                 <div className="flex items-start">
@@ -145,9 +149,9 @@ export default function CommissionRatesPage() {
                     <div className="text-sm text-blue-800">
                         <p className="font-semibold mb-1">How Commission Rates Work:</p>
                         <ul className="list-disc list-inside space-y-1 ml-2">
-                            <li><strong>Affiliate:</strong> Base commission percentage for regular affiliate users</li>
-                            <li><strong>Branch Admin Direct:</strong> Bonus added to affiliate rate when branch admin refers directly (Total = Affiliate % + Branch Direct %)</li>
-                            <li><strong>Branch/Area/State:</strong> Percentage of affiliate team earnings distributed to admins</li>
+                            <li>The four normal shares must add up to exactly 100% of the product commission pool.</li>
+                            <li>Additional commission and bonus campaigns remain separate.</li>
+                            <li>Direct referrals continue combining existing normal shares; they do not create a fifth share.</li>
                         </ul>
                     </div>
                 </div>
@@ -179,11 +183,14 @@ export default function CommissionRatesPage() {
                                     </label>
                                     <div className="relative">
                                         <input
-                                            type="number"
+                                            id={`commission-rate-${rate.role_type}`}
+                                            aria-label={roleLabels[rate.role_type] || rate.role_type}
+                                            type="text"
+                                            inputMode="decimal"
                                             min="0"
                                             max="100"
                                             step="0.01"
-                                            value={editedRates[rate.role_type] || 0}
+                                            value={editedRates[rate.role_type] ?? ""}
                                             onChange={(e) => handleRateChange(rate.role_type, e.target.value)}
                                             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                                         />
@@ -203,7 +210,7 @@ export default function CommissionRatesPage() {
                                             </p>
                                         ) : (
                                             <p className="text-gray-600">
-                                                Branch admin direct referral: {editedRates["affiliate"] || 70}% + {editedRates[rate.role_type] || 15}% = <span className="font-semibold text-indigo-600">{(editedRates["affiliate"] || 70) + (editedRates[rate.role_type] || 15)}%</span> total
+                                                This legacy setting is excluded from the normal 100% pool.
                                             </p>
                                         )}
                                     </div>
@@ -225,18 +232,18 @@ export default function CommissionRatesPage() {
                     <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-lg p-4">
                         <p className="text-sm text-indigo-600 font-medium">Affiliate Direct Referral</p>
                         <p className="text-2xl font-bold text-indigo-900 mt-1">
-                            {editedRates["affiliate"] || 70}%
+                            {Number(editedRates["affiliate"] || 0)}%
                         </p>
                         <p className="text-xs text-indigo-700 mt-1">Commission on product sales</p>
                     </div>
 
                     <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-4">
-                        <p className="text-sm text-purple-600 font-medium">Branch Admin Direct Referral</p>
+                        <p className="text-sm text-purple-600 font-medium">Area Sales Manager (/bm) Direct Referral</p>
                         <p className="text-2xl font-bold text-purple-900 mt-1">
-                            {(editedRates["affiliate"] || 70) + (editedRates["branch_direct"] || 15)}%
+                            {Number(editedRates["affiliate"] || 0) + Number(editedRates["branch"] || 0)}%
                         </p>
                         <p className="text-xs text-purple-700 mt-1">
-                            Affiliate {editedRates["affiliate"] || 70}% + Bonus {editedRates["branch_direct"] || 15}%
+                            Sales Executive {Number(editedRates["affiliate"] || 0)}% + own share {Number(editedRates["branch"] || 0)}%
                         </p>
                     </div>
                 </div>

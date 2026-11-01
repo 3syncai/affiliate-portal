@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { Percent, Save, RefreshCw } from "lucide-react"
+import CommissionPoolSummary from "@/app/components/CommissionPoolSummary"
+import { normalCommissionPool, NORMAL_COMMISSION_ROLES, COMMISSION_POOL_LABELS } from "@/lib/commission-pool"
 
 interface CommissionRate {
     id: string
@@ -18,6 +20,7 @@ export default function CommissionSettingsPage() {
     const [error, setError] = useState("")
     const [success, setSuccess] = useState("")
     const [formData, setFormData] = useState<{ [key: string]: string }>({})
+    const poolState = normalCommissionPool(formData)
 
     useEffect(() => {
         fetchRates()
@@ -58,9 +61,11 @@ export default function CommissionSettingsPage() {
         setError("")
         setSuccess("")
 
-        // Validate all fields
+        if (!poolState.valid) { setError(poolState.error); return }
+
+        // Validate normal shares only; bonus settings remain separate.
         const updatedRates = []
-        for (const rate of rates) {
+        for (const rate of rates.filter(rate => (NORMAL_COMMISSION_ROLES as readonly string[]).includes(rate.role_type))) {
             const value = formData[rate.role_type]
             if (!value || value === "") {
                 setError("All commission rates are required")
@@ -102,20 +107,7 @@ export default function CommissionSettingsPage() {
         }
     }
 
-    const getRoleLabel = (roleType: string) => {
-        switch (roleType) {
-            case "affiliate":
-                return " sales Executive"
-            case "state":
-                return "State Admin"
-            case "area":
-                return "Branch Admin"
-            case "branch":
-                return "Area sales Manager"
-            default:
-                return roleType
-        }
-    }
+    const getRoleLabel = (roleType: string) => COMMISSION_POOL_LABELS[roleType] || roleType
 
     const getRoleDescription = (rate: CommissionRate) => {
         switch (rate.role_type) {
@@ -161,9 +153,11 @@ export default function CommissionSettingsPage() {
                         </div>
                     )}
 
+                    <CommissionPoolSummary values={formData} />
+
                     {/* Commission Rate Fields */}
                     <div className="space-y-6">
-                        {rates.filter(rate => rate.role_type !== 'branch_direct').map((rate) => (
+                        {rates.filter(rate => (NORMAL_COMMISSION_ROLES as readonly string[]).includes(rate.role_type)).map((rate) => (
                             <div key={rate.id} className="border-b border-gray-200 pb-6 last:border-b-0 last:pb-0">
                                 <div className="flex items-start justify-between mb-3">
                                     <div>
@@ -177,6 +171,9 @@ export default function CommissionSettingsPage() {
                                 <div className="flex items-center gap-3">
                                     <div className="relative flex-1 max-w-xs">
                                         <input
+                                            id={`commission-setting-${rate.role_type}`}
+                                            aria-label={getRoleLabel(rate.role_type)}
+                                            inputMode="decimal"
                                             type="text"
                                             value={formData[rate.role_type] || ""}
                                             onChange={(e) => handleChange(rate.role_type, e.target.value)}
@@ -198,7 +195,7 @@ export default function CommissionSettingsPage() {
                     {/* Info Box */}
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                         <p className="text-sm text-blue-800">
-                            <strong>Note:</strong> These commission rates will apply to all transactions. Changes take effect immediately after saving.
+                            <strong>Note:</strong> Normal shares apply to newly calculated commissions after saving. Existing credited payouts are not recalculated.
                         </p>
                     </div>
 
@@ -215,7 +212,7 @@ export default function CommissionSettingsPage() {
                         </button>
                         <button
                             type="submit"
-                            disabled={saving}
+                            disabled={saving || !poolState.valid}
                             className="flex-1 px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 font-medium"
                         >
                             {saving ? (
@@ -244,7 +241,7 @@ export default function CommissionSettingsPage() {
                     </li>
                     <li className="flex items-start">
                         <span className="font-medium mr-2">•</span>
-                        <span>The <strong>remaining commission</strong> is split among the hierarchy based on their percentages</span>
+                        <span>Each layer receives its configured share of the same product commission pool</span>
                     </li>
                     <li className="flex items-start">
                         <span className="font-medium mr-2">•</span>
@@ -252,7 +249,7 @@ export default function CommissionSettingsPage() {
                     </li>
                     <li className="flex items-start">
                         <span className="font-medium mr-2">•</span>
-                        <span>Commission percentages must be between <strong>0% and 100%</strong></span>
+                        <span>The four normal percentages must total <strong>exactly 100%</strong>. Additional commission is separate.</span>
                     </li>
                 </ul>
             </div>
