@@ -1,11 +1,11 @@
+import { withCommissionSettlementTransaction } from "@/lib/commission-settlement-transaction";
+import { cancelCommissionRows } from "@/lib/commission-wallet-ledger";
 import {
   RETURN_REQUEST_APPROVED_STATUSES,
   returnStatusSqlList,
 } from "@/lib/return-request-status";
 
-type Queryable = {
-  query: (text: string, params?: unknown[]) => Promise<{ rows: unknown[]; rowCount?: number }>;
-};
+type Queryable = Pick<import("pg").Pool, "query">;
 
 type VoidOptions = {
   affiliateCode?: string;
@@ -27,7 +27,9 @@ export async function voidCommissionsForApprovedReturns(
   const { affiliateCode, orderId, logPrefix = "[Return Void]" } = options;
 
   const filters: string[] = [
-    "acl.status IS DISTINCT FROM 'CANCELLED'",
+    `(acl.status IS DISTINCT FROM 'CANCELLED' OR EXISTS (
+      SELECT 1 FROM partner_commission_wallet_ledger wl
+      WHERE wl.commission_id = acl.id::text AND wl.reversed_at IS NULL))`,
     `EXISTS (
       SELECT 1
       FROM return_request rr
@@ -68,44 +70,8 @@ export async function voidCommissionsForApprovedReturns(
     return 0;
   }
 
-  const updateResult = await db.query(
-    `
-    UPDATE affiliate_commission_log acl
-    SET status = 'CANCELLED',
-        affiliate_commission = 0,
-        additional_commission_amount = 0,
-        credited_at = NULL,
-        unlock_at = NULL
-    WHERE ${filters.join(" AND ")}
-    RETURNING id, affiliate_code
-    `,
-    params,
-  );
+  const updated = await cancelCommissionRows(db, rows.map(row => String(row.id)));
 
-  for (const row of rows) {
-    const amount = parseFloat(String(row.affiliate_commission ?? "0"));
-    if (amount <= 0) continue;
-
-    try {
-      await db.query(
-        `
-        UPDATE customer_wallet
-        SET coins_balance = GREATEST(0, coins_balance - $2)
-        WHERE customer_id = (
-          SELECT id FROM affiliate_user WHERE refer_code = $1 LIMIT 1
-        )
-        `,
-        [row.affiliate_code, amount],
-      );
-    } catch (walletError) {
-      console.error(
-        `${logPrefix} wallet reversal failed for ${row.affiliate_code}:`,
-        walletError,
-      );
-    }
-  }
-
-  const updated = updateResult.rowCount ?? rows.length;
   if (updated > 0) {
     console.log(
       `${logPrefix} voided ${updated} commission row(s) for approved return`,
@@ -113,4 +79,12 @@ export async function voidCommissionsForApprovedReturns(
   }
 
   return updated;
+}
+
+/** Mutation webhook keeps immediate voiding, atomically serialized with the worker. */
+export async function voidApprovedReturnCommissions(pool: Pick<import("pg").Pool, "connect">, options: VoidOptions) {
+  const result = await withCommissionSettlementTransaction(pool,
+    client => voidCommissionsForApprovedReturns(client, options), true);
+  if (result.skipped) throw new Error("Unable to acquire commission settlement lock");
+  return result.value;
 }

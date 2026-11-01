@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import pool from "@/lib/db";
 import { fetchCommissionRates } from "@/lib/commission-rates";
-import { syncAffiliateCommissionStatuses } from "@/lib/affiliate-commission-sync";
 import { buildNationalActivities } from "@/lib/recent-activity";
 import {
   fetchAffiliateDashboardStats,
@@ -18,13 +17,6 @@ export async function GET(req: NextRequest) {
       100,
     );
 
-    try {
-      await syncAffiliateCommissionStatuses(pool, {
-        logPrefix: "[Admin Dashboard]",
-      });
-    } catch (err) {
-      console.warn("[Admin Dashboard] status sync failed:", err);
-    }
 
     const [stats, adminStats, commissionRates, activities] = await Promise.all([
       fetchAffiliateDashboardStats(pool),

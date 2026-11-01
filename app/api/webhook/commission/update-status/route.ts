@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import pool from "@/lib/db";
 import { applyAdditionalCommissionForOrder } from "@/lib/additional-commission";
-import { syncAffiliateCommissionStatuses } from "@/lib/affiliate-commission-sync";
 
 export const dynamic = "force-dynamic";
 
@@ -46,9 +45,6 @@ export async function POST(req: NextRequest) {
             });
         }
 
-        await syncAffiliateCommissionStatuses(pool, {
-            logPrefix: "[Commission Update]",
-        });
 
         for (const row of result.rows) {
             console.log(
@@ -60,7 +56,7 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json({
             success: true,
-            message: "Commission status updated; unlock window managed by sync",
+            message: "Commission status updated; unlock window managed by settlement worker",
             updated_count: result.rowCount,
             updated_records: result.rows
         });

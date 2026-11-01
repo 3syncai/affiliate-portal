@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { Pool } from 'pg';
-import { syncAffiliateCommissionStatuses } from '@/lib/affiliate-commission-sync';
 import { COMMISSION_HAS_RETURN_SQL } from '@/lib/dashboard-return-sql';
 
 export const dynamic = 'force-dynamic';
@@ -42,12 +41,7 @@ export async function GET(request: Request) {
             );
         }
 
-        // Apply the same delivery / return / unlock logic the affiliate dashboard
-        // uses, so a delivered order shows the return/replacement policy countdown here too.
-        await syncAffiliateCommissionStatuses(pool, {
-            affiliateCode: referCode,
-            logPrefix: '[Branch My Referrals]',
-        });
+        // Read the return/replacement policy countdown maintained by the settlement worker.
 
         // 1. Get all customers who used this referral code (from customer table)
         const customersQuery = `
@@ -94,8 +88,8 @@ export async function GET(request: Request) {
         const ordersResult = await pool.query(ordersQuery, [referCode]);
 
         // Helpers used both for aggregation and per-order payload.
-        const orderHasReturn = (row: any) => Boolean(row?.has_return);
-        const effectiveCommission = (row: any) =>
+        const orderHasReturn = (row: { has_return?: boolean }) => Boolean(row?.has_return);
+        const effectiveCommission = (row: { status?: string; has_return?: boolean; affiliate_commission?: string }) =>
             row.status === 'CANCELLED' || orderHasReturn(row)
                 ? 0
                 : parseFloat(row.affiliate_commission || '0');

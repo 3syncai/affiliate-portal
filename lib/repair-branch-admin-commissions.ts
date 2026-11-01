@@ -64,12 +64,13 @@ async function resolveBranchAdminForSale(
  */
 export async function repairMissingBranchAdminCommissions(
     db: Queryable,
-    options: { logPrefix?: string; branchFilter?: string } = {},
+    options: { logPrefix?: string; branchFilter?: string; batchLimit?: number } = {},
 ): Promise<number> {
     const { logPrefix = "[Branch Admin Repair]", branchFilter } = options;
 
     const branchClause = branchFilter ? "AND au.branch ILIKE $1" : "";
     const params = branchFilter ? [branchFilter] : [];
+    const batchLimit = options.batchLimit ? `LIMIT ${Math.min(100, Math.max(1, Math.floor(options.batchLimit)))}` : "";
 
     const missing = await db.query(
         `
@@ -105,6 +106,7 @@ export async function repairMissingBranchAdminCommissions(
                 AND ba.product_name IS NOT DISTINCT FROM se.product_name
           )
         ORDER BY se.created_at DESC
+        ${batchLimit}
         `,
         params,
     );
@@ -122,6 +124,12 @@ export async function repairMissingBranchAdminCommissions(
     let inserted = 0;
 
     for (const row of missing.rows as MissingOrderRow[]) {
+        // Match the webhook's per-order lock, then recheck after acquiring it.
+        await db.query("SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", ["commission:" + row.order_id]);
+        const duplicate = await db.query(`SELECT id FROM affiliate_commission_log
+            WHERE order_id = $1 AND commission_source = 'branch_admin'
+              AND product_name IS NOT DISTINCT FROM $2 LIMIT 1`, [row.order_id, row.product_name]);
+        if (duplicate.rows.length) continue;
         const branchAdmin = await resolveBranchAdminForSale(
             db,
             row.se_branch,
@@ -164,7 +172,7 @@ export async function repairMissingBranchAdminCommissions(
                 commissionAmount,
                 branchRate,
                 branchCommission,
-                row.status,
+                row.status === "CREDITED" ? "PENDING" : row.status,
                 row.customer_id,
                 `${branchAdmin.first_name} ${branchAdmin.last_name}`,
                 branchAdmin.email,

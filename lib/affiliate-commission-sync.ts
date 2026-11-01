@@ -1,4 +1,7 @@
+import { withCommissionSettlementTransaction } from "@/lib/commission-settlement-transaction";
 import type { Pool } from "pg";
+import { creditDueCommissions, cancelCommissionRows } from "@/lib/commission-wallet-ledger";
+import { repairMissingBranchAdminCommissions } from "@/lib/repair-branch-admin-commissions";
 import { COMMISSION_HAS_ANY_RETURN_REQUEST_SQL } from "@/lib/dashboard-return-sql";
 import { voidCommissionsForApprovedReturns } from "@/lib/void-return-commission";
 
@@ -10,112 +13,7 @@ type SyncOptions = {
     throwOnError?: boolean;
 };
 
-type PromotedCommissionRow = {
-    commission_source: string;
-    affiliate_user_id: string | null;
-    affiliate_code: string | null;
-    affiliate_commission: string | number | null;
-};
-
-async function creditWalletsForPromotedRows(
-    db: Queryable,
-    rows: PromotedCommissionRow[],
-    logPrefix: string,
-) {
-    const branchTotals = new Map<string, number>();
-    const asmTotals = new Map<string, number>();
-    const stateTotals = new Map<string, number>();
-    const affiliateTotals = new Map<string, number>();
-
-    for (const row of rows) {
-        const amount = Number.parseFloat(String(row.affiliate_commission ?? 0)) || 0;
-        if (amount <= 0) continue;
-
-        if (row.commission_source === "affiliate") {
-            const referCode = String(row.affiliate_code ?? "").trim();
-            if (referCode) {
-                affiliateTotals.set(referCode, (affiliateTotals.get(referCode) ?? 0) + amount);
-            }
-            continue;
-        }
-
-        const userId = String(row.affiliate_user_id ?? "").trim();
-        if (!userId) continue;
-
-        if (row.commission_source === "branch_admin") {
-            branchTotals.set(userId, (branchTotals.get(userId) ?? 0) + amount);
-        } else if (
-            row.commission_source === "area_manager" ||
-            row.commission_source === "asm_direct"
-        ) {
-            asmTotals.set(userId, (asmTotals.get(userId) ?? 0) + amount);
-        } else if (
-            row.commission_source === "state_admin" ||
-            row.commission_source === "state_admin_direct"
-        ) {
-            stateTotals.set(userId, (stateTotals.get(userId) ?? 0) + amount);
-        }
-    }
-
-    for (const [userId, amount] of branchTotals) {
-        await db.query(
-            `
-            INSERT INTO customer_wallet (customer_id, coins_balance)
-            VALUES ($1::text, $2)
-            ON CONFLICT (customer_id)
-            DO UPDATE SET coins_balance = customer_wallet.coins_balance + $2
-            `,
-            [userId, amount],
-        );
-    }
-
-    for (const [userId, amount] of asmTotals) {
-        await db.query(
-            `
-            INSERT INTO customer_wallet (customer_id, coins_balance)
-            VALUES ($1::text, $2)
-            ON CONFLICT (customer_id)
-            DO UPDATE SET coins_balance = customer_wallet.coins_balance + $2
-            `,
-            [userId, amount],
-        );
-    }
-
-    for (const [userId, amount] of stateTotals) {
-        await db.query(
-            `
-            INSERT INTO customer_wallet (customer_id, coins_balance)
-            VALUES ($1::text, $2)
-            ON CONFLICT (customer_id)
-            DO UPDATE SET coins_balance = customer_wallet.coins_balance + $2
-            `,
-            [userId, amount],
-        );
-    }
-
-    for (const [referCode, amount] of affiliateTotals) {
-        await db.query(
-            `
-            INSERT INTO customer_wallet (customer_id, coins_balance)
-            SELECT id::text, $2 FROM affiliate_user WHERE refer_code = $1
-            ON CONFLICT (customer_id)
-            DO UPDATE SET coins_balance = customer_wallet.coins_balance + $2
-            `,
-            [referCode, amount],
-        );
-    }
-
-    const credited =
-        branchTotals.size +
-        asmTotals.size +
-        stateTotals.size +
-        affiliateTotals.size;
-    if (credited > 0) {
-        console.log(`${logPrefix} credited ${credited} wallet(s) after unlock promotion`);
-    }
-}
-
-export async function syncAffiliateCommissionStatuses(db: Queryable, options: SyncOptions) {
+async function synchronizeInTransaction(db: Queryable, options: SyncOptions) {
     const { affiliateCode, logPrefix } = options;
 
     try {
@@ -131,7 +29,7 @@ export async function syncAffiliateCommissionStatuses(db: Queryable, options: Sy
 
         if (orderTableRes.rows.length === 0) {
             console.warn(`${logPrefix} status sync skipped: order table not found`);
-            return;
+            throw new Error("Settlement requires an order table");
         }
 
         const orderTable = orderTableRes.rows[0].table_name;
@@ -272,23 +170,14 @@ export async function syncAffiliateCommissionStatuses(db: Queryable, options: Sy
               )`;
 
         if (cancelledConditions.length > 0) {
-            await db.query(
-                `
-                UPDATE affiliate_commission_log acl
-                SET status = 'CANCELLED',
-                    affiliate_commission = 0,
-                    additional_commission_amount = 0,
-                    credited_at = NULL,
-                    unlock_at = NULL
-                FROM "${orderTable}" o
-                ${joinClause}
-                WHERE o.id = acl.order_id
-                  ${affiliateFilterClause}
-                  AND acl.status IS DISTINCT FROM 'CANCELLED'
-                  AND (${cancelledConditions.join(" OR ")})
-            `,
-                params
-            );
+            const cancelled = await db.query(
+                `SELECT DISTINCT acl.id::text AS id FROM affiliate_commission_log acl
+                 JOIN "${orderTable}" o ON o.id = acl.order_id ${joinClause}
+                 WHERE (acl.status IS DISTINCT FROM 'CANCELLED' OR EXISTS (
+                     SELECT 1 FROM partner_commission_wallet_ledger wl
+                     WHERE wl.commission_id = acl.id::text AND wl.reversed_at IS NULL))
+                   ${affiliateFilterClause} AND (${cancelledConditions.join(" OR ")})`, params);
+            await cancelCommissionRows(db, cancelled.rows.map(row => row.id));
         }
 
         if (deliveredConditions.length > 0) {
@@ -312,30 +201,24 @@ export async function syncAffiliateCommissionStatuses(db: Queryable, options: Sy
             );
         }
 
-        const promotedResult = await db.query(
-            `
-            UPDATE affiliate_commission_log acl
-            SET status = 'CREDITED',
-                credited_at = COALESCE(acl.credited_at, NOW())
-            WHERE acl.status = 'PENDING'
-              AND acl.unlock_at IS NOT NULL
-              AND acl.unlock_at <= NOW()
-              AND NOT (${COMMISSION_HAS_ANY_RETURN_REQUEST_SQL})
-              ${affiliateCode ? "AND acl.affiliate_code = $1" : ""}
-            RETURNING acl.commission_source, acl.affiliate_user_id, acl.affiliate_code, acl.affiliate_commission
-        `,
-            params
-        );
+        await creditDueCommissions(db, COMMISSION_HAS_ANY_RETURN_REQUEST_SQL, affiliateCode);
 
-        if (promotedResult.rows?.length) {
-            await creditWalletsForPromotedRows(
-                db,
-                promotedResult.rows as PromotedCommissionRow[],
-                logPrefix,
-            );
-        }
     } catch (error) {
         console.error(`${logPrefix} status sync failed:`, error);
+        throw error;
+    }
+}
+
+/** Worker entry point: one connection, one transaction, one cross-process lock. */
+export async function syncAffiliateCommissionStatuses(pool: Pick<Pool, "connect">, options: SyncOptions) {
+    try {
+        return await withCommissionSettlementTransaction(pool, async client => {
+            await repairMissingBranchAdminCommissions(client, { logPrefix: options.logPrefix, batchLimit: 100 });
+            await synchronizeInTransaction(client, { ...options, throwOnError: true });
+        });
+    } catch (error) {
         if (options.throwOnError) throw error;
+        console.error(`${options.logPrefix} settlement transaction failed:`, error);
+        return { failed: true, skipped: false };
     }
 }

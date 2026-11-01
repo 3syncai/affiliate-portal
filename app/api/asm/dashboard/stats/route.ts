@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import pool from "@/lib/db";
-import { syncAffiliateCommissionStatuses } from "@/lib/affiliate-commission-sync";
 import { fetchCommissionRates } from "@/lib/commission-rates";
 import { COMMISSION_IS_RETURN_OR_CANCELLED_SQL } from "@/lib/dashboard-return-sql";
 import { getBmTerritoryGross } from "@/lib/territory-gross-commission";
@@ -103,13 +102,6 @@ export async function GET(req: NextRequest) {
     let creditedCommission = 0;
     let pendingCommission = 0;
 
-    try {
-      await syncAffiliateCommissionStatuses(pool, {
-        logPrefix: "[ASM Dashboard Stats]",
-      });
-    } catch (err) {
-      console.warn("[ASM Dashboard Stats] status sync failed:", err);
-    }
 
     try {
       const territoryResult = await pool.query(

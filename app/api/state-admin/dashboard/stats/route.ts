@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import pool from "@/lib/db";
 import { fetchCommissionRates } from "@/lib/commission-rates";
-import { syncAffiliateCommissionStatuses } from "@/lib/affiliate-commission-sync";
 import { COMMISSION_IS_RETURN_OR_CANCELLED_SQL } from "@/lib/dashboard-return-sql";
 import { getStateTerritoryGross } from "@/lib/territory-gross-commission";
 import { normalizeStateParam } from "@/lib/territory-params";
@@ -91,13 +90,6 @@ export async function GET(req: NextRequest) {
     let pendingCommission = 0;
     let creditedCommission = 0;
 
-    try {
-      await syncAffiliateCommissionStatuses(pool, {
-        logPrefix: "[State Admin Dashboard Stats]",
-      });
-    } catch (err) {
-      console.warn("[State Admin Dashboard Stats] status sync failed:", err);
-    }
 
     try {
       const ordersResult = await pool.query(

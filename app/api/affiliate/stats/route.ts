@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
-import { syncAffiliateCommissionStatuses } from '@/lib/affiliate-commission-sync';
 import {
     COMMISSION_HAS_RETURN_SQL,
     COMMISSION_HAS_PENDING_RETURN_REQUEST_SQL,
@@ -36,9 +35,7 @@ export async function GET(request: NextRequest) {
             );
         }
 
-        const affiliateUser = userResult.rows[0];
 
-        await syncAffiliateCommissionStatuses(pool, { affiliateCode, logPrefix: '[Affiliate Stats]' });
 
         // Get affiliate rate
         const rateRes = await pool.query(`SELECT commission_percentage FROM commission_rates WHERE role_type = 'affiliate'`);

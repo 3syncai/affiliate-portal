@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import pool from "@/lib/db";
 import { isApprovedReturnStatus } from "@/lib/return-request-status";
-import { voidCommissionsForApprovedReturns } from "@/lib/void-return-commission";
+import { voidApprovedReturnCommissions } from "@/lib/void-return-commission";
 
 export const dynamic = "force-dynamic";
 
@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const updatedCount = await voidCommissionsForApprovedReturns(pool, {
+    const updatedCount = await voidApprovedReturnCommissions(pool, {
       orderId,
       logPrefix: "[Webhook Return Void]",
     });

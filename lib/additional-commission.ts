@@ -128,7 +128,7 @@ export async function applyAdditionalCommissionForOrder(orderId: string, db: Com
     `
       SELECT id, product_id, order_amount, commission_source, affiliate_code, commission_amount, affiliate_rate
       FROM affiliate_commission_log
-      WHERE order_id = $1 AND status <> 'RATE_MISSING'
+      WHERE order_id = $1 AND status = 'PENDING'
     `,
     [cleanOrderId]
   );
@@ -160,7 +160,7 @@ export async function applyAdditionalCommissionForOrder(orderId: string, db: Com
             additional_commission_rate = $3,
             additional_commission_amount = $4,
             affiliate_commission = $5
-        WHERE id = $1
+        WHERE id = $1 AND status = 'PENDING'
       `,
       [row.id, campaign.id, campaign.additionalRate, additionalAmount, totalAffiliateCommission]
     );
