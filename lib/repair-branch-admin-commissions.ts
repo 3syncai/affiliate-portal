@@ -103,7 +103,8 @@ export async function repairMissingBranchAdminCommissions(
               FROM affiliate_commission_log ba
               WHERE ba.order_id = se.order_id
                 AND ba.commission_source = 'branch_admin'
-                AND ba.product_name IS NOT DISTINCT FROM se.product_name
+                AND (ba.product_id = se.product_id
+                    OR (NULLIF(ba.product_id, '') IS NULL AND ba.product_name IS NOT DISTINCT FROM se.product_name))
           )
         ORDER BY se.created_at DESC
         ${batchLimit}
@@ -128,7 +129,7 @@ export async function repairMissingBranchAdminCommissions(
         await db.query("SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", ["commission:" + row.order_id]);
         const duplicate = await db.query(`SELECT id FROM affiliate_commission_log
             WHERE order_id = $1 AND commission_source = 'branch_admin'
-              AND product_name IS NOT DISTINCT FROM $2 LIMIT 1`, [row.order_id, row.product_name]);
+              AND (product_id = $2 OR (NULLIF(product_id, '') IS NULL AND product_name IS NOT DISTINCT FROM $3)) LIMIT 1`, [row.order_id, row.product_id, row.product_name]);
         if (duplicate.rows.length) continue;
         const branchAdmin = await resolveBranchAdminForSale(
             db,

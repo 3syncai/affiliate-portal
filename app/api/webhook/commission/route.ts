@@ -166,8 +166,8 @@ export async function POST(request: NextRequest) {
             // DEDUPLICATION CHECK: Check if commission already logged (e.g. by Storefront)
             const existingCheck = await pool.query(`
                 SELECT id, status FROM affiliate_commission_log 
-                WHERE order_id = $1 AND product_name = $2 AND affiliate_code = $3
-            `, [payload.order_id, payload.product_name, payload.affiliate_code]);
+                WHERE order_id = $1 AND (product_id = $2 OR (NULLIF(product_id, '') IS NULL AND product_name IS NOT DISTINCT FROM $4)) AND affiliate_code = $3
+            `, [payload.order_id, payload.product_id, payload.affiliate_code, payload.product_name || 'Product']);
 
             if (existingCheck.rows.length === 0) {
                 // Insert Branch Admin Commission
@@ -217,8 +217,8 @@ export async function POST(request: NextRequest) {
                     // Check duplicate for Area Manager
                     const areaCheck = await pool.query(`
                         SELECT id, status FROM affiliate_commission_log 
-                        WHERE order_id = $1 AND product_name = $2 AND customer_email = $3 AND commission_source = 'area_manager'
-                    `, [payload.order_id, payload.product_name, areaManager.email]);
+                        WHERE order_id = $1 AND (product_id = $2 OR (NULLIF(product_id, '') IS NULL AND product_name IS NOT DISTINCT FROM $4)) AND customer_email = $3 AND commission_source = 'area_manager'
+                    `, [payload.order_id, payload.product_id, areaManager.email, payload.product_name || 'Product']);
 
                     if (areaCheck.rows.length === 0) {
                         await pool.query(`
@@ -277,8 +277,8 @@ export async function POST(request: NextRequest) {
                     // Check duplicate for State Admin
                     const stateCheck = await pool.query(`
                         SELECT id, status FROM affiliate_commission_log 
-                        WHERE order_id = $1 AND product_name = $2 AND customer_email = $3 AND commission_source = 'state_admin'
-                    `, [payload.order_id, payload.product_name, stateAdmin.email]);
+                        WHERE order_id = $1 AND (product_id = $2 OR (NULLIF(product_id, '') IS NULL AND product_name IS NOT DISTINCT FROM $4)) AND customer_email = $3 AND commission_source = 'state_admin'
+                    `, [payload.order_id, payload.product_id, stateAdmin.email, payload.product_name || 'Product']);
 
                     if (stateCheck.rows.length === 0) {
                         await pool.query(`
@@ -336,8 +336,8 @@ export async function POST(request: NextRequest) {
             // Deduplication check
             const existingCheck = await pool.query(`
                 SELECT id, status FROM affiliate_commission_log 
-                WHERE order_id = $1 AND product_name = $2 AND affiliate_code = $3
-            `, [payload.order_id, payload.product_name, payload.affiliate_code]);
+                WHERE order_id = $1 AND (product_id = $2 OR (NULLIF(product_id, '') IS NULL AND product_name IS NOT DISTINCT FROM $4)) AND affiliate_code = $3
+            `, [payload.order_id, payload.product_id, payload.affiliate_code, payload.product_name || 'Product']);
 
             if (existingCheck.rows.length === 0) {
                 await pool.query(`
@@ -345,15 +345,15 @@ export async function POST(request: NextRequest) {
                         order_id, affiliate_code, product_name, quantity, item_price, order_amount,
                         commission_rate, commission_amount, affiliate_rate, affiliate_commission,
                         commission_source, status, customer_id, customer_name, customer_email, 
-                        product_id, category_id, collection_id, created_at
-                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, NOW())
+                        affiliate_user_id, product_id, category_id, collection_id, created_at
+                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, NOW())
                 `, [
                     payload.order_id, payload.affiliate_code, payload.product_name || 'Product',
                     payload.quantity || 1, payload.item_price || 0, payload.order_amount || 0,
                     commissionPercentage, commissionAmount, totalRate, asmCommission,
                     'asm_direct', commissionStatus,
                     payload.customer_id || null, payload.customer_name || null, payload.customer_email || null,
-                    payload.product_id, payload.category_id || null, payload.collection_id || null
+                    asm.id, payload.product_id, payload.category_id || null, payload.collection_id || null
                 ]);
             }
 
@@ -374,8 +374,8 @@ export async function POST(request: NextRequest) {
                     // Check duplicate for State Admin
                     const stateCheck = await pool.query(`
                         SELECT id, status FROM affiliate_commission_log 
-                        WHERE order_id = $1 AND product_name = $2 AND customer_email = $3 AND commission_source = 'state_admin'
-                    `, [payload.order_id, payload.product_name, stateAdmin.email]);
+                        WHERE order_id = $1 AND (product_id = $2 OR (NULLIF(product_id, '') IS NULL AND product_name IS NOT DISTINCT FROM $4)) AND customer_email = $3 AND commission_source = 'state_admin'
+                    `, [payload.order_id, payload.product_id, stateAdmin.email, payload.product_name || 'Product']);
 
                     if (stateCheck.rows.length === 0) {
                         await pool.query(`
@@ -383,8 +383,8 @@ export async function POST(request: NextRequest) {
                                 order_id, affiliate_code, product_name, quantity, item_price, order_amount,
                                 commission_rate, commission_amount, affiliate_rate, affiliate_commission,
                                 commission_source, status, customer_id, customer_name, customer_email, 
-                                product_id, category_id, collection_id, created_at
-                            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, NOW())
+                                affiliate_user_id, product_id, category_id, collection_id, created_at
+                            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, NOW())
                         `, [
                             payload.order_id,
                             'STATE', // Placeholder code
@@ -394,7 +394,7 @@ export async function POST(request: NextRequest) {
                             'state_admin', commissionStatus,
                             payload.customer_id || null,
                             `${stateAdmin.first_name} ${stateAdmin.last_name}`, stateAdmin.email,
-                            payload.product_id, payload.category_id || null, payload.collection_id || null
+                            stateAdmin.id, payload.product_id, payload.category_id || null, payload.collection_id || null
                         ]);
                         console.log(`[State Admin] Logged Commission: ₹${stateCommission} for ${stateAdmin.first_name} (ASM referral)`);
                     }
@@ -433,10 +433,10 @@ export async function POST(request: NextRequest) {
                 const existingCheck = await pool.query(`
                     SELECT id, status FROM affiliate_commission_log 
                     WHERE order_id = $1
-                      AND product_name = $2
+                      AND (product_id = $2 OR (NULLIF(product_id, '') IS NULL AND product_name IS NOT DISTINCT FROM $4))
                       AND commission_source = 'state_admin_direct'
                       AND LOWER(affiliate_code) = LOWER($3)
-                `, [payload.order_id, payload.product_name, canonicalStateReferCode]);
+                `, [payload.order_id, payload.product_id, canonicalStateReferCode, payload.product_name || 'Product']);
 
                 // UPDATE STATUS for State Admin Direct
                 if (existingCheck.rows.length > 0) {
@@ -449,15 +449,15 @@ export async function POST(request: NextRequest) {
                             order_id, affiliate_code, product_name, quantity, item_price, order_amount,
                             commission_rate, commission_amount, affiliate_rate, affiliate_commission,
                             commission_source, status, customer_id, customer_name, customer_email, 
-                            product_id, category_id, collection_id, created_at
-                        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, NOW())
+                            affiliate_user_id, product_id, category_id, collection_id, created_at
+                        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, NOW())
                     `, [
                         payload.order_id, canonicalStateReferCode, payload.product_name || 'Product',
                         payload.quantity || 1, payload.item_price || 0, payload.order_amount || 0,
                         commissionPercentage, commissionAmount, totalRate, stateCommission,
                         'state_admin_direct', commissionStatus,
                         payload.customer_id || null, payload.customer_name || null, payload.customer_email || null,
-                        payload.product_id, payload.category_id || null, payload.collection_id || null
+                        stateAdmin.id, payload.product_id, payload.category_id || null, payload.collection_id || null
                     ]);
                     console.log(`[State Admin Direct] Logged Commission: ₹${stateCommission} at ${totalRate}%`);
 
@@ -485,8 +485,8 @@ export async function POST(request: NextRequest) {
                 // Deduplication check
                 const existingCheck = await pool.query(`
                     SELECT id, status FROM affiliate_commission_log 
-                    WHERE order_id = $1 AND product_name = $2 AND affiliate_code = $3
-                `, [payload.order_id, payload.product_name, payload.affiliate_code]);
+                    WHERE order_id = $1 AND (product_id = $2 OR (NULLIF(product_id, '') IS NULL AND product_name IS NOT DISTINCT FROM $4)) AND affiliate_code = $3
+                `, [payload.order_id, payload.product_id, payload.affiliate_code, payload.product_name || 'Product']);
 
                 if (existingCheck.rows.length === 0) {
                     await pool.query(`
@@ -527,7 +527,8 @@ export async function POST(request: NextRequest) {
                             SELECT id, status FROM affiliate_commission_log 
                             WHERE order_id = $1 AND commission_source = 'branch_admin'
                               AND NULLIF(affiliate_user_id, '') = $2::text
-                        `, [payload.order_id, branchAdmin.id]);
+                              AND (product_id = $3 OR (NULLIF(product_id, '') IS NULL AND product_name IS NOT DISTINCT FROM $4))
+                        `, [payload.order_id, branchAdmin.id, payload.product_id, payload.product_name || 'Product']);
 
                         if (brCheck.rows.length === 0) {
                             await pool.query(`
@@ -582,8 +583,8 @@ export async function POST(request: NextRequest) {
 
                         const areaCheck = await pool.query(`
                             SELECT id, status FROM affiliate_commission_log 
-                            WHERE order_id = $1 AND product_name = $2 AND customer_email = $3 AND commission_source = 'area_manager'
-                        `, [payload.order_id, payload.product_name, asm.email]);
+                            WHERE order_id = $1 AND (product_id = $2 OR (NULLIF(product_id, '') IS NULL AND product_name IS NOT DISTINCT FROM $4)) AND customer_email = $3 AND commission_source = 'area_manager'
+                        `, [payload.order_id, payload.product_id, asm.email, payload.product_name || 'Product']);
 
                         if (areaCheck.rows.length === 0) {
                             await pool.query(`
@@ -623,8 +624,8 @@ export async function POST(request: NextRequest) {
 
                         const stateCheck = await pool.query(`
                             SELECT id, status FROM affiliate_commission_log 
-                            WHERE order_id = $1 AND product_name = $2 AND customer_email = $3 AND commission_source = 'state_admin'
-                        `, [payload.order_id, payload.product_name, stateAdmin.email]);
+                            WHERE order_id = $1 AND (product_id = $2 OR (NULLIF(product_id, '') IS NULL AND product_name IS NOT DISTINCT FROM $4)) AND customer_email = $3 AND commission_source = 'state_admin'
+                        `, [payload.order_id, payload.product_id, stateAdmin.email, payload.product_name || 'Product']);
 
                         if (stateCheck.rows.length === 0) {
                             await pool.query(`
