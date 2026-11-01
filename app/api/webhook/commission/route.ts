@@ -4,7 +4,6 @@ import databasePool from "@/lib/db";
 import { CommissionEventConflict, receiveCommissionEvent } from "@/lib/commission-webhook-transaction";
 import { sendNotification } from "@/lib/sse";
 import { applyAdditionalCommissionForOrder, ensureAdditionalCommissionSchema } from "@/lib/additional-commission";
-import { syncAffiliateCommissionStatuses } from "@/lib/affiliate-commission-sync";
 import { resolveBranchAdminForSale } from "@/lib/repair-branch-admin-commissions";
 
 export const dynamic = "force-dynamic";
@@ -654,10 +653,6 @@ export async function POST(request: NextRequest) {
 
         if (matchedRule) await applyAdditionalCommissionForOrder(payload.order_id, pool, true);
 
-        await syncAffiliateCommissionStatuses(pool, {
-            logPrefix: "[Commission Webhook]",
-            throwOnError: true,
-        });
 
         return NextResponse.json({
             success: true,

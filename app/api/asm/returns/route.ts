@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import pool from "@/lib/db";
-import { syncAffiliateCommissionStatuses } from "@/lib/affiliate-commission-sync";
 import {
   COMMISSION_HAS_RETURN_SQL,
   COMMISSION_IS_RETURN_OR_CANCELLED_SQL,
@@ -38,9 +37,6 @@ export async function GET(req: NextRequest) {
       asmReferCode = asmRow.rows[0]?.refer_code || asmReferCode;
     }
 
-    await syncAffiliateCommissionStatuses(pool, {
-      logPrefix: "[ASM Returns]",
-    });
 
     const returnLateralFor = (orderIdRef: string) => `
       LEFT JOIN LATERAL (

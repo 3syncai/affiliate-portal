@@ -125,6 +125,7 @@ async function test(name, run) { await run(); results.push({ name, result: 'PASS
   } };
   const route = load('app/api/webhook/commission/route.ts', {
     'next/server': next, '@/lib/db': { default: routePool },
+    '@/lib/catalog-commission': { lookupCatalogCommission: async () => ({ id: 'qa-rule', rate: 5 }) },
     '@/lib/commission-webhook-transaction': { receiveCommissionEvent, CommissionEventConflict },
     '@/lib/sse': { sendNotification() {} },
     '@/lib/additional-commission': { ensureAdditionalCommissionSchema: async () => {}, applyAdditionalCommissionForOrder: async (id, db) => { bonusDb = db; if (fault) throw Error('bonus failure'); } },
@@ -135,7 +136,7 @@ async function test(name, run) { await run(); results.push({ name, result: 'PASS
   await test('actual route commits once and passes transaction client to commission helpers', async () => {
     const p = { ...payload('route'), affiliate_code: 'QA', product_id: 'QA', product_name: 'QA', order_amount: 100 };
     assert.equal((await route.POST(request(p))).status, 200); assert.equal((await route.POST(request(p))).body.duplicate, true);
-    assert.equal(await effects(p.order_id), 1); assert.equal(bonusDb, syncDb); assert.ok(bonusDb.query);
+    assert.equal(await effects(p.order_id), 1); assert.equal(syncDb, undefined); assert.ok(bonusDb.query);
   });
   await test('actual route bonus failure rolls back base commission; retry succeeds', async () => {
     const p = { ...payload('routefail'), affiliate_code: 'QA', product_id: 'QA', order_amount: 100 };

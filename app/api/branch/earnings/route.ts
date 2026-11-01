@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Pool } from "pg";
 import { fetchCommissionRates } from "@/lib/commission-rates";
-import { syncAffiliateCommissionStatuses } from "@/lib/affiliate-commission-sync";
-import { repairMissingBranchAdminCommissions } from "@/lib/repair-branch-admin-commissions";
 import { COMMISSION_HAS_RETURN_SQL, COMMISSION_HAS_PENDING_RETURN_REQUEST_SQL } from "@/lib/dashboard-return-sql";
 import {
     getBranchAdminPersonalEarnings,
@@ -31,11 +29,6 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ success: false, error: "Admin ID is required" }, { status: 400 });
         }
 
-        await syncAffiliateCommissionStatuses(pool, { logPrefix: "[Branch Earnings]" });
-        await repairMissingBranchAdminCommissions(pool, {
-            logPrefix: "[Branch Earnings]",
-            branchFilter: branch || undefined,
-        });
 
         const commissionRates = await fetchCommissionRates(pool);
         const adminDetailsRef = await pool.query(`

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Pool } from "pg";
-import { syncAffiliateCommissionStatuses } from "@/lib/affiliate-commission-sync";
 import { buildBmActivities } from "@/lib/recent-activity";
 
 export const dynamic = "force-dynamic";
@@ -29,9 +28,6 @@ export async function GET(req: NextRequest) {
             ssl: { rejectUnauthorized: false },
         });
 
-        await syncAffiliateCommissionStatuses(pool, {
-            logPrefix: "[BM Activity]",
-        });
 
         const activities = await buildBmActivities(
             pool,

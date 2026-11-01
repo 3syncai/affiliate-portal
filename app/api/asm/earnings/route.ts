@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Pool } from "pg";
 import { fetchCommissionRates } from "@/lib/commission-rates";
-import { syncAffiliateCommissionStatuses } from "@/lib/affiliate-commission-sync";
 import { COMMISSION_HAS_RETURN_SQL, COMMISSION_HAS_PENDING_RETURN_REQUEST_SQL } from "@/lib/dashboard-return-sql";
 import { getBmPersonalEarnings } from "@/lib/personal-commission-earnings";
 import { ledgerDisplayCommissionSql } from "@/lib/ledger-commission-display";
@@ -29,7 +28,6 @@ export async function GET(req: NextRequest) {
     });
 
     try {
-        await syncAffiliateCommissionStatuses(pool, { logPrefix: "[ASM Earnings]" });
 
         const commissionRates = await fetchCommissionRates(pool);
         let commissionRate = commissionRates.summary.asm.overrideRate;

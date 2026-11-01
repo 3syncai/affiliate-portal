@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import pool from "@/lib/db";
-import { syncAffiliateCommissionStatuses } from "@/lib/affiliate-commission-sync";
 import { COMMISSION_HAS_RETURN_SQL } from "@/lib/dashboard-return-sql";
 import {
   ledgerDisplayCommissionSql,
@@ -31,9 +30,6 @@ export async function GET(req: NextRequest) {
     const status = searchParams.get("status") || "ALL";
     const offset = (page - 1) * limit;
 
-    await syncAffiliateCommissionStatuses(pool, {
-      logPrefix: "[Admin Returns]",
-    });
 
     const rateRes = await pool.query(
       `SELECT commission_percentage FROM commission_rates WHERE role_type = 'affiliate'`,

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import pool from "@/lib/db";
 import { fetchCommissionRates } from "@/lib/commission-rates";
-import { syncAffiliateCommissionStatuses } from "@/lib/affiliate-commission-sync";
 import { COMMISSION_IS_RETURN_OR_CANCELLED_SQL } from "@/lib/dashboard-return-sql";
 import { getBranchTerritoryGross } from "@/lib/territory-gross-commission";
 
@@ -24,9 +23,6 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    await syncAffiliateCommissionStatuses(pool, {
-      logPrefix: "[Branch Stats]",
-    });
 
     const commissionRates = await fetchCommissionRates(pool);
 

@@ -1,4 +1,4 @@
-// Test/operations loader only; the Next app uses its normal compiler.
+// Standalone worker/test/operations loader; the Next app uses its normal compiler.
 const fs = require("node:fs");
 const path = require("node:path");
 const Module = require("node:module");

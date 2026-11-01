@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import pool from "@/lib/db";
-import { syncAffiliateCommissionStatuses } from "@/lib/affiliate-commission-sync";
 import { buildNationalActivities } from "@/lib/recent-activity";
 
 export const dynamic = "force-dynamic";
@@ -15,13 +14,6 @@ export async function GET(req: NextRequest) {
     const skipSync = searchParams.get("skipSync") === "1";
 
     if (!skipSync) {
-      try {
-        await syncAffiliateCommissionStatuses(pool, {
-          logPrefix: "[National Activity]",
-        });
-      } catch (err) {
-        console.warn("[National Activity] status sync failed:", err);
-      }
     }
 
     const activities = await buildNationalActivities(pool, limit);

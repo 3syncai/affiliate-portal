@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Pool } from "pg";
-import { syncAffiliateCommissionStatuses } from "@/lib/affiliate-commission-sync";
 
 export const dynamic = "force-dynamic";
 
@@ -54,7 +53,6 @@ export async function GET(req: NextRequest) {
             ssl: { rejectUnauthorized: false }
         });
 
-        await syncAffiliateCommissionStatuses(pool, { logPrefix: "[ASM Orders]" });
 
         const asmIdentityResult = await pool.query(
             `SELECT refer_code FROM area_sales_manager WHERE id = $1 LIMIT 1`,

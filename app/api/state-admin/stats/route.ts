@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { Pool } from "pg";
-import { syncAffiliateCommissionStatuses } from "@/lib/affiliate-commission-sync";
 
 export const dynamic = "force-dynamic"
 
@@ -23,7 +22,6 @@ export async function GET(request: Request) {
             ssl: { rejectUnauthorized: false }
         });
 
-        await syncAffiliateCommissionStatuses(pool, { logPrefix: "[State Admin Stats]" });
 
         // Get total agents in state (approved users who are agents)
         const totalAgentsResult = await pool.query(
