@@ -274,7 +274,7 @@ export default function ASMEarningsPage() {
 
                         {stats.pendingEarnings > 0 && (
                             <p className="text-xs text-amber-300 mt-3">
-                                Pending (until delivery or 7-day return window): {formatCurrency(stats.pendingEarnings)}
+                                Pending (delivery + return/replacement window): {formatCurrency(stats.pendingEarnings)}
                             </p>
                         )}
                     </div>

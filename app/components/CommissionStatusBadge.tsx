@@ -77,7 +77,7 @@ export default function CommissionStatusBadge({
     return (
       <span
         className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded bg-blue-100 text-blue-700 ${className}`}
-        title="Crediting after 7-day return window"
+        title="Crediting after the return/replacement policy window"
       >
         <Clock className="w-3 h-3" />
         Crediting in {formatRemaining(remaining)}

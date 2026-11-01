@@ -91,9 +91,23 @@ test('real PostgreSQL settlement, concurrency and recovery', { skip: !url }, asy
     await admin.query(`CREATE DATABASE ${database}`);
     const scoped = new URL(url); scoped.pathname = '/' + database;
     pool = new Pool({ connectionString: scoped.toString(), max: 6 });
+    await t.test('main category policy migration and trigger regressions remain compatible', async () => {
+      const policy = spawnSync(process.execPath, ['scripts/test_commission_policy.cjs'], {
+        cwd: root, env: { ...process.env, COMMISSION_POLICY_TEST_DATABASE_URL: scoped.toString() }, timeout: 15000, encoding: 'utf8',
+      });
+      assert.equal(policy.status, 0, policy.stderr);
+    });
     await pool.query(`CREATE TABLE affiliate_user (id text PRIMARY KEY, refer_code text UNIQUE, branch text, approved_by text, entry_sponsor text);
       CREATE TABLE customer_wallet (customer_id text PRIMARY KEY, coins_balance numeric DEFAULT 0);
-      CREATE TABLE "order" (id text PRIMARY KEY, status text, metadata jsonb, canceled_at timestamptz);
+      CREATE TABLE "order" (id text PRIMARY KEY, status text, metadata jsonb, canceled_at timestamptz, deleted_at timestamptz);
+      CREATE TABLE order_item(order_id text, item_id text);
+      CREATE TABLE order_line_item(id text, product_id text, variant_id text);
+      CREATE TABLE product_variant(id text, product_id text);
+      CREATE TABLE product_category(id text, parent_category_id text);
+      CREATE TABLE product_category_product(product_id text, product_category_id text);
+      CREATE TABLE category_return_policy(category_id text, return_window_days int, replacement_window_days int);
+      CREATE TABLE fulfillment(id text, delivered_at timestamptz, canceled_at timestamptz);
+      CREATE TABLE order_fulfillment(order_id text, fulfillment_id text);
       CREATE TABLE return_request (id text PRIMARY KEY, order_id text, status text, deleted_at timestamptz);
       CREATE TABLE affiliate_commission_log (id text PRIMARY KEY, order_id text, affiliate_code text,
         affiliate_user_id text, commission_source text DEFAULT 'affiliate', affiliate_commission numeric,
@@ -102,7 +116,7 @@ test('real PostgreSQL settlement, concurrency and recovery', { skip: !url }, asy
         item_price numeric, order_amount numeric, commission_rate numeric, commission_amount numeric,
         customer_id text, customer_name text, customer_email text, product_id text, category_id text, collection_id text);
       INSERT INTO affiliate_user(id, refer_code) VALUES ('agent', 'QA');
-      INSERT INTO "order" VALUES ('order', 'completed', '{"shiprocket_delivered_at":"2026-01-01T00:00:00Z"}', NULL);
+      INSERT INTO "order"(id,status,metadata,canceled_at) VALUES ('order', 'completed', '{"shiprocket_delivered_at":"2026-01-01T00:00:00Z"}', NULL);
       INSERT INTO affiliate_commission_log(id,order_id,affiliate_code,status,affiliate_commission) VALUES ('legacy','order','QA','CREDITED',75);
       INSERT INTO customer_wallet VALUES ('agent',75);`);
     const reset = async () => {
@@ -112,18 +126,20 @@ test('real PostgreSQL settlement, concurrency and recovery', { skip: !url }, asy
     };
     const insert = async (id, amount = '10.25', extra = {}) => {
       await pool.query(`INSERT INTO affiliate_commission_log
-        (id,order_id,affiliate_code,affiliate_user_id,commission_source,status,affiliate_commission,unlock_at)
-        VALUES($1,'order',$2,$3,$4,$5,$6::numeric,$7::timestamptz)`,
+        (id,order_id,affiliate_code,affiliate_user_id,commission_source,status,affiliate_commission,unlock_at,policy_hold_days,policy_delivered_at)
+        VALUES($1,'order',$2,$3,$4,$5,$6::numeric,$7::timestamptz,$8,$9::timestamptz)`,
         [id, extra.code || 'QA', extra.user || null, extra.source || 'affiliate', extra.status || 'PENDING', amount,
-          extra.unlock === undefined ? '2026-01-01T00:00:00Z' : extra.unlock]);
+          extra.unlock === undefined ? '2026-01-01T00:00:00Z' : extra.unlock,
+          extra.unlock && new Date(extra.unlock).getTime() > Date.now() ? 7 : null,
+          extra.unlock && new Date(extra.unlock).getTime() > Date.now() ? new Date(new Date(extra.unlock).getTime() - 7*86400000).toISOString() : null]);
     };
     const balance = async id => (await pool.query('SELECT coins_balance::text AS value FROM customer_wallet WHERE customer_id=$1', [id || 'agent'])).rows[0]?.value;
     const status = async id => (await pool.query('SELECT status FROM affiliate_commission_log WHERE id=$1', [id])).rows[0].status;
     await t.test('migration baselines historical credits without incrementing balances, and reruns safely', async () => {
+      await pool.query(fs.readFileSync(path.join(root, 'migrations/update_commission_unlock_policy.sql'), 'utf8'));
       await pool.query(migration); await pool.query(migration);
       assert.equal(await balance(), '75');
       assert.equal((await pool.query('SELECT legacy_baseline FROM partner_commission_wallet_ledger')).rows[0].legacy_baseline, true);
-      await pool.query(fs.readFileSync(path.join(root, 'migrations/update_commission_unlock_trigger_7d.sql'), 'utf8'));
       await settle(pool, options); assert.equal(await balance(), '75');
     });
     await t.test('credits without opening any page; repeat and new worker instance cannot duplicate', async () => {
@@ -192,6 +208,26 @@ test('real PostgreSQL settlement, concurrency and recovery', { skip: !url }, asy
       assert.equal(await status('unshipped'), 'PENDING'); assert.equal(await balance(), '0');
       await pool.query(`UPDATE "order" SET metadata='{"shiprocket_delivered_at":"2026-01-01T00:00:00Z"}'`);
     });
+    await t.test('worker respects category-specific frozen return/replacement policy from main', async () => {
+      await reset();
+      await pool.query(`INSERT INTO "order"(id,status,metadata) VALUES ('policy_order','completed',jsonb_build_object('shiprocket_delivered_at',NOW()));
+        INSERT INTO order_item VALUES ('policy_order','policy_item');
+        INSERT INTO order_line_item VALUES ('policy_item','policy_product',NULL);
+        INSERT INTO product_category VALUES ('policy_category',NULL);
+        INSERT INTO product_category_product VALUES ('policy_product','policy_category');
+        INSERT INTO category_return_policy VALUES ('policy_category',3,14);
+        INSERT INTO affiliate_commission_log(id,order_id,affiliate_code,status,affiliate_commission)
+          VALUES ('policy_credit','policy_order','QA','PENDING',10);`);
+      await settle(pool, options);
+      let row = (await pool.query("SELECT status,policy_hold_days FROM affiliate_commission_log WHERE id='policy_credit'")).rows[0];
+      assert.equal(row.status,'PENDING'); assert.equal(row.policy_hold_days,14);
+      await pool.query("UPDATE category_return_policy SET replacement_window_days=1 WHERE category_id='policy_category'");
+      await settle(pool, options);
+      row=(await pool.query("SELECT policy_hold_days FROM affiliate_commission_log WHERE id='policy_credit'")).rows[0];
+      assert.equal(row.policy_hold_days,14);
+      await pool.query("UPDATE affiliate_commission_log SET policy_delivered_at=NOW()-INTERVAL '20 days' WHERE id='policy_credit'");
+      await settle(pool, options); assert.equal(await balance(),'10');
+    });
     await t.test('pending return holds credit, rejected return releases it, approved return reverses once', async () => {
       await reset(); await insert('returned');
       await pool.query("INSERT INTO return_request VALUES ('rr','order','pending_approval',NULL)");
@@ -250,6 +286,25 @@ test('real PostgreSQL settlement, concurrency and recovery', { skip: !url }, asy
       assert.equal(JSON.parse(health.stdout.trim()).healthy, true); assert.equal(await balance(), '10.25');
       await pool.query("UPDATE partner_commission_settlement_worker SET last_error='QAError'");
       assert.equal(run(['--check']).status, 1);
+    });
+    await t.test('ecommerce debug release uses the same receipts and remains reversible', { skip: !process.env.ECOMM_REPO_PATH }, async () => {
+      await reset();
+      const ts=require('typescript'), exports={};
+      const file=path.join(process.env.ECOMM_REPO_PATH,'src/lib/debug-controller/settlement.ts');
+      vm.runInNewContext(ts.transpileModule(fs.readFileSync(file,'utf8'), {compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText,
+        { exports, require: name=>{throw Error('Unexpected runtime dependency '+name);} });
+      await pool.query('CREATE TABLE IF NOT EXISTS vendor_earnings_log(order_id text,vendor_id text,status text,credited_at timestamptz,unlock_at timestamptz,updated_at timestamptz)');
+      await insert('debug_release');
+      await exports.forceSettleDebugOrder(pool,'order'); await settle(pool,options);
+      await exports.forceSettleDebugOrder(pool,'order'); assert.equal(await balance(),'10.25');
+      assert.equal((await pool.query("SELECT count(*)::int AS n FROM partner_commission_wallet_ledger WHERE commission_id='debug_release'")).rows[0].n,1);
+      await pool.query("INSERT INTO return_request VALUES ('rr','order','approved',NULL)");
+      await voidApprovedReturnCommissions(pool,{orderId:'order'});assert.equal(await balance(),'0');
+      // Ecommerce may deploy before the optional partner ledger migration.
+      await reset(); await pool.query('DROP TABLE partner_commission_wallet_ledger');
+      await insert('debug_before_migration');
+      await exports.forceSettleDebugOrder(pool,'order'); assert.equal(await balance(),'10.25');
+      await pool.query(migration); await settle(pool,options); assert.equal(await balance(),'10.25');
     });
     await t.test('large backlog is bounded to 100 credits per transaction and drains on subsequent ticks', async () => {
       await reset();

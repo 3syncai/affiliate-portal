@@ -41,8 +41,7 @@ export async function GET(request: Request) {
             );
         }
 
-        // Apply the same delivery / return / unlock logic the affiliate dashboard
-        // uses, so a delivered order shows the 5-minute countdown here too.
+        // Read the return/replacement policy countdown maintained by the settlement worker.
 
         // 1. Get all customers who used this referral code (from customer table)
         const customersQuery = `

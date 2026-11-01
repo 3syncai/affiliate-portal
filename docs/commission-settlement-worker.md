@@ -10,7 +10,7 @@ and CREDITED status commit together. Database NUMERIC amounts are passed as stri
 than accumulated with JavaScript floating point.
 
 Commission percentages and `/asm` = Branch Admin, `/bm` = Area Sales Manager are unchanged.
-The existing delivery detection, configured unlock interval (default seven days), pending
+The existing delivery detection, category-based return/replacement hold (default seven days when no policy is configured), pending
 return hold, approved return/cancellation and zero-floor wallet reversal policies remain.
 Missing recipient/unknown source, negative payout and RATE_MISSING entries are held, not paid.
 Existing missing-branch repair now runs under the worker transaction. Newly repaired credited
@@ -21,6 +21,10 @@ The existing explicit zero-rate admin correction may upgrade a zero-money receip
 it cannot replay a nonzero wallet credit. Other receipt/recipient/amount mismatches fail closed
 and require investigation. Additional-commission campaign calculation stays in the existing
 commission creation flow; this change does not redefine campaign eligibility or percentages.
+
+Ecommerce debug releases remain compatible before the ledger migration; after migration they
+write the same unique receipt inside their existing transaction. Deploy the accompanying
+ecommerce debug-receipt commit before enabling ledger-based return reversal.
 
 The approved-return mutation webhook still voids immediately, using the same transaction/lock
 as the worker. Return reversal only subtracts a recorded wallet credit, using that receipt's recipient and
@@ -39,14 +43,14 @@ against existing wallet/withdrawal records before declaring financial data fully
 Use Node 22+ and install the repository's pinned dependencies, including TypeScript used by
 the standalone worker loader (`npm ci --include=dev`). The web portal can remain on Vercel;
 the persistent worker must run on a VM/container/process supervisor, not in a Vercel request.
-Supply the same server-side DATABASE_URL and unlock settings as the portal. Never expose
-DATABASE_URL through NEXT_PUBLIC variables. No test-mode unlock override in production.
+Supply the same server-side DATABASE_URL and policy migration as the portal. Never expose
+DATABASE_URL through NEXT_PUBLIC variables. The worker uses resolve_commission_hold_days and frozen policy delivery dates from main; old minute/day environment overrides are not used.
 
 1. Back up the database and verify the restore process. Test these steps in staging first.
 2. Stop/drain old portal settlement writers (including old previews using this database).
    Temporarily pause commission webhook delivery, keeping sender retries enabled. Do not let
    old page-time settlement and new ledger settlement run concurrently during cutover.
-3. From the partner repository, run `npm run migrate:commission-wallet -- --apply`.
+3. Apply main's `migrations/update_commission_unlock_policy.sql` first if it has not already been applied. Then, from the partner repository, run `npm run migrate:commission-wallet -- --apply`.
    It uses one connection, locks the commission log while baselining and is rerunnable.
 4. Deploy the new portal and verify the response contracts. With the worker still stopped,
    reading wallets/earnings must not change balances/statuses. Resume webhook delivery.
@@ -80,7 +84,7 @@ delivery/unlock, pending/rejected/approved returns, cancellation, missing rates/
 historical baseline, zero-rate correction, bounded batches and the worker health command.
 
 Staging UAT still requires a real delivered test order: verify each role's existing share,
-no credit before the configured window, automatic credit with all pages closed, matching
+no credit before the category policy window, automatic credit with all pages closed, matching
 wallet/ledger/earnings after refresh, no double credit on refresh/webhook retry/restart, return
 hold/release/reversal, worker failure alert, and recovery. Financial endpoints' authorization,
 withdrawal concurrency, historical reconciliation and cross-service return races remain
