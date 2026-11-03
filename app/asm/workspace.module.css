@@ -165,4 +165,3 @@
 @media (prefers-reduced-motion: reduce) {
   .workspace *, .workspace *::before, .workspace *::after { transition: none !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; }
 }
-
