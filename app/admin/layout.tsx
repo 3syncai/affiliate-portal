@@ -7,6 +7,7 @@ import axios from "axios"
 import { SmoothScroll } from "@/components/SmoothScroll"
 import ConfirmModal from "@/app/components/ConfirmModal"
 import { useTheme } from "@/contexts/ThemeContext"
+import styles from "./workspace.module.css"
 import {
   LayoutDashboard,
   LogOut,
@@ -109,7 +110,7 @@ export default function AdminLayout({
 
   if (!authChecked) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className={`${styles.workspace} ${styles.loading} min-h-screen flex items-center justify-center bg-gray-50`}>
         <div className="text-lg">Loading...</div>
       </div>
     )
@@ -118,7 +119,7 @@ export default function AdminLayout({
   return (
     <>
       <SmoothScroll />
-      <div className="min-h-screen flex overflow-x-hidden" style={{ backgroundColor: theme.background }}>
+      <div className={`${styles.workspace} min-h-screen flex overflow-x-hidden`} style={{ backgroundColor: theme.background }}>
         {sidebarOpen && (
           <button
             type="button"
@@ -130,16 +131,19 @@ export default function AdminLayout({
 
         {/* Sidebar */}
         <aside
-          className={`w-64 transition-transform duration-300 overflow-hidden flex flex-col fixed left-0 top-0 h-screen z-30 shadow-xl ${
+          className={`${styles.sidebar} w-64 transition-transform duration-300 overflow-hidden flex flex-col fixed left-0 top-0 h-screen z-30 shadow-xl ${
             sidebarOpen ? "translate-x-0" : "-translate-x-full"
           } lg:translate-x-0`}
-          style={{ background: `linear-gradient(to bottom, ${theme.sidebar}, ${theme.sidebar}dd)` }}
+          style={{ background: "var(--theme-card-bg)" }}
         >
           <div
-            className="flex items-center justify-between p-4"
-            style={{ borderBottomColor: "rgba(255,255,255,0.2)", borderBottomWidth: "1px" }}
+            className={`${styles.brand} flex items-center justify-between p-5 sm:p-6`}
           >
-            <div className="min-w-0">
+            <div className="min-w-0 flex flex-col gap-4">
+              <div className={styles.brandMark}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/brand/oweg-wordmark.svg" alt="OWEG" width={84} height={28} />
+              </div>
               <div className="lg:hidden">
                 <p className="text-[10px] text-white/60 font-medium tracking-wider uppercase">Hello</p>
                 <h1 className="text-base font-bold text-white tracking-wide truncate">
@@ -153,12 +157,13 @@ export default function AdminLayout({
             <button
               onClick={() => setSidebarOpen(false)}
               className="lg:hidden shrink-0 text-white/70 hover:text-white"
+              aria-label="Close sidebar"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
-          <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+          <nav className={`${styles.navigation} flex-1 p-4 space-y-1 overflow-y-auto`} aria-label="National Head navigation">
             {navigationItems.map((item) => {
               const Icon = item.icon
               const isActive = pathname === item.href
@@ -166,16 +171,16 @@ export default function AdminLayout({
                 <Link
                   key={item.name}
                   href={item.href}
+                  aria-current={isActive ? "page" : undefined}
                   onClick={() => {
                     if (typeof window !== "undefined" && window.innerWidth < 1024) {
                       setSidebarOpen(false)
                     }
                   }}
-                  className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${isActive
+                  className={`${styles.navLink} flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${isActive
                     ? "bg-white/20 text-white"
                     : "text-white/70 hover:bg-white/10 hover:text-white"
                     }`}
-                  style={isActive ? { backgroundColor: "rgba(255,255,255,0.2)" } : {}}
                 >
                   <Icon className="w-5 h-5 mr-3 shrink-0" />
                   <span className="truncate">{item.name}</span>
@@ -185,8 +190,7 @@ export default function AdminLayout({
           </nav>
 
           <div
-            className="p-4 relative"
-            style={{ borderTopColor: "rgba(255,255,255,0.2)", borderTopWidth: "1px" }}
+            className={`${styles.account} p-4 relative`}
           >
             <div className="lg:hidden space-y-1">
               <button
@@ -224,7 +228,7 @@ export default function AdminLayout({
             <div className="hidden lg:flex items-center gap-3 px-2 py-2 mb-2">
               <div
                 className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
-                style={{ background: `linear-gradient(to bottom right, ${theme.primary}, ${theme.primaryHover})` }}
+                style={{ background: "var(--workspace-hover)" }}
               >
                 {initial}
               </div>
@@ -286,9 +290,10 @@ export default function AdminLayout({
 
         {/* Main Content */}
         <div className="flex-1 flex flex-col ml-0 lg:ml-64 transition-all duration-300 overflow-x-hidden min-w-0">
-          <header className="bg-white border-b border-gray-200 px-4 sm:px-6 py-3 sm:py-4 sticky top-0 z-20">
+          <header className={`${styles.header} bg-white border-b border-gray-200 px-4 sm:px-6 py-3 sm:py-4 sticky top-0 z-20`}>
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-3 min-w-0">
+                <span className={styles.headerLabel}>National Head <span>/ Workspace</span></span>
                 <button
                   onClick={() => setSidebarOpen(!sidebarOpen)}
                   className="lg:hidden shrink-0 text-gray-500 hover:text-gray-700"
@@ -304,7 +309,7 @@ export default function AdminLayout({
                 </Link>
               </div>
               <div className="flex items-center gap-2 sm:gap-4 shrink-0">
-                <button className="p-2 text-gray-400 hover:text-gray-500 rounded-full hover:bg-gray-100 transition-colors relative">
+                <button aria-label="Notifications" className="p-2 text-gray-400 hover:text-gray-500 rounded-full hover:bg-gray-100 transition-colors relative">
                   <Bell className="w-5 h-5" />
                   <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
                 </button>
@@ -318,7 +323,7 @@ export default function AdminLayout({
             </div>
           </header>
 
-          <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 lg:p-8 scroll-smooth min-w-0">
+          <main className={`${styles.content} flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 lg:p-8 scroll-smooth min-w-0`}>
             {children}
           </main>
         </div>

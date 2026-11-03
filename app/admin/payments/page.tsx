@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import axios from "axios"
-import { Search, DollarSign, CreditCard, Building, User, CheckCircle, Clock, AlertCircle, Landmark, MapPin } from "lucide-react"
+import { Search, IndianRupee, CreditCard, Building, User, CheckCircle, Clock, AlertCircle, Landmark, MapPin } from "lucide-react"
 
 type BankDetails = {
     account_name: string | null
@@ -357,7 +357,7 @@ export default function PaymentsPage() {
                                         Payment Amount (Net Payable) <span className="text-red-500">*</span>
                                     </label>
                                     <div className="relative">
-                                        <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                        <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                                         <input
                                             type="text"
                                             value={amount}

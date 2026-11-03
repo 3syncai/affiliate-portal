@@ -1,4 +1,5 @@
 "use client"
+import styles from "../workspace.module.css"
 
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
@@ -142,7 +143,7 @@ export default function AdminProfilePage() {
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
                     <div className="relative shrink-0">
-                        <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full flex items-center justify-center text-white text-2xl sm:text-3xl font-bold" style={{ background: `linear-gradient(to bottom right, ${theme.primary}, ${theme.sidebar})` }}>
+                        <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full flex items-center justify-center text-2xl sm:text-3xl font-bold" style={{ background: "var(--theme-primary-light)", color: "var(--theme-surface-text)" }}>
                             {(user?.name || user?.email || 'A').charAt(0).toUpperCase()}
                         </div>
                     </div>
@@ -205,7 +206,7 @@ export default function AdminProfilePage() {
                                 ? 'border-indigo-600 text-indigo-600'
                                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                                 }`}
-                            style={activeTab === 'theme' ? { borderColor: theme.primary, color: theme.primary } : {}}
+                            style={activeTab === 'theme' ? { borderColor: "var(--theme-primary)", color: "var(--theme-primary)" } : {}}
                         >
                             <div className="flex items-center gap-2">
                                 <Palette className="w-4 h-4" />
@@ -268,8 +269,7 @@ export default function AdminProfilePage() {
                                             type="button"
                                             onClick={savePhone}
                                             disabled={savingPhone || phone.length !== 10}
-                                            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-white text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                                            style={{ backgroundColor: theme.primary }}
+                                            className={`${styles.primaryAction} inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed`}
                                         >
                                             {savingPhone ? (
                                                 <Loader2 className="w-4 h-4 animate-spin" />

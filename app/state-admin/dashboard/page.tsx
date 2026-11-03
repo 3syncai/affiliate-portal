@@ -7,7 +7,7 @@ import Link from "next/link";
 import QRCode from "qrcode";
 import {
   Users,
-  DollarSign,
+  IndianRupee,
   ShoppingBag,
   Building2,
   Briefcase,
@@ -26,6 +26,7 @@ import {
 import { useSSE } from "@/hooks/useSSE";
 import { Toast } from "@/components/Toast";
 import { STORE_URL } from "@/lib/config";
+import workspace from "../workspace.module.css";
 import RecentActivityFeed from "@/components/dashboard/RecentActivityFeed";
 import {
   mapActivityEventToFeedItem,
@@ -320,10 +321,10 @@ export default function StateAdminDashboard() {
   }
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500 bg-gray-50/50 min-h-screen p-4">
+    <div className={`${workspace.dashboard} space-y-6 sm:space-y-8 min-w-0`}>
       {/* Payment Received Toast */}
       {showToast && (
-        <Toast
+        <Toast currencyIcon={IndianRupee}
           message={toastData.message}
           type="payment"
           amount={toastData.amount}
@@ -376,7 +377,7 @@ export default function StateAdminDashboard() {
       )}
 
       {/* Dashboard overview — UI labels match client hierarchy (ASM = /branch, Branch = /asm) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+      <div className={`${workspace.metrics} grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 min-w-0`}>
         <StatCard
           label="Active Branches"
           value={stats.activeBranches ?? stats.totalBranches ?? 0}
@@ -428,7 +429,7 @@ export default function StateAdminDashboard() {
         <StatCard
           label="Total Commission"
           value={formatCurrency(stats.totalCommission ?? 0)}
-          icon={DollarSign}
+          icon={IndianRupee}
           color="green"
           isCurrency
           sublabel="Gross commission from your territory sales"
@@ -445,10 +446,10 @@ export default function StateAdminDashboard() {
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className={`${workspace.dashboardGrid} grid grid-cols-1 lg:grid-cols-3 gap-8 min-w-0`}>
         {/* Left Column: Recent Activity */}
-        <div className="lg:col-span-2">
-          <RecentActivityFeed
+        <div className={`${workspace.activity} min-w-0`}>
+          <RecentActivityFeed currencyIcon={IndianRupee}
             items={activityFeedItems}
             loading={activitiesLoading}
             emptyMessage="No recent activity found."
@@ -457,9 +458,9 @@ export default function StateAdminDashboard() {
         </div>
 
         {/* Right Column: Referral & Attributes */}
-        <div className="space-y-6">
+        <div className="space-y-6 min-w-0">
           {/* Referral Card */}
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+          <div className={`${workspace.referral} bg-white rounded-2xl p-6 shadow-sm border border-slate-100 min-w-0`}>
             <div className="flex items-start gap-4 mb-6">
               <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
                 <Share2 className="w-6 h-6" />
@@ -475,7 +476,7 @@ export default function StateAdminDashboard() {
             </div>
 
             <div
-              className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex items-center justify-between gap-2 mb-6 group hover:border-indigo-200 transition-colors cursor-pointer"
+              className={`${workspace.referralCode} bg-slate-50 border border-slate-200 rounded-xl p-4 flex items-center justify-between gap-2 mb-6 group hover:border-indigo-200 transition-colors cursor-pointer min-w-0`}
               onClick={copyReferralCode}
             >
               <span className="font-mono font-bold text-slate-700 text-lg tracking-wider">
@@ -699,13 +700,13 @@ function StatCard({
 
   if (href) {
     return (
-      <Link href={href} className={className}>
+      <Link href={href} className={`${workspace.metric} ${className}`}>
         {cardContent}
       </Link>
     );
   }
 
-  return <div className={className}>{cardContent}</div>;
+  return <div className={`${workspace.metric} ${className}`}>{cardContent}</div>;
 }
 
 function QuickAttrItem({
