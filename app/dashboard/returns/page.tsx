@@ -1,5 +1,7 @@
 "use client"
 
+import styles from "@/app/components/sales-executive.module.css"
+
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import axios from "axios"
@@ -130,7 +132,7 @@ export default function AffiliateReturnsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className={`${styles.surface} min-h-screen flex items-center justify-center bg-gray-50`}>
         <div className="text-lg text-gray-600">Loading returns...</div>
       </div>
     )
@@ -139,7 +141,7 @@ export default function AffiliateReturnsPage() {
   const userName = user?.first_name || user?.email || "Partner"
 
   return (
-    <div className="min-h-screen bg-gray-50 overflow-x-hidden">
+    <div className={`${styles.surface} min-h-screen bg-gray-50 overflow-x-hidden`}>
       <UserNavbar userName={userName} />
 
       <main className="max-w-7xl mx-auto py-6 sm:py-8 px-4 sm:px-6 lg:px-8 space-y-6">

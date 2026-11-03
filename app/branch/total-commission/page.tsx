@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import axios from "axios"
-import { DollarSign, TrendingUp, Wallet, ShoppingBag, Eye, Download } from "lucide-react"
+import { IndianRupee, TrendingUp, Wallet, ShoppingBag, Eye, Download } from "lucide-react"
 
 type AffiliateCommission = {
     user_id: string
@@ -136,7 +136,7 @@ export default function TotalCommissionPage() {
                             <p className="text-lg sm:text-2xl font-bold text-green-600 mt-1 truncate">{formatCurrency(totalCommissionSum)}</p>
                         </div>
                         <div className="bg-green-100 p-2 sm:p-3 rounded-lg shrink-0">
-                            <DollarSign className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />
+                            <IndianRupee className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />
                         </div>
                     </div>
                 </div>
@@ -365,7 +365,7 @@ export default function TotalCommissionPage() {
                                 <div className="grid grid-cols-2 gap-3 sm:gap-4">
                                     <div className="bg-green-50 border border-green-200 p-3 sm:p-4 rounded-lg min-w-0">
                                         <div className="flex items-center gap-2 mb-2">
-                                            <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 shrink-0" />
+                                            <IndianRupee className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 shrink-0" />
                                             <p className="text-[10px] sm:text-xs text-green-700 font-semibold uppercase leading-tight">Total Commission</p>
                                         </div>
                                         <p className="text-lg sm:text-2xl font-bold text-green-600 truncate">{formatCurrency(selectedAffiliate.total_commission)}</p>

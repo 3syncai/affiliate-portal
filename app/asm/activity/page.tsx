@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { IndianRupee } from "lucide-react";
 import ActivityHistoryPage from "@/components/dashboard/ActivityHistoryPage";
 
 type BmUser = {
@@ -30,6 +31,7 @@ export default function AsmActivityPage() {
 
   return (
     <ActivityHistoryPage
+      currencyIcon={IndianRupee}
       title="Activity History"
       description="Sales executive and ASM commissions, partner requests, returns, and notifications in your area."
       apiUrl={apiUrl}

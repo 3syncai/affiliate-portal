@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import axios from "axios"
 import useSWR from "swr"
-import { Package, DollarSign, TrendingUp, Eye, Download, Search, ChevronDown, Copy, RotateCcw } from "lucide-react"
+import { Package, IndianRupee, TrendingUp, Eye, Download, Search, ChevronDown, Copy, RotateCcw } from "lucide-react"
 import { useTheme } from "@/contexts/ThemeContext"
 
 const fetcher = (url: string) => axios.get(url).then(res => res.data)
@@ -255,7 +255,7 @@ export default function OrderLayoutPage() {
               <p className="text-2xl sm:text-3xl font-bold text-gray-900 tabular-nums truncate">{formatCurrency(totalOrderAmount)}</p>
             </div>
             <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-blue-50 flex items-center justify-center shrink-0">
-              <DollarSign className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
+              <IndianRupee className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
             </div>
           </div>
         </div>

@@ -7,7 +7,7 @@ import Link from "next/link";
 import QRCode from "qrcode";
 import {
   Users,
-  DollarSign,
+  IndianRupee,
   ShoppingBag,
   Building2,
   Copy,
@@ -25,6 +25,7 @@ import {
 import { useSSE } from "@/hooks/useSSE";
 import { Toast } from "@/components/Toast";
 import { STORE_URL } from "@/lib/config";
+import styles from "../workspace.module.css";
 import RecentActivityFeed from "@/components/dashboard/RecentActivityFeed";
 import {
   mapActivityEventToFeedItem,
@@ -278,10 +279,10 @@ export default function ASMDashboard() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className={`${styles.dashboard} space-y-6 sm:space-y-8 min-w-0`}>
       {/* Payment Received Toast */}
       {showToast && (
-        <Toast
+        <Toast currencyIcon={IndianRupee}
           message={toastData.message}
           type="payment"
           amount={toastData.amount}
@@ -332,7 +333,7 @@ export default function ASMDashboard() {
       )}
 
       {/* Branch Manager overview (/asm route) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className={`${styles.metrics} grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 min-w-0`}>
         {[
           {
             title: "ASM's",
@@ -370,7 +371,7 @@ export default function ASMDashboard() {
             title: "Total Commission",
             value: formatCurrency(overview.totalCommission ?? 0),
             subtitle: "Gross commission from your territory sales",
-            icon: DollarSign,
+            icon: IndianRupee,
             bg: "bg-green-50",
             color: "text-green-600",
             href: "/asm/earnings",
@@ -387,7 +388,7 @@ export default function ASMDashboard() {
           const Icon = card.icon;
           const content = (
             <div
-              className={`bg-white rounded-xl p-6 shadow-sm border border-gray-100 transition-shadow ${
+              className={`${styles.metric} bg-white rounded-xl p-6 shadow-sm border border-gray-100 transition-shadow min-w-0 ${
                 "href" in card && card.href
                   ? "hover:border-gray-200 cursor-pointer hover:shadow-md"
                   : "hover:shadow-md"
@@ -413,7 +414,7 @@ export default function ASMDashboard() {
           );
 
           return "href" in card && card.href ? (
-            <Link key={card.title} href={card.href} className="block">
+            <Link key={card.title} href={card.href} className="block min-w-0">
               {content}
             </Link>
           ) : (
@@ -422,10 +423,10 @@ export default function ASMDashboard() {
         })}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className={`${styles.dashboardGrid} grid grid-cols-1 lg:grid-cols-3 gap-8 min-w-0`}>
         {/* Left Column: Recent Activity */}
-        <div className="lg:col-span-2">
-          <RecentActivityFeed
+        <div className={`${styles.activity} min-w-0`}>
+          <RecentActivityFeed currencyIcon={IndianRupee}
             items={activityFeedItems}
             loading={activitiesLoading}
             viewAllHref="/asm/activity"
@@ -433,9 +434,9 @@ export default function ASMDashboard() {
         </div>
 
         {/* Right Column: Referral Code & Quick Actions */}
-        <div className="space-y-6">
+        <div className="space-y-6 min-w-0">
           {/* Referral Code Card */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <div className={`${styles.referral} bg-white rounded-xl shadow-sm border border-gray-100 p-6 min-w-0`}>
             <div className="flex items-start justify-between mb-4">
               <div>
                 <h3 className="font-bold text-gray-900 flex items-center gap-2">
@@ -448,7 +449,7 @@ export default function ASMDashboard() {
               </div>
             </div>
 
-            <div className="flex items-center gap-2 mb-6">
+            <div className={`${styles.referralCode} flex items-center gap-2 mb-6 min-w-0`}>
               <div className="flex-1 bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 font-mono text-center font-bold text-gray-800 tracking-wider">
                 {user?.refer_code || "LOADING..."}
               </div>
@@ -563,7 +564,7 @@ export default function ASMDashboard() {
               >
                 <div className="flex items-center gap-3">
                   <div className="bg-green-100 p-2 rounded-lg text-green-600">
-                    <DollarSign className="w-4 h-4" />
+                    <IndianRupee className="w-4 h-4" />
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-gray-900">

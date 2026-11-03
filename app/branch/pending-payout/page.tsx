@@ -1,5 +1,7 @@
 "use client"
 
+import { IndianRupee } from "lucide-react"
+
 import { useEffect, useState, useCallback } from "react"
 import axios from "axios"
 import useSWR from 'swr'
@@ -187,7 +189,7 @@ export default function PendingPayoutPage() {
     <div className="space-y-8">
       {/* Payment Received Toast */}
       {showToast && (
-        <Toast
+        <Toast currencyIcon={IndianRupee}
           message={toastData.message || "Data Updated"}
           type="payment"
           amount={toastData.amount}

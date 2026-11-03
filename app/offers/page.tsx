@@ -1,5 +1,7 @@
 "use client"
 
+import styles from "@/app/components/sales-executive.module.css"
+
 import { useEffect, useState } from "react"
 import useSWR from "swr"
 import axios from "axios"
@@ -137,7 +139,7 @@ export default function AffiliateOffersPage() {
   const offerProducts = products.filter((p) => (additionalByProduct[p.id] || 0) > 0)
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-emerald-50 overflow-x-hidden">
+    <div className={`${styles.surface} min-h-screen bg-slate-50 overflow-x-hidden`}>
       <UserNavbar userName={userName} />
 
       <main className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
@@ -204,7 +206,7 @@ function OfferProductCard({
   }
 
   return (
-    <div className="group relative bg-white rounded-2xl border-2 border-gray-100 overflow-hidden hover:border-emerald-200 transition-all duration-300 hover:shadow-2xl hover:shadow-emerald-100 hover:-translate-y-1">
+    <div className={`${styles.productCard} group relative bg-white overflow-hidden transition-colors hover:border-emerald-200`}>
       <button
         onClick={handleShare}
         className="absolute top-4 right-4 z-10 bg-white/90 backdrop-blur-md hover:bg-emerald-500 text-gray-700 hover:text-white p-3 rounded-full shadow-lg transition-all duration-300 transform hover:scale-110"
@@ -214,12 +216,12 @@ function OfferProductCard({
       </button>
 
       {copied && (
-        <div className="absolute top-4 left-4 z-10 bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-sm font-medium px-4 py-2 rounded-full shadow-xl">
+        <div className="absolute top-4 left-4 z-10 bg-emerald-600 text-white text-sm font-medium px-4 py-2 rounded-full shadow-xl">
           ✓ Link copied!
         </div>
       )}
 
-      <div className="relative h-56 bg-gradient-to-br from-gray-50 to-white flex items-center justify-center p-6 overflow-hidden">
+      <div className="relative h-56 bg-slate-50 flex items-center justify-center p-6 overflow-hidden">
         {product.thumbnail ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -239,7 +241,7 @@ function OfferProductCard({
           </h3>
           <span
             className={`px-3 py-1.5 text-xs font-bold rounded-full whitespace-nowrap shadow-sm ${
-              product.isInStock ? "bg-gradient-to-r from-green-400 to-emerald-500 text-white" : "bg-gradient-to-r from-red-400 to-pink-500 text-white"
+              product.isInStock ? "bg-emerald-600 text-white" : "bg-red-600 text-white"
             }`}
           >
             {product.isInStock ? "In Stock" : "Out of Stock"}
@@ -253,7 +255,7 @@ function OfferProductCard({
             <span className="text-yellow-400 text-lg">★</span>
             <span className="text-sm font-semibold text-gray-700">4.5</span>
           </div>
-          <span className="text-xs font-medium text-gray-500 bg-gradient-to-r from-gray-100 to-slate-100 px-3 py-1.5 rounded-full border border-gray-200">
+          <span className="text-xs font-medium text-gray-500 bg-slate-50 px-3 py-1.5 rounded-full border border-gray-200">
             {product.category}
           </span>
         </div>
@@ -261,12 +263,12 @@ function OfferProductCard({
         <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-gray-100">
           <div className="flex items-center gap-1 min-w-0">
             <IndianRupee size={18} className="text-gray-700 shrink-0" />
-            <span className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-gray-900 to-emerald-900 bg-clip-text text-transparent">
+            <span className="text-xl sm:text-2xl font-bold bg-slate-900 bg-clip-text text-transparent">
               {product.price.toLocaleString("en-IN")}
             </span>
           </div>
           {product.commissionRate && (
-            <div className="flex items-center gap-1.5 bg-gradient-to-r from-emerald-50 to-teal-50 px-3 py-1.5 rounded-full shrink-0">
+            <div className="flex items-center gap-1.5 bg-slate-50 px-3 py-1.5 rounded-full shrink-0">
               <span className="text-sm font-bold text-emerald-700">{formatCommissionRatePercent(effectiveCommissionRate)}%</span>
             </div>
           )}
@@ -279,12 +281,12 @@ function OfferProductCard({
           </div>
         )}
 
-        <div className="relative bg-gradient-to-r from-emerald-500 to-teal-500 rounded-xl p-[2px] shadow-lg shadow-emerald-200">
+        <div className="relative bg-emerald-600 rounded-xl p-[2px] shadow-lg shadow-emerald-200">
           <div className="bg-white rounded-xl px-4 py-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex flex-wrap items-center gap-2 min-w-0">
                 <span className="text-sm font-medium text-gray-600">Your commission:</span>
-                <span className="text-lg font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
+                <span className="text-lg font-bold bg-emerald-600 bg-clip-text text-transparent">
                   ₹{formatCommissionInr(regularCommission)}
                 </span>
               </div>

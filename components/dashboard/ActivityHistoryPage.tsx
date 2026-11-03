@@ -2,6 +2,7 @@
 
 import useSWR from "swr";
 import axios from "axios";
+import type { LucideIcon } from "lucide-react";
 import RecentActivityFeed from "@/components/dashboard/RecentActivityFeed";
 import { mapActivityEventToFeedItem, type ActivityEvent } from "@/lib/recent-activity";
 
@@ -12,6 +13,7 @@ type ActivityHistoryPageProps = {
   description?: string;
   apiUrl: string | null;
   limit?: number;
+  currencyIcon?: LucideIcon;
 };
 
 export default function ActivityHistoryPage({
@@ -19,6 +21,7 @@ export default function ActivityHistoryPage({
   description = "Full timeline of recent events in your territory.",
   apiUrl,
   limit = 50,
+  currencyIcon,
 }: ActivityHistoryPageProps) {
   const { data, isLoading } = useSWR(apiUrl, fetcher);
 
@@ -33,6 +36,7 @@ export default function ActivityHistoryPage({
       </div>
 
       <RecentActivityFeed
+        currencyIcon={currencyIcon}
         items={items}
         loading={isLoading}
         limit={limit}

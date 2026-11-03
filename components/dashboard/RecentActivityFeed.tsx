@@ -47,6 +47,7 @@ type RecentActivityFeedProps = {
   viewAllHref?: string;
   limit?: number;
   showViewAll?: boolean;
+  currencyIcon?: LucideIcon;
 };
 
 const variantStyles: Record<
@@ -131,6 +132,7 @@ export default function RecentActivityFeed({
   viewAllHref,
   limit = 5,
   showViewAll = true,
+  currencyIcon: CurrencyIcon = DollarSign,
 }: RecentActivityFeedProps) {
   const visibleItems = items.slice(0, limit);
 
@@ -151,7 +153,7 @@ export default function RecentActivityFeed({
         ) : (
           visibleItems.map((activity) => {
             const style = variantStyles[activity.variant ?? "default"];
-            const Icon = style.icon;
+            const Icon = activity.variant === "commission" ? CurrencyIcon : style.icon;
             const showAmount =
               activity.amount != null && Number(activity.amount) > 0;
             const showCommissionStatus = Boolean(activity.commissionStatus);

@@ -1,4 +1,5 @@
 "use client"
+import styles from "../workspace.module.css"
 
 import { useEffect, useState } from "react"
 import { Search, Package, IndianRupee, Box, Share2 } from "lucide-react"
@@ -223,7 +224,7 @@ function ProductCard({ product, user, theme, commissionRate, additionalCommissio
     }
 
     return (
-        <div className="bg-white rounded-xl border border-gray-100 overflow-hidden hover:shadow-lg transition-shadow relative">
+        <div className={`${styles.productCard} bg-white rounded-xl border border-gray-100 overflow-hidden hover:shadow-lg transition-shadow relative`}>
             <button
                 onClick={handleShare}
                 className="absolute top-3 right-3 z-10 bg-white/90 backdrop-blur-sm hover:bg-emerald-50 text-gray-700 hover:text-emerald-600 p-2 rounded-full shadow-md transition-all"
@@ -237,7 +238,7 @@ function ProductCard({ product, user, theme, commissionRate, additionalCommissio
                 </div>
             )}
 
-            <div className="h-48 bg-white flex items-center justify-center p-4">
+            <div className={`${styles.productImage} h-48 bg-white flex items-center justify-center p-4`}>
                 {product.thumbnail ? (
                     <img
                         src={product.thumbnail}

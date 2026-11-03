@@ -1,5 +1,7 @@
 "use client"
 
+import styles from "@/app/components/sales-executive.module.css"
+
 import { useEffect, useState, useRef } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -13,7 +15,7 @@ import {
   Users,
   Wallet,
   TrendingUp,
-  DollarSign,
+  IndianRupee,
   RotateCcw,
   ArrowUpRight,
   Package,
@@ -22,7 +24,6 @@ import {
   CheckCircle2,
   QrCode,
   Info,
-  Calendar,
   Mail,
   Phone,
   Hash,
@@ -285,7 +286,7 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/30 flex items-center justify-center">
+      <div className={`${styles.surface} min-h-screen bg-slate-50 flex items-center justify-center`}>
         <div className="flex flex-col items-center gap-4">
           <div className="relative">
             <div className="w-14 h-14 rounded-full border-4 border-emerald-100"></div>
@@ -312,63 +313,30 @@ export default function DashboardPage() {
   const walletBalance = walletData?.success ? walletData.data.balance.current : 0
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/40 overflow-x-hidden">
+    <div className={`${styles.surface} min-h-screen bg-slate-50 overflow-x-hidden`}>
       <UserNavbar userName={fullName || undefined} />
 
       {/* ─── Main Content ──────────────────────────────────────────── */}
       <main className="max-w-7xl mx-auto py-6 sm:py-8 px-4 sm:px-6 lg:px-8">
         <div className="space-y-6 sm:space-y-8">
-          {/* ─── Hero / Greeting ───────────────────────────────────── */}
-          <section className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-700 p-5 sm:p-8 lg:p-10 text-white shadow-xl shadow-emerald-200/40">
-            <div className="absolute inset-0 opacity-20" style={{
-              backgroundImage: 'radial-gradient(circle at 30% 50%, rgba(255,255,255,.35) 0, transparent 35%), radial-gradient(circle at 80% 20%, rgba(255,255,255,.25) 0, transparent 40%)'
-            }} />
-            <div className="absolute -top-10 -right-10 w-64 h-64 rounded-full bg-white/10 blur-3xl" />
-            <div className="absolute -bottom-16 -left-10 w-72 h-72 rounded-full bg-cyan-400/20 blur-3xl" />
-
-            <div className="relative flex flex-col md:flex-row md:items-end md:justify-between gap-6">
-              <div>
-                <div className="flex items-center gap-2 text-emerald-100/90 text-sm mb-3">
-                  <Calendar className="w-4 h-4" />
-                  <span>{today}</span>
-                </div>
-                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight">
-                  {greeting}, {user?.first_name || 'Partner'} 👋
-                </h1>
-                <p className="text-emerald-50/90 mt-2 text-sm sm:text-base">
-                  Here's a snapshot of your performance and earnings.
-                </p>
-              </div>
-
-              <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-                <a
-                  href="/products"
-                  className="inline-flex w-full sm:w-auto items-center justify-center gap-2 px-5 py-3 bg-white text-emerald-700 hover:bg-emerald-50 rounded-xl font-semibold text-sm shadow-md transition-all hover:scale-[1.02]"
-                >
-                  <Package className="w-4 h-4" />
-                  Browse Products
-                </a>
-                <a
-                  href="/dashboard/wallet"
-                  className="inline-flex w-full sm:w-auto items-center justify-center gap-2 px-5 py-3 bg-white/15 backdrop-blur-sm border border-white/30 text-white hover:bg-white/25 rounded-xl font-semibold text-sm transition-all"
-                >
-                  <Wallet className="w-4 h-4" />
-                  Wallet
-                </a>
-              </div>
+          <section className={styles.pageHeader}>
+            <div>
+              <h1>Sales overview</h1>
+              <p>{greeting}, {user?.first_name || 'Partner'} · {today}</p>
+            </div>
+            <div className={styles.headerActions}>
+              <a href="/products" className={styles.secondary}><Package className="w-4 h-4" />Browse Products</a>
+              <a href="/dashboard/wallet" className={styles.primary}><Wallet className="w-4 h-4" />Wallet</a>
             </div>
           </section>
 
           {/* ─── Stats Grid — 2x2 matrix on mobile; wallet full-width under KPIs ── */}
-          <section className="grid grid-cols-2 gap-2.5 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 min-w-0">
+          <section className={`${styles.metrics} grid grid-cols-2 lg:grid-cols-5 min-w-0`}>
             <StatCard
               label="Total Referrals"
               value={String(stats?.referrals.total || 0)}
               meta={`${stats?.referrals.active || 0} active customers`}
               icon={Users}
-              gradient="from-blue-500 to-indigo-500"
-              accent="text-blue-600"
-              ringClass="ring-blue-100"
               href="/dashboard/referrals"
             />
             <StatCard
@@ -376,9 +344,6 @@ export default function DashboardPage() {
               value={String(stats?.referrals.total_orders || 0)}
               meta={`₹${(stats?.referrals.total_order_value || 0).toLocaleString('en-IN')} order value`}
               icon={TrendingUp}
-              gradient="from-violet-500 to-purple-500"
-              accent="text-violet-600"
-              ringClass="ring-violet-100"
               href="/dashboard/orders"
             />
             <StatCard
@@ -386,9 +351,6 @@ export default function DashboardPage() {
               value={String(stats?.referrals.total_returns || 0)}
               meta="Cancelled + return requests"
               icon={RotateCcw}
-              gradient="from-rose-500 to-red-500"
-              accent="text-rose-600"
-              ringClass="ring-rose-100"
               href="/dashboard/returns"
             />
             <StatCard
@@ -396,33 +358,24 @@ export default function DashboardPage() {
               value={`₹${(stats?.commission.total_earned || 0).toFixed(2)}`}
               meta={`₹${(stats?.commission.pending || 0).toFixed(2)} pending`}
               metaTone="amber"
-              icon={DollarSign}
-              gradient="from-amber-500 to-orange-500"
-              accent="text-amber-600"
-              ringClass="ring-amber-100"
+              icon={IndianRupee}
               href="/dashboard/earnings"
             />
 
             {/* Wallet Card — featured; full-width on mobile under 2x2 KPI matrix */}
-            <a href="/dashboard/wallet" className="group block col-span-2 sm:col-span-1 min-w-0">
-              <div className="relative h-full overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-700 p-3.5 sm:p-5 shadow-lg shadow-emerald-200/50 hover:shadow-xl hover:shadow-emerald-300/50 transition-all hover:-translate-y-0.5">
-                <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/10 blur-2xl" />
+            <a href="/dashboard/wallet" className="group block col-span-2 lg:col-span-1 min-w-0">
+              <div className={`${styles.metric} ${styles.walletMetric}`}>
                 <div className="relative">
-                  <div className="flex items-start justify-between mb-2 sm:mb-3">
-                    <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center ring-1 ring-white/30">
-                      <Wallet className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-                    </div>
-                    <ArrowUpRight className="w-4 h-4 text-white/80 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-                  </div>
-                  <p className="text-[11px] uppercase tracking-wider text-emerald-100 font-semibold">Wallet Balance</p>
-                  <p className="text-2xl sm:text-3xl font-bold text-white mt-1 tracking-tight truncate">₹{walletBalance.toFixed(2)}</p>
+                  <div className={styles.metricTop}><Wallet /><ArrowUpRight /></div>
+                  <p className={styles.metricLabel}>Wallet Balance</p>
+                  <p className={styles.metricValue}>₹{walletBalance.toFixed(2)}</p>
                   {(stats?.wallet.locked || 0) > 0 ? (
-                    <p className="text-[11px] sm:text-xs text-emerald-100/90 mt-2 flex items-center gap-1">
+                    <p className={`${styles.metricMeta} flex items-center gap-1`}>
                       <Sparkles className="w-3 h-3 shrink-0" />
                       <span className="truncate">₹{((stats?.wallet.locked || 0) * affiliateRate / 100).toFixed(2)} unlocking soon</span>
                     </p>
                   ) : (
-                    <p className="text-[11px] sm:text-xs text-emerald-100/80 mt-2">All funds available</p>
+                    <p className={styles.metricMeta}>All funds available</p>
                   )}
                 </div>
               </div>
@@ -431,7 +384,6 @@ export default function DashboardPage() {
 
           {/* ─── Active Additional Commission Banner ──────────────── */}
           <section className="relative overflow-hidden rounded-2xl bg-white border border-slate-200 shadow-sm">
-            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500" />
             <div className="p-5 sm:p-6">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2.5">
@@ -460,7 +412,7 @@ export default function DashboardPage() {
                   {(additionalData.campaigns as AdditionalCampaign[]).slice(0, 3).map((campaign) => (
                     <div
                       key={campaign.id}
-                      className="group relative overflow-hidden bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-100 rounded-xl p-4 hover:shadow-md hover:border-emerald-200 transition-all"
+                      className="group relative overflow-hidden bg-slate-50 border border-emerald-100 rounded-xl p-4 hover:shadow-md hover:border-emerald-200 transition-all"
                     >
                       <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full bg-emerald-200/40 group-hover:bg-emerald-200/60 transition-colors" />
                       <div className="relative">
@@ -484,7 +436,6 @@ export default function DashboardPage() {
           <section className="grid gap-6 lg:grid-cols-3">
             {/* Partner Code */}
             <div className="relative overflow-hidden rounded-2xl bg-white border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-emerald-100/50 to-transparent rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
               <div className="relative p-6">
                 <div className="flex items-center justify-between mb-5">
                   <div className="flex items-center gap-2">
@@ -493,7 +444,7 @@ export default function DashboardPage() {
                     </div>
                     <h3 className="text-sm font-semibold text-slate-900">Your Partner Code</h3>
                   </div>
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-sm">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-600 text-white shadow-sm">
                     <CheckCircle2 className="w-3 h-3" />
                     Active
                   </span>
@@ -537,7 +488,7 @@ export default function DashboardPage() {
 
                 {qrDataUrl ? (
                   <div className="flex flex-col items-center">
-                    <div className="p-3 bg-gradient-to-br from-slate-50 to-white rounded-xl border border-slate-200">
+                    <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
                       <img
                         src={qrDataUrl}
                         alt="QR Code"
@@ -546,7 +497,7 @@ export default function DashboardPage() {
                     </div>
                     <button
                       onClick={downloadQR}
-                      className="mt-4 inline-flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-gradient-to-r from-slate-900 to-slate-800 hover:from-slate-800 hover:to-slate-700 text-white rounded-xl text-xs font-semibold shadow-sm transition-all"
+                      className="mt-4 inline-flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-slate-900 hover:from-slate-800 hover:to-slate-700 text-white rounded-xl text-xs font-semibold shadow-sm transition-all"
                     >
                       <Download className="w-3.5 h-3.5" />
                       Download QR
@@ -561,8 +512,7 @@ export default function DashboardPage() {
             </div>
 
             {/* How It Works */}
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white border border-slate-700 shadow-lg">
-              <div className="absolute top-0 right-0 w-40 h-40 bg-emerald-500/20 blur-3xl rounded-full -translate-y-1/2 translate-x-1/2" />
+            <div className={styles.guidance}>
               <div className="relative p-6">
                 <div className="flex items-center gap-2 mb-5">
                   <div className="w-8 h-8 rounded-lg bg-emerald-500/20 ring-1 ring-emerald-400/30 flex items-center justify-center">
@@ -607,7 +557,7 @@ export default function DashboardPage() {
                       return (
                         <div key={ref.id} className="group flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 p-3 rounded-xl border border-transparent hover:border-slate-200 hover:bg-slate-50 transition-colors min-w-0 overflow-hidden">
                           <div className="flex items-center gap-3 min-w-0 flex-1 overflow-hidden">
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white text-sm font-bold shrink-0">
+                            <div className="w-10 h-10 rounded-full bg-emerald-600 flex items-center justify-center text-white text-sm font-bold shrink-0">
                               {refInitials}
                             </div>
                             <div className="min-w-0 flex-1 overflow-hidden">
@@ -642,7 +592,7 @@ export default function DashboardPage() {
               <div className="flex items-center justify-between gap-2 p-4 sm:p-6 pb-3 min-w-0">
                 <div className="flex items-center gap-2.5 min-w-0">
                   <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center shrink-0">
-                    <DollarSign className="w-4 h-4 text-emerald-600" />
+                    <IndianRupee className="w-4 h-4 text-emerald-600" />
                   </div>
                   <div className="min-w-0">
                     <h3 className="text-sm font-semibold text-slate-900 truncate">Recent Commission</h3>
@@ -660,7 +610,7 @@ export default function DashboardPage() {
                     {stats.recent_commissions.slice(0, 5).map((comm) => (
                       <div key={comm.id} className="group flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 p-3 rounded-xl border border-transparent hover:border-slate-200 hover:bg-slate-50 transition-colors min-w-0 overflow-hidden">
                         <div className="flex items-center gap-3 min-w-0 flex-1 overflow-hidden">
-                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-100 to-teal-100 flex items-center justify-center shrink-0">
+                          <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center shrink-0">
                             <Package className="w-4 h-4 text-emerald-700" />
                           </div>
                           <div className="min-w-0 flex-1 overflow-hidden">
@@ -690,7 +640,7 @@ export default function DashboardPage() {
                 ) : (
                   <div className="flex flex-col items-center justify-center py-10 text-center">
                     <div className="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center mb-3">
-                      <DollarSign className="w-6 h-6 text-slate-400" />
+                      <IndianRupee className="w-6 h-6 text-slate-400" />
                     </div>
                     <p className="text-sm font-semibold text-slate-700">No commission yet</p>
                     <p className="text-xs text-slate-500 mt-1">Earn when your referrals purchase</p>
@@ -744,9 +694,6 @@ function StatCard({
   meta,
   metaTone = 'muted',
   icon: Icon,
-  gradient,
-  accent,
-  ringClass,
   href,
 }: {
   label: string
@@ -754,22 +701,17 @@ function StatCard({
   meta: string
   metaTone?: 'muted' | 'amber'
   icon: LucideIcon
-  gradient: string
-  accent: string
-  ringClass: string
   href?: string
 }) {
   const card = (
-    <div className={`group relative overflow-hidden rounded-xl sm:rounded-2xl bg-white border border-slate-200 p-3.5 sm:p-5 shadow-sm transition-all h-full min-w-0 ${href ? 'hover:shadow-md hover:-translate-y-0.5 cursor-pointer' : 'hover:shadow-md hover:-translate-y-0.5'}`}>
-      <div className="flex items-start justify-between mb-2 sm:mb-3 gap-1">
-        <div className={`w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center shadow-sm ring-2 sm:ring-4 ${ringClass} shrink-0`}>
-          <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-        </div>
-        <ArrowUpRight className={`w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0 ${accent} ${href ? 'opacity-60 group-hover:opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity`} />
+    <div className={styles.metric}>
+      <div className={styles.metricTop}>
+        <Icon />
+        <ArrowUpRight className={href ? 'opacity-60' : 'opacity-0 group-hover:opacity-100'} />
       </div>
-      <p className="text-[10px] sm:text-[11px] uppercase tracking-wider font-semibold text-slate-500 truncate">{label}</p>
-      <p className="text-xl sm:text-3xl font-bold text-slate-900 mt-0.5 sm:mt-1 tracking-tight truncate">{value}</p>
-      <p className={`text-[11px] sm:text-xs mt-1.5 sm:mt-2 line-clamp-2 ${metaTone === 'amber' ? 'text-amber-600 font-medium' : 'text-slate-500'}`}>{meta}</p>
+      <p className={styles.metricLabel}>{label}</p>
+      <p className={styles.metricValue}>{value}</p>
+      <p className={`${styles.metricMeta} ${metaTone === 'amber' ? 'text-amber-700' : ''}`}>{meta}</p>
     </div>
   )
 
@@ -787,7 +729,7 @@ function StatCard({
 function Step({ n, text }: { n: number; text: string }) {
   return (
     <li className="flex items-start gap-3">
-      <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-gradient-to-br from-emerald-400 to-teal-500 text-white text-xs font-bold flex-shrink-0 shadow-sm shadow-emerald-500/30">
+      <span className={styles.stepNumber}>
         {n}
       </span>
       <span className="text-sm text-slate-200 leading-relaxed pt-1">{text}</span>

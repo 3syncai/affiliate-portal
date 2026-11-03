@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import axios from "axios"
 import useSWR from "swr"
-import { Bell, CheckCircle, ChevronDown, ChevronUp, DollarSign, Info, AlertCircle, Wifi } from "lucide-react"
+import { Bell, CheckCircle, ChevronDown, ChevronUp, IndianRupee, Info, AlertCircle, Wifi } from "lucide-react"
 import { formatIST } from "@/lib/datetime"
 
 type Notification = {
@@ -97,7 +97,7 @@ export default function ASMNotificationsPage() {
     const getIcon = (type: string) => {
         switch (type) {
             case "payment":
-                return <DollarSign className="w-5 h-5 text-green-600" />
+                return <IndianRupee className="w-5 h-5 text-green-600" />
             case "alert":
                 return <AlertCircle className="w-5 h-5 text-red-600" />
             case "system":

@@ -1,4 +1,5 @@
 "use client"
+import styles from "../workspace.module.css"
 
 import { useEffect, useState } from "react"
 import useSWR from "swr"
@@ -152,14 +153,14 @@ function OfferCard({
   }
 
   return (
-    <div className="group relative bg-white rounded-2xl border-2 border-gray-100 overflow-hidden hover:border-emerald-200 transition-all duration-300 hover:shadow-xl">
+    <div className={`${styles.productCard} group relative bg-white rounded-2xl border border-gray-100 overflow-hidden hover:border-emerald-200 transition-all duration-300 hover:shadow-xl`}>
       <button onClick={handleShare} className="absolute top-4 right-4 z-10 bg-white/90 text-gray-700 hover:text-white hover:bg-emerald-500 p-3 rounded-full shadow-md transition-all" title="Share offer">
         <Share2 size={18} />
       </button>
 
       {copied && <div className="absolute top-4 left-4 z-10 bg-emerald-500 text-white text-xs font-semibold px-3 py-1.5 rounded-full">Link copied!</div>}
 
-      <div className="h-44 sm:h-52 bg-gradient-to-br from-gray-50 to-white flex items-center justify-center p-4 sm:p-5">
+      <div className={`${styles.productImage} h-44 sm:h-52 bg-white flex items-center justify-center p-4 sm:p-5`}>
         {product.thumbnail ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={product.thumbnail} alt={product.title} className="w-full h-full object-contain" />

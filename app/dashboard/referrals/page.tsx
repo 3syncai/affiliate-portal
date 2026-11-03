@@ -1,5 +1,7 @@
 "use client"
 
+import styles from "@/app/components/sales-executive.module.css"
+
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import axios from "axios"
@@ -105,18 +107,18 @@ export default function AllReferralsPage() {
 
   if (loading || isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className={`${styles.surface} min-h-screen flex items-center justify-center bg-gray-50`}>
         <div className="text-lg text-gray-600">Loading referrals...</div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 overflow-x-hidden">
+    <div className={`${styles.surface} min-h-screen bg-gray-50 overflow-x-hidden`}>
       <UserNavbar userName={user?.first_name || user?.email || undefined} />
 
       <main className="max-w-7xl mx-auto py-6 sm:py-8 px-4 sm:px-6 lg:px-8">
-        <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-200">
+        <div className={`${styles.listPage} bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-200`}>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
             <h2 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-2 min-w-0">
               <Users className="w-6 h-6 text-blue-600 shrink-0" />
@@ -127,7 +129,7 @@ export default function AllReferralsPage() {
               <button
                 onClick={exportReferralsToExcel}
                 disabled={!referrals.length}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-sm hover:from-emerald-700 hover:to-teal-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all w-full sm:w-auto justify-center"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold bg-emerald-600 text-white shadow-sm hover:from-emerald-700 hover:to-teal-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all w-full sm:w-auto justify-center"
               >
                 <Download className="w-4 h-4" />
                 Export Excel
