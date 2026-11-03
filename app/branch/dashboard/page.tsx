@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 import Link from "next/link";
 import {
   Users,
-  DollarSign,
+  IndianRupee,
   ShoppingBag,
   Clock,
   ArrowUpRight,
@@ -24,6 +24,7 @@ import QRCode from "qrcode";
 import { useSSE } from "@/hooks/useSSE";
 import { Toast } from "@/components/Toast";
 import { STORE_URL } from "@/lib/config";
+import styles from "../workspace.module.css";
 import { formatIST } from "@/lib/datetime";
 import RecentActivityFeed from "@/components/dashboard/RecentActivityFeed";
 import {
@@ -292,7 +293,7 @@ export default function BranchDashboard() {
       title: "Total Commission",
       value: formatCurrency(stats.totalCommission ?? 0),
       subtitle: "Gross commission from your territory sales",
-      icon: DollarSign,
+      icon: IndianRupee,
       color: "text-green-600",
       bg: "bg-green-50",
       href: "/branch/earnings",
@@ -308,10 +309,10 @@ export default function BranchDashboard() {
   ];
 
   return (
-    <div className="space-y-6 sm:space-y-8 max-w-[1600px] mx-auto p-0 sm:p-2 min-w-0">
+    <div className={`${styles.dashboard} space-y-6 sm:space-y-8 max-w-[1600px] mx-auto p-0 sm:p-2 min-w-0`}>
       {/* Payment Received Toast */}
       {showToast && (
-        <Toast
+        <Toast currencyIcon={IndianRupee}
           message={toastData.message}
           type="payment"
           amount={toastData.amount}
@@ -325,7 +326,7 @@ export default function BranchDashboard() {
           <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-gray-900">
             Dashboard
           </h1>
-          <p className="hidden lg:block text-sm text-gray-500 mt-1 break-words">
+          <p className="text-sm text-gray-500 mt-1 break-words">
             ASM area overview for{" "}
             <span className="font-semibold text-gray-900">{user?.branch}</span>
           </p>
@@ -358,7 +359,7 @@ export default function BranchDashboard() {
       </div>
 
       {/* Stats Cards - Compact 2-col on phones; desktop grids unchanged */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4 min-w-0">
+      <div className={`${styles.metrics} grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4 min-w-0`}>
         {statCards.map((stat, index) => {
           const Icon = stat.icon;
           const isWideOnMobile =
@@ -366,7 +367,7 @@ export default function BranchDashboard() {
             stat.title === "Pending Commission";
           const card = (
             <div
-              className={`bg-white rounded-xl border border-gray-200 p-3 sm:p-6 shadow-sm transition-all duration-200 min-w-0 ${
+              className={`${styles.metric} bg-white rounded-xl border border-gray-200 p-3 sm:p-6 shadow-sm transition-all duration-200 min-w-0 ${
                 stat.href
                   ? "hover:border-gray-200 cursor-pointer hover:shadow-md"
                   : "hover:border-gray-300"
@@ -413,10 +414,10 @@ export default function BranchDashboard() {
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 min-w-0">
+      <div className={`${styles.dashboardGrid} grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 min-w-0`}>
         {/* Left Column: Activity Feed */}
-        <div className="lg:col-span-2 min-w-0">
-          <RecentActivityFeed
+        <div className={`${styles.activity} min-w-0`}>
+          <RecentActivityFeed currencyIcon={IndianRupee}
             items={activityFeedItems}
             loading={activitiesLoading}
             viewAllHref="/branch/activity"
@@ -427,7 +428,7 @@ export default function BranchDashboard() {
         <div className="space-y-4 sm:space-y-6 min-w-0">
           {/* Referral Card - Professional & Clean */}
           {user?.refer_code && (
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden min-w-0">
+            <div className={`${styles.referral} bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden min-w-0`}>
               <div className="p-4 sm:p-6">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="p-2 bg-blue-50 rounded-lg shrink-0">
@@ -443,7 +444,7 @@ export default function BranchDashboard() {
                   </div>
                 </div>
 
-                <div className="bg-gray-50 border border-gray-200 rounded-lg p-1 flex items-center gap-2 mb-4 min-w-0">
+                <div className={`${styles.referralCode} bg-gray-50 border border-gray-200 rounded-lg p-1 flex items-center gap-2 mb-4 min-w-0`}>
                   <div className="flex-1 min-w-0 px-2 sm:px-3 py-2 font-mono text-base sm:text-lg font-bold text-gray-800 tracking-wider text-center truncate">
                     {user.refer_code}
                   </div>
@@ -541,7 +542,7 @@ export default function BranchDashboard() {
                   name: "Commission Report",
                   desc: "View earnings",
                   href: "/branch/total-commission",
-                  icon: DollarSign,
+                  icon: IndianRupee,
                   color: "text-purple-600",
                   bg: "bg-purple-50",
                 },

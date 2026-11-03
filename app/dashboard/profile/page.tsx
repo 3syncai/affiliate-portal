@@ -1,5 +1,7 @@
 "use client";
 
+import styles from "@/app/components/sales-executive.module.css"
+
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
@@ -232,14 +234,14 @@ export default function DashboardProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className={`${styles.surface} min-h-screen flex items-center justify-center bg-gray-50`}>
         <div className="text-lg text-gray-600">Loading profile...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 overflow-x-hidden">
+    <div className={`${styles.surface} min-h-screen bg-gray-50 overflow-x-hidden`}>
       <UserNavbar userName={displayName || undefined} />
 
       <main className="max-w-5xl mx-auto py-6 sm:py-8 px-4 sm:px-6 lg:px-8">

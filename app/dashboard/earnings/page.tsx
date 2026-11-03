@@ -1,11 +1,13 @@
 "use client"
 
+import styles from "@/app/components/sales-executive.module.css"
+
 import { Suspense, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import axios from "axios"
 import useSWR from "swr"
-import { DollarSign, AlertCircle } from "lucide-react"
+import { IndianRupee, AlertCircle } from "lucide-react"
 import CommissionStatusBadge from "@/app/components/CommissionStatusBadge"
 import UserNavbar from "@/app/components/UserNavbar"
 import {
@@ -113,7 +115,7 @@ function EarningsContent() {
 
   if (authLoading || isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className={`${styles.surface} min-h-screen flex items-center justify-center bg-gray-50`}>
         <div className="text-lg text-gray-600">Loading commission...</div>
       </div>
     )
@@ -122,13 +124,13 @@ function EarningsContent() {
   const userName = user?.first_name || user?.email || "Partner"
 
   return (
-    <div className="min-h-screen bg-gray-50 overflow-x-hidden">
+    <div className={`${styles.surface} min-h-screen bg-gray-50 overflow-x-hidden`}>
       <UserNavbar userName={userName} />
 
       <main className="max-w-7xl mx-auto py-6 sm:py-8 px-4 sm:px-6 lg:px-8 space-y-6">
         <div>
           <h2 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <DollarSign className="w-6 h-6 text-amber-600 shrink-0" />
+            <IndianRupee className="w-6 h-6 text-amber-600 shrink-0" />
             My Commission
           </h2>
           <p className="text-gray-600 mt-1 text-sm sm:text-base">Earnings from your referred customer orders</p>
@@ -198,7 +200,7 @@ function EarningsContent() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
+              <table className={`${styles.numeric} min-w-full divide-y divide-gray-200`}>
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
@@ -260,7 +262,7 @@ export default function AffiliateEarningsPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className={`${styles.surface} min-h-screen flex items-center justify-center bg-gray-50`}>
           <div className="text-lg text-gray-600">Loading commission...</div>
         </div>
       }

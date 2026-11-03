@@ -8,6 +8,7 @@ import useSWR from "swr"
 import NotificationDropdown from "@/components/NotificationDropdown"
 import ConfirmModal from "@/app/components/ConfirmModal"
 import { useTheme } from "@/contexts/ThemeContext"
+import styles from "./workspace.module.css"
 import {
     LayoutDashboard,
     Users,
@@ -23,7 +24,7 @@ import {
     Share2,
     ShoppingCart,
     BadgePercent,
-    ShieldCheck,
+    IndianRupee,
     MapPin,
     Link2,
 } from "lucide-react"
@@ -215,7 +216,7 @@ export default function StateAdminLayout({
 
     if (!authChecked) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+            <div className={`${styles.workspace} ${styles.loading} min-h-screen flex items-center justify-center bg-gray-50`}>
                 <div className="text-lg">Loading...</div>
             </div>
         )
@@ -223,7 +224,7 @@ export default function StateAdminLayout({
 
     return (
         <div
-            className="min-h-screen flex overflow-x-hidden"
+            className={`${styles.workspace} min-h-screen flex overflow-x-hidden`}
             style={mounted ? { backgroundColor: theme.background } : undefined}
         >
             {sidebarOpen && (
@@ -237,26 +238,25 @@ export default function StateAdminLayout({
 
             {/* Sidebar */}
             <aside
-                className={`w-72 transition-transform duration-300 overflow-hidden flex flex-col fixed left-0 top-0 h-screen z-30 shadow-2xl ${
+                className={`${styles.sidebar} w-72 transition-transform duration-300 overflow-hidden flex flex-col fixed left-0 top-0 h-screen z-30 shadow-2xl ${
                     sidebarOpen ? "translate-x-0" : "-translate-x-full"
                 } lg:translate-x-0`}
                 style={
                     mounted
                         ? {
-                            background: theme.sidebar,
-                            backgroundImage: `linear-gradient(to bottom, ${theme.sidebar}, ${theme.sidebar}dd)`,
+                            background: "var(--theme-card-bg)",
                         }
                         : undefined
                 }
             >
                 {/* Brand */}
                 <div
-                    className="flex items-center justify-between p-4 sm:p-6"
-                    style={{ borderBottom: "1px solid rgba(255,255,255,0.1)" }}
+                    className={`${styles.brand} flex items-center justify-between p-4 sm:p-6`}
                 >
                     <div className="flex items-center gap-3 min-w-0">
-                        <div className="bg-white/10 p-2 rounded-lg backdrop-blur-sm shrink-0">
-                            <ShieldCheck className="w-6 h-6 text-indigo-200" />
+                        <div className={`${styles.brandMark} shrink-0`}>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src="/brand/oweg-wordmark.svg" alt="OWEG" width={84} height={28} />
                         </div>
                         <div className="min-w-0 lg:hidden">
                             <p className="text-[10px] text-indigo-300 font-medium tracking-wider uppercase">
@@ -278,13 +278,14 @@ export default function StateAdminLayout({
                     <button
                         onClick={() => setSidebarOpen(false)}
                         className="lg:hidden shrink-0 text-white/50 hover:text-white transition-colors"
+                        aria-label="Close sidebar"
                     >
                         <X className="w-5 h-5" />
                     </button>
                 </div>
 
                 {/* Navigation */}
-                <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+                <nav className={`${styles.navigation} flex-1 p-4 space-y-1 overflow-y-auto`} aria-label="State Admin navigation">
                     {navigationItems.map((item) => {
                         const Icon = item.icon
                         const isActive = pathname.startsWith(item.href)
@@ -293,12 +294,13 @@ export default function StateAdminLayout({
                             <Link
                                 key={item.name}
                                 href={item.href}
+                                aria-current={isActive ? "page" : undefined}
                                 onClick={() => {
                                     if (typeof window !== "undefined" && window.innerWidth < 1024) {
                                         setSidebarOpen(false)
                                     }
                                 }}
-                                className={`flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 group relative overflow-hidden ${isActive
+                                className={`${styles.navLink} flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 group relative overflow-hidden ${isActive
                                     ? "text-white bg-white/10 shadow-lg backdrop-blur-sm border border-white/10"
                                     : "text-indigo-200/70 hover:text-white hover:bg-white/5"
                                     }`}
@@ -323,11 +325,7 @@ export default function StateAdminLayout({
 
                 {/* Footer Profile */}
                 <div
-                    className="p-4 relative"
-                    style={{
-                        borderTopColor: "rgba(255,255,255,0.2)",
-                        borderTopWidth: "1px",
-                    }}
+                    className={`${styles.account} p-4 relative`}
                 >
                     <div className="lg:hidden space-y-1">
                         <button
@@ -425,8 +423,9 @@ export default function StateAdminLayout({
             {/* Main */}
             <div className="flex-1 flex flex-col ml-0 lg:ml-72 transition-all duration-300 overflow-x-hidden min-w-0">
                 {/* Top Bar */}
-                <header className="bg-white/80 backdrop-blur-xl border-b border-indigo-50 px-4 sm:px-6 lg:px-8 py-3 sm:py-5 sticky top-0 z-20 flex items-center justify-between gap-3">
+                <header className={`${styles.header} bg-white/80 backdrop-blur-xl border-b border-indigo-50 px-4 sm:px-6 lg:px-8 py-3 sm:py-5 sticky top-0 z-20 flex items-center justify-between gap-3`}>
                     <div className="flex items-center gap-3 min-w-0">
+                        <span className={styles.headerLabel}>State Admin <span>/ Workspace</span></span>
                         <button
                             onClick={() => setSidebarOpen(!sidebarOpen)}
                             className="text-gray-400 hover:text-indigo-600 transition-colors lg:hidden shrink-0"
@@ -445,6 +444,7 @@ export default function StateAdminLayout({
                     <div className="flex items-center gap-2 sm:gap-4 lg:gap-6 shrink-0">
                         {user?.id && (
                             <NotificationDropdown
+                                currencyIcon={IndianRupee}
                                 userId={String(user.id)}
                                 userRole="state"
                             />
@@ -460,8 +460,8 @@ export default function StateAdminLayout({
                 </header>
 
                 {/* Page Content */}
-                <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 lg:p-8 scroll-smooth min-w-0">
-                    <div className="max-w-[1600px] mx-auto min-w-0">{children}</div>
+                <main className={`${styles.content} flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 lg:p-8 scroll-smooth min-w-0`}>
+                    <div className={`${styles.pageFrame} max-w-[1600px] mx-auto min-w-0`}>{children}</div>
                 </main>
             </div>
 

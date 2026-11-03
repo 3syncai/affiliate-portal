@@ -1,5 +1,7 @@
 "use client";
 
+import { IndianRupee } from "lucide-react";
+
 import { useState } from "react";
 import ActivityHistoryPage from "@/components/dashboard/ActivityHistoryPage";
 
@@ -28,7 +30,7 @@ export default function StateAdminActivityPage() {
       : null;
 
   return (
-    <ActivityHistoryPage
+    <ActivityHistoryPage currencyIcon={IndianRupee}
       title="Activity History"
       description="State-wide commissions, referrals, returns, branch manager activity, and notifications."
       apiUrl={apiUrl}

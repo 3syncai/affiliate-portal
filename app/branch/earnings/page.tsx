@@ -5,7 +5,7 @@ import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import axios from "axios"
 import useSWR from 'swr'
-import { DollarSign, ShoppingBag, AlertCircle, Wallet, ArrowUpCircle, Users, Package, Info, Wifi, WifiOff } from "lucide-react"
+import { IndianRupee, ShoppingBag, AlertCircle, Wallet, ArrowUpCircle, Users, Package, Info, Wifi, WifiOff } from "lucide-react"
 import { useSSE } from "@/hooks/useSSE"
 import { Toast } from "@/components/Toast"
 import RecentTransactionsTable from "@/components/earnings/RecentTransactionsTable"
@@ -158,7 +158,7 @@ export default function EarningsPage() {
         <div className="space-y-6 sm:space-y-8 min-w-0">
             {/* Payment Received Toast */}
             {showToast && (
-                <Toast
+                <Toast currencyIcon={IndianRupee}
                     message={toastData.message}
                     type="payment"
                     amount={toastData.amount}
@@ -207,7 +207,7 @@ export default function EarningsPage() {
                 {/* 2. Total Earnings Card */}
                 <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 sm:p-6 relative overflow-hidden group transition-all hover:shadow-md min-w-0">
                     <div className="absolute top-0 right-0 p-4 opacity-10">
-                        <DollarSign className="w-16 h-16 text-emerald-600" />
+                        <IndianRupee className="w-16 h-16 text-emerald-600" />
                     </div>
                     <p className="text-sm font-medium text-gray-500">Total Lifetime Earnings</p>
                     <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mt-2 tracking-tight break-words">{formatCurrency(stats.lifetimeEarnings || stats.totalEarnings)}</h2>

@@ -1,8 +1,10 @@
 "use client"
 
+import styles from "@/app/components/sales-executive.module.css"
+
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Search, Package, IndianRupee, Box, Share2, Info, Sparkles } from "lucide-react"
+import { Search, Package, IndianRupee, Box, Share2, Info } from "lucide-react"
 import axios from "axios"
 import useSWR from "swr"
 import UserNavbar from "../components/UserNavbar"
@@ -209,17 +211,16 @@ export default function ProductsPage() {
         : user?.email
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-emerald-50 overflow-x-hidden">
+        <div className={`${styles.surface} min-h-screen bg-slate-50 overflow-x-hidden`}>
             <UserNavbar userName={userName} />
 
             <main className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
                 {/* Header */}
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-10">
+                <div className={`${styles.catalogHeader} flex flex-col md:flex-row md:items-center md:justify-between gap-4`}>
                     <div>
-                        <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-emerald-900 bg-clip-text text-transparent">
+                        <h1 className="text-4xl font-bold bg-slate-900 bg-clip-text text-transparent">
                             Product Catalog
                         </h1>
-                        <Sparkles className="text-emerald-500 animate-pulse" size={24} />
                         <p className="text-gray-600 text-lg">Browse products and see your commission rates</p>
                     </div>
                     <div className="flex items-center gap-3">
@@ -237,8 +238,7 @@ export default function ProductsPage() {
                             Live
                         </div>
                         <div className="relative">
-                            <div className="absolute inset-0 bg-gradient-to-r from-emerald-400 to-teal-400 rounded-full blur opacity-50"></div>
-                            <div className="relative bg-gradient-to-r from-emerald-500 to-teal-500 text-white px-6 py-3 rounded-full text-sm font-semibold shadow-lg">
+                            <div className="relative bg-emerald-600 text-white px-6 py-3 rounded-full text-sm font-semibold shadow-lg">
                                 {showSkeleton ? (
                                     <span className="inline-flex items-center gap-2">
                                         <span className="h-4 w-12 bg-white/30 rounded animate-pulse"></span>
@@ -253,10 +253,9 @@ export default function ProductsPage() {
                 </div>
 
                 {/* Search and Filters */}
-                <div className="flex flex-col lg:flex-row gap-4 mb-10">
+                <div className={`${styles.catalogControls} flex flex-col lg:flex-row gap-4`}>
                     {/* Search Bar */}
                     <div className="flex-1 relative group">
-                        <div className="absolute inset-0 bg-gradient-to-r from-emerald-400 to-teal-400 rounded-2xl blur opacity-0 group-hover:opacity-20 transition-opacity"></div>
                         <div className="relative">
                             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 group-hover:text-emerald-500 transition-colors" size={20} />
                             <input
@@ -274,7 +273,7 @@ export default function ProductsPage() {
                         <button
                             onClick={() => setSelectedCategory("all")}
                             className={`px-5 py-3 rounded-full text-sm font-semibold transition-all duration-300 transform hover:scale-105 ${selectedCategory === "all"
-                                ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-200"
+                                ? "bg-emerald-600 text-white shadow-lg shadow-emerald-200"
                                 : "bg-white border-2 border-gray-200 text-gray-700 hover:border-emerald-300 shadow-sm hover:shadow-md"
                                 }`}
                         >
@@ -292,7 +291,7 @@ export default function ProductsPage() {
                                     key={category}
                                     onClick={() => setSelectedCategory(category)}
                                     className={`px-5 py-3 rounded-full text-sm font-semibold transition-all duration-300 transform hover:scale-105 ${selectedCategory === category
-                                        ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-200"
+                                        ? "bg-emerald-600 text-white shadow-lg shadow-emerald-200"
                                         : "bg-white border-2 border-gray-200 text-gray-700 hover:border-emerald-300 shadow-sm hover:shadow-md"
                                         }`}
                                 >
@@ -304,7 +303,7 @@ export default function ProductsPage() {
 
                 {/* Error State */}
                 {error && (
-                    <div className="bg-gradient-to-r from-red-50 to-pink-50 border-2 border-red-200 text-red-700 px-6 py-4 rounded-2xl mb-8 shadow-sm">
+                    <div className="bg-red-50 border-2 border-red-200 text-red-700 px-6 py-4 rounded-2xl mb-8 shadow-sm">
                         {error}
                     </div>
                 )}
@@ -396,9 +395,7 @@ function ProductCard({
     }
 
     return (
-        <div className="group relative bg-white rounded-2xl border-2 border-gray-100 overflow-hidden hover:border-emerald-200 transition-all duration-300 hover:shadow-2xl hover:shadow-emerald-100 hover:-translate-y-1">
-            {/* Gradient overlay on hover */}
-            <div className="absolute inset-0 bg-gradient-to-br from-emerald-50/0 via-transparent to-teal-50/0 group-hover:from-emerald-50/50 group-hover:to-teal-50/30 transition-all duration-300 pointer-events-none"></div>
+        <div className={`${styles.productCard} group relative bg-white overflow-hidden transition-colors hover:border-emerald-200`}>
 
             {/* Share Button */}
             <button
@@ -411,14 +408,13 @@ function ProductCard({
 
             {/* Copied notification */}
             {copied && (
-                <div className="absolute top-4 left-4 z-10 bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-sm font-medium px-4 py-2 rounded-full shadow-xl animate-bounce">
+                <div className="absolute top-4 left-4 z-10 bg-emerald-600 text-white text-sm font-medium px-4 py-2 rounded-full shadow-xl animate-bounce">
                     ✓ Link copied!
                 </div>
             )}
 
             {/* Image Container */}
-            <div className="relative h-56 bg-gradient-to-br from-gray-50 to-white flex items-center justify-center p-6 overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-t from-black/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            <div className="relative h-56 bg-slate-50 flex items-center justify-center p-6 overflow-hidden">
                 {product.thumbnail ? (
                     <img
                         src={product.thumbnail}
@@ -440,8 +436,8 @@ function ProductCard({
                         {product.title}
                     </h3>
                     <span className={`px-3 py-1.5 text-xs font-bold rounded-full whitespace-nowrap shadow-sm ${product.isInStock
-                        ? "bg-gradient-to-r from-green-400 to-emerald-500 text-white"
-                        : "bg-gradient-to-r from-red-400 to-pink-500 text-white"
+                        ? "bg-emerald-600 text-white"
+                        : "bg-red-600 text-white"
                         }`}>
                         {product.isInStock ? "In Stock" : "Out of Stock"}
                     </span>
@@ -458,7 +454,7 @@ function ProductCard({
                         <span className="text-yellow-400 text-lg">★</span>
                         <span className="text-sm font-semibold text-gray-700">4.5</span>
                     </div>
-                    <span className="text-xs font-medium text-gray-500 bg-gradient-to-r from-gray-100 to-slate-100 px-3 py-1.5 rounded-full border border-gray-200">
+                    <span className="text-xs font-medium text-gray-500 bg-slate-50 px-3 py-1.5 rounded-full border border-gray-200">
                         {product.category}
                     </span>
                 </div>
@@ -467,12 +463,12 @@ function ProductCard({
                 <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-gray-100">
                     <div className="flex items-center gap-1 min-w-0">
                         <IndianRupee size={18} className="text-gray-700 shrink-0" />
-                        <span className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-gray-900 to-emerald-900 bg-clip-text text-transparent">
+                        <span className="text-xl sm:text-2xl font-bold bg-slate-900 bg-clip-text text-transparent">
                             {product.price.toLocaleString("en-IN")}
                         </span>
                     </div>
                     {product.commissionRate && (
-                        <div className="flex items-center gap-1.5 bg-gradient-to-r from-emerald-50 to-teal-50 px-3 py-1.5 rounded-full shrink-0">
+                        <div className="flex items-center gap-1.5 bg-slate-50 px-3 py-1.5 rounded-full shrink-0">
                             <span className="text-sm font-bold text-emerald-700">{formatCommissionRatePercent(effectiveCommissionRate)}%</span>
                         </div>
                     )}
@@ -509,12 +505,12 @@ function ProductCard({
 
                 {/* Your Commission */}
                 {product.commissionRate && (
-                    <div className="relative bg-gradient-to-r from-emerald-500 to-teal-500 rounded-xl p-[2px] shadow-lg shadow-emerald-200">
+                    <div className="relative bg-emerald-600 rounded-xl p-[2px] shadow-lg shadow-emerald-200">
                         <div className="bg-white rounded-xl px-4 py-3">
                             <div className="flex flex-wrap items-center justify-between gap-2">
                                 <div className="flex flex-wrap items-center gap-2 min-w-0">
                                     <span className="text-sm font-medium text-gray-600">Your commission:</span>
-                                    <span className="text-lg font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
+                                    <span className="text-lg font-bold bg-emerald-600 bg-clip-text text-transparent">
                                         ₹{formatCommissionInr(regularCommission)}
                                     </span>
                                 </div>
@@ -579,7 +575,7 @@ function ProductCardSkeleton() {
     return (
         <div className="relative bg-white rounded-2xl border-2 border-gray-100 overflow-hidden animate-pulse">
             {/* Image placeholder */}
-            <div className="relative h-56 bg-gradient-to-br from-gray-100 to-gray-50" />
+            <div className="relative h-56 bg-slate-50" />
 
             {/* Content placeholder */}
             <div className="p-6 space-y-4">
@@ -607,7 +603,7 @@ function ProductCardSkeleton() {
                 </div>
 
                 <div className="h-10 w-full bg-gray-100 rounded-lg" />
-                <div className="h-12 w-full bg-gradient-to-r from-emerald-100 to-teal-100 rounded-xl" />
+                <div className="h-12 w-full bg-slate-50 rounded-xl" />
             </div>
         </div>
     )

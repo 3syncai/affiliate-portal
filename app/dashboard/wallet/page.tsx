@@ -1,5 +1,7 @@
 "use client"
 
+import styles from "@/app/components/sales-executive.module.css"
+
 import { useEffect, useState, useCallback } from "react"
 import axios from "axios"
 import { Wallet, CreditCard, Building2, Smartphone, Plus, Edit2, CheckCircle, TrendingUp, History, ArrowUpRight, Copy, Wifi, WifiOff, Receipt } from "lucide-react"
@@ -319,7 +321,7 @@ export default function WalletPage() {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center h-64">
+            <div className={`${styles.surface} flex items-center justify-center h-64`}>
                 <div className="text-lg text-gray-500">Loading wallet...</div>
             </div>
         )
@@ -327,14 +329,14 @@ export default function WalletPage() {
 
     if (!walletData) {
         return (
-            <div className="flex items-center justify-center h-64">
+            <div className={`${styles.surface} flex items-center justify-center h-64`}>
                 <div className="text-lg text-red-500">Failed to load wallet data</div>
             </div>
         )
     }
 
     return (
-        <>
+        <div className={styles.surface}>
             <UserNavbar userName={userName} />
 
             {/* Real-time Connection Indicator */}
@@ -355,12 +357,12 @@ export default function WalletPage() {
                 />
             )}
 
-            <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 px-4 py-6 sm:px-6 lg:px-8 overflow-x-hidden">
+            <div className={`${styles.walletContent} px-4 py-6 sm:px-6 lg:px-8`}>
                 <div className="max-w-7xl mx-auto space-y-6 sm:space-y-8">
                     {/* Header Section */}
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                         <div className="min-w-0">
-                            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold bg-gradient-to-r from-slate-900 via-cyan-900 to-emerald-900 bg-clip-text text-transparent mb-1 tracking-tight">
+                            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold bg-slate-900 bg-clip-text text-transparent mb-1 tracking-tight">
                                 Wallet & Earnings
                             </h1>
                             <p className="text-gray-600 text-sm sm:text-base">Manage your payouts and payment methods</p>
@@ -368,7 +370,7 @@ export default function WalletPage() {
                         {walletData.paymentMethod && walletData.balance.current >= 20 && (
                             <button
                                 onClick={() => setShowWithdrawModal(true)}
-                                className="bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 hover:from-emerald-700 hover:via-teal-700 hover:to-cyan-700 text-white px-5 py-2.5 rounded-xl font-semibold shadow-lg shadow-emerald-200 transition-all duration-300 hover:scale-[1.02] flex items-center gap-2 text-sm"
+                                className="bg-emerald-600 hover:from-emerald-700 hover:via-teal-700 hover:to-cyan-700 text-white px-5 py-2.5 rounded-xl font-semibold shadow-lg shadow-emerald-200 transition-all duration-300 hover:scale-[1.02] flex items-center gap-2 text-sm"
                             >
                                 <ArrowUpRight className="w-4 h-4" />
                                 Withdraw Funds
@@ -379,18 +381,7 @@ export default function WalletPage() {
                     {/* Hero + Quick Stats */}
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 items-stretch min-w-0">
                         {/* Available Balance Card - HERO */}
-                        <div className="lg:col-span-2 bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600 rounded-2xl sm:rounded-3xl p-4 sm:p-6 lg:p-8 text-white shadow-2xl relative overflow-hidden group hover:shadow-emerald-300/70 transition-shadow duration-300 border border-white/20 min-w-0">
-                            {/* Coin Background Decoration */}
-                            <div className="absolute inset-0 opacity-25 sm:opacity-40">
-                                <div className="absolute right-0 sm:right-8 top-1/2 -translate-y-1/2 w-36 h-36 sm:w-56 sm:h-56 lg:w-72 lg:h-72">
-                                    <img
-                                        src="/uploads/coin/coin.png"
-                                        alt="Coin decoration"
-                                        className="w-full h-full object-contain opacity-60 sm:opacity-80 group-hover:scale-110 group-hover:rotate-12 transition-all duration-700"
-                                    />
-                                </div>
-                            </div>
-
+                        <div className={`${styles.walletBalance} lg:col-span-2 min-w-0`}>
                             <div className="relative z-10 min-w-0">
                                 <p className="text-emerald-100/90 font-medium mb-0.5 sm:mb-1 text-[11px] sm:text-sm uppercase tracking-wider">Available Balance</p>
                                 <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold mb-3 sm:mb-5 tracking-tight truncate">
@@ -454,8 +445,8 @@ export default function WalletPage() {
                         <div className="bg-white/90 backdrop-blur-md rounded-2xl sm:rounded-3xl p-4 sm:p-5 lg:p-6 shadow-xl border border-gray-100 hover:shadow-2xl transition-shadow duration-300 min-w-0 h-full flex flex-col">
                             <h3 className="text-xs font-bold text-gray-500 uppercase tracking-[0.18em] mb-3 sm:mb-4 lg:mb-5">Quick Stats</h3>
                             <div className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid lg:grid-cols-1 lg:grid-rows-4 lg:flex-1 lg:gap-3 min-h-0">
-                                <div className="flex items-center gap-2 lg:gap-3 p-2.5 sm:p-3 lg:p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl hover:from-blue-100 hover:to-indigo-100 transition-all min-w-0">
-                                    <div className="bg-gradient-to-br from-blue-500 to-indigo-600 p-1.5 sm:p-2 lg:p-2.5 rounded-lg shadow-lg shrink-0">
+                                <div className="flex items-center gap-2 lg:gap-3 p-2.5 sm:p-3 lg:p-4 bg-slate-50 rounded-xl hover:from-blue-100 hover:to-indigo-100 transition-all min-w-0">
+                                    <div className="bg-emerald-600 p-1.5 sm:p-2 lg:p-2.5 rounded-lg shadow-lg shrink-0">
                                         <TrendingUp className="w-3 h-3 sm:w-3.5 sm:h-3.5 lg:w-4 lg:h-4 text-white" />
                                     </div>
                                     <div className="min-w-0">
@@ -463,8 +454,8 @@ export default function WalletPage() {
                                         <span className="text-xs sm:text-sm lg:text-base font-bold text-gray-900 truncate block">{formatCurrency(walletData.balance.totalEarned)}</span>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-2 lg:gap-3 p-2.5 sm:p-3 lg:p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl hover:from-purple-100 hover:to-pink-100 transition-all min-w-0">
-                                    <div className="bg-gradient-to-br from-purple-500 to-pink-600 p-1.5 sm:p-2 lg:p-2.5 rounded-lg shadow-lg shrink-0">
+                                <div className="flex items-center gap-2 lg:gap-3 p-2.5 sm:p-3 lg:p-4 bg-slate-50 rounded-xl hover:from-purple-100 hover:to-pink-100 transition-all min-w-0">
+                                    <div className="bg-emerald-600 p-1.5 sm:p-2 lg:p-2.5 rounded-lg shadow-lg shrink-0">
                                         <History className="w-3 h-3 sm:w-3.5 sm:h-3.5 lg:w-4 lg:h-4 text-white" />
                                     </div>
                                     <div className="min-w-0">
@@ -472,8 +463,8 @@ export default function WalletPage() {
                                         <span className="text-xs sm:text-sm lg:text-base font-bold text-gray-900 truncate block">{formatCurrency(walletData.balance.withdrawn)}</span>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-2 lg:gap-3 p-2.5 sm:p-3 lg:p-4 bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl hover:from-amber-100 hover:to-orange-100 transition-all min-w-0">
-                                    <div className="bg-gradient-to-br from-amber-500 to-orange-600 p-1.5 sm:p-2 lg:p-2.5 rounded-lg shadow-lg shrink-0">
+                                <div className="flex items-center gap-2 lg:gap-3 p-2.5 sm:p-3 lg:p-4 bg-amber-50 rounded-xl hover:from-amber-100 hover:to-orange-100 transition-all min-w-0">
+                                    <div className="bg-emerald-600 p-1.5 sm:p-2 lg:p-2.5 rounded-lg shadow-lg shrink-0">
                                         <Receipt className="w-3 h-3 sm:w-3.5 sm:h-3.5 lg:w-4 lg:h-4 text-white" />
                                     </div>
                                     <div className="min-w-0">
@@ -481,8 +472,8 @@ export default function WalletPage() {
                                         <span className="text-xs sm:text-sm lg:text-base font-bold text-gray-900 truncate block">{formatCurrency(walletData.balance.tdsDeducted ?? 0)}</span>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-2 lg:gap-3 p-2.5 sm:p-3 lg:p-4 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl hover:from-emerald-100 hover:to-teal-100 transition-all min-w-0">
-                                    <div className="bg-gradient-to-br from-emerald-500 to-teal-600 p-1.5 sm:p-2 lg:p-2.5 rounded-lg shadow-lg shrink-0">
+                                <div className="flex items-center gap-2 lg:gap-3 p-2.5 sm:p-3 lg:p-4 bg-slate-50 rounded-xl hover:from-emerald-100 hover:to-teal-100 transition-all min-w-0">
+                                    <div className="bg-emerald-600 p-1.5 sm:p-2 lg:p-2.5 rounded-lg shadow-lg shrink-0">
                                         <Wallet className="w-3 h-3 sm:w-3.5 sm:h-3.5 lg:w-4 lg:h-4 text-white" />
                                     </div>
                                     <div className="min-w-0">
@@ -495,10 +486,10 @@ export default function WalletPage() {
                     </div>
                     {/* Payment Method Card */}
                     <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-shadow duration-300 min-w-0">
-                        <div className="bg-gradient-to-r from-emerald-50/80 to-white p-3 sm:p-4 border-b border-gray-100">
+                        <div className="bg-slate-50 p-3 sm:p-4 border-b border-gray-100">
                             <div className="flex items-center justify-between gap-2 min-w-0">
                                 <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                                    <div className="bg-gradient-to-br from-emerald-500 to-teal-600 p-1.5 sm:p-2 rounded-lg shadow-md shrink-0">
+                                    <div className="bg-emerald-600 p-1.5 sm:p-2 rounded-lg shadow-md shrink-0">
                                         <CreditCard className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
                                     </div>
                                     <div className="min-w-0">
@@ -522,11 +513,11 @@ export default function WalletPage() {
                             {walletData.paymentMethod ? (
                                 <div className="flex items-center gap-2.5 sm:gap-3 p-2.5 sm:p-3 bg-slate-50/80 rounded-xl border border-gray-100 hover:border-emerald-200 transition-all min-w-0">
                                     {walletData.paymentMethod.method === 'Bank Transfer' ? (
-                                        <div className="bg-gradient-to-br from-emerald-500 to-teal-600 p-1.5 sm:p-2 rounded-lg shadow-md shrink-0">
+                                        <div className="bg-emerald-600 p-1.5 sm:p-2 rounded-lg shadow-md shrink-0">
                                             <Building2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
                                         </div>
                                     ) : (
-                                        <div className="bg-gradient-to-br from-teal-500 to-cyan-600 p-1.5 sm:p-2 rounded-lg shadow-md shrink-0">
+                                        <div className="bg-emerald-600 p-1.5 sm:p-2 rounded-lg shadow-md shrink-0">
                                             <Smartphone className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
                                         </div>
                                     )}
@@ -561,7 +552,7 @@ export default function WalletPage() {
                                     <p className="text-gray-600 text-xs sm:text-sm mb-4 max-w-md mx-auto px-2">Add your bank account or UPI ID to receive withdrawal payments</p>
                                     <button
                                         onClick={() => setShowSetupModal(true)}
-                                        className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white px-4 py-2 rounded-lg font-semibold shadow-md shadow-emerald-200/60 transition-all duration-300 inline-flex items-center gap-1.5 text-xs sm:text-sm"
+                                        className="bg-emerald-600 hover:from-emerald-700 hover:to-teal-700 text-white px-4 py-2 rounded-lg font-semibold shadow-md shadow-emerald-200/60 transition-all duration-300 inline-flex items-center gap-1.5 text-xs sm:text-sm"
                                     >
                                         <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                                         Setup Payment Method
@@ -573,9 +564,9 @@ export default function WalletPage() {
 
                     {/* Withdrawal History */}
                     <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-shadow duration-300 min-w-0">
-                        <div className="bg-gradient-to-r from-emerald-50/80 to-white p-3 sm:p-4 border-b border-gray-100">
+                        <div className="bg-slate-50 p-3 sm:p-4 border-b border-gray-100">
                             <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                                <div className="bg-gradient-to-br from-emerald-600 to-teal-700 p-1.5 sm:p-2 rounded-lg shadow-md shrink-0">
+                                <div className="bg-emerald-600 p-1.5 sm:p-2 rounded-lg shadow-md shrink-0">
                                     <History className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
                                 </div>
                                 <div className="min-w-0">
@@ -602,10 +593,10 @@ export default function WalletPage() {
                                     <div key={withdrawal.id} className="p-3 sm:p-4 hover:bg-slate-50/80 transition-all min-w-0">
                                         <div className="flex items-start justify-between gap-2 mb-2">
                                             <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
-                                                <div className={`p-1.5 sm:p-2 rounded-lg shadow-md shrink-0 ${withdrawal.status === 'PAID' ? 'bg-gradient-to-br from-green-500 to-emerald-600' :
-                                                    withdrawal.status === 'REJECTED' ? 'bg-gradient-to-br from-red-500 to-pink-600' :
-                                                        withdrawal.status === 'APPROVED' ? 'bg-gradient-to-br from-blue-500 to-indigo-600' :
-                                                            'bg-gradient-to-br from-amber-500 to-orange-600'
+                                                <div className={`p-1.5 sm:p-2 rounded-lg shadow-md shrink-0 ${withdrawal.status === 'PAID' ? 'bg-emerald-600' :
+                                                    withdrawal.status === 'REJECTED' ? 'bg-red-600' :
+                                                        withdrawal.status === 'APPROVED' ? 'bg-emerald-600' :
+                                                            'bg-emerald-600'
                                                     }`}>
                                                     {withdrawal.status === 'PAID' ? <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" /> :
                                                         <Wallet className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />}
@@ -854,6 +845,6 @@ export default function WalletPage() {
                 )
             }
 
-        </>
+        </div>
     )
 }

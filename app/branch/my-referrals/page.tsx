@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react"
 import axios from "axios"
 import useSWR from "swr"
-import { Users, DollarSign, ShoppingBag, TrendingUp, Package, Wifi, WifiOff, RotateCcw } from "lucide-react"
+import { Users, IndianRupee, ShoppingBag, TrendingUp, Package, Wifi, WifiOff, RotateCcw } from "lucide-react"
 import { useSSE } from "@/hooks/useSSE"
 import { Toast } from "@/components/Toast"
 import { formatISTDate } from "@/lib/datetime"
@@ -130,7 +130,7 @@ export default function BranchMyReferralsPage() {
         <div className="space-y-4 sm:space-y-6 min-w-0">
             {/* Toast */}
             {showToast && (
-                <Toast
+                <Toast currencyIcon={IndianRupee}
                     message={toastData.message}
                     type="payment"
                     amount={toastData.amount}
@@ -178,7 +178,7 @@ export default function BranchMyReferralsPage() {
                 <StatCard
                     label="Total Sales"
                     value={formatCurrency(stats.total_sales)}
-                    icon={<DollarSign className="w-6 h-6 text-green-600" />}
+                    icon={<IndianRupee className="w-6 h-6 text-green-600" />}
                     iconBg="bg-green-50"
                 />
                 <StatCard
@@ -200,7 +200,7 @@ export default function BranchMyReferralsPage() {
                     value={formatCurrency(stats.credited_commissions)}
                     valueClass="text-green-600"
                     sublabel="Delivered orders"
-                    icon={<DollarSign className="w-6 h-6 text-green-600" />}
+                    icon={<IndianRupee className="w-6 h-6 text-green-600" />}
                     iconBg="bg-green-50"
                 />
             </div>

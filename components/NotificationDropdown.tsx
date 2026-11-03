@@ -4,7 +4,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import axios from "axios"
 import useSWR from "swr"
-import { Bell, X, CheckCircle, AlertCircle, DollarSign, Info } from "lucide-react"
+import { Bell, X, CheckCircle, AlertCircle, DollarSign, Info, type LucideIcon } from "lucide-react"
 import { formatRelativeIST } from "@/lib/datetime"
 
 type Notification = {
@@ -25,12 +25,13 @@ type NotificationsResponse = {
 type NotificationDropdownProps = {
     userId: string
     userRole: string
+    currencyIcon?: LucideIcon
 }
 
 const fetcher = (url: string) =>
     axios.get(url).then(res => res.data as NotificationsResponse)
 
-export default function NotificationDropdown({ userId, userRole }: NotificationDropdownProps) {
+export default function NotificationDropdown({ userId, userRole, currencyIcon: CurrencyIcon = DollarSign }: NotificationDropdownProps) {
     const router = useRouter()
     const [isOpen, setIsOpen] = useState(false)
 
@@ -78,7 +79,7 @@ export default function NotificationDropdown({ userId, userRole }: NotificationD
     const getIcon = (type: string) => {
         switch (type) {
             case 'payment':
-                return <DollarSign className="w-5 h-5 text-green-600" />
+                return <CurrencyIcon className="w-5 h-5 text-green-600" />
             case 'alert':
                 return <AlertCircle className="w-5 h-5 text-red-600" />
             case 'system':

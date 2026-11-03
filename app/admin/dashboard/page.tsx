@@ -6,7 +6,7 @@ import useSWR from "swr"
 import {
   Users,
   UserCheck,
-  DollarSign,
+  IndianRupee,
   Clock,
   ShoppingBag,
   MapPin,
@@ -18,6 +18,7 @@ import {
   LucideIcon,
 } from "lucide-react"
 import RecentActivityFeed from "@/components/dashboard/RecentActivityFeed"
+import styles from "../workspace.module.css"
 import {
   mapActivityEventToFeedItem,
   type ActivityEvent,
@@ -78,7 +79,7 @@ const defaultAdminStats = {
 
 function StatCardSkeleton() {
   return (
-    <div className="bg-white p-6 rounded-xl border-2 border-gray-100 animate-pulse">
+    <div className={`${styles.metricSkeleton} bg-white p-6 rounded-xl border border-gray-100 animate-pulse`}>
       <div className="flex items-center justify-center mb-4">
         <div className="w-14 h-14 bg-gray-200 rounded-xl" />
       </div>
@@ -208,7 +209,7 @@ export default function AdminDashboardPage() {
   ]
 
   return (
-    <div className="space-y-6 sm:space-y-8 p-4 sm:p-6 lg:p-8">
+    <div className={`${styles.dashboard} space-y-6 sm:space-y-8 min-w-0`}>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4 min-w-0">
         <div className="min-w-0">
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">Dashboard</h1>
@@ -230,9 +231,9 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
-        <div className="xl:col-span-3 space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      <div className={`${styles.overviewGrid} grid grid-cols-1 xl:grid-cols-4 gap-6 min-w-0`}>
+        <div className="space-y-6 min-w-0">
+          <div className={`${styles.dashboardMetrics} grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3 gap-4 min-w-0`}>
             {showSkeleton
               ? Array.from({ length: 7 }).map((_, index) => (
                   <StatCardSkeleton key={index} />
@@ -243,7 +244,7 @@ export default function AdminDashboardPage() {
                     <a
                       key={card.label}
                       href={card.href}
-                      className={`group bg-white p-4 sm:p-6 rounded-xl border-2 ${card.borderColor} ${card.hoverBorderColor} transition-all cursor-pointer`}
+                      className={`${styles.dashboardMetric} group bg-white p-4 sm:p-6 rounded-xl border ${card.borderColor} ${card.hoverBorderColor} transition-all cursor-pointer min-w-0`}
                     >
                       <div className="flex items-center justify-center mb-4">
                         <div className={`p-3 ${card.iconBg} rounded-xl transition-colors`}>
@@ -263,15 +264,18 @@ export default function AdminDashboardPage() {
                 })}
           </div>
 
-          <RecentActivityFeed
-            items={activityFeedItems}
-            loading={showSkeleton || (isValidating && activities.length === 0)}
-            viewAllHref="/admin/activity"
-          />
+          <div className={styles.activity}>
+            <RecentActivityFeed
+              currencyIcon={IndianRupee}
+              items={activityFeedItems}
+              loading={showSkeleton || (isValidating && activities.length === 0)}
+              viewAllHref="/admin/activity"
+            />
+          </div>
         </div>
 
-        <div className="xl:col-span-1 space-y-6">
-          <div className="bg-gradient-to-br from-indigo-50 to-white rounded-xl shadow-sm border border-indigo-200 p-4 sm:p-6 xl:sticky xl:top-6">
+        <div className="space-y-6 min-w-0">
+          <div className={`${styles.ratesPanel} bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 xl:sticky xl:top-6`}>
             <div className="flex items-center gap-2 mb-5">
               <div className="p-2 bg-indigo-100 rounded-lg">
                 <Percent className="w-5 h-5 text-indigo-600" />
@@ -328,7 +332,7 @@ export default function AdminDashboardPage() {
               >
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-green-100 rounded-lg group-hover:bg-green-200 transition-colors">
-                    <DollarSign className="w-5 h-5 text-green-600" />
+                    <IndianRupee className="w-5 h-5 text-green-600" />
                   </div>
                   <div>
                     <p className="text-xs text-green-700 font-medium">Total Commission</p>

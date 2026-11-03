@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { CheckCircle, X, DollarSign, Bell } from "lucide-react";
+import { CheckCircle, X, DollarSign, Bell, type LucideIcon } from "lucide-react";
 
 interface ToastProps {
     message: string;
@@ -9,6 +9,7 @@ interface ToastProps {
     duration?: number;
     onClose?: () => void;
     amount?: number | string;
+    currencyIcon?: LucideIcon;
 }
 
 function formatToastAmount(amount: number | string | undefined): string | null {
@@ -17,7 +18,7 @@ function formatToastAmount(amount: number | string | undefined): string | null {
     return Number.isFinite(value) ? value.toFixed(2) : null;
 }
 
-export function Toast({ message, type = "success", duration = 5000, onClose, amount }: ToastProps) {
+export function Toast({ message, type = "success", duration = 5000, onClose, amount, currencyIcon: CurrencyIcon = DollarSign }: ToastProps) {
     const [isVisible, setIsVisible] = useState(true);
     const [isExiting, setIsExiting] = useState(false);
 
@@ -41,7 +42,7 @@ export function Toast({ message, type = "success", duration = 5000, onClose, amo
         success: <CheckCircle className="w-6 h-6 text-emerald-500" />,
         error: <X className="w-6 h-6 text-red-500" />,
         info: <Bell className="w-6 h-6 text-blue-500" />,
-        payment: <DollarSign className="w-6 h-6 text-emerald-500" />,
+        payment: <CurrencyIcon className="w-6 h-6 text-emerald-500" />,
     };
 
     const backgrounds = {
@@ -59,7 +60,7 @@ export function Toast({ message, type = "success", duration = 5000, onClose, amo
             <div className="flex-shrink-0">
                 {type === "payment" ? (
                     <div className="w-10 h-10 bg-emerald-500 rounded-full flex items-center justify-center animate-pulse">
-                        <DollarSign className="w-5 h-5 text-white" />
+                        <CurrencyIcon className="w-5 h-5 text-white" />
                     </div>
                 ) : (
                     icons[type]

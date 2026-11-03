@@ -5,7 +5,7 @@ import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import axios from "axios"
 import useSWR from 'swr'
-import { DollarSign, User, Users, ShoppingBag, Wallet, CheckCircle2, AlertCircle, Wifi, WifiOff } from "lucide-react"
+import { IndianRupee, User, Users, ShoppingBag, Wallet, CheckCircle2, AlertCircle, Wifi, WifiOff } from "lucide-react"
 import { useSSE } from "@/hooks/useSSE"
 import { Toast } from "@/components/Toast"
 import RecentTransactionsTable from "@/components/earnings/RecentTransactionsTable"
@@ -162,7 +162,7 @@ export default function ASMEarningsPage() {
 
             {/* Payment Received Toast */}
             {showToast && (
-                <Toast
+                <Toast currencyIcon={IndianRupee}
                     message={toastData.message}
                     type="payment"
                     amount={toastData.amount}
@@ -223,7 +223,7 @@ export default function ASMEarningsPage() {
                             <h2 className="text-3xl font-bold text-gray-900 mt-2">{formatCurrency(stats.lifetimeEarnings || stats.totalEarnings)}</h2>
                         </div>
                         <div className="bg-green-50 p-3 rounded-lg">
-                            <DollarSign className="w-6 h-6 text-green-600" />
+                            <IndianRupee className="w-6 h-6 text-green-600" />
                         </div>
                     </div>
 

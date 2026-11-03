@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { IndianRupee } from "lucide-react";
 import ActivityHistoryPage from "@/components/dashboard/ActivityHistoryPage";
 
 type BranchUser = {
@@ -29,6 +30,7 @@ export default function BranchActivityPage() {
 
   return (
     <ActivityHistoryPage
+      currencyIcon={IndianRupee}
       title="Activity History"
       description="Orders, commissions, partner approvals, returns, and notifications for your branch."
       apiUrl={apiUrl}
