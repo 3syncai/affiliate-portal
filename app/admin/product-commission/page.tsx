@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Search, Filter, Package, DollarSign, TrendingUp, CheckCircle, XCircle } from "lucide-react"
+import { Search, Filter, Package, TrendingUp, CheckCircle, XCircle, ChevronLeft, ChevronRight } from "lucide-react"
 import axios from "axios"
 
 type Product = {
@@ -57,13 +57,19 @@ type Filters = {
   types: Array<{ id: string; value: string }>
 }
 
+const PAGE_SIZE = 25
+
 export default function ProductCommissionPage() {
   const [products, setProducts] = useState<Product[]>([])
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>([])
   const [filters, setFilters] = useState<Filters>({ categories: [], collections: [], types: [] })
   const [stats, setStats] = useState({ total: 0, in_stock: 0, out_of_stock: 0 })
   const [loading, setLoading] = useState(true)
+  const [fetching, setFetching] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
+  const [debouncedSearch, setDebouncedSearch] = useState("")
+  const [page, setPage] = useState(1)
+  const [total, setTotal] = useState(0)
+  const [totalPages, setTotalPages] = useState(1)
   const [selectedCategory, setSelectedCategory] = useState<string>("all")
   const [selectedCollection, setSelectedCollection] = useState<string>("all")
   const [selectedType, setSelectedType] = useState<string>("all")
@@ -71,74 +77,77 @@ export default function ProductCommissionPage() {
   const [showFilters, setShowFilters] = useState(false)
   const [additionalCampaigns, setAdditionalCampaigns] = useState<AdditionalCampaign[]>([])
 
+  // Debounce typing and jump back to page 1 when the search term changes.
   useEffect(() => {
-    loadProducts()
+    const t = setTimeout(() => {
+      setDebouncedSearch(searchTerm.trim())
+      setPage(1)
+    }, 300)
+    return () => clearTimeout(t)
+  }, [searchTerm])
+
+  // Additional-commission campaigns are small; load them once.
+  useEffect(() => {
+    axios
+      .get("/api/admin/additional-commissions")
+      .then((res) => setAdditionalCampaigns(res.data?.campaigns || []))
+      .catch((error) => console.error("Failed to fetch campaigns:", error))
   }, [])
 
+  // Fetch one page at a time; search/filters are applied on the server.
   useEffect(() => {
-    filterProducts()
-  }, [products, searchTerm, selectedCategory, selectedCollection, selectedType, stockFilter])
-
-  const loadProducts = async () => {
-    setLoading(true)
-    try {
-      const [productsRes, campaignsRes] = await Promise.all([
-        axios.get("/api/affiliate/admin/products"),
-        axios.get("/api/admin/additional-commissions"),
-      ])
-      const data = productsRes.data
-      setProducts(data.products || [])
-      setFilters(data.filters || { categories: [], collections: [], types: [] })
-      setStats(data.stats || { total: 0, in_stock: 0, out_of_stock: 0 })
-      setAdditionalCampaigns(campaignsRes.data?.campaigns || [])
-    } catch (error: any) {
-      console.error("Failed to fetch products:", error)
-      const errorMessage = error.response?.data?.message || error.message || "Unknown error"
-      alert(`Error loading products: ${errorMessage}`)
-    } finally {
-      setLoading(false)
+    let cancelled = false
+    const run = async () => {
+      setFetching(true)
+      try {
+        const res = await axios.get("/api/affiliate/admin/products", {
+          params: {
+            page,
+            limit: PAGE_SIZE,
+            search: debouncedSearch,
+            category: selectedCategory,
+            collection: selectedCollection,
+            type: selectedType,
+            stock: stockFilter,
+          },
+        })
+        if (cancelled) return
+        const data = res.data
+        setProducts(data.products || [])
+        setFilters(data.filters || { categories: [], collections: [], types: [] })
+        setStats(data.stats || { total: 0, in_stock: 0, out_of_stock: 0 })
+        setTotal(data.pagination?.total ?? 0)
+        setTotalPages(data.pagination?.totalPages ?? 1)
+      } catch (error: any) {
+        if (cancelled) return
+        console.error("Failed to fetch products:", error)
+        const errorMessage = error.response?.data?.message || error.message || "Unknown error"
+        alert(`Error loading products: ${errorMessage}`)
+      } finally {
+        if (!cancelled) {
+          setLoading(false)
+          setFetching(false)
+        }
+      }
     }
+    void run()
+    return () => {
+      cancelled = true
+    }
+  }, [page, debouncedSearch, selectedCategory, selectedCollection, selectedType, stockFilter])
+
+  const goToPage = (next: number) => {
+    setPage(Math.min(Math.max(1, next), totalPages))
+    window.scrollTo({ top: 0, behavior: "smooth" })
+  }
+  const changeFilter = (setter: (v: string) => void) => (value: string) => {
+    setter(value)
+    setPage(1)
   }
 
-  const filterProducts = () => {
-    let filtered = [...products]
-
-    // Search filter
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase()
-      filtered = filtered.filter(
-        (p) =>
-          p.title.toLowerCase().includes(term) ||
-          p.handle.toLowerCase().includes(term) ||
-          p.description?.toLowerCase().includes(term) ||
-          p.variants.some((v) => v.sku?.toLowerCase().includes(term))
-      )
-    }
-
-    // Category filter
-    if (selectedCategory !== "all") {
-      filtered = filtered.filter((p) => p.categories.some((c) => c.id === selectedCategory))
-    }
-
-    // Collection filter
-    if (selectedCollection !== "all") {
-      filtered = filtered.filter((p) => p.collection?.id === selectedCollection)
-    }
-
-    // Type filter
-    if (selectedType !== "all") {
-      filtered = filtered.filter((p) => p.type?.id === selectedType)
-    }
-
-    // Stock filter
-    if (stockFilter === "in_stock") {
-      filtered = filtered.filter((p) => p.in_stock)
-    } else if (stockFilter === "out_of_stock") {
-      filtered = filtered.filter((p) => !p.in_stock)
-    }
-
-    setFilteredProducts(filtered)
-  }
+  const filteredProducts = products
+  const rangeStart = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1
+  const rangeEnd = Math.min(page * PAGE_SIZE, total)
 
   const formatCurrency = (amount: number) => {
     // Backend returns price directly, no division needed
@@ -187,7 +196,7 @@ export default function ProductCommissionPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 min-w-0">
       {/* Header */}
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Product Commission</h1>
@@ -236,7 +245,7 @@ export default function ProductCommissionPage() {
           <div className="flex items-center justify-between gap-2">
             <div className="min-w-0">
               <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">Filtered Results</p>
-              <p className="text-xl sm:text-2xl font-bold text-indigo-600 mt-1 sm:mt-2">{filteredProducts.length}</p>
+              <p className="text-xl sm:text-2xl font-bold text-indigo-600 mt-1 sm:mt-2">{total}</p>
             </div>
             <div className="bg-indigo-100 p-2 sm:p-3 rounded-lg shrink-0">
               <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-indigo-600" />
@@ -274,7 +283,7 @@ export default function ProductCommissionPage() {
               <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
               <select
                 value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
+                onChange={(e) => changeFilter(setSelectedCategory)(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white text-gray-900 appearance-none cursor-pointer"
               >
                 <option value="all">All Categories</option>
@@ -290,7 +299,7 @@ export default function ProductCommissionPage() {
               <label className="block text-sm font-medium text-gray-700 mb-2">Brand</label>
               <select
                 value={selectedCollection}
-                onChange={(e) => setSelectedCollection(e.target.value)}
+                onChange={(e) => changeFilter(setSelectedCollection)(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white text-gray-900 appearance-none cursor-pointer"
               >
                 <option value="all">All Brands</option>
@@ -306,7 +315,7 @@ export default function ProductCommissionPage() {
               <label className="block text-sm font-medium text-gray-700 mb-2">Sub-Category</label>
               <select
                 value={selectedType}
-                onChange={(e) => setSelectedType(e.target.value)}
+                onChange={(e) => changeFilter(setSelectedType)(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white text-gray-900 appearance-none cursor-pointer"
               >
                 <option value="all">All Sub-Categories</option>
@@ -322,7 +331,7 @@ export default function ProductCommissionPage() {
               <label className="block text-sm font-medium text-gray-700 mb-2">Stock Status</label>
               <select
                 value={stockFilter}
-                onChange={(e) => setStockFilter(e.target.value)}
+                onChange={(e) => changeFilter(setStockFilter)(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white text-gray-900 appearance-none cursor-pointer"
               >
                 <option value="all">All Products</option>
@@ -339,7 +348,7 @@ export default function ProductCommissionPage() {
           No products found
         </div>
       ) : (
-        <>
+        <div className={`space-y-4 transition-opacity ${fetching ? "opacity-60" : ""}`}>
           {/* Mobile cards */}
           <div className="md:hidden space-y-3">
             {filteredProducts.map((product) => (
@@ -559,7 +568,41 @@ export default function ProductCommissionPage() {
               </table>
             </div>
           </div>
-        </>
+
+          {/* Pagination */}
+          <div className="flex flex-col-reverse items-center gap-3 sm:flex-row sm:justify-between">
+            <p className="text-xs sm:text-sm text-gray-600">
+              Showing {rangeStart}–{rangeEnd} of {total}
+            </p>
+            {totalPages > 1 && (
+              <nav className="flex w-full sm:w-auto items-center justify-center gap-2" aria-label="Product pages">
+                <button
+                  type="button"
+                  onClick={() => goToPage(page - 1)}
+                  disabled={page <= 1}
+                  aria-label="Previous page"
+                  className="inline-flex items-center justify-center gap-1 min-h-[44px] min-w-[44px] px-3 sm:px-4 border border-gray-300 rounded-lg bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                  <span className="hidden sm:inline">Previous</span>
+                </button>
+                <span className="flex-1 sm:flex-none sm:min-w-[110px] text-center text-sm text-gray-600 tabular-nums">
+                  Page {page} of {totalPages}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => goToPage(page + 1)}
+                  disabled={page >= totalPages}
+                  aria-label="Next page"
+                  className="inline-flex items-center justify-center gap-1 min-h-[44px] min-w-[44px] px-3 sm:px-4 border border-gray-300 rounded-lg bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <span className="hidden sm:inline">Next</span>
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+              </nav>
+            )}
+          </div>
+        </div>
       )}
     </div>
   )

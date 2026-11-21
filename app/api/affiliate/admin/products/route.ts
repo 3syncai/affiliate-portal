@@ -52,7 +52,7 @@ interface DBPrice {
     discounted_price: string | null;
 }
 
-export async function GET(req: NextRequest) {
+async function buildFullResponse(req: NextRequest) {
     console.log("=== Fetching Products for Admin (Optimized) ===");
 
     try {
@@ -279,4 +279,88 @@ export async function GET(req: NextRequest) {
             stats: { total: 0, in_stock: 0, out_of_stock: 0 }
         });
     }
+}
+// ---------------------------------------------------------------------------
+// Pagination (opt-in via ?page=N)
+//
+// Callers that don't send `page` (Set Commission, Additional Commission) keep
+// receiving the full, always-fresh list. Paginated callers get one page of
+// rows, filtered on the server, plus whole-catalog stats and filter options.
+// The assembled catalog is cached briefly so flipping pages / typing in the
+// search box doesn't rebuild it on every request.
+// ---------------------------------------------------------------------------
+const PAGE_CACHE_MS = 15_000;
+const DEFAULT_PAGE_SIZE = 25;
+const MAX_PAGE_SIZE = 100;
+
+let pageCache: { body: any; at: number } | null = null;
+let pageInFlight: Promise<any> | null = null;
+
+async function buildBody(req: NextRequest) {
+    const res = await buildFullResponse(req);
+    const body = await res.json();
+    if (body?.success) pageCache = { body, at: Date.now() };
+    return body;
+}
+
+async function getBodyForPaging(req: NextRequest) {
+    if (pageCache && Date.now() - pageCache.at < PAGE_CACHE_MS) return pageCache.body;
+    if (!pageInFlight) {
+        pageInFlight = buildBody(req).finally(() => {
+            pageInFlight = null;
+        });
+    }
+    return pageInFlight;
+}
+
+export async function GET(req: NextRequest) {
+    const params = req.nextUrl.searchParams;
+    if (!params.has("page")) {
+        const body = await buildBody(req);
+        return NextResponse.json(body);
+    }
+
+    const body = await getBodyForPaging(req);
+    if (!body?.success) return NextResponse.json(body);
+
+    const page = Math.max(1, parseInt(params.get("page") || "1", 10) || 1);
+    const limit = Math.min(
+        MAX_PAGE_SIZE,
+        Math.max(1, parseInt(params.get("limit") || String(DEFAULT_PAGE_SIZE), 10) || DEFAULT_PAGE_SIZE)
+    );
+    const search = (params.get("search") || "").trim().toLowerCase();
+    const category = params.get("category") || "all";
+    const collection = params.get("collection") || "all";
+    const type = params.get("type") || "all";
+    const stock = params.get("stock") || "all";
+
+    const filtered = (body.products as any[]).filter((p) => {
+        if (search) {
+            const hit =
+                p.title?.toLowerCase().includes(search) ||
+                p.handle?.toLowerCase().includes(search) ||
+                p.description?.toLowerCase().includes(search) ||
+                p.variants?.some((v: any) => v.sku?.toLowerCase().includes(search));
+            if (!hit) return false;
+        }
+        if (category !== "all" && !p.categories?.some((c: any) => c.id === category)) return false;
+        if (collection !== "all" && p.collection?.id !== collection) return false;
+        if (type !== "all" && p.type?.id !== type) return false;
+        if (stock === "in_stock" && !p.in_stock) return false;
+        if (stock === "out_of_stock" && p.in_stock) return false;
+        return true;
+    });
+
+    const total = filtered.length;
+    const totalPages = Math.max(1, Math.ceil(total / limit));
+    const safePage = Math.min(page, totalPages);
+    const start = (safePage - 1) * limit;
+
+    return NextResponse.json({
+        success: true,
+        products: filtered.slice(start, start + limit),
+        filters: body.filters,
+        stats: body.stats,
+        pagination: { page: safePage, limit, total, totalPages, hasMore: safePage < totalPages },
+    });
 }

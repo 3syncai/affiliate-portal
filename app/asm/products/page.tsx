@@ -2,7 +2,7 @@
 import styles from "../workspace.module.css"
 
 import { useEffect, useState } from "react"
-import { Search, Package, IndianRupee, Box, Share2 } from "lucide-react"
+import { Search, Package, IndianRupee, Box, Share2, ChevronLeft, ChevronRight } from "lucide-react"
 import axios from "axios"
 import { BACKEND_URL, STORE_URL } from "@/lib/config"
 import { useTheme } from "@/contexts/ThemeContext"
@@ -28,6 +28,8 @@ interface Product {
     hasCommission: boolean
 }
 
+const PAGE_SIZE = 12
+
 export default function ASMProductsPage() {
     const { theme } = useTheme()
     const [loading, setLoading] = useState(true)
@@ -35,6 +37,12 @@ export default function ASMProductsPage() {
     const [categories, setCategories] = useState<string[]>([])
     const [selectedCategory, setSelectedCategory] = useState<string>("all")
     const [searchQuery, setSearchQuery] = useState("")
+    const [debouncedSearch, setDebouncedSearch] = useState("")
+    const [page, setPage] = useState(1)
+    const [token, setToken] = useState<string | null>(null)
+    const [total, setTotal] = useState(0)
+    const [totalPages, setTotalPages] = useState(1)
+    const [fetching, setFetching] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const [user, setUser] = useState<any>(null)
     const [additionalByProduct, setAdditionalByProduct] = useState<Record<string, number>>({})
@@ -48,7 +56,7 @@ export default function ASMProductsPage() {
             setUser(JSON.parse(userData))
         }
         if (token) {
-            fetchProducts(token)
+            setToken(token)
             fetchCommissionRates()
             fetchAdditionalCommissions("asm")
         } else {
@@ -69,24 +77,58 @@ export default function ASMProductsPage() {
         }
     }
 
-    const fetchProducts = async (token: string) => {
-        try {
-            const response = await axios.get("/api/products", {
-                headers: {
-                    "Authorization": `Bearer ${token}`,
-                    "Content-Type": "application/json",
-                },
-            })
+    // Debounce typing and reset to page 1 when the search term changes.
+    useEffect(() => {
+        const t = setTimeout(() => {
+            setDebouncedSearch(searchQuery.trim())
+            setPage(1)
+        }, 300)
+        return () => clearTimeout(t)
+    }, [searchQuery])
 
-            const data = response.data
-            setProducts(data.products || data.allProducts || [])
-            setCategories(data.categories || [])
-        } catch (err: any) {
-            console.error("Error fetching products:", err)
-            setError(err.response?.data?.message || err.message || "Failed to load products")
-        } finally {
-            setLoading(false)
+    // Fetch one page at a time; search/category are filtered on the server.
+    useEffect(() => {
+        if (!token) return
+        let cancelled = false
+        const run = async () => {
+            setFetching(true)
+            try {
+                const response = await axios.get("/api/products", {
+                    params: { page, limit: PAGE_SIZE, search: debouncedSearch, category: selectedCategory },
+                    headers: {
+                        "Authorization": `Bearer ${token}`,
+                        "Content-Type": "application/json",
+                    },
+                })
+                if (cancelled) return
+                const data = response.data
+                setProducts(data.products || [])
+                setCategories(data.categories || [])
+                setTotal(data.pagination?.total ?? 0)
+                setTotalPages(data.pagination?.totalPages ?? 1)
+                setError(null)
+            } catch (err: any) {
+                if (cancelled) return
+                console.error("Error fetching products:", err)
+                setError(err.response?.data?.message || err.message || "Failed to load products")
+            } finally {
+                if (!cancelled) {
+                    setLoading(false)
+                    setFetching(false)
+                }
+            }
         }
+        void run()
+        return () => { cancelled = true }
+    }, [token, page, debouncedSearch, selectedCategory])
+
+    const goToPage = (next: number) => {
+        setPage(Math.min(Math.max(1, next), totalPages))
+        window.scrollTo({ top: 0, behavior: "smooth" })
+    }
+    const selectCategory = (category: string) => {
+        setSelectedCategory(category)
+        setPage(1)
     }
 
     const fetchAdditionalCommissions = async (role: string) => {
@@ -107,12 +149,7 @@ export default function ASMProductsPage() {
         }
     }
 
-    const filteredProducts = products.filter(product => {
-        const matchesSearch = product.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            product.description?.toLowerCase().includes(searchQuery.toLowerCase())
-        const matchesCategory = selectedCategory === "all" || product.category === selectedCategory
-        return matchesSearch && matchesCategory
-    })
+    const filteredProducts = products
 
     if (loading) {
         return (
@@ -134,7 +171,7 @@ export default function ASMProductsPage() {
                     <p className="text-gray-600 mt-1 text-sm sm:text-base">Direct sales earn you maximum commission</p>
                 </div>
                 <div className="inline-flex self-start px-4 py-2 rounded-full text-sm font-medium bg-blue-50 text-blue-700 border border-blue-200 shrink-0">
-                    {filteredProducts.length} Products Available
+                    {total} Products Available
                 </div>
             </div>
 
@@ -153,9 +190,9 @@ export default function ASMProductsPage() {
                 </div>
 
                 {/* Category Filters */}
-                <div className="flex flex-wrap gap-2">
+                <div className={`${styles.categoryRow} flex gap-2`}>
                     <button
-                        onClick={() => setSelectedCategory("all")}
+                        onClick={() => selectCategory("all")}
                         className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${selectedCategory === "all"
                             ? "text-white bg-blue-600"
                             : "bg-white border border-gray-200 text-gray-700 hover:bg-gray-50"
@@ -166,7 +203,7 @@ export default function ASMProductsPage() {
                     {categories.map((category) => (
                         <button
                             key={category}
-                            onClick={() => setSelectedCategory(category)}
+                            onClick={() => selectCategory(category)}
                             className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${selectedCategory === category
                                 ? "text-white bg-blue-600"
                                 : "bg-white border border-gray-200 text-gray-700 hover:bg-gray-50"
@@ -197,18 +234,35 @@ export default function ASMProductsPage() {
                     </p>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {filteredProducts.map((product) => (
-                        <ProductCard
-                            key={product.id}
-                            product={product}
-                            user={user}
-                            theme={theme}
-                            commissionRate={commissionRate}
-                            additionalCommissionRate={additionalByProduct[product.id] || 0}
-                        />
-                    ))}
-                </div>
+                <>
+                    <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 transition-opacity ${fetching ? "opacity-60" : ""}`}>
+                        {filteredProducts.map((product) => (
+                            <ProductCard
+                                key={product.id}
+                                product={product}
+                                user={user}
+                                theme={theme}
+                                commissionRate={commissionRate}
+                                additionalCommissionRate={additionalByProduct[product.id] || 0}
+                            />
+                        ))}
+                    </div>
+                    {totalPages > 1 && (
+                <nav className={styles.pagination} aria-label="Product pages">
+                    <button type="button" className={styles.pageButton} disabled={page <= 1} aria-label="Previous page"
+                        onClick={() => goToPage(page - 1)}>
+                        <ChevronLeft size={18} />
+                        <span className={styles.pageButtonLabel}>Previous</span>
+                    </button>
+                    <span className={styles.pageInfo}>Page {page} of {totalPages}</span>
+                    <button type="button" className={styles.pageButton} disabled={page >= totalPages} aria-label="Next page"
+                        onClick={() => goToPage(page + 1)}>
+                        <span className={styles.pageButtonLabel}>Next</span>
+                        <ChevronRight size={18} />
+                    </button>
+                </nav>
+            )}
+                </>
             )}
         </div>
     )
@@ -252,12 +306,12 @@ function ProductCard({ product, user, theme, commissionRate, additionalCommissio
                 )}
             </div>
 
-            <div className="p-5">
-                <div className="flex items-start justify-between gap-2 mb-2">
-                    <h3 className="font-semibold text-gray-900 text-lg leading-tight line-clamp-2">
+            <div className="p-4 sm:p-5">
+                <div className="flex flex-col gap-2 min-[400px]:flex-row min-[400px]:items-start min-[400px]:justify-between mb-2">
+                    <h3 className="font-semibold text-gray-900 text-base sm:text-lg leading-tight line-clamp-2 min-w-0">
                         {product.title}
                     </h3>
-                    <span className={`px-2 py-0.5 text-xs font-medium rounded-full whitespace-nowrap ${product.isInStock
+                    <span className={`self-start px-2 py-0.5 text-xs font-medium rounded-full whitespace-nowrap ${product.isInStock
                         ? "bg-green-100 text-green-700"
                         : "bg-red-100 text-red-700"
                         }`}>
@@ -269,7 +323,7 @@ function ProductCard({ product, user, theme, commissionRate, additionalCommissio
                     {product.description || "No description available"}
                 </p>
 
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
                     <div className="flex items-center gap-1">
                         <span className="text-yellow-500">★</span>
                         <span className="text-sm text-gray-600">4.5</span>
@@ -279,7 +333,7 @@ function ProductCard({ product, user, theme, commissionRate, additionalCommissio
                     </span>
                 </div>
 
-                <div className="flex items-center justify-between mb-3">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-3">
                     <div className="flex items-center gap-1">
                         <IndianRupee size={16} className="text-gray-700" />
                         <span className="text-xl font-bold text-gray-900">

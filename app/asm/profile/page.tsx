@@ -172,52 +172,53 @@ export default function ASMProfilePage() {
 
             {/* Tabs */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-                <div className="border-b border-gray-200 overflow-x-auto">
-                    <nav className="flex -mb-px min-w-max sm:min-w-0">
+                <div className="border-b border-gray-200">
+                    <nav className="flex -mb-px" aria-label="Profile sections">
                         <button
                             onClick={() => setActiveTab('info')}
-                            className={`px-4 sm:px-6 py-3 sm:py-4 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${activeTab === 'info'
+                            className={`flex-1 sm:flex-none min-w-0 px-1 sm:px-6 py-2.5 sm:py-4 text-[11px] sm:text-sm font-medium border-b-2 transition-colors sm:whitespace-nowrap ${activeTab === 'info'
                                 ? 'border-blue-600 text-blue-600'
                                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                                 }`}
                         >
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2">
                                 <User className="w-4 h-4" />
-                                Personal Information
+                                <span className="sm:hidden">Personal</span>
+                                <span className="hidden sm:inline">Personal Information</span>
                             </div>
                         </button>
                         <button
                             onClick={() => setActiveTab('security')}
-                            className={`px-4 sm:px-6 py-3 sm:py-4 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${activeTab === 'security'
+                            className={`flex-1 sm:flex-none min-w-0 px-1 sm:px-6 py-2.5 sm:py-4 text-[11px] sm:text-sm font-medium border-b-2 transition-colors sm:whitespace-nowrap ${activeTab === 'security'
                                 ? 'border-blue-600 text-blue-600'
                                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                                 }`}
                         >
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2">
                                 <Lock className="w-4 h-4" />
                                 Security
                             </div>
                         </button>
                         <button
                             onClick={() => setActiveTab('kyc')}
-                            className={`px-4 sm:px-6 py-3 sm:py-4 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${activeTab === 'kyc'
+                            className={`flex-1 sm:flex-none min-w-0 px-1 sm:px-6 py-2.5 sm:py-4 text-[11px] sm:text-sm font-medium border-b-2 transition-colors sm:whitespace-nowrap ${activeTab === 'kyc'
                                 ? 'border-blue-600 text-blue-600'
                                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                                 }`}
                         >
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2">
                                 <CreditCard className="w-4 h-4" />
                                 KYC & Bank
                             </div>
                         </button>
                         <button
                             onClick={() => setActiveTab('theme')}
-                            className={`px-4 sm:px-6 py-3 sm:py-4 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${activeTab === 'theme'
+                            className={`flex-1 sm:flex-none min-w-0 px-1 sm:px-6 py-2.5 sm:py-4 text-[11px] sm:text-sm font-medium border-b-2 transition-colors sm:whitespace-nowrap ${activeTab === 'theme'
                                 ? 'border-blue-600 text-blue-600'
                                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                                 }`}
                         >
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2">
                                 <Palette className="w-4 h-4" />
                                 Theme
                             </div>

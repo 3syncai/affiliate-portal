@@ -161,15 +161,15 @@ export default function RecentActivityFeed({
             return (
               <div
                 key={activity.id}
-                className="p-3 sm:p-4 flex items-start sm:items-center justify-between gap-3 hover:bg-gray-50 transition-colors"
+                className="p-3 sm:p-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3 hover:bg-gray-50 transition-colors"
               >
-                <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+                <div className="flex items-start sm:items-center gap-3 sm:gap-4 min-w-0">
                   <div
                     className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center shrink-0 ${style.bg}`}
                   >
                     <Icon className={`w-5 h-5 ${style.iconClass}`} />
                   </div>
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium text-gray-900 break-words">
                       <span className="font-bold">{activity.name}</span>{" "}
                       {activity.action}
@@ -181,14 +181,14 @@ export default function RecentActivityFeed({
                     ) : null}
                   </div>
                 </div>
-                <div className="text-right shrink-0 ml-2 sm:ml-4">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pl-12 sm:pl-0 sm:block sm:text-right sm:shrink-0 sm:ml-4">
                   {showAmount ? (
                     <p className="text-sm font-bold text-green-600">
                       +{formatCurrency(Number(activity.amount))}
                     </p>
                   ) : null}
                   {showCommissionStatus ? (
-                    <div className={`flex justify-end ${showAmount ? "mt-1" : ""}`}>
+                    <div className={`flex sm:justify-end min-w-0 max-w-full ${showAmount ? "sm:mt-1" : ""}`}>
                       <CommissionStatusBadge
                         status={activity.commissionStatus!}
                         unlockAt={activity.unlockAt}
@@ -199,7 +199,7 @@ export default function RecentActivityFeed({
                       />
                     </div>
                   ) : null}
-                  <p className="text-xs text-gray-400 mt-1">
+                  <p className="text-xs text-gray-400 sm:mt-1 ml-auto sm:ml-0">
                     {formatActivityDate(activity.timestamp)}
                   </p>
                 </div>

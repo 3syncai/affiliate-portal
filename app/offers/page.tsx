@@ -6,7 +6,7 @@ import { useEffect, useState } from "react"
 import useSWR from "swr"
 import axios from "axios"
 import UserNavbar from "../components/UserNavbar"
-import { Box, IndianRupee, Info, Share2 } from "lucide-react"
+import { Box, ChevronLeft, ChevronRight, IndianRupee, Info, Share2 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { STORE_URL } from "@/lib/config"
 import {
@@ -40,13 +40,15 @@ type Product = {
   commissionAmount: number
 }
 
+const PAGE_SIZE = 12
+
 const fetcher = (url: string) => axios.get(url).then((res) => res.data)
 
 export default function AffiliateOffersPage() {
   const router = useRouter()
   const [user, setUser] = useState<any>(null)
-  const [products, setProducts] = useState<Product[]>([])
-  const [loadingProducts, setLoadingProducts] = useState(true)
+  const [token, setToken] = useState<string | null>(null)
+  const [page, setPage] = useState(1)
   const [affiliateRate, setAffiliateRate] = useState<number>(100)
 
   useEffect(() => {
@@ -67,43 +69,12 @@ export default function AffiliateOffersPage() {
 
       const parsed = JSON.parse(rawUser || "null")
       setUser(parsed)
-      void fetchProducts(token)
+      setToken(token)
       void fetchAffiliateRate()
     } catch {
       router.push("/login")
     }
   }, [router])
-
-  const fetchProducts = async (token: string) => {
-    try {
-      const response = await axios.get("/api/products", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      })
-
-      const rows = (response.data?.products || []) as any[]
-      setProducts(
-        rows.map((p) => ({
-          id: p.id,
-          title: p.title,
-          description: p.description || "",
-          thumbnail: p.thumbnail || null,
-          price: Number(p.price || 0),
-          category: p.category || "General",
-          isInStock: Boolean(p.isInStock),
-          inventoryQuantity: Number(p.inventoryQuantity || 0),
-          commissionRate: p.commissionRate ? Number(p.commissionRate) : null,
-          commissionAmount: Number(p.commissionAmount || 0),
-        }))
-      )
-    } catch (error) {
-      console.error("Failed to load offer products:", error)
-    } finally {
-      setLoadingProducts(false)
-    }
-  }
 
   const fetchAffiliateRate = async () => {
     try {
@@ -136,7 +107,35 @@ export default function AffiliateOffersPage() {
     return acc
   }, {} as Record<string, number>)
 
-  const offerProducts = products.filter((p) => (additionalByProduct[p.id] || 0) > 0)
+  // Only products that actually have an active offer are requested, one page
+  // at a time, instead of downloading the whole catalog.
+  const offerIds = Object.keys(additionalByProduct).filter((id) => additionalByProduct[id] > 0)
+  const offerIdsKey = offerIds.sort().join(",")
+  const totalPages = Math.max(1, Math.ceil(offerIds.length / PAGE_SIZE))
+  const currentPage = Math.min(page, totalPages)
+  const pageIds = offerIds.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE).join(",")
+
+  const { data: productsData, isLoading: loadingProducts } = useSWR(
+    token && pageIds
+      ? `/api/products?page=1&limit=${PAGE_SIZE}&ids=${encodeURIComponent(pageIds)}`
+      : null,
+    fetcher,
+    { keepPreviousData: true, revalidateOnFocus: true },
+  )
+
+  const offerProducts: Product[] = ((productsData?.products || []) as any[]).map((p) => ({
+    id: p.id,
+    title: p.title,
+    description: p.description || "",
+    thumbnail: p.thumbnail || null,
+    price: Number(p.price || 0),
+    category: p.category || "General",
+    isInStock: Boolean(p.isInStock),
+    inventoryQuantity: Number(p.inventoryQuantity || 0),
+    commissionRate: p.commissionRate ? Number(p.commissionRate) : null,
+    commissionAmount: Number(p.commissionAmount || 0),
+  }))
+  const waitingForProducts = Boolean(pageIds) && !productsData && (loadingProducts || !token)
 
   return (
     <div className={`${styles.surface} min-h-screen bg-slate-50 overflow-x-hidden`}>
@@ -145,28 +144,55 @@ export default function AffiliateOffersPage() {
       <main className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         <div className="space-y-6">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Offers</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Offers</h1>
             <p className="text-gray-600 mt-1">Active additional commission offers for Partner or All.</p>
           </div>
 
-          {isLoading || loadingProducts ? (
+          {isLoading || waitingForProducts ? (
             <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-8 text-gray-500">Loading offers...</div>
           ) : offerProducts.length === 0 ? (
             <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-8 text-gray-500">
               No active offers available for your role.
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {offerProducts.map((product) => (
-                <OfferProductCard
-                  key={product.id}
-                  product={product}
-                  user={user}
-                  affiliateRate={affiliateRate}
-                  additionalCommissionRate={additionalByProduct[product.id] || 0}
-                />
-              ))}
-            </div>
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+                {offerProducts.map((product) => (
+                  <OfferProductCard
+                    key={product.id}
+                    product={product}
+                    user={user}
+                    affiliateRate={affiliateRate}
+                    additionalCommissionRate={additionalByProduct[product.id] || 0}
+                  />
+                ))}
+              </div>
+              {totalPages > 1 && (
+                <nav className={styles.pagination} aria-label="Offer pages">
+                  <button
+                    type="button"
+                    className={styles.pageButton}
+                    disabled={currentPage <= 1}
+                    aria-label="Previous page"
+                    onClick={() => { setPage(currentPage - 1); window.scrollTo({ top: 0, behavior: "smooth" }) }}
+                  >
+                    <ChevronLeft size={18} />
+                    <span className={styles.pageButtonLabel}>Previous</span>
+                  </button>
+                  <span className={styles.pageInfo}>Page {currentPage} of {totalPages}</span>
+                  <button
+                    type="button"
+                    className={styles.pageButton}
+                    disabled={currentPage >= totalPages}
+                    aria-label="Next page"
+                    onClick={() => { setPage(currentPage + 1); window.scrollTo({ top: 0, behavior: "smooth" }) }}
+                  >
+                    <span className={styles.pageButtonLabel}>Next</span>
+                    <ChevronRight size={18} />
+                  </button>
+                </nav>
+              )}
+            </>
           )}
         </div>
       </main>
@@ -221,7 +247,7 @@ function OfferProductCard({
         </div>
       )}
 
-      <div className="relative h-56 bg-slate-50 flex items-center justify-center p-6 overflow-hidden">
+      <div className="relative h-48 sm:h-56 bg-slate-50 flex items-center justify-center p-4 sm:p-6 overflow-hidden">
         {product.thumbnail ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -234,9 +260,9 @@ function OfferProductCard({
         )}
       </div>
 
-      <div className="relative p-6 space-y-4">
+      <div className="relative p-4 sm:p-6 space-y-3 sm:space-y-4">
         <div className="flex items-start justify-between gap-3">
-          <h3 className="font-bold text-gray-900 text-lg leading-tight line-clamp-2 group-hover:text-emerald-900 transition-colors">
+          <h3 className="min-w-0 break-words font-bold text-gray-900 text-base sm:text-lg leading-tight line-clamp-2 group-hover:text-emerald-900 transition-colors">
             {product.title}
           </h3>
           <span

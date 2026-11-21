@@ -197,6 +197,8 @@
   .header { min-height: 64px; }
 }
 @media (max-width: 639px) {
+  .content { overflow-x: hidden; }
+  .content :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea) { font-size: 16px; }
   .content { padding: 24px 16px 36px; }
   .content > div > div:has(h1) { padding-bottom: 20px; }
   .header { padding-left: 16px; padding-right: 16px; }

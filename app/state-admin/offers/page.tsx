@@ -4,7 +4,7 @@ import styles from "../workspace.module.css"
 import { useEffect, useState } from "react"
 import useSWR from "swr"
 import axios from "axios"
-import { Box, IndianRupee, Share2 } from "lucide-react"
+import { Box, ChevronLeft, ChevronRight, IndianRupee, Share2 } from "lucide-react"
 import { STORE_URL } from "@/lib/config"
 
 type AdditionalCampaign = {
@@ -26,12 +26,14 @@ type Product = {
   commissionAmount: number
 }
 
+const PAGE_SIZE = 12
+
 const fetcher = (url: string) => axios.get(url).then((res) => res.data)
 
 export default function StateAdminOffersPage() {
   const [user, setUser] = useState<any>(null)
-  const [products, setProducts] = useState<Product[]>([])
-  const [loadingProducts, setLoadingProducts] = useState(true)
+  const [token, setToken] = useState<string | null>(null)
+  const [page, setPage] = useState(1)
   const [directRate, setDirectRate] = useState<number>(0)
   const { data, isLoading } = useSWR("/api/additional-commissions/active?role=state", fetcher)
   const campaigns: AdditionalCampaign[] = data?.campaigns || []
@@ -41,42 +43,10 @@ export default function StateAdminOffersPage() {
     const rawUser = localStorage.getItem("affiliate_user")
     if (rawUser) setUser(JSON.parse(rawUser))
     if (token) {
-      void fetchProducts(token)
+      setToken(token)
       void fetchRates()
-    } else {
-      setLoadingProducts(false)
     }
   }, [])
-
-  const fetchProducts = async (token: string) => {
-    try {
-      const response = await axios.get("/api/products", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      })
-      const rows = (response.data?.products || response.data?.allProducts || []) as any[]
-      setProducts(
-        rows.map((p) => ({
-          id: p.id,
-          title: p.title,
-          description: p.description || "",
-          thumbnail: p.thumbnail || null,
-          price: Number(p.price || 0),
-          category: p.category || "General",
-          isInStock: Boolean(p.isInStock),
-          inventoryQuantity: Number(p.inventoryQuantity || 0),
-          commissionRate: p.commissionRate ? Number(p.commissionRate) : null,
-          commissionAmount: Number(p.commissionAmount || 0),
-        }))
-      )
-    } catch (error) {
-      console.error("Failed to load products:", error)
-    } finally {
-      setLoadingProducts(false)
-    }
-  }
 
   const fetchRates = async () => {
     try {
@@ -97,7 +67,36 @@ export default function StateAdminOffersPage() {
     return acc
   }, {} as Record<string, number>)
 
-  const offerProducts = products.filter((p) => (additionalByProduct[p.id] || 0) > 0)
+  // Request only the products that have an active offer, one page at a time.
+  const offerIds = Object.keys(additionalByProduct).filter((id) => additionalByProduct[id] > 0).sort()
+  const totalPages = Math.max(1, Math.ceil(offerIds.length / PAGE_SIZE))
+  const currentPage = Math.min(page, totalPages)
+  const pageIds = offerIds.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE).join(",")
+
+  const { data: productsData, isLoading: productsLoading } = useSWR(
+    token && pageIds ? `/api/products?page=1&limit=${PAGE_SIZE}&ids=${encodeURIComponent(pageIds)}` : null,
+    fetcher,
+    { keepPreviousData: true },
+  )
+  const loadingProducts = Boolean(pageIds) && !productsData && (productsLoading || !token)
+
+  const offerProducts: Product[] = ((productsData?.products || []) as any[]).map((p) => ({
+    id: p.id,
+    title: p.title,
+    description: p.description || "",
+    thumbnail: p.thumbnail || null,
+    price: Number(p.price || 0),
+    category: p.category || "General",
+    isInStock: Boolean(p.isInStock),
+    inventoryQuantity: Number(p.inventoryQuantity || 0),
+    commissionRate: p.commissionRate ? Number(p.commissionRate) : null,
+    commissionAmount: Number(p.commissionAmount || 0),
+  }))
+
+  const goToPage = (next: number) => {
+    setPage(Math.min(Math.max(1, next), totalPages))
+    window.scrollTo({ top: 0, behavior: "smooth" })
+  }
 
   return (
     <div className="space-y-4 sm:space-y-6 min-w-0">
@@ -111,17 +110,34 @@ export default function StateAdminOffersPage() {
       ) : offerProducts.length === 0 ? (
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-8 text-gray-500">No active offers available for your role.</div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-          {offerProducts.map((product) => (
-            <OfferCard
-              key={product.id}
-              product={product}
-              user={user}
-              directRate={directRate}
-              additionalRate={additionalByProduct[product.id] || 0}
-            />
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
+            {offerProducts.map((product) => (
+              <OfferCard
+                key={product.id}
+                product={product}
+                user={user}
+                directRate={directRate}
+                additionalRate={additionalByProduct[product.id] || 0}
+              />
+            ))}
+          </div>
+          {totalPages > 1 && (
+                <nav className={styles.pagination} aria-label="Offer pages">
+                    <button type="button" className={styles.pageButton} disabled={currentPage <= 1} aria-label="Previous page"
+                        onClick={() => goToPage(currentPage - 1)}>
+                        <ChevronLeft size={18} />
+                        <span className={styles.pageButtonLabel}>Previous</span>
+                    </button>
+                    <span className={styles.pageInfo}>Page {currentPage} of {totalPages}</span>
+                    <button type="button" className={styles.pageButton} disabled={currentPage >= totalPages} aria-label="Next page"
+                        onClick={() => goToPage(currentPage + 1)}>
+                        <span className={styles.pageButtonLabel}>Next</span>
+                        <ChevronRight size={18} />
+                    </button>
+                </nav>
+            )}
+        </>
       )}
     </div>
   )
@@ -169,10 +185,10 @@ function OfferCard({
         )}
       </div>
 
-      <div className="p-5 space-y-4">
-        <div className="flex items-start justify-between gap-3">
-          <h3 className="font-bold text-gray-900 text-lg leading-tight line-clamp-2">{product.title}</h3>
-          <span className={`px-3 py-1.5 text-xs font-bold rounded-full whitespace-nowrap ${product.isInStock ? "bg-emerald-500 text-white" : "bg-red-500 text-white"}`}>
+      <div className="p-4 sm:p-5 space-y-3 sm:space-y-4">
+        <div className="flex flex-col gap-2 min-[400px]:flex-row min-[400px]:items-start min-[400px]:justify-between">
+          <h3 className="font-bold text-gray-900 text-base sm:text-lg leading-tight line-clamp-2 min-w-0">{product.title}</h3>
+          <span className={`self-start px-3 py-1.5 text-xs font-bold rounded-full whitespace-nowrap ${product.isInStock ? "bg-emerald-500 text-white" : "bg-red-500 text-white"}`}>
             {product.isInStock ? "In Stock" : "Out of Stock"}
           </span>
         </div>

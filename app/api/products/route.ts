@@ -291,17 +291,67 @@ async function getCachedOrFresh(): Promise<ProductsPayload> {
     return startBackgroundRebuild();
 }
 
-export async function GET(_req: NextRequest) {
+const DEFAULT_PAGE_SIZE = 12;
+const MAX_PAGE_SIZE = 60;
+
+export async function GET(req: NextRequest) {
     try {
         const data = await getCachedOrFresh();
         const ageMs = cache ? Date.now() - cache.builtAt : 0;
-        return NextResponse.json(data, {
-            headers: {
-                "Cache-Control": "no-store, must-revalidate",
-                "X-Cache-Age-Ms": String(ageMs),
-                "X-Built-In-Ms": String(data.builtInMs ?? 0),
-            },
+        const headers = {
+            "Cache-Control": "no-store, must-revalidate",
+            "X-Cache-Age-Ms": String(ageMs),
+            "X-Built-In-Ms": String(data.builtInMs ?? 0),
+        };
+
+        // Pagination is opt-in (?page=N) so the other portals that still read
+        // the full catalog keep working unchanged.
+        const params = req.nextUrl.searchParams;
+        if (!params.has("page")) {
+            return NextResponse.json(data, { headers });
+        }
+
+        const page = Math.max(1, parseInt(params.get("page") || "1", 10) || 1);
+        const limit = Math.min(
+            MAX_PAGE_SIZE,
+            Math.max(1, parseInt(params.get("limit") || String(DEFAULT_PAGE_SIZE), 10) || DEFAULT_PAGE_SIZE)
+        );
+        const search = (params.get("search") || "").trim().toLowerCase();
+        const category = (params.get("category") || "").trim();
+        const idList = (params.get("ids") || "").split(",").map((i) => i.trim()).filter(Boolean);
+        const idSet = idList.length ? new Set(idList) : null;
+
+        const filtered = data.products.filter((p) => {
+            if (idSet && !idSet.has(p.id)) return false;
+            if (category && category !== "all" && p.category !== category) return false;
+            if (!search) return true;
+            return (
+                p.title.toLowerCase().includes(search) ||
+                p.description.toLowerCase().includes(search)
+            );
         });
+
+        const total = filtered.length;
+        const totalPages = Math.max(1, Math.ceil(total / limit));
+        const safePage = Math.min(page, totalPages);
+        const start = (safePage - 1) * limit;
+
+        return NextResponse.json(
+            {
+                success: true,
+                products: filtered.slice(start, start + limit),
+                categories: data.categories,
+                pagination: {
+                    page: safePage,
+                    limit,
+                    total,
+                    totalPages,
+                    hasMore: safePage < totalPages,
+                },
+                updatedAt: data.updatedAt,
+            },
+            { headers }
+        );
     } catch (error: any) {
         console.error("Products endpoint error:", error?.message || error);
         return NextResponse.json(

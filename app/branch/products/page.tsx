@@ -2,7 +2,7 @@
 import styles from "../workspace.module.css"
 
 import { useEffect, useState } from "react"
-import { Search, Package, IndianRupee, Box, Share2 } from "lucide-react"
+import { Search, Package, IndianRupee, Box, Share2, ChevronLeft, ChevronRight } from "lucide-react"
 import axios from "axios"
 import { STORE_URL } from "@/lib/config"
 import { useTheme } from "@/contexts/ThemeContext"
@@ -28,6 +28,8 @@ interface Product {
     hasCommission: boolean
 }
 
+const PAGE_SIZE = 12
+
 export default function BranchProductsPage() {
     const { theme } = useTheme()
     const [loading, setLoading] = useState(true)
@@ -35,6 +37,12 @@ export default function BranchProductsPage() {
     const [categories, setCategories] = useState<string[]>([])
     const [selectedCategory, setSelectedCategory] = useState<string>("all")
     const [searchQuery, setSearchQuery] = useState("")
+    const [debouncedSearch, setDebouncedSearch] = useState("")
+    const [page, setPage] = useState(1)
+    const [token, setToken] = useState<string | null>(null)
+    const [total, setTotal] = useState(0)
+    const [totalPages, setTotalPages] = useState(1)
+    const [fetching, setFetching] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const [user, setUser] = useState<any>(null)
     const [commissionRate, setCommissionRate] = useState<number>(0)
@@ -47,7 +55,7 @@ export default function BranchProductsPage() {
             setUser(JSON.parse(userData))
         }
         if (token) {
-            fetchProducts(token)
+            setToken(token)
             fetchCommissionRates()
             fetchAdditionalCommissions("branch")
         } else {
@@ -86,32 +94,61 @@ export default function BranchProductsPage() {
         }
     }
 
-    const fetchProducts = async (token: string) => {
-        try {
-            const response = await axios.get("/api/products", {
-                headers: {
-                    "Authorization": `Bearer ${token}`,
-                    "Content-Type": "application/json",
-                },
-            })
+    // Debounce typing and reset to page 1 when the search term changes.
+    useEffect(() => {
+        const t = setTimeout(() => {
+            setDebouncedSearch(searchQuery.trim())
+            setPage(1)
+        }, 300)
+        return () => clearTimeout(t)
+    }, [searchQuery])
 
-            const data = response.data
-            setProducts(data.products || data.allProducts || [])
-            setCategories(data.categories || [])
-        } catch (err: any) {
-            console.error("Error fetching products:", err)
-            setError(err.response?.data?.message || err.message || "Failed to load products")
-        } finally {
-            setLoading(false)
+    // Fetch one page at a time; search/category are filtered on the server.
+    useEffect(() => {
+        if (!token) return
+        let cancelled = false
+        const run = async () => {
+            setFetching(true)
+            try {
+                const response = await axios.get("/api/products", {
+                    params: { page, limit: PAGE_SIZE, search: debouncedSearch, category: selectedCategory },
+                    headers: {
+                        "Authorization": `Bearer ${token}`,
+                        "Content-Type": "application/json",
+                    },
+                })
+                if (cancelled) return
+                const data = response.data
+                setProducts(data.products || [])
+                setCategories(data.categories || [])
+                setTotal(data.pagination?.total ?? 0)
+                setTotalPages(data.pagination?.totalPages ?? 1)
+                setError(null)
+            } catch (err: any) {
+                if (cancelled) return
+                console.error("Error fetching products:", err)
+                setError(err.response?.data?.message || err.message || "Failed to load products")
+            } finally {
+                if (!cancelled) {
+                    setLoading(false)
+                    setFetching(false)
+                }
+            }
         }
+        void run()
+        return () => { cancelled = true }
+    }, [token, page, debouncedSearch, selectedCategory])
+
+    const goToPage = (next: number) => {
+        setPage(Math.min(Math.max(1, next), totalPages))
+        window.scrollTo({ top: 0, behavior: "smooth" })
+    }
+    const selectCategory = (category: string) => {
+        setSelectedCategory(category)
+        setPage(1)
     }
 
-    const filteredProducts = products.filter(product => {
-        const matchesSearch = product.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            product.description?.toLowerCase().includes(searchQuery.toLowerCase())
-        const matchesCategory = selectedCategory === "all" || product.category === selectedCategory
-        return matchesSearch && matchesCategory
-    })
+    const filteredProducts = products
 
     if (loading) {
         return (
@@ -132,7 +169,7 @@ export default function BranchProductsPage() {
                     <p className="text-gray-600 mt-1 text-sm sm:text-base">Direct sales earn you maximum commission</p>
                 </div>
                 <div className="self-start px-4 py-2 rounded-full text-sm font-medium shrink-0" style={{ backgroundColor: theme.primaryLight, color: theme.primary }}>
-                    {filteredProducts.length} Products Available
+                    {total} Products Available
                 </div>
             </div>
 
@@ -148,9 +185,9 @@ export default function BranchProductsPage() {
                     />
                 </div>
 
-                <div className="flex flex-wrap gap-2">
+                <div className={`${styles.categoryRow} flex gap-2`}>
                     <button
-                        onClick={() => setSelectedCategory("all")}
+                        onClick={() => selectCategory("all")}
                         className={`px-3 sm:px-4 py-2 rounded-full text-sm font-medium transition-all ${selectedCategory === "all"
                             ? "text-white"
                             : "bg-white border border-gray-200 text-gray-700 hover:bg-gray-50"
@@ -162,7 +199,7 @@ export default function BranchProductsPage() {
                     {categories.map((category) => (
                         <button
                             key={category}
-                            onClick={() => setSelectedCategory(category)}
+                            onClick={() => selectCategory(category)}
                             className={`px-3 sm:px-4 py-2 rounded-full text-sm font-medium transition-all ${selectedCategory === category
                                 ? "text-white"
                                 : "bg-white border border-gray-200 text-gray-700 hover:bg-gray-50"
@@ -192,18 +229,35 @@ export default function BranchProductsPage() {
                     </p>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                    {filteredProducts.map((product) => (
-                        <ProductCard
-                            key={product.id}
-                            product={product}
-                            user={user}
-                            theme={theme}
-                            commissionRate={commissionRate}
-                            additionalCommissionRate={additionalByProduct[product.id] || 0}
-                        />
-                    ))}
-                </div>
+                <>
+                    <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 transition-opacity ${fetching ? "opacity-60" : ""}`}>
+                        {filteredProducts.map((product) => (
+                            <ProductCard
+                                key={product.id}
+                                product={product}
+                                user={user}
+                                theme={theme}
+                                commissionRate={commissionRate}
+                                additionalCommissionRate={additionalByProduct[product.id] || 0}
+                            />
+                        ))}
+                    </div>
+                    {totalPages > 1 && (
+                <nav className={styles.pagination} aria-label="Product pages">
+                    <button type="button" className={styles.pageButton} disabled={page <= 1} aria-label="Previous page"
+                        onClick={() => goToPage(page - 1)}>
+                        <ChevronLeft size={18} />
+                        <span className={styles.pageButtonLabel}>Previous</span>
+                    </button>
+                    <span className={styles.pageInfo}>Page {page} of {totalPages}</span>
+                    <button type="button" className={styles.pageButton} disabled={page >= totalPages} aria-label="Next page"
+                        onClick={() => goToPage(page + 1)}>
+                        <span className={styles.pageButtonLabel}>Next</span>
+                        <ChevronRight size={18} />
+                    </button>
+                </nav>
+            )}
+                </>
             )}
         </div>
     )

@@ -89,6 +89,12 @@
 .productCard { border: 1px solid #dfe7db; border-radius: 12px; }
 .productCard > div:last-child { padding: 20px; }
 .productCard :global(.h-56) { height: 196px; }
+.categoryRow { flex-wrap: wrap; }
+.pagination { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 32px; }
+.pageButton { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; min-width: 44px; padding: 10px 16px; border: 1px solid #cfdbc8; border-radius: 8px; background: #fff; color: #2c342f; font-size: 13px; font-weight: 600; transition: background .15s; }
+.pageButton:hover:not(:disabled) { background: #eef7e8; }
+.pageButton:disabled { opacity: .45; }
+.pageInfo { min-width: 96px; text-align: center; color: #647067; font-size: 13px; font-weight: 500; font-variant-numeric: tabular-nums; }
 .walletContent { min-height: calc(100vh - 65px); background: #f6f9f4; padding-bottom: 64px; }
 .walletBalance { background: #eef7e8; border: 1px solid #d8e7cf; padding: 24px; border-radius: 12px; color: #17211b; }
 .walletBalance h2 { font-size: clamp(30px, 4vw, 42px); }
@@ -101,6 +107,18 @@
 .numeric :is(th, td):nth-child(4), .numeric :is(th, td):nth-child(5) { text-align: right; }
 
 @media (max-width: 767px) {
+  .surface main { overflow-x: hidden; }
+  .surface :is(input, select, textarea) { font-size: 16px; }
+  .categoryRow { flex-wrap: nowrap; overflow-x: auto; margin: 0 -16px; padding: 2px 16px 6px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .categoryRow::-webkit-scrollbar { display: none; }
+  .categoryRow > * { flex-shrink: 0; white-space: nowrap; }
+  .catalogHeader { margin-bottom: 18px; }
+  .catalogControls { margin-bottom: 18px; gap: 12px; }
+  .productCard > div:last-child { padding: 16px; }
+  .productCard :global(.h-56), .productCard :global(.h-48) { height: 180px; }
+  .pagination { gap: 8px; margin-top: 24px; }
+  .pageButtonLabel { display: none; }
+  .pageInfo { flex: 1; }
   .surface main { padding-top: 20px; padding-bottom: 32px; }
   .brand img { width: 76px; }
   .brandLabel { padding-left: 10px; font-size: 11px; max-width: 80px; }

@@ -145,6 +145,13 @@
 .productImage { height: 224px; padding: 28px; border-bottom: 1px solid var(--theme-surface-border); }
 .workspace .productImage { background-image: none; }
 
+.categoryRow { flex-wrap: wrap; }
+.pagination { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 32px; }
+.pageButton { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; min-width: 44px; padding: 10px 16px; border: 1px solid var(--theme-surface-border); border-radius: 9px; background: var(--theme-card-bg); color: var(--theme-surface-text); font-size: 13px; font-weight: 600; transition: background .15s; }
+.pageButton:hover:not(:disabled) { background: var(--workspace-hover); }
+.pageButton:disabled { opacity: .45; }
+.pageInfo { min-width: 96px; text-align: center; color: var(--theme-surface-text-muted); font-size: 13px; font-weight: 500; font-variant-numeric: tabular-nums; }
+
 @media (min-width: 1024px) {
   .headerLabel { display: inline; }
   .dashboardGrid { grid-template-columns: minmax(0, 1.65fr) minmax(280px, 1fr); }
@@ -159,6 +166,16 @@
   .metrics > :is(a, div) { border-bottom: 1px solid var(--theme-surface-border); }
 }
 @media (max-width: 639px) {
+  .content { overflow-x: hidden; }
+  .content :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea) { font-size: 16px; }
+  .categoryRow { flex-wrap: nowrap; overflow-x: auto; margin: 0 -16px; padding: 2px 16px 6px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .categoryRow::-webkit-scrollbar { display: none; }
+  .categoryRow > * { flex-shrink: 0; white-space: nowrap; }
+  .productCard > div:last-child { padding: 16px; }
+  .productImage { height: 176px; padding: 16px; }
+  .pagination { gap: 8px; margin-top: 24px; }
+  .pageButtonLabel { display: none; }
+  .pageInfo { flex: 1; }
   .content { padding: 24px 16px 36px; }
   .pageFrame > div > div:has(h1) { padding-bottom: 20px; }
   .header { padding-left: 16px; padding-right: 16px; }

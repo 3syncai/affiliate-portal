@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import pool from "@/lib/db";
 
 export const dynamic = "force-dynamic";
@@ -17,8 +17,15 @@ export const dynamic = "force-dynamic";
  * Response shape:
  *   { success: true, inventory: { [productId: string]: number }, updatedAt: string }
  */
-export async function GET() {
+export async function GET(req: NextRequest) {
     try {
+        // Optional ?ids=a,b,c limits the aggregate to the products currently
+        // on screen so paginated pages don't pay for the whole catalog.
+        const ids = (req.nextUrl.searchParams.get("ids") || "")
+            .split(",")
+            .map((id) => id.trim())
+            .filter(Boolean)
+            .slice(0, 100);
         const result = await pool.query(`
             SELECT
                 pv.product_id,
@@ -29,8 +36,9 @@ export async function GET() {
             LEFT JOIN inventory_level il
                 ON il.inventory_item_id = pvii.inventory_item_id
             WHERE pv.deleted_at IS NULL
+            ${ids.length ? "AND pv.product_id = ANY($1::text[])" : ""}
             GROUP BY pv.product_id
-        `);
+        `, ids.length ? [ids] : []);
 
         const inventory: Record<string, number> = {};
         for (const row of result.rows) {

@@ -4,7 +4,7 @@ import styles from "@/app/components/sales-executive.module.css"
 
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Search, Package, IndianRupee, Box, Share2, Info } from "lucide-react"
+import { Search, Package, IndianRupee, Box, Share2, Info, ChevronLeft, ChevronRight } from "lucide-react"
 import axios from "axios"
 import useSWR from "swr"
 import UserNavbar from "../components/UserNavbar"
@@ -35,11 +35,21 @@ interface Product {
     status?: string
 }
 
+interface Pagination {
+    page: number
+    limit: number
+    total: number
+    totalPages: number
+    hasMore: boolean
+}
+
 interface ProductsResponse {
     products?: Product[]
-    allProducts?: Product[]
     categories?: string[]
+    pagination?: Pagination
 }
+
+const PAGE_SIZE = 12
 
 const plainFetcher = (url: string) => axios.get(url).then(res => res.data)
 
@@ -49,6 +59,18 @@ export default function ProductsPage() {
     const [authChecked, setAuthChecked] = useState(false)
     const [selectedCategory, setSelectedCategory] = useState<string>("all")
     const [searchQuery, setSearchQuery] = useState("")
+    const [debouncedSearch, setDebouncedSearch] = useState("")
+    const [page, setPage] = useState(1)
+
+    // Debounce typing so we don't hit the API on every keystroke, and jump
+    // back to page 1 whenever the search term changes.
+    useEffect(() => {
+        const t = setTimeout(() => {
+            setDebouncedSearch(searchQuery.trim())
+            setPage(1)
+        }, 300)
+        return () => clearTimeout(t)
+    }, [searchQuery])
 
     useEffect(() => {
         const token = localStorage.getItem("affiliate_token")
@@ -81,7 +103,7 @@ export default function ProductsPage() {
         }
     }, [router])
 
-    // Live products feed.
+    // Live products feed (one page at a time, filtered server-side).
     // Polls every 5s and revalidates on focus/reconnect, so admin status flips
     // (draft <-> published) and commission-list edits are reflected on the
     // page within a few seconds without a manual refresh.
@@ -91,10 +113,17 @@ export default function ProductsPage() {
         isLoading: productsLoading,
         isValidating: productsValidating,
     } = useSWR<ProductsResponse>(
-        authChecked ? "/api/products" : null,
+        authChecked
+            ? `/api/products?${new URLSearchParams({
+                page: String(page),
+                limit: String(PAGE_SIZE),
+                search: debouncedSearch,
+                category: selectedCategory,
+            }).toString()}`
+            : null,
         fetcher,
         {
-            refreshInterval: 5000,
+            refreshInterval: 15000,
             revalidateOnFocus: true,
             revalidateOnReconnect: true,
             revalidateOnMount: true,
@@ -127,15 +156,16 @@ export default function ProductsPage() {
     // This is a tiny, dedicated endpoint (a single SQL aggregate) so we can
     // poll it aggressively (every 3s) to reflect stock changes as sales happen
     // — without re-fetching the entire heavy product catalog.
+    const visibleIds = (productsData?.products || []).map(p => p.id).join(",")
     const { data: inventoryData } = useSWR<{
         success: boolean
         inventory: Record<string, number>
         updatedAt: string
     }>(
-        authChecked ? "/api/products/inventory" : null,
+        authChecked && visibleIds ? `/api/products/inventory?ids=${encodeURIComponent(visibleIds)}` : null,
         plainFetcher,
         {
-            refreshInterval: 3000,
+            refreshInterval: 5000,
             revalidateOnFocus: true,
             revalidateOnReconnect: true,
             dedupingInterval: 500,
@@ -196,15 +226,21 @@ export default function ProductsPage() {
     const firstLoadInProgress = !productsData && productsLoading
     const showSkeleton = !authChecked || firstLoadInProgress
 
-    // Filter products by status (published only), search and category
-    const filteredProducts = products.filter(product => {
-        const status = String(product.status ?? "published").toLowerCase()
-        if (status !== "published") return false
-        const matchesSearch = product.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            product.description.toLowerCase().includes(searchQuery.toLowerCase())
-        const matchesCategory = selectedCategory === "all" || product.category === selectedCategory
-        return matchesSearch && matchesCategory
-    })
+    // The server already returns only published products matching the
+    // search/category for the current page.
+    const filteredProducts = products
+    const pagination = productsData?.pagination
+    const totalCount = pagination?.total ?? 0
+    const totalPages = pagination?.totalPages ?? 1
+
+    const goToPage = (next: number) => {
+        setPage(Math.min(Math.max(1, next), totalPages))
+        window.scrollTo({ top: 0, behavior: "smooth" })
+    }
+    const selectCategory = (category: string) => {
+        setSelectedCategory(category)
+        setPage(1)
+    }
 
     const userName = user?.first_name && user?.last_name
         ? `${user.first_name} ${user.last_name} `
@@ -218,10 +254,10 @@ export default function ProductsPage() {
                 {/* Header */}
                 <div className={`${styles.catalogHeader} flex flex-col md:flex-row md:items-center md:justify-between gap-4`}>
                     <div>
-                        <h1 className="text-4xl font-bold bg-slate-900 bg-clip-text text-transparent">
+                        <h1 className="text-2xl sm:text-4xl font-bold bg-slate-900 bg-clip-text text-transparent">
                             Product Catalog
                         </h1>
-                        <p className="text-gray-600 text-lg">Browse products and see your commission rates</p>
+                        <p className="text-gray-600 text-base sm:text-lg">Browse products and see your commission rates</p>
                     </div>
                     <div className="flex items-center gap-3">
                         <div
@@ -238,14 +274,14 @@ export default function ProductsPage() {
                             Live
                         </div>
                         <div className="relative">
-                            <div className="relative bg-emerald-600 text-white px-6 py-3 rounded-full text-sm font-semibold shadow-lg">
+                            <div className="relative bg-emerald-600 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-full text-sm font-semibold shadow-lg">
                                 {showSkeleton ? (
                                     <span className="inline-flex items-center gap-2">
                                         <span className="h-4 w-12 bg-white/30 rounded animate-pulse"></span>
                                         Products
                                     </span>
                                 ) : (
-                                    `${filteredProducts.length} Products Available`
+                                    `${totalCount} Products Available`
                                 )}
                             </div>
                         </div>
@@ -263,15 +299,15 @@ export default function ProductsPage() {
                                 placeholder="Search products..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full pl-12 pr-4 py-4 border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all bg-white shadow-sm hover:shadow-md"
+                                className="w-full pl-12 pr-4 py-3 sm:py-4 border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all bg-white shadow-sm hover:shadow-md"
                             />
                         </div>
                     </div>
 
                     {/* Category Filters */}
-                    <div className="flex flex-wrap gap-3">
+                    <div className={`${styles.categoryRow} flex gap-3`}>
                         <button
-                            onClick={() => setSelectedCategory("all")}
+                            onClick={() => selectCategory("all")}
                             className={`px-5 py-3 rounded-full text-sm font-semibold transition-all duration-300 transform hover:scale-105 ${selectedCategory === "all"
                                 ? "bg-emerald-600 text-white shadow-lg shadow-emerald-200"
                                 : "bg-white border-2 border-gray-200 text-gray-700 hover:border-emerald-300 shadow-sm hover:shadow-md"
@@ -289,7 +325,7 @@ export default function ProductsPage() {
                             : categories.map((category) => (
                                 <button
                                     key={category}
-                                    onClick={() => setSelectedCategory(category)}
+                                    onClick={() => selectCategory(category)}
                                     className={`px-5 py-3 rounded-full text-sm font-semibold transition-all duration-300 transform hover:scale-105 ${selectedCategory === category
                                         ? "bg-emerald-600 text-white shadow-lg shadow-emerald-200"
                                         : "bg-white border-2 border-gray-200 text-gray-700 hover:border-emerald-300 shadow-sm hover:shadow-md"
@@ -310,8 +346,8 @@ export default function ProductsPage() {
 
                 {/* Products Grid */}
                 {showSkeleton ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {Array.from({ length: 9 }).map((_, i) => (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+                        {Array.from({ length: 6 }).map((_, i) => (
                             <ProductCardSkeleton key={i} />
                         ))}
                     </div>
@@ -326,17 +362,46 @@ export default function ProductsPage() {
                         </p>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {filteredProducts.map((product) => (
-                            <ProductCard
-                                key={product.id}
-                                product={product}
-                                user={user}
-                                affiliateRate={affiliateRate}
-                                additionalCommissionRate={additionalByProduct[product.id] || 0}
-                            />
-                        ))}
-                    </div>
+                    <>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+                            {filteredProducts.map((product) => (
+                                <ProductCard
+                                    key={product.id}
+                                    product={product}
+                                    user={user}
+                                    affiliateRate={affiliateRate}
+                                    additionalCommissionRate={additionalByProduct[product.id] || 0}
+                                />
+                            ))}
+                        </div>
+                        {totalPages > 1 && (
+                            <nav className={styles.pagination} aria-label="Product pages">
+                                <button
+                                    type="button"
+                                    onClick={() => goToPage(page - 1)}
+                                    disabled={page <= 1}
+                                    className={styles.pageButton}
+                                    aria-label="Previous page"
+                                >
+                                    <ChevronLeft size={18} />
+                                    <span className={styles.pageButtonLabel}>Previous</span>
+                                </button>
+                                <span className={styles.pageInfo}>
+                                    Page {page} of {totalPages}
+                                </span>
+                                <button
+                                    type="button"
+                                    onClick={() => goToPage(page + 1)}
+                                    disabled={page >= totalPages}
+                                    className={styles.pageButton}
+                                    aria-label="Next page"
+                                >
+                                    <span className={styles.pageButtonLabel}>Next</span>
+                                    <ChevronRight size={18} />
+                                </button>
+                            </nav>
+                        )}
+                    </>
                 )}
             </main>
         </div>
@@ -400,7 +465,7 @@ function ProductCard({
             {/* Share Button */}
             <button
                 onClick={handleShare}
-                className="absolute top-4 right-4 z-10 bg-white/90 backdrop-blur-md hover:bg-emerald-500 text-gray-700 hover:text-white p-3 rounded-full shadow-lg transition-all duration-300 transform hover:scale-110 hover:rotate-12"
+                className="absolute top-3 right-3 sm:top-4 sm:right-4 z-10 bg-white/90 backdrop-blur-md hover:bg-emerald-500 text-gray-700 hover:text-white p-3 rounded-full shadow-lg transition-all duration-300 transform hover:scale-110 hover:rotate-12"
                 title="Share product with your referral link"
             >
                 <Share2 size={18} />
@@ -414,7 +479,7 @@ function ProductCard({
             )}
 
             {/* Image Container */}
-            <div className="relative h-56 bg-slate-50 flex items-center justify-center p-6 overflow-hidden">
+            <div className="relative h-48 sm:h-56 bg-slate-50 flex items-center justify-center p-4 sm:p-6 overflow-hidden">
                 {product.thumbnail ? (
                     <img
                         src={product.thumbnail}
@@ -429,10 +494,10 @@ function ProductCard({
             </div>
 
             {/* Content */}
-            <div className="relative p-6 space-y-4">
+            <div className="relative p-4 sm:p-6 space-y-3 sm:space-y-4">
                 {/* Title and Stock Badge */}
                 <div className="flex items-start justify-between gap-3">
-                    <h3 className="font-bold text-gray-900 text-lg leading-tight line-clamp-2 group-hover:text-emerald-900 transition-colors">
+                    <h3 className="min-w-0 font-bold text-gray-900 text-base sm:text-lg leading-tight line-clamp-2 break-words group-hover:text-emerald-900 transition-colors">
                         {product.title}
                     </h3>
                     <span className={`px-3 py-1.5 text-xs font-bold rounded-full whitespace-nowrap shadow-sm ${product.isInStock
